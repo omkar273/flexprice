@@ -91,6 +91,7 @@ func (r *featureRepository) Get(ctx context.Context, id string) (*domainFeature.
 		Where(
 			feature.ID(id),
 			feature.TenantID(types.GetTenantID(ctx)),
+			feature.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		Only(ctx)
 
@@ -194,6 +195,7 @@ func (r *featureRepository) Update(ctx context.Context, f *domainFeature.Feature
 		Where(
 			feature.ID(f.ID),
 			feature.TenantID(f.TenantID),
+			feature.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		SetName(f.Name).
 		SetDescription(f.Description).
@@ -235,6 +237,7 @@ func (r *featureRepository) Delete(ctx context.Context, id string) error {
 		Where(
 			feature.ID(id),
 			feature.TenantID(types.GetTenantID(ctx)),
+			feature.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		SetStatus(string(types.StatusArchived)).
 		SetUpdatedAt(time.Now().UTC()).

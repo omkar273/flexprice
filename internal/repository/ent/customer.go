@@ -220,6 +220,7 @@ func (r *customerRepository) Update(ctx context.Context, c *domainCustomer.Custo
 		Where(
 			customer.ID(c.ID),
 			customer.TenantID(c.TenantID),
+			customer.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		SetExternalID(c.ExternalID).
 		SetName(c.Name).
@@ -267,12 +268,14 @@ func (r *customerRepository) Delete(ctx context.Context, id string) error {
 	r.log.Debugw("deleting customer",
 		"customer_id", id,
 		"tenant_id", types.GetTenantID(ctx),
+		"environment_id", types.GetEnvironmentID(ctx),
 	)
 
 	_, err := client.Customer.Update().
 		Where(
 			customer.ID(id),
 			customer.TenantID(types.GetTenantID(ctx)),
+			customer.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		SetStatus(string(types.StatusArchived)).
 		SetUpdatedAt(time.Now().UTC()).

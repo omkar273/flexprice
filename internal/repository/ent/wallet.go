@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/flexprice/flexprice/ent"
+	"github.com/flexprice/flexprice/ent/customer"
 	"github.com/flexprice/flexprice/ent/wallet"
 	"github.com/flexprice/flexprice/ent/wallettransaction"
 	walletdomain "github.com/flexprice/flexprice/internal/domain/wallet"
@@ -30,6 +31,20 @@ func NewWalletRepository(client postgres.IClient, logger *logger.Logger) walletd
 
 func (r *walletRepository) CreateWallet(ctx context.Context, w *walletdomain.Wallet) error {
 	client := r.client.Querier(ctx)
+
+	// check if customer exists
+	customer, err := r.client.Querier(ctx).Customer.Query().
+		Where(customer.ID(w.CustomerID)).
+		Only(ctx)
+	if err != nil {
+		return ierr.WithError(err).Mark(ierr.ErrDatabase)
+	}
+
+	if customer == nil {
+		return ierr.NewError("customer not found").
+			WithHintf("Customer with ID %s not found", w.CustomerID).
+			Mark(ierr.ErrNotFound)
+	}
 
 	// Set environment ID from context if not already set
 	if w.EnvironmentID == "" {
@@ -83,6 +98,7 @@ func (r *walletRepository) GetWalletByID(ctx context.Context, id string) (*walle
 			wallet.ID(id),
 			wallet.TenantID(types.GetTenantID(ctx)),
 			wallet.StatusEQ(string(types.StatusPublished)),
+			wallet.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		Only(ctx)
 
@@ -114,6 +130,7 @@ func (r *walletRepository) GetWalletsByCustomerID(ctx context.Context, customerI
 			wallet.TenantID(types.GetTenantID(ctx)),
 			wallet.StatusEQ(string(types.StatusPublished)),
 			wallet.WalletStatusEQ(string(types.WalletStatusActive)),
+			wallet.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		All(ctx)
 
@@ -140,6 +157,7 @@ func (r *walletRepository) UpdateWalletStatus(ctx context.Context, id string, st
 			wallet.ID(id),
 			wallet.TenantID(types.GetTenantID(ctx)),
 			wallet.StatusEQ(string(types.StatusPublished)),
+			wallet.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		SetWalletStatus(string(status)).
 		SetUpdatedBy(types.GetUserID(ctx)).
@@ -348,6 +366,7 @@ func (r *walletRepository) GetTransactionByID(ctx context.Context, id string) (*
 			wallettransaction.ID(id),
 			wallettransaction.TenantID(types.GetTenantID(ctx)),
 			wallettransaction.StatusEQ(string(types.StatusPublished)),
+			wallettransaction.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		Only(ctx)
 
@@ -451,6 +470,7 @@ func (r *walletRepository) UpdateTransactionStatus(ctx context.Context, id strin
 			wallettransaction.ID(id),
 			wallettransaction.TenantID(types.GetTenantID(ctx)),
 			wallettransaction.StatusEQ(string(types.StatusPublished)),
+			wallettransaction.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		SetTransactionStatus(string(status)).
 		SetUpdatedBy(types.GetUserID(ctx)).
@@ -593,6 +613,7 @@ func (r *walletRepository) UpdateWallet(ctx context.Context, id string, w *walle
 			wallet.ID(id),
 			wallet.TenantID(types.GetTenantID(ctx)),
 			wallet.StatusEQ(string(types.StatusPublished)),
+			wallet.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		SetName(w.Name).
 		SetDescription(w.Description).
