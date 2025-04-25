@@ -6,6 +6,7 @@ import (
 
 	"github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/ent/plan"
+	"github.com/flexprice/flexprice/internal/cache"
 	domainPlan "github.com/flexprice/flexprice/internal/domain/plan"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
@@ -17,13 +18,15 @@ type planRepository struct {
 	client    postgres.IClient
 	log       *logger.Logger
 	queryOpts PlanQueryOptions
+	cache     cache.Cache
 }
 
-func NewPlanRepository(client postgres.IClient, log *logger.Logger) domainPlan.Repository {
+func NewPlanRepository(client postgres.IClient, log *logger.Logger, cache cache.Cache) domainPlan.Repository {
 	return &planRepository{
 		client:    client,
 		log:       log,
 		queryOpts: PlanQueryOptions{},
+		cache:     cache,
 	}
 }
 
@@ -90,6 +93,11 @@ func (r *planRepository) Create(ctx context.Context, p *domainPlan.Plan) error {
 }
 
 func (r *planRepository) Get(ctx context.Context, id string) (*domainPlan.Plan, error) {
+	// Check cache first
+	if planData := r.GetCache(ctx, id); planData != nil {
+		return planData, nil
+	}
+
 	client := r.client.Querier(ctx)
 
 	r.log.Debugw("getting plan", "plan_id", id)
@@ -127,7 +135,9 @@ func (r *planRepository) Get(ctx context.Context, id string) (*domainPlan.Plan, 
 	}
 
 	SetSpanSuccess(span)
-	return domainPlan.FromEnt(plan), nil
+	planData := domainPlan.FromEnt(plan)
+	r.SetCache(ctx, planData)
+	return planData, nil
 }
 
 func (r *planRepository) List(ctx context.Context, filter *types.PlanFilter) ([]*domainPlan.Plan, error) {
@@ -206,6 +216,11 @@ func (r *planRepository) Count(ctx context.Context, filter *types.PlanFilter) (i
 }
 
 func (r *planRepository) GetByLookupKey(ctx context.Context, lookupKey string) (*domainPlan.Plan, error) {
+	// Check cache first
+	if planData := r.GetCache(ctx, lookupKey); planData != nil {
+		return planData, nil
+	}
+
 	r.log.Debugw("getting plan by lookup key", "lookup_key", lookupKey)
 
 	// Start a span for this repository operation
@@ -241,7 +256,9 @@ func (r *planRepository) GetByLookupKey(ctx context.Context, lookupKey string) (
 	}
 
 	SetSpanSuccess(span)
-	return domainPlan.FromEnt(plan), nil
+	planData := domainPlan.FromEnt(plan)
+	r.SetCache(ctx, planData)
+	return planData, nil
 }
 
 func (r *planRepository) Update(ctx context.Context, p *domainPlan.Plan) error {
@@ -301,6 +318,7 @@ func (r *planRepository) Update(ctx context.Context, p *domainPlan.Plan) error {
 	}
 
 	SetSpanSuccess(span)
+	r.DeleteCache(ctx, p.ID)
 	return nil
 }
 
@@ -348,6 +366,7 @@ func (r *planRepository) Delete(ctx context.Context, id string) error {
 	}
 
 	SetSpanSuccess(span)
+	r.DeleteCache(ctx, id)
 	return nil
 }
 
@@ -424,4 +443,44 @@ func (o PlanQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.Pl
 	}
 
 	return query
+}
+
+func (r *planRepository) GetCache(ctx context.Context, id string) *domainPlan.Plan {
+	tenantID := types.GetTenantID(ctx)
+	environmentID := types.GetEnvironmentID(ctx)
+	if plan, found := r.cache.Get(ctx, cache.GenerateKey(cache.PrefixPlan, tenantID, environmentID, id)); found {
+		return plan.(*domainPlan.Plan)
+	}
+	return nil
+}
+
+func (r *planRepository) SetCache(ctx context.Context, plan *domainPlan.Plan) {
+	tenantID := types.GetTenantID(ctx)
+	environmentID := types.GetEnvironmentID(ctx)
+	planIDCacheKey := cache.GenerateKey(cache.PrefixPlan, tenantID, environmentID, plan.ID)
+	r.cache.Set(ctx, planIDCacheKey, plan, cache.ExpiryDefaultInMemory)
+
+	lookupKeyCacheKey := cache.GenerateKey(cache.PrefixPlan, tenantID, environmentID, plan.LookupKey)
+	r.cache.Set(ctx, lookupKeyCacheKey, plan, cache.ExpiryDefaultInMemory)
+}
+
+func (r *planRepository) DeleteCache(ctx context.Context, id string) {
+	tenantID := types.GetTenantID(ctx)
+	environmentID := types.GetEnvironmentID(ctx)
+	r.cache.Delete(ctx, cache.GenerateKey(cache.PrefixPlan, tenantID, environmentID, id))
+}
+
+func (r *planRepository) DeleteCacheByPrefix(ctx context.Context, prefix string) {
+	tenantID := types.GetTenantID(ctx)
+	environmentID := types.GetEnvironmentID(ctx)
+	planIDCacheKey := cache.GenerateKey(cache.PrefixPlan, tenantID, environmentID, prefix)
+	r.cache.DeleteByPrefix(ctx, planIDCacheKey)
+
+	plan, err := r.GetByLookupKey(ctx, prefix)
+	if err != nil {
+		r.log.Errorw("failed to get plan by lookup key", "error", err)
+	}
+
+	lookupKeyCacheKey := cache.GenerateKey(cache.PrefixPlan, tenantID, environmentID, plan.LookupKey)
+	r.cache.Delete(ctx, lookupKeyCacheKey)
 }
