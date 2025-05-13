@@ -169,6 +169,7 @@ func main() {
 			service.NewSecretService,
 			service.NewOnboardingService,
 			service.NewBillingService,
+			service.NewTaxRateService,
 		),
 	)
 
