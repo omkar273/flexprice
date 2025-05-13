@@ -984,7 +984,7 @@ var (
 		PrimaryKey: []*schema.Column{TaxRatesColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "taxrate_code_tenant_id_environment_id",
+				Name:    "idx_code_tenant_id_environment_id",
 				Unique:  true,
 				Columns: []*schema.Column{TaxRatesColumns[10], TaxRatesColumns[1], TaxRatesColumns[7]},
 				Annotation: &entsql.IndexAnnotation{
