@@ -1467,6 +1467,121 @@ func (s *BillingServiceSuite) TestCalculateUsageChargesWithDailyReset() {
 	s.Equal("daily", lineItems[0].Metadata["usage_reset_period"])
 }
 
+func (s *BillingServiceSuite) TestCalculateUsageChargesWithAnnualReset() {
+	// Setup test data for annual usage calculation
+	ctx := s.GetContext()
+
+	// Clear the event store to start with a clean slate
+	s.eventRepo.Clear()
+
+	// Create test feature with annual reset
+	testFeature := &feature.Feature{
+		ID:          "feat_annual_123",
+		Name:        "Annual API Calls",
+		Description: "API calls with annual reset",
+		Type:        types.FeatureTypeMetered,
+		MeterID:     s.testData.meters.apiCalls.ID,
+		BaseModel:   types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().FeatureRepo.Create(ctx, testFeature))
+
+	// Create entitlement with annual reset
+	entitlement := &entitlement.Entitlement{
+		ID:               "ent_annual_123",
+		EntityType:       types.ENTITLEMENT_ENTITY_TYPE_PLAN,
+		EntityID:         s.testData.plan.ID,
+		FeatureID:        testFeature.ID,
+		FeatureType:      types.FeatureTypeMetered,
+		IsEnabled:        true,
+		UsageLimit:       lo.ToPtr(int64(1000)), // 1000 requests per year
+		UsageResetPeriod: types.ENTITLEMENT_USAGE_RESET_PERIOD_ANNUAL,
+		IsSoftLimit:      false,
+		BaseModel:        types.GetDefaultBaseModel(ctx),
+	}
+	_, err := s.GetStores().EntitlementRepo.Create(ctx, entitlement)
+	s.NoError(err)
+
+	// Create test events across different months within the annual period
+	// We'll simulate usage that exceeds the annual limit
+	// Total usage: 1200 requests (200 over the 1000 limit)
+	eventDates := []time.Time{
+		s.testData.now.Add(-6 * 30 * 24 * time.Hour), // 6 months ago
+		s.testData.now.Add(-3 * 30 * 24 * time.Hour), // 3 months ago
+		s.testData.now.Add(-1 * 30 * 24 * time.Hour), // 1 month ago
+		s.testData.now,                                // Today
+	}
+
+	for i, eventDate := range eventDates {
+		var eventCount int
+		switch i {
+		case 0:
+			eventCount = 300 // 6 months ago: 300 requests
+		case 1:
+			eventCount = 400 // 3 months ago: 400 requests
+		case 2:
+			eventCount = 300 // 1 month ago: 300 requests
+		case 3:
+			eventCount = 200 // Today: 200 requests
+		}
+
+		for j := 0; j < eventCount; j++ {
+			event := &events.Event{
+				ID:                 s.GetUUID(),
+				TenantID:           s.testData.subscription.TenantID,
+				EventName:          s.testData.meters.apiCalls.EventName,
+				ExternalCustomerID: s.testData.customer.ExternalID,
+				Timestamp:          eventDate,
+				Properties:         map[string]interface{}{},
+			}
+			s.NoError(s.GetStores().EventRepo.InsertEvent(ctx, event))
+		}
+	}
+
+	// Create usage data that would normally come from GetUsageBySubscription
+	usage := &dto.GetUsageBySubscriptionResponse{
+		StartTime: s.testData.subscription.CurrentPeriodStart,
+		EndTime:   s.testData.subscription.CurrentPeriodEnd,
+		Currency:  s.testData.subscription.Currency,
+		Charges: []*dto.SubscriptionUsageByMetersResponse{
+			{
+				Price:     s.testData.prices.apiCalls,
+				Quantity:  1200, // Total usage across all months (300+400+300+200)
+				Amount:    24,   // $24 without entitlement adjustment (1200 * 0.02)
+				IsOverage: false,
+				MeterID:   s.testData.meters.apiCalls.ID,
+			},
+		},
+	}
+
+	// Calculate charges
+	lineItems, totalAmount, err := s.service.CalculateUsageCharges(
+		ctx,
+		s.testData.subscription,
+		usage,
+		s.testData.subscription.CurrentPeriodStart,
+		s.testData.subscription.CurrentPeriodEnd,
+	)
+
+	s.NoError(err)
+	s.Len(lineItems, 1, "Should have one line item for annual usage")
+
+	// Expected calculation:
+	// Total annual usage: 1200 requests
+	// Annual limit: 1000 requests
+	// Overage: 1200 - 1000 = 200 requests
+	// Total cost: 200 * $0.02 = $4.00 (using tiered pricing)
+	expectedQuantity := decimal.NewFromInt(200)
+
+	s.True(expectedQuantity.Equal(lineItems[0].Quantity),
+		"Expected quantity %s, got %s", expectedQuantity, lineItems[0].Quantity)
+
+	// Check that the amount is calculated correctly
+	s.Equal(decimal.NewFromFloat(4.00), totalAmount, "Should have correct total amount for annual overage")
+
+	// Check metadata indicates annual reset
+	s.Equal("annual", lineItems[0].Metadata["usage_reset_period"])
+}
+
 func (s *BillingServiceSuite) TestCalculateUsageChargesWithBucketedMaxAggregation() {
 	ctx := s.GetContext()
 
