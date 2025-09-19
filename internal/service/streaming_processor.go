@@ -2,7 +2,6 @@ package service
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"encoding/csv"
 	"encoding/json"
@@ -84,28 +83,6 @@ func DefaultStreamingConfig() *StreamingConfig {
 		MaxErrors:      1000, // Stop processing after 1000 errors
 		BatchSize:      10,   // Update progress every 10 chunks
 	}
-}
-
-// detectFileType attempts to determine if the file is CSV or JSON
-func (sp *StreamingProcessor) detectFileType(content []byte) FileType {
-	// Skip BOM if present
-	if len(content) >= 3 && content[0] == 0xEF && content[1] == 0xBB && content[2] == 0xBF {
-		content = content[3:]
-	}
-
-	// Trim whitespace
-	trimmed := bytes.TrimSpace(content)
-	if len(trimmed) == 0 {
-		return FileTypeCSV // Default to CSV for empty files
-	}
-
-	// Check if content starts with [ for JSON array
-	if trimmed[0] == '[' {
-		return FileTypeJSON
-	}
-
-	// Default to CSV
-	return FileTypeCSV
 }
 
 // ProcessFileStream processes a file in streaming fashion
