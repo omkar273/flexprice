@@ -3634,7 +3634,7 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 			return err
 		}
 
-		deleteReq := dto.DeleteSubscriptionLineItemRequest{EndDate: req.EffectiveFrom}
+		deleteReq := dto.DeleteSubscriptionLineItemRequest{EffectiveFrom: req.EffectiveFrom}
 		for _, lineItem := range lineItems {
 			if _, err := s.DeleteSubscriptionLineItem(ctx, lineItem.ID, deleteReq); err != nil {
 				return err

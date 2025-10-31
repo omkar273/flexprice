@@ -907,7 +907,7 @@ func (s *planService) SyncSubscriptionWithPlanPrices(params *dto.SubscriptionSyn
 			}
 
 			// Line item exists and needs termination
-			deleteReq := dto.DeleteSubscriptionLineItemRequest{EndDate: planPrice.EndDate}
+			deleteReq := dto.DeleteSubscriptionLineItemRequest{EffectiveFrom: planPrice.EndDate}
 			if _, err := subscriptionService.DeleteSubscriptionLineItem(params.Context, lineItem.ID, deleteReq); err != nil {
 				s.Logger.Errorw("Failed to terminate line item",
 					"subscription_id", params.Subscription.ID,

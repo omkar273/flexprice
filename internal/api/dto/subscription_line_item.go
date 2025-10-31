@@ -23,7 +23,7 @@ type CreateSubscriptionLineItemRequest struct {
 
 // DeleteSubscriptionLineItemRequest represents the request to delete a subscription line item
 type DeleteSubscriptionLineItemRequest struct {
-	EndDate *time.Time `json:"end_date,omitempty"`
+	EffectiveFrom *time.Time `json:"effective_from,omitempty"`
 }
 
 type UpdateSubscriptionLineItemRequest struct {
@@ -244,4 +244,3 @@ func (r *UpdateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 
 	return newLineItem
 }
-
