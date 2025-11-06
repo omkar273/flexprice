@@ -352,17 +352,11 @@ func (r *GetMonitoringDataRequest) Validate() error {
 }
 
 type GetMonitoringDataResponse struct {
-	TotalEventCount                uint64             `json:"total_event_count"`
-	WindowSize                     types.WindowSize   `json:"window_size,omitempty"`
-	Points                         []EventMetricPoint `json:"points,omitempty"`
-	EventConsumptionConsumerLag    int64              `json:"event_consumption_consumer_lag"`
-	EventPostProcessingConsumerLag int64              `json:"event_post_processing_consumer_lag"`
-}
-
-type EventMetric struct {
-	TotalEventCount uint64             `json:"total_event_count"`
-	WindowSize      types.WindowSize   `json:"window_size,omitempty"`
-	Points          []EventMetricPoint `json:"points,omitempty"`
+	TotalCount        uint64             `json:"total_count"`
+	WindowSize        types.WindowSize   `json:"window_size,omitempty"`
+	Points            []EventMetricPoint `json:"points,omitempty"`
+	ConsumptionLag    int64              `json:"consumption_lag"`
+	PostProcessingLag int64              `json:"post_processing_lag"`
 }
 
 // EventMetricPoint represents a point in the time series data
