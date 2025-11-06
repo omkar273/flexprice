@@ -17,6 +17,9 @@ type Repository interface {
 	FindUnprocessedEvents(ctx context.Context, params *FindUnprocessedEventsParams) ([]*Event, error)
 	FindUnprocessedEventsFromFeatureUsage(ctx context.Context, params *FindUnprocessedEventsParams) ([]*Event, error)
 	GetDistinctEventNames(ctx context.Context, externalCustomerID string, startTime, endTime time.Time) ([]string, error)
+
+	// Monitoring methods
+	GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) uint64
 }
 
 // ProcessedEventRepository defines operations for processed events

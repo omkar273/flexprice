@@ -1034,3 +1034,49 @@ func (r *EventRepository) GetDistinctEventNames(ctx context.Context, externalCus
 	SetSpanSuccess(span)
 	return eventNames, nil
 }
+
+// GetTotalEventCount returns the total count of events in a given time range
+func (r *EventRepository) GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) uint64 {
+	span := StartRepositorySpan(ctx, "event", "get_total_event_count", map[string]interface{}{
+		"start_time":  startTime,
+		"end_time":    endTime,
+		"window_size": windowSize,
+	})
+	defer FinishSpan(span)
+
+	query := `
+		SELECT COUNT(*) as total_count
+		FROM events
+		WHERE tenant_id = ?
+		AND environment_id = ?
+	`
+
+	args := []interface{}{
+		types.GetTenantID(ctx),
+		types.GetEnvironmentID(ctx),
+	}
+
+	if !startTime.IsZero() {
+		query += " AND timestamp >= ?"
+		args = append(args, startTime)
+	}
+
+	if !endTime.IsZero() {
+		query += " AND timestamp <= ?"
+		args = append(args, endTime)
+	}
+
+	var totalCount uint64
+	err := r.store.GetConn().QueryRow(ctx, query, args...).Scan(&totalCount)
+	if err != nil {
+		r.logger.Errorw("failed to get total event count",
+			"error", err,
+			"start_time", startTime,
+			"end_time", endTime)
+		SetSpanError(span, err)
+		return 0
+	}
+
+	SetSpanSuccess(span)
+	return totalCount
+}

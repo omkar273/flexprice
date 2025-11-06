@@ -430,3 +430,43 @@ func validateStartAndEndTime(startTime, endTime time.Time) (time.Time, time.Time
 
 	return startTime, endTime, nil
 }
+
+// @Summary Get monitoring data
+// @Description Retrieve monitoring data for events including consumer lag and event metrics
+// @Tags Events
+// @Produce json
+// @Security ApiKeyAuth
+// @Param request body dto.GetMonitoringDataRequest true "Request body"
+// @Success 200 {object} dto.GetMonitoringDataResponse
+// @Failure 400 {object} ierr.ErrorResponse
+// @Failure 500 {object} ierr.ErrorResponse
+// @Router /events/monitoring [post]
+func (h *EventsHandler) GetMonitoringData(c *gin.Context) {
+	ctx := c.Request.Context()
+	var err error
+
+	var req dto.GetMonitoringDataRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(ierr.WithError(err).
+			WithHint("Please check the request payload").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	req.StartTime, req.EndTime, err = validateStartAndEndTime(req.StartTime, req.EndTime)
+	if err != nil {
+		c.Error(ierr.WithError(err).
+			WithHint("Please check the request payload").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	// Call the service to get detailed analytics
+	response, err := h.eventService.GetMonitoringData(ctx, &req)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}

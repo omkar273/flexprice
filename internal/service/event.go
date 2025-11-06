@@ -14,6 +14,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/meter"
 	ierr "github.com/flexprice/flexprice/internal/errors"
+	"github.com/flexprice/flexprice/internal/kafka"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/publisher"
 	"github.com/flexprice/flexprice/internal/sentry"
@@ -30,6 +31,7 @@ type EventService interface {
 	BulkGetUsageByMeter(ctx context.Context, req []*dto.GetUsageByMeterRequest) (map[string]*events.AggregationResult, error)
 	GetUsageByMeterWithFilters(ctx context.Context, req *dto.GetUsageByMeterRequest, filterGroups map[string]map[string][]string) ([]*events.AggregationResult, error)
 	GetEvents(ctx context.Context, req *dto.GetEventsRequest) (*dto.GetEventsResponse, error)
+	GetMonitoringData(ctx context.Context, req *dto.GetMonitoringDataRequest) (*dto.GetMonitoringDataResponse, error)
 }
 
 type eventService struct {
@@ -534,4 +536,112 @@ func parseEventIteratorToStruct(key string) (*events.EventIterator, error) {
 
 func createEventIteratorKey(timestamp time.Time, id string) string {
 	return fmt.Sprintf("%d::%s", timestamp.UnixNano(), id)
+}
+
+func (s *eventService) GetMonitoringData(ctx context.Context, req *dto.GetMonitoringDataRequest) (*dto.GetMonitoringDataResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	// Create Kafka monitoring service
+	kafkaMonitoring := kafka.NewMonitoringService(s.config, s.logger)
+
+	// Get total event count
+	totalEventCount := s.eventRepo.GetTotalEventCount(ctx, req.StartTime, req.EndTime, req.WindowSize)
+
+	// Get tenant and environment from context
+	// Note: Consumer groups might be tenant/environment specific in production
+	// For now, using global consumer groups from config
+	tenantID := types.GetTenantID(ctx)
+	envID := types.GetEnvironmentID(ctx)
+
+	s.logger.Infow("fetching monitoring data",
+		"tenant_id", tenantID,
+		"environment_id", envID,
+		"event_consumption_group", s.config.EventProcessing.ConsumerGroup,
+		"event_post_processing_group", s.config.EventPostProcessing.ConsumerGroup)
+
+	// Calculate Kafka consumer lag for event consumption
+	// Topic: events, Consumer Group: from config
+	eventConsumptionLag, err := kafkaMonitoring.GetConsumerLag(ctx,
+		s.config.EventProcessing.Topic,
+		s.config.EventProcessing.ConsumerGroup)
+	if err != nil {
+		s.logger.Warnw("failed to get event consumption consumer lag",
+			"error", err,
+			"topic", s.config.EventProcessing.Topic,
+			"consumer_group", s.config.EventProcessing.ConsumerGroup)
+		// Continue with zero lag on error
+		eventConsumptionLag = &kafka.ConsumerLag{TotalLag: 0}
+	}
+
+	// Calculate Kafka consumer lag for event post processing
+	// Topic: events_post_processing, Consumer Group: from config
+	eventPostProcessingLag, err := kafkaMonitoring.GetConsumerLag(ctx,
+		s.config.FeatureUsageTracking.Topic,
+		s.config.FeatureUsageTracking.ConsumerGroup)
+	if err != nil {
+		s.logger.Warnw("failed to get event post processing consumer lag",
+			"error", err,
+			"topic", s.config.EventPostProcessing.Topic,
+			"consumer_group", s.config.EventPostProcessing.ConsumerGroup)
+		// Continue with zero lag on error
+		eventPostProcessingLag = &kafka.ConsumerLag{TotalLag: 0}
+	}
+
+	// Build response
+	response := &dto.GetMonitoringDataResponse{
+		TotalEventCount:                totalEventCount,
+		WindowSize:                     req.WindowSize,
+		Points:                         []dto.EventMetricPoint{},
+		EventConsumptionConsumerLag:    eventConsumptionLag.TotalLag,
+		EventPostProcessingConsumerLag: eventPostProcessingLag.TotalLag,
+	}
+
+	// If window size is specified, generate points
+	if req.WindowSize != "" {
+		points := s.generateEventMetricPoints(ctx, req.StartTime, req.EndTime, req.WindowSize)
+		response.Points = points
+	}
+
+	return response, nil
+}
+
+// generateEventMetricPoints generates event metric points based on the window size
+func (s *eventService) generateEventMetricPoints(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) []dto.EventMetricPoint {
+	points := []dto.EventMetricPoint{}
+
+	// Calculate window duration
+	var windowDuration time.Duration
+	switch windowSize {
+	case types.WindowSizeHour:
+		windowDuration = time.Hour
+	case types.WindowSizeDay:
+		windowDuration = 24 * time.Hour
+	case types.WindowSizeWeek:
+		windowDuration = 7 * 24 * time.Hour
+	case types.WindowSizeMonth:
+		windowDuration = 30 * 24 * time.Hour // Approximate
+	default:
+		return points
+	}
+
+	// Generate points for each window
+	currentTime := startTime
+	for currentTime.Before(endTime) {
+		windowEnd := currentTime.Add(windowDuration)
+		if windowEnd.After(endTime) {
+			windowEnd = endTime
+		}
+
+		eventCount := s.eventRepo.GetTotalEventCount(ctx, currentTime, windowEnd, "")
+		points = append(points, dto.EventMetricPoint{
+			Timestamp:  currentTime,
+			EventCount: eventCount,
+		})
+
+		currentTime = windowEnd
+	}
+
+	return points
 }

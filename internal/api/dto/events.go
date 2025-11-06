@@ -331,3 +331,42 @@ type UsageAnalyticPoint struct {
 	Cost       decimal.Decimal `json:"cost"`
 	EventCount uint64          `json:"event_count"` // Number of events in this time window
 }
+
+// MonitoringDataRequest represents a request for monitoring data
+
+type GetMonitoringDataRequest struct {
+	StartTime  time.Time        `json:"start_time,omitempty"`
+	EndTime    time.Time        `json:"end_time,omitempty"`
+	WindowSize types.WindowSize `json:"window_size,omitempty"`
+}
+
+func (r *GetMonitoringDataRequest) Validate() error {
+
+	if r.WindowSize.Validate() != nil {
+		return ierr.NewError("invalid window_size").
+			WithHint("Invalid window_size").
+			Mark(ierr.ErrValidation)
+	}
+
+	return nil
+}
+
+type GetMonitoringDataResponse struct {
+	TotalEventCount                uint64             `json:"total_event_count"`
+	WindowSize                     types.WindowSize   `json:"window_size,omitempty"`
+	Points                         []EventMetricPoint `json:"points,omitempty"`
+	EventConsumptionConsumerLag    int64              `json:"event_consumption_consumer_lag"`
+	EventPostProcessingConsumerLag int64              `json:"event_post_processing_consumer_lag"`
+}
+
+type EventMetric struct {
+	TotalEventCount uint64             `json:"total_event_count"`
+	WindowSize      types.WindowSize   `json:"window_size,omitempty"`
+	Points          []EventMetricPoint `json:"points,omitempty"`
+}
+
+// EventMetricPoint represents a point in the time series data
+type EventMetricPoint struct {
+	Timestamp  time.Time `json:"timestamp"`
+	EventCount uint64    `json:"event_count"` // Number of events in this time window
+}
