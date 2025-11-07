@@ -688,7 +688,7 @@ func (s *InMemoryEventStore) FindUnprocessedEventsFromFeatureUsage(ctx context.C
 }
 
 // GetTotalEventCount returns the total count of events in the given time range
-func (s *InMemoryEventStore) GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) uint64 {
+func (s *InMemoryEventStore) GetTotalEventCount(ctx context.Context, startTime, endTime time.Time) uint64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

@@ -1036,11 +1036,10 @@ func (r *EventRepository) GetDistinctEventNames(ctx context.Context, externalCus
 }
 
 // GetTotalEventCount returns the total count of events in a given time range
-func (r *EventRepository) GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) uint64 {
+func (r *EventRepository) GetTotalEventCount(ctx context.Context, startTime, endTime time.Time) uint64 {
 	span := StartRepositorySpan(ctx, "event", "get_total_event_count", map[string]interface{}{
-		"start_time":  startTime,
-		"end_time":    endTime,
-		"window_size": windowSize,
+		"start_time": startTime,
+		"end_time":   endTime,
 	})
 	defer FinishSpan(span)
 

@@ -547,7 +547,7 @@ func (s *eventService) GetMonitoringData(ctx context.Context, req *dto.GetMonito
 	kafkaMonitoring := kafka.NewMonitoringService(s.config, s.logger)
 
 	// Get total event count
-	totalEventCount := s.eventRepo.GetTotalEventCount(ctx, req.StartTime, req.EndTime, req.WindowSize)
+	totalEventCount := s.eventRepo.GetTotalEventCount(ctx, req.StartTime, req.EndTime)
 
 	// Get tenant and environment from context
 	// Note: Consumer groups might be tenant/environment specific in production
@@ -635,7 +635,7 @@ func (s *eventService) generateEventMetricPoints(ctx context.Context, startTime,
 			windowEnd = endTime
 		}
 
-		eventCount := s.eventRepo.GetTotalEventCount(ctx, currentTime, windowEnd, "")
+		eventCount := s.eventRepo.GetTotalEventCount(ctx, currentTime, windowEnd)
 		points = append(points, dto.EventMetricPoint{
 			Timestamp:  currentTime,
 			EventCount: eventCount,

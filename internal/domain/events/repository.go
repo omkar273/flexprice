@@ -19,7 +19,7 @@ type Repository interface {
 	GetDistinctEventNames(ctx context.Context, externalCustomerID string, startTime, endTime time.Time) ([]string, error)
 
 	// Monitoring methods
-	GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) uint64
+	GetTotalEventCount(ctx context.Context, startTime, endTime time.Time) uint64
 }
 
 // ProcessedEventRepository defines operations for processed events
