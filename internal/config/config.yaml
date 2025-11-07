@@ -149,7 +149,7 @@ cache:
 event_processing:
   topic: "events"
   rate_limit: 12
-  consumer_group: "flexprice-consumer-staging"
+  consumer_group: "flexprice-consumer-local"
 
 event_processing_lazy:
   topic: "events_lazy"
