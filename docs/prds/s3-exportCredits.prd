@@ -185,7 +185,7 @@ USER → API → Create ScheduledTask
 
 ## Credit Top-Up Export Feature
 
-### Entity Type: `credit_topup`
+### Entity Type: `credit_topups`
 
 ### CSV Schema (CreditTopupCSV)
 The CSV export will contain the following columns:
@@ -239,7 +239,7 @@ LIMIT ? OFFSET ?
    - CreditTopupCSV struct (CSV schema)
    - PrepareData() method with batching
    - convertToCSVRecords() helper
-   - GetFilenamePrefix() returns "credit_topup"
+   - GetFilenamePrefix() returns "credit_topups"
 
 2. **Update `internal/service/sync/export/base.go`**
    - Add CreditTopupExporter to getExporter() switch case
@@ -254,7 +254,7 @@ LIMIT ? OFFSET ?
 
 ### File Structure Example
 ```
-s3://customer-bucket/exports/credit_topup/credit_topup-250115120000-250115130000.csv.gz
+s3://customer-bucket/exports/credit_topups/credit_topups-250115120000-250115130000.csv.gz
 ```
 
 ### Batch Processing
