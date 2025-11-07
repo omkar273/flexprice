@@ -686,3 +686,19 @@ func (s *InMemoryEventStore) FindUnprocessedEventsFromFeatureUsage(ctx context.C
 		WithHint("not implemented").
 		Mark(ierr.ErrSystem)
 }
+
+// GetTotalEventCount returns the total count of events in the given time range
+func (s *InMemoryEventStore) GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) uint64 {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	count := uint64(0)
+	for _, event := range s.events {
+		// Check if event is within time range
+		if !event.Timestamp.Before(startTime) && !event.Timestamp.After(endTime) {
+			count++
+		}
+	}
+
+	return count
+}
