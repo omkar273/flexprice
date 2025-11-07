@@ -332,22 +332,14 @@ type UsageAnalyticPoint struct {
 	EventCount uint64          `json:"event_count"` // Number of events in this time window
 }
 
-// MonitoringDataRequest represents a request for monitoring data
-
 type GetMonitoringDataRequest struct {
-	StartTime  time.Time        `json:"start_time,omitempty"`
-	EndTime    time.Time        `json:"end_time,omitempty"`
+	StartTime  time.Time        `json:"start_time"`
+	EndTime    time.Time        `json:"end_time"`
 	WindowSize types.WindowSize `json:"window_size,omitempty"`
 }
 
 func (r *GetMonitoringDataRequest) Validate() error {
-
-	if r.WindowSize.Validate() != nil {
-		return ierr.NewError("invalid window_size").
-			WithHint("Invalid window_size").
-			Mark(ierr.ErrValidation)
-	}
-
+	// No validation needed, all fields are optional
 	return nil
 }
 

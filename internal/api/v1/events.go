@@ -432,36 +432,26 @@ func validateStartAndEndTime(startTime, endTime time.Time) (time.Time, time.Time
 }
 
 // @Summary Get monitoring data
-// @Description Retrieve monitoring data for events including consumer lag and event metrics
+// @Description Retrieve monitoring data for events including consumer lag and event metrics (last 24 hours by default)
 // @Tags Events
 // @Produce json
 // @Security ApiKeyAuth
-// @Param request body dto.GetMonitoringDataRequest true "Request body"
 // @Success 200 {object} dto.GetMonitoringDataResponse
-// @Failure 400 {object} ierr.ErrorResponse
 // @Failure 500 {object} ierr.ErrorResponse
-// @Router /events/monitoring [post]
+// @Router /events/monitoring [get]
 func (h *EventsHandler) GetMonitoringData(c *gin.Context) {
 	ctx := c.Request.Context()
-	var err error
 
-	var req dto.GetMonitoringDataRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.Error(ierr.WithError(err).
-			WithHint("Please check the request payload").
-			Mark(ierr.ErrValidation))
-		return
+	// Default to last 24 hours
+	endTime := time.Now().UTC()
+	startTime := endTime.Add(-24 * time.Hour)
+
+	req := dto.GetMonitoringDataRequest{
+		StartTime: startTime,
+		EndTime:   endTime,
 	}
 
-	req.StartTime, req.EndTime, err = validateStartAndEndTime(req.StartTime, req.EndTime)
-	if err != nil {
-		c.Error(ierr.WithError(err).
-			WithHint("Please check the request payload").
-			Mark(ierr.ErrValidation))
-		return
-	}
-
-	// Call the service to get detailed analytics
+	// Call the service to get monitoring data
 	response, err := h.eventService.GetMonitoringData(ctx, &req)
 	if err != nil {
 		c.Error(err)
