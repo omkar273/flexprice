@@ -8,6 +8,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/connection"
 	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/invoice"
+	"github.com/flexprice/flexprice/internal/domain/wallet"
 	"github.com/flexprice/flexprice/internal/integration"
 	"github.com/flexprice/flexprice/internal/logger"
 	syncExport "github.com/flexprice/flexprice/internal/service/sync/export"
@@ -18,6 +19,7 @@ import (
 type ExportActivity struct {
 	featureUsageRepo   events.FeatureUsageRepository
 	invoiceRepo        invoice.Repository
+	walletRepo         wallet.Repository
 	connectionRepo     connection.Repository
 	integrationFactory *integration.Factory
 	logger             *logger.Logger
@@ -27,6 +29,7 @@ type ExportActivity struct {
 func NewExportActivity(
 	featureUsageRepo events.FeatureUsageRepository,
 	invoiceRepo invoice.Repository,
+	walletRepo wallet.Repository,
 	connectionRepo connection.Repository,
 	integrationFactory *integration.Factory,
 	logger *logger.Logger,
@@ -34,6 +37,7 @@ func NewExportActivity(
 	return &ExportActivity{
 		featureUsageRepo:   featureUsageRepo,
 		invoiceRepo:        invoiceRepo,
+		walletRepo:         walletRepo,
 		connectionRepo:     connectionRepo,
 		integrationFactory: integrationFactory,
 		logger:             logger,
@@ -83,7 +87,7 @@ func (a *ExportActivity) ExportData(ctx context.Context, input ExportDataInput) 
 	}
 
 	// Use the ExportService which handles routing to the correct exporter
-	exportService := syncExport.NewExportService(a.featureUsageRepo, a.invoiceRepo, a.connectionRepo, a.integrationFactory, a.logger)
+	exportService := syncExport.NewExportServiceWithWallet(a.featureUsageRepo, a.invoiceRepo, a.walletRepo, a.connectionRepo, a.integrationFactory, a.logger)
 	response, err := exportService.Export(ctx, request)
 	if err != nil {
 		a.logger.Errorw("export failed", "error", err, "entity_type", input.EntityType)

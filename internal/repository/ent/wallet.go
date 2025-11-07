@@ -866,3 +866,105 @@ func (r *walletRepository) GetWalletsByFilter(ctx context.Context, filter *types
 
 	return walletdomain.FromEntList(wallets), nil
 }
+
+// GetCreditTopupsForExport retrieves wallet transactions joined with wallet and customer data for export
+func (r *walletRepository) GetCreditTopupsForExport(ctx context.Context, tenantID, envID string, startTime, endTime time.Time, limit, offset int) ([]*walletdomain.CreditTopupsExportData, error) {
+	// Start a span for this repository operation
+	span := StartRepositorySpan(ctx, "wallet", "get_credit_topups_for_export", map[string]interface{}{
+		"tenant_id": tenantID,
+		"env_id":    envID,
+		"start":     startTime,
+		"end":       endTime,
+		"limit":     limit,
+		"offset":    offset,
+	})
+	defer FinishSpan(span)
+
+	client := r.client.Reader(ctx)
+
+	// Use raw SQL for complex join query
+	query := `
+		SELECT
+			wt.id AS topup_id,
+			c.external_id,
+			c.name AS customer_name,
+			wt.wallet_id,
+			wt.amount,
+			wt.credit_balance_before,
+			wt.credit_balance_after,
+			wt.reference_id,
+			wt.transaction_reason,
+			wt.created_at
+		FROM
+			wallet_transactions wt
+			INNER JOIN wallets w ON w.id = wt.wallet_id
+			INNER JOIN customers c ON c.id = w.customer_id
+		WHERE
+			wt.tenant_id = $1
+			AND wt.environment_id = $2
+			AND wt.type = $3
+			AND wt.transaction_status = $4
+			AND wt.status = $5
+			AND wt.created_at >= $6
+			AND wt.created_at < $7
+		ORDER BY wt.created_at ASC
+		LIMIT $8 OFFSET $9
+	`
+
+	rows, err := client.QueryContext(ctx, query,
+		tenantID,
+		envID,
+		string(types.TransactionTypeCredit),
+		string(types.TransactionStatusCompleted),
+		string(types.StatusPublished),
+		startTime,
+		endTime,
+		limit,
+		offset,
+	)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to fetch credit topups for export").
+			WithReportableDetails(map[string]interface{}{
+				"tenant_id": tenantID,
+				"env_id":    envID,
+				"limit":     limit,
+				"offset":    offset,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	result := make([]*walletdomain.CreditTopupsExportData, 0)
+	for rows.Next() {
+		exportData := &walletdomain.CreditTopupsExportData{}
+		err := rows.Scan(
+			&exportData.TopupID,
+			&exportData.ExternalID,
+			&exportData.CustomerName,
+			&exportData.WalletID,
+			&exportData.Amount,
+			&exportData.CreditBalanceBefore,
+			&exportData.CreditBalanceAfter,
+			&exportData.ReferenceID,
+			&exportData.TransactionReason,
+			&exportData.CreatedAt,
+		)
+		if err != nil {
+			r.logger.Errorw("failed to scan credit topup export data", "error", err)
+			continue
+		}
+
+		result = append(result, exportData)
+	}
+
+	if err = rows.Err(); err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to iterate credit topup rows").
+			Mark(ierr.ErrDatabase)
+	}
+
+	return result, nil
+}

@@ -39,8 +39,9 @@ func (s ScheduledTaskInterval) Validate() error {
 type ScheduledTaskEntityType string
 
 const (
-	ScheduledTaskEntityTypeEvents  ScheduledTaskEntityType = "events"
-	ScheduledTaskEntityTypeInvoice ScheduledTaskEntityType = "invoice"
+	ScheduledTaskEntityTypeEvents       ScheduledTaskEntityType = "events"
+	ScheduledTaskEntityTypeInvoice      ScheduledTaskEntityType = "invoice"
+	ScheduledTaskEntityTypeCreditTopups ScheduledTaskEntityType = "credit_topups"
 )
 
 // Validate validates the entity type
@@ -48,6 +49,7 @@ func (e ScheduledTaskEntityType) Validate() error {
 	allowedTypes := []ScheduledTaskEntityType{
 		ScheduledTaskEntityTypeEvents,
 		ScheduledTaskEntityTypeInvoice,
+		ScheduledTaskEntityTypeCreditTopups,
 	}
 	if e == "" {
 		return ierr.NewError("entity type is required").
@@ -60,7 +62,7 @@ func (e ScheduledTaskEntityType) Validate() error {
 		}
 	}
 	return ierr.NewError("invalid entity type").
-		WithHint("Entity type must be one of: events, invoice").
+		WithHint("Entity type must be one of: events, invoices, credit_topups").
 		Mark(ierr.ErrValidation)
 }
 

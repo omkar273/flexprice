@@ -8,6 +8,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/connection"
 	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/invoice"
+	"github.com/flexprice/flexprice/internal/domain/wallet"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/integration"
 	"github.com/flexprice/flexprice/internal/logger"
@@ -27,6 +28,7 @@ type Exporter interface {
 type ExportService struct {
 	featureUsageRepo   events.FeatureUsageRepository
 	invoiceRepo        invoice.Repository
+	walletRepo         wallet.Repository
 	connectionRepo     connection.Repository
 	integrationFactory *integration.Factory
 	logger             *logger.Logger
@@ -43,6 +45,26 @@ func NewExportService(
 	return &ExportService{
 		featureUsageRepo:   featureUsageRepo,
 		invoiceRepo:        invoiceRepo,
+		walletRepo:         nil, // Will be set when needed
+		connectionRepo:     connectionRepo,
+		integrationFactory: integrationFactory,
+		logger:             logger,
+	}
+}
+
+// NewExportServiceWithWallet creates a new export service with wallet repository
+func NewExportServiceWithWallet(
+	featureUsageRepo events.FeatureUsageRepository,
+	invoiceRepo invoice.Repository,
+	walletRepo wallet.Repository,
+	connectionRepo connection.Repository,
+	integrationFactory *integration.Factory,
+	logger *logger.Logger,
+) *ExportService {
+	return &ExportService{
+		featureUsageRepo:   featureUsageRepo,
+		invoiceRepo:        invoiceRepo,
+		walletRepo:         walletRepo,
 		connectionRepo:     connectionRepo,
 		integrationFactory: integrationFactory,
 		logger:             logger,
@@ -168,6 +190,12 @@ func (s *ExportService) getExporter(entityType types.ScheduledTaskEntityType) Ex
 		return NewEventExporter(s.featureUsageRepo, s.integrationFactory, s.logger)
 	case types.ScheduledTaskEntityTypeInvoice:
 		return NewInvoiceExporter(s.invoiceRepo, s.integrationFactory, s.logger)
+	case types.ScheduledTaskEntityTypeCreditTopups:
+		if s.walletRepo == nil {
+			s.logger.Errorw("wallet repository not configured for credit topup export")
+			return nil
+		}
+		return NewCreditTopupExporter(s.walletRepo, s.integrationFactory, s.logger)
 	default:
 		return nil
 	}
