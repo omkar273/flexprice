@@ -593,58 +593,11 @@ func (s *eventService) GetMonitoringData(ctx context.Context, req *dto.GetMonito
 	// Build response
 	response := &dto.GetMonitoringDataResponse{
 		TotalCount:        totalEventCount,
-		WindowSize:        req.WindowSize,
-		Points:            []dto.EventMetricPoint{},
 		ConsumptionLag:    eventConsumptionLag.TotalLag,
 		PostProcessingLag: eventPostProcessingLag.TotalLag,
 	}
 
-	// If window size is specified, generate points
-	if req.WindowSize != "" {
-		points := s.generateEventMetricPoints(ctx, req.StartTime, req.EndTime, req.WindowSize)
-		response.Points = points
-	}
-
 	return response, nil
-}
-
-// generateEventMetricPoints generates event metric points based on the window size
-func (s *eventService) generateEventMetricPoints(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) []dto.EventMetricPoint {
-	points := []dto.EventMetricPoint{}
-
-	// Calculate window duration
-	var windowDuration time.Duration
-	switch windowSize {
-	case types.WindowSizeHour:
-		windowDuration = time.Hour
-	case types.WindowSizeDay:
-		windowDuration = 24 * time.Hour
-	case types.WindowSizeWeek:
-		windowDuration = 7 * 24 * time.Hour
-	case types.WindowSizeMonth:
-		windowDuration = 30 * 24 * time.Hour // Approximate
-	default:
-		return points
-	}
-
-	// Generate points for each window
-	currentTime := startTime
-	for currentTime.Before(endTime) {
-		windowEnd := currentTime.Add(windowDuration)
-		if windowEnd.After(endTime) {
-			windowEnd = endTime
-		}
-
-		eventCount := s.eventRepo.GetTotalEventCount(ctx, currentTime, windowEnd)
-		points = append(points, dto.EventMetricPoint{
-			Timestamp:  currentTime,
-			EventCount: eventCount,
-		})
-
-		currentTime = windowEnd
-	}
-
-	return points
 }
 
 // getKafkaConsumerConfig determines the appropriate Kafka consumer groups and topics

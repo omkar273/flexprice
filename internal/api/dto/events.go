@@ -333,9 +333,8 @@ type UsageAnalyticPoint struct {
 }
 
 type GetMonitoringDataRequest struct {
-	StartTime  time.Time        `json:"start_time"`
-	EndTime    time.Time        `json:"end_time"`
-	WindowSize types.WindowSize `json:"window_size,omitempty"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
 }
 
 func (r *GetMonitoringDataRequest) Validate() error {
@@ -344,15 +343,7 @@ func (r *GetMonitoringDataRequest) Validate() error {
 }
 
 type GetMonitoringDataResponse struct {
-	TotalCount        uint64             `json:"total_count"`
-	WindowSize        types.WindowSize   `json:"window_size,omitempty"`
-	Points            []EventMetricPoint `json:"points,omitempty"`
-	ConsumptionLag    int64              `json:"consumption_lag"`
-	PostProcessingLag int64              `json:"post_processing_lag"`
-}
-
-// EventMetricPoint represents a point in the time series data
-type EventMetricPoint struct {
-	Timestamp  time.Time `json:"timestamp"`
-	EventCount uint64    `json:"event_count"` // Number of events in this time window
+	TotalCount        uint64 `json:"total_count"`
+	ConsumptionLag    int64  `json:"consumption_lag"`
+	PostProcessingLag int64  `json:"post_processing_lag"`
 }
