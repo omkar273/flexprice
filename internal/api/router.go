@@ -56,10 +56,11 @@ type Handlers struct {
 	// Portal handlers
 	Onboarding *v1.OnboardingHandler
 	// Cron jobs : TODO: move crons out of API based architecture
-	CronSubscription *cron.SubscriptionHandler
-	CronWallet       *cron.WalletCronHandler
-	CronCreditGrant  *cron.CreditGrantCronHandler
-	CronInvoice      *cron.InvoiceHandler
+	CronSubscription       *cron.SubscriptionHandler
+	CronWallet             *cron.WalletCronHandler
+	CronCreditGrant        *cron.CreditGrantCronHandler
+	CronInvoice            *cron.InvoiceHandler
+	CronKafkaLagMonitoring *cron.KafkaLagMonitoringHandler
 }
 
 func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logger, secretService service.SecretService, envAccessService service.EnvAccessService, rbacService *rbac.RBACService) *gin.Engine {
@@ -522,6 +523,11 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 	invoiceGroup := cron.Group("/invoices")
 	{
 		invoiceGroup.POST("/void-old-pending", handlers.CronInvoice.VoidOldPendingInvoices)
+	}
+	// Kafka lag monitoring related cron jobs
+	kafkaLagMonitoringGroup := cron.Group("/events")
+	{
+		kafkaLagMonitoringGroup.POST("/monitoring", handlers.CronKafkaLagMonitoring.HandleKafkaLagMonitoring)
 	}
 
 	// Settings routes

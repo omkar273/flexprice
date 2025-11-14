@@ -339,6 +339,7 @@ func provideHandlers(
 		ScheduledTask:            v1.NewScheduledTaskHandler(scheduledTaskService, logger),
 		AlertLogsHandler:         v1.NewAlertLogsHandler(alertLogsService, customerService, walletService, featureService, logger),
 		RBAC:                     v1.NewRBACHandler(rbacService, userService, logger),
+		CronKafkaLagMonitoring:   cron.NewKafkaLagMonitoringHandler(logger, eventService),
 	}
 }
 
