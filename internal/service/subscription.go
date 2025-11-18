@@ -2112,7 +2112,6 @@ func (s *subscriptionService) processSubscriptionPeriod(ctx context.Context, sub
 			// Check for cancellation at this period end
 			if sub.CancelAtPeriodEnd && sub.CancelAt != nil && !sub.CancelAt.After(period.end) {
 				sub.SubscriptionStatus = types.SubscriptionStatusCancelled
-				sub.CancelledAt = sub.CancelAt
 				sub.EndDate = sub.CancelAt
 				break
 			}
@@ -2153,7 +2152,6 @@ func (s *subscriptionService) processSubscriptionPeriod(ctx context.Context, sub
 		// Final cancellation check
 		if sub.CancelAtPeriodEnd && sub.CancelAt != nil && !sub.CancelAt.After(newPeriod.end) {
 			sub.SubscriptionStatus = types.SubscriptionStatusCancelled
-			sub.CancelledAt = sub.CancelAt
 		}
 
 		// Check if the new period end matches the subscription end date
