@@ -962,7 +962,9 @@ func (s *subscriptionService) GetSubscription(ctx context.Context, id string) (*
 		return nil, err
 	}
 
-	response := &dto.SubscriptionResponse{Subscription: sub}
+	response := &dto.SubscriptionResponse{
+		Subscription: sub,
+	}
 
 	// if subscription pause status is not none, get all pauses
 	if sub.PauseStatus != types.PauseStatusNone {
@@ -1064,6 +1066,7 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 
 	if req.CancelAt != nil {
 		subscription.CancelAt = req.CancelAt
+		subscription.EndDate = req.CancelAt
 	}
 
 	subscription.CancelAtPeriodEnd = req.CancelAtPeriodEnd
@@ -2110,6 +2113,7 @@ func (s *subscriptionService) processSubscriptionPeriod(ctx context.Context, sub
 			if sub.CancelAtPeriodEnd && sub.CancelAt != nil && !sub.CancelAt.After(period.end) {
 				sub.SubscriptionStatus = types.SubscriptionStatusCancelled
 				sub.CancelledAt = sub.CancelAt
+				sub.EndDate = sub.CancelAt
 				break
 			}
 
@@ -3764,8 +3768,6 @@ func (s *subscriptionService) updateSubscriptionForCancellation(
 
 	// Update cancellation fields
 	subscription.CancelledAt = &now
-	subscription.UpdatedAt = now
-	subscription.UpdatedBy = types.GetUserID(ctx)
 
 	// Add cancellation metadata
 	if subscription.Metadata == nil {
@@ -3781,11 +3783,13 @@ func (s *subscriptionService) updateSubscriptionForCancellation(
 		subscription.SubscriptionStatus = types.SubscriptionStatusCancelled
 		subscription.CancelAt = &effectiveDate
 		subscription.CancelAtPeriodEnd = false
+		subscription.EndDate = &effectiveDate
 
 	case types.CancellationTypeEndOfPeriod:
 		// Don't change status immediately - will be cancelled at period end
 		subscription.CancelAtPeriodEnd = true
 		subscription.CancelAt = &effectiveDate
+		subscription.EndDate = &effectiveDate
 	default:
 		return ierr.NewError("invalid cancellation type").
 			WithHintf("Unsupported cancellation type: %s", cancellationType).
