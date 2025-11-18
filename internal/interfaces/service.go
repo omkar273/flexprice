@@ -19,6 +19,9 @@ type CustomerService interface {
 	UpdateCustomer(ctx context.Context, id string, req dto.UpdateCustomerRequest) (*dto.CustomerResponse, error)
 	DeleteCustomer(ctx context.Context, id string) error
 	GetCustomerByLookupKey(ctx context.Context, lookupKey string) (*dto.CustomerResponse, error)
+
+	// Credit grant applications
+	GetUpcomingCreditGrantApplications(ctx context.Context, customerID string) (*dto.ListCreditGrantApplicationsResponse, error)
 }
 
 // PaymentService defines the interface for payment operations
@@ -108,6 +111,12 @@ type SubscriptionService interface {
 
 	GetSubscriptionEntitlements(ctx context.Context, subscriptionID string) ([]*dto.EntitlementResponse, error)
 	GetAggregatedSubscriptionEntitlements(ctx context.Context, subscriptionID string, req *dto.GetSubscriptionEntitlementsRequest) (*dto.SubscriptionEntitlementsResponse, error)
+
+	// Credit grant applications
+	GetUpcomingCreditGrantApplications(ctx context.Context, req *dto.GetUpcomingCreditGrantApplicationsRequest) (*dto.ListCreditGrantApplicationsResponse, error)
+
+	// ListByCustomerID retrieves all active subscriptions for a customer
+	ListByCustomerID(ctx context.Context, customerID string) ([]*subscription.Subscription, error)
 }
 
 type ServiceDependencies struct {

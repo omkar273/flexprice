@@ -404,3 +404,38 @@ func (h *SubscriptionHandler) DeleteSubscriptionLineItem(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+
+// @Summary Get upcoming credit grant applications
+// @Description Get upcoming credit grant applications for a subscription
+// @Tags Subscriptions
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path string true "Subscription ID"
+// @Success 200 {object} dto.ListCreditGrantApplicationsResponse
+// @Failure 400 {object} ierr.ErrorResponse
+// @Failure 404 {object} ierr.ErrorResponse
+// @Failure 500 {object} ierr.ErrorResponse
+// @Router /subscriptions/{id}/grants/upcoming [get]
+func (h *SubscriptionHandler) GetUpcomingCreditGrantApplications(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.Error(ierr.NewError("subscription ID is required").
+			WithHint("Please provide a valid subscription ID").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	// Create request DTO with the subscription ID from path parameter
+	req := &dto.GetUpcomingCreditGrantApplicationsRequest{
+		SubscriptionIDs: []string{id},
+	}
+
+	resp, err := h.service.GetUpcomingCreditGrantApplications(c.Request.Context(), req)
+	if err != nil {
+		h.log.Error("Failed to get upcoming credit grant applications", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

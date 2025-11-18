@@ -1040,6 +1040,17 @@ func (s *subscriptionService) GetSubscription(ctx context.Context, id string) (*
 		lineItem.Price = priceMap[lineItem.PriceID]
 	}
 
+	// expand credit grants
+	creditGrantService := NewCreditGrantService(s.ServiceParams)
+	creditGrantsResponse, err := creditGrantService.GetCreditGrantsBySubscription(ctx, id)
+	if err != nil {
+		s.Logger.Errorw("failed to get credit grants for subscription",
+			"subscription_id", id,
+			"error", err)
+		return nil, err
+	}
+	response.CreditGrants = creditGrantsResponse.Items
+
 	return response, nil
 }
 
@@ -4668,4 +4679,87 @@ func (s *subscriptionService) ProcessSubscriptionEntitlementOverrides(
 	}
 
 	return nil
+}
+
+// GetUpcomingCreditGrantApplications retrieves upcoming credit grant applications for one or more subscriptions
+// Upcoming grants are those with status pending or failed (for retries) and scheduled_for date in the future
+// This method accepts multiple subscription IDs to support customer-level queries and batch operations
+func (s *subscriptionService) GetUpcomingCreditGrantApplications(ctx context.Context, req *dto.GetUpcomingCreditGrantApplicationsRequest) (*dto.ListCreditGrantApplicationsResponse, error) {
+	// Validate request
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	// Validate that all subscriptions exist
+	for _, subscriptionID := range req.SubscriptionIDs {
+		_, err := s.SubRepo.Get(ctx, subscriptionID)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Failed to get subscription").
+				WithReportableDetails(map[string]interface{}{
+					"subscription_id": subscriptionID,
+				}).
+				Mark(ierr.ErrNotFound)
+		}
+	}
+
+	// Get credit grant service
+	creditGrantService := NewCreditGrantService(s.ServiceParams)
+
+	// Create filter for upcoming grants
+	// Include pending and failed statuses (failed ones can be retried)
+	now := time.Now().UTC()
+	filter := types.NewNoLimitCreditGrantApplicationFilter()
+	filter.SubscriptionIDs = req.SubscriptionIDs
+	filter.ApplicationStatuses = []types.ApplicationStatus{
+		types.ApplicationStatusPending,
+		types.ApplicationStatusFailed,
+	}
+
+	// Get all applications for the specified subscriptions with pending/failed status
+	response, err := creditGrantService.ListCreditGrantApplications(ctx, filter)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to list credit grant applications").
+			WithReportableDetails(map[string]interface{}{
+				"subscription_ids": req.SubscriptionIDs,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+
+	// Filter to only include upcoming grants (scheduled_for > now)
+	upcomingItems := make([]*dto.CreditGrantApplicationResponse, 0)
+	for _, item := range response.Items {
+		if item.CreditGrantApplication != nil && item.ScheduledFor.After(now) {
+			upcomingItems = append(upcomingItems, item)
+		}
+	}
+
+	// Sort by scheduled_for date (ascending - earliest first)
+	sort.Slice(upcomingItems, func(i, j int) bool {
+		return upcomingItems[i].ScheduledFor.Before(upcomingItems[j].ScheduledFor)
+	})
+
+	// Update response with filtered items
+	response.Items = upcomingItems
+	response.Pagination.Total = len(upcomingItems)
+
+	return response, nil
+}
+
+// ListByCustomerID retrieves all active subscriptions for a customer
+// This method returns subscriptions with Active or Trialing status and includes line items
+func (s *subscriptionService) ListByCustomerID(ctx context.Context, customerID string) ([]*subscription.Subscription, error) {
+	if customerID == "" {
+		return nil, ierr.NewError("customer ID is required").
+			WithHint("Please provide a valid customer ID").
+			Mark(ierr.ErrValidation)
+	}
+
+	subscriptions, err := s.SubRepo.ListByCustomerID(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
+
+	return subscriptions, nil
 }

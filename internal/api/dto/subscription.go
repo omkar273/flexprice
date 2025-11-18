@@ -281,6 +281,9 @@ type SubscriptionResponse struct {
 	// Phases are the subscription phases for this subscription
 	Phases []*SubscriptionPhaseResponse `json:"phases,omitempty"`
 
+	// Credit grants are the credit grants for this subscription
+	CreditGrants []*CreditGrantResponse `json:"credit_grants,omitempty"`
+
 	// Latest invoice information for incomplete subscriptions
 	LatestInvoice *InvoiceResponse `json:"latest_invoice,omitempty"`
 }
@@ -1125,4 +1128,35 @@ type SubscriptionUpdatePeriodResponseItem struct {
 	PeriodEnd      time.Time `json:"period_end"`
 	Success        bool      `json:"success"`
 	Error          string    `json:"error"`
+}
+
+// GetUpcomingCreditGrantApplicationsRequest represents the request to get upcoming credit grant applications
+type GetUpcomingCreditGrantApplicationsRequest struct {
+	// SubscriptionIDs is a list of subscription IDs to get upcoming credit grant applications for
+	// This allows querying multiple subscriptions at once, useful for customer-level queries
+	SubscriptionIDs []string `json:"subscription_ids" binding:"required,min=1" validate:"required,min=1"`
+}
+
+// Validate validates the GetUpcomingCreditGrantApplicationsRequest
+func (r *GetUpcomingCreditGrantApplicationsRequest) Validate() error {
+	if err := validator.ValidateRequest(r); err != nil {
+		return err
+	}
+
+	if len(r.SubscriptionIDs) == 0 {
+		return ierr.NewError("subscription_ids is required").
+			WithHint("Please provide at least one subscription ID").
+			Mark(ierr.ErrValidation)
+	}
+
+	// Validate that all subscription IDs are non-empty
+	for i, id := range r.SubscriptionIDs {
+		if id == "" {
+			return ierr.NewError("subscription_ids cannot contain empty values").
+				WithHint(fmt.Sprintf("Subscription ID at index %d is empty", i)).
+				Mark(ierr.ErrValidation)
+		}
+	}
+
+	return nil
 }

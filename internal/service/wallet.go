@@ -745,7 +745,8 @@ func (s *walletService) GetWalletBalance(ctx context.Context, walletID string) (
 
 	if shouldIncludeUsage {
 		// STEP 1: Get all active subscriptions to calculate current usage
-		subscriptions, err := s.SubRepo.ListByCustomerID(ctx, w.CustomerID)
+		subscriptionService := NewSubscriptionService(s.ServiceParams)
+		subscriptions, err := subscriptionService.ListByCustomerID(ctx, w.CustomerID)
 		if err != nil {
 			return nil, err
 		}
@@ -764,7 +765,6 @@ func (s *walletService) GetWalletBalance(ctx context.Context, walletID string) (
 		}
 
 		billingService := NewBillingService(s.ServiceParams)
-		subscriptionService := NewSubscriptionService(s.ServiceParams)
 
 		// Calculate total pending charges (usage) only if usage is allowed
 		for _, sub := range filteredSubscriptions {
@@ -1750,7 +1750,8 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 	if shouldIncludeUsage {
 
 		// STEP 1: Get all active subscriptions to calculate current usage
-		subscriptions, err := s.SubRepo.ListByCustomerID(ctx, w.CustomerID)
+		subscriptionService := NewSubscriptionService(s.ServiceParams)
+		subscriptions, err := subscriptionService.ListByCustomerID(ctx, w.CustomerID)
 		if err != nil {
 			return nil, err
 		}
@@ -1769,7 +1770,6 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 		}
 
 		billingService := NewBillingService(s.ServiceParams)
-		subscriptionService := NewSubscriptionService(s.ServiceParams)
 
 		// Calculate total pending charges (usage)
 		for _, sub := range filteredSubscriptions {

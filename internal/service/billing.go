@@ -1871,7 +1871,8 @@ func (s *billingService) GetCustomerEntitlements(ctx context.Context, customerID
 	}
 
 	// 1. Get active subscriptions for the customer
-	subscriptions, err := s.SubRepo.ListByCustomerID(ctx, customerID)
+	subscriptionService := NewSubscriptionService(s.ServiceParams)
+	subscriptions, err := subscriptionService.ListByCustomerID(ctx, customerID)
 	if err != nil {
 		return nil, err
 	}
@@ -1891,9 +1892,6 @@ func (s *billingService) GetCustomerEntitlements(ctx context.Context, customerID
 	if len(subscriptions) == 0 {
 		return resp, nil
 	}
-
-	// Initialize subscription service to get entitlements
-	subscriptionService := NewSubscriptionService(s.ServiceParams)
 
 	// Collect all entitlements from all subscriptions
 	allEntitlements := make([]*dto.EntitlementResponse, 0)

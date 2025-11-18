@@ -186,6 +186,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			customer.GET("/:id/entitlements", handlers.Customer.GetCustomerEntitlements)
 			customer.GET("/usage", handlers.Customer.GetCustomerUsageSummary)     // New route with query parameters (must come first!)
 			customer.GET("/:id/usage", handlers.Customer.GetCustomerUsageSummary) // Deprecated route with path parameter
+			customer.GET("/:id/grants/upcoming", handlers.Customer.GetUpcomingCreditGrantApplications)
 
 			// other routes for customer
 			customer.GET("/:id/wallets", handlers.Wallet.GetWalletsByCustomerID)
@@ -246,6 +247,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			subscription.POST("/:id/resume", handlers.SubscriptionPause.ResumeSubscription)
 			subscription.GET("/:id/pauses", handlers.SubscriptionPause.ListPauses)
 			subscription.GET("/:id/entitlements", handlers.Subscription.GetSubscriptionEntitlements)
+			subscription.GET("/:id/grants/upcoming", handlers.Subscription.GetUpcomingCreditGrantApplications)
 
 			// Addon management for subscriptions - moved under subscription handler
 			subscription.POST("/addon", handlers.Subscription.AddAddonToSubscription)
