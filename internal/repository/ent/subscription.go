@@ -176,7 +176,9 @@ func (r *subscriptionRepository) Update(ctx context.Context, sub *domainSub.Subs
 		SetCollectionMethod(subscription.CollectionMethod(sub.CollectionMethod)).
 		SetNillableGatewayPaymentMethodID(sub.GatewayPaymentMethodID).
 		SetUpdatedAt(now).
-		SetUpdatedBy(types.GetUserID(ctx))
+		SetUpdatedBy(types.GetUserID(ctx)).
+		SetNillableEndDate(sub.EndDate).
+		SetMetadata(sub.Metadata)
 
 	if sub.ActivePauseID != nil {
 		query.SetActivePauseID(*sub.ActivePauseID)
