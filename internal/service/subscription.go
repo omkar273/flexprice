@@ -4681,9 +4681,6 @@ func (s *subscriptionService) ProcessSubscriptionEntitlementOverrides(
 	return nil
 }
 
-// GetUpcomingCreditGrantApplications retrieves upcoming credit grant applications for one or more subscriptions
-// Upcoming grants are those with status pending or failed (for retries) and scheduled_for date in the future
-// This method accepts multiple subscription IDs to support customer-level queries and batch operations
 func (s *subscriptionService) GetUpcomingCreditGrantApplications(ctx context.Context, req *dto.GetUpcomingCreditGrantApplicationsRequest) (*dto.ListCreditGrantApplicationsResponse, error) {
 	// Validate request
 	if err := req.Validate(); err != nil {
