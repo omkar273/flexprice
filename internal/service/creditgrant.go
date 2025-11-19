@@ -242,6 +242,16 @@ func (s *creditGrantService) DeleteCreditGrant(ctx context.Context, id string) e
 		return err
 	}
 
+	if grant.Status != types.StatusPublished {
+		return ierr.NewError("credit grant is not in published status").
+			WithHint("Credit grant is already archived").
+			WithReportableDetails(map[string]interface{}{
+				"credit_grant_id": id,
+				"status":          grant.Status,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
 	if err := s.DB.WithTx(ctx, func(ctx context.Context) error {
 		if grant.Scope == types.CreditGrantScopeSubscription && grant.SubscriptionID != nil {
 			err = s.CancelFutureCreditGrantsOfSubscription(ctx, *grant.SubscriptionID)
