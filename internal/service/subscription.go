@@ -4691,7 +4691,7 @@ func (s *subscriptionService) GetUpcomingCreditGrantApplications(ctx context.Con
 	}
 
 	// Verify each subscription exists
-	subFilter := types.NewSubscriptionFilter()
+	subFilter := types.NewNoLimitSubscriptionFilter()
 	subFilter.SubscriptionIDs = req.SubscriptionIDs
 	subscriptions, err := s.SubRepo.List(ctx, subFilter)
 	if err != nil {
