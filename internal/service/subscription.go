@@ -4690,14 +4690,26 @@ func (s *subscriptionService) GetUpcomingCreditGrantApplications(ctx context.Con
 		return nil, err
 	}
 
-	// Validate that all subscriptions exist
+	// Verify each subscription exists
+	subFilter := types.NewSubscriptionFilter()
+	subFilter.SubscriptionIDs = req.SubscriptionIDs
+	subscriptions, err := s.SubRepo.List(ctx, subFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	subscriptionIDToSubscriptionMap := make(map[string]*subscription.Subscription, len(subscriptions))
+	for _, sub := range subscriptions {
+		subscriptionIDToSubscriptionMap[sub.ID] = sub
+	}
+
 	for _, subscriptionID := range req.SubscriptionIDs {
-		_, err := s.SubRepo.Get(ctx, subscriptionID)
-		if err != nil {
-			return nil, ierr.WithError(err).
-				WithHint("Failed to get subscription").
+		if _, exists := subscriptionIDToSubscriptionMap[subscriptionID]; !exists {
+			return nil, ierr.NewError("subscription not found").
+				WithHint("Please verify the subscription ID is correct").
 				WithReportableDetails(map[string]interface{}{
-					"subscription_id": subscriptionID,
+					"subscription_id":  subscriptionID,
+					"subscription_ids": req.SubscriptionIDs,
 				}).
 				Mark(ierr.ErrNotFound)
 		}
