@@ -88,11 +88,6 @@ func (s *priceService) CreatePrice(ctx context.Context, req dto.CreatePriceReque
 
 	response := &dto.PriceResponse{Price: p}
 
-	// TODO: !REMOVE after migration
-	if p.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
-		response.PlanID = p.EntityID
-	}
-
 	// Sync new price to Chargebee if it belongs to a plan
 	if p.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
 		s.syncPriceToChargebeeIfEnabled(ctx, p.ID, p.EntityID)
@@ -216,11 +211,38 @@ func (s *priceService) CreateBulkPrice(ctx context.Context, req dto.CreateBulkPr
 	}
 
 	// Sync prices to Chargebee if integration is available and prices are for a plan
-	// Use the centralized sync function for each price
+	// Group prices by plan ID for efficient bulk syncing
 	if response != nil && len(response.Items) > 0 {
+		planPrices := make(map[string][]*price.Price)
 		for _, priceResp := range response.Items {
 			if priceResp.Price.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
-				s.syncPriceToChargebeeIfEnabled(ctx, priceResp.Price.ID, priceResp.Price.EntityID)
+				planID := priceResp.Price.EntityID
+				planPrices[planID] = append(planPrices[planID], priceResp.Price)
+			}
+		}
+
+		// Sync each plan's prices to Chargebee
+		for planID, prices := range planPrices {
+			chargebeeIntegration, err := s.IntegrationFactory.GetChargebeeIntegration(ctx)
+			if err == nil && chargebeeIntegration != nil {
+				// Get domain plan using repository
+				plan, err := s.PlanRepo.Get(ctx, planID)
+				if err == nil {
+					// Sync to Chargebee (non-blocking - log errors but don't fail price creation)
+					if len(prices) > 0 {
+						if syncErr := chargebeeIntegration.PlanSyncSvc.SyncPlanToChargebee(ctx, plan, prices); syncErr != nil {
+							s.Logger.Errorw("failed to sync prices to Chargebee",
+								"plan_id", planID,
+								"price_count", len(prices),
+								"error", syncErr)
+							// Don't fail price creation if Chargebee sync fails
+						} else {
+							s.Logger.Infow("successfully synced prices to Chargebee",
+								"plan_id", planID,
+								"price_count", len(prices))
+						}
+					}
+				}
 			}
 		}
 	}
