@@ -22,6 +22,7 @@ import (
 	"github.com/flexprice/flexprice/ent/coupon"
 	"github.com/flexprice/flexprice/ent/couponapplication"
 	"github.com/flexprice/flexprice/ent/couponassociation"
+	"github.com/flexprice/flexprice/ent/creditapplication"
 	"github.com/flexprice/flexprice/ent/creditgrant"
 	"github.com/flexprice/flexprice/ent/creditgrantapplication"
 	"github.com/flexprice/flexprice/ent/creditnote"
@@ -126,6 +127,7 @@ func checkColumn(table, column string) error {
 			coupon.Table:                   coupon.ValidColumn,
 			couponapplication.Table:        couponapplication.ValidColumn,
 			couponassociation.Table:        couponassociation.ValidColumn,
+			creditapplication.Table:        creditapplication.ValidColumn,
 			creditgrant.Table:              creditgrant.ValidColumn,
 			creditgrantapplication.Table:   creditgrantapplication.ValidColumn,
 			creditnote.Table:               creditnote.ValidColumn,

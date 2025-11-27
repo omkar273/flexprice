@@ -15,6 +15,7 @@ import (
 	"github.com/flexprice/flexprice/ent/coupon"
 	"github.com/flexprice/flexprice/ent/couponapplication"
 	"github.com/flexprice/flexprice/ent/couponassociation"
+	"github.com/flexprice/flexprice/ent/creditapplication"
 	"github.com/flexprice/flexprice/ent/creditgrant"
 	"github.com/flexprice/flexprice/ent/creditgrantapplication"
 	"github.com/flexprice/flexprice/ent/creditnote"
@@ -456,6 +457,47 @@ func init() {
 	couponassociationDescStartDate := couponassociationFields[5].Descriptor()
 	// couponassociation.DefaultStartDate holds the default value on creation for the start_date field.
 	couponassociation.DefaultStartDate = couponassociationDescStartDate.Default.(func() time.Time)
+	creditapplicationMixin := schema.CreditApplication{}.Mixin()
+	creditapplicationMixinFields0 := creditapplicationMixin[0].Fields()
+	_ = creditapplicationMixinFields0
+	creditapplicationMixinFields1 := creditapplicationMixin[1].Fields()
+	_ = creditapplicationMixinFields1
+	creditapplicationFields := schema.CreditApplication{}.Fields()
+	_ = creditapplicationFields
+	// creditapplicationDescTenantID is the schema descriptor for tenant_id field.
+	creditapplicationDescTenantID := creditapplicationMixinFields0[0].Descriptor()
+	// creditapplication.TenantIDValidator is a validator for the "tenant_id" field. It is called by the builders before save.
+	creditapplication.TenantIDValidator = creditapplicationDescTenantID.Validators[0].(func(string) error)
+	// creditapplicationDescStatus is the schema descriptor for status field.
+	creditapplicationDescStatus := creditapplicationMixinFields0[1].Descriptor()
+	// creditapplication.DefaultStatus holds the default value on creation for the status field.
+	creditapplication.DefaultStatus = creditapplicationDescStatus.Default.(string)
+	// creditapplicationDescCreatedAt is the schema descriptor for created_at field.
+	creditapplicationDescCreatedAt := creditapplicationMixinFields0[2].Descriptor()
+	// creditapplication.DefaultCreatedAt holds the default value on creation for the created_at field.
+	creditapplication.DefaultCreatedAt = creditapplicationDescCreatedAt.Default.(func() time.Time)
+	// creditapplicationDescUpdatedAt is the schema descriptor for updated_at field.
+	creditapplicationDescUpdatedAt := creditapplicationMixinFields0[3].Descriptor()
+	// creditapplication.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	creditapplication.DefaultUpdatedAt = creditapplicationDescUpdatedAt.Default.(func() time.Time)
+	// creditapplication.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	creditapplication.UpdateDefaultUpdatedAt = creditapplicationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// creditapplicationDescEnvironmentID is the schema descriptor for environment_id field.
+	creditapplicationDescEnvironmentID := creditapplicationMixinFields1[0].Descriptor()
+	// creditapplication.DefaultEnvironmentID holds the default value on creation for the environment_id field.
+	creditapplication.DefaultEnvironmentID = creditapplicationDescEnvironmentID.Default.(string)
+	// creditapplicationDescEntityID is the schema descriptor for entity_id field.
+	creditapplicationDescEntityID := creditapplicationFields[1].Descriptor()
+	// creditapplication.EntityIDValidator is a validator for the "entity_id" field. It is called by the builders before save.
+	creditapplication.EntityIDValidator = creditapplicationDescEntityID.Validators[0].(func(string) error)
+	// creditapplicationDescEntityType is the schema descriptor for entity_type field.
+	creditapplicationDescEntityType := creditapplicationFields[2].Descriptor()
+	// creditapplication.EntityTypeValidator is a validator for the "entity_type" field. It is called by the builders before save.
+	creditapplication.EntityTypeValidator = creditapplicationDescEntityType.Validators[0].(func(string) error)
+	// creditapplicationDescCurrency is the schema descriptor for currency field.
+	creditapplicationDescCurrency := creditapplicationFields[4].Descriptor()
+	// creditapplication.CurrencyValidator is a validator for the "currency" field. It is called by the builders before save.
+	creditapplication.CurrencyValidator = creditapplicationDescCurrency.Validators[0].(func(string) error)
 	creditgrantMixin := schema.CreditGrant{}.Mixin()
 	creditgrantMixinFields0 := creditgrantMixin[0].Fields()
 	_ = creditgrantMixinFields0

@@ -67,6 +67,10 @@ const (
 	FieldPeriodStart = "period_start"
 	// FieldPeriodEnd holds the string denoting the period_end field in the database.
 	FieldPeriodEnd = "period_end"
+	// FieldCreditsApplied holds the string denoting the credits_applied field in the database.
+	FieldCreditsApplied = "credits_applied"
+	// FieldCreditAmountApplied holds the string denoting the credit_amount_applied field in the database.
+	FieldCreditAmountApplied = "credit_amount_applied"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// EdgeInvoice holds the string denoting the invoice edge name in mutations.
@@ -120,6 +124,8 @@ var Columns = []string{
 	FieldCurrency,
 	FieldPeriodStart,
 	FieldPeriodEnd,
+	FieldCreditsApplied,
+	FieldCreditAmountApplied,
 	FieldMetadata,
 }
 
@@ -294,6 +300,16 @@ func ByPeriodStart(opts ...sql.OrderTermOption) OrderOption {
 // ByPeriodEnd orders the results by the period_end field.
 func ByPeriodEnd(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPeriodEnd, opts...).ToFunc()
+}
+
+// ByCreditsApplied orders the results by the credits_applied field.
+func ByCreditsApplied(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreditsApplied, opts...).ToFunc()
+}
+
+// ByCreditAmountApplied orders the results by the credit_amount_applied field.
+func ByCreditAmountApplied(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreditAmountApplied, opts...).ToFunc()
 }
 
 // ByInvoiceField orders the results by invoice field.

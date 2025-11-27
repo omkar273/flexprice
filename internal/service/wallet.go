@@ -90,14 +90,12 @@ type WalletService interface {
 
 type walletService struct {
 	ServiceParams
-	idempGen *idempotency.Generator
 }
 
 // NewWalletService creates a new instance of WalletService
 func NewWalletService(params ServiceParams) WalletService {
 	return &walletService{
 		ServiceParams: params,
-		idempGen:      idempotency.NewGenerator(),
 	}
 }
 
@@ -162,13 +160,16 @@ func (s *walletService) CreateWallet(ctx context.Context, req *dto.CreateWalletR
 		)
 
 		// Load initial credits to wallet
+		generator := idempotency.NewGenerator()
 		if req.InitialCreditsToLoad.GreaterThan(decimal.Zero) {
-			idempotencyKey := s.idempGen.GenerateKey(idempotency.ScopeCreditGrant, map[string]interface{}{
+			// Generate idempotency key
+			idempotencyKey := generator.GenerateKey(idempotency.ScopeCreditGrant, map[string]interface{}{
 				"wallet_id":          w.ID,
 				"credits_to_add":     req.InitialCreditsToLoad,
 				"transaction_reason": types.TransactionReasonFreeCredit,
 				"timestamp":          time.Now().UTC().Format(time.RFC3339),
 			})
+
 			topUpResp, err := s.TopUpWallet(ctx, w.ID, &dto.TopUpWalletRequest{
 				CreditsToAdd:      req.InitialCreditsToLoad,
 				TransactionReason: types.TransactionReasonFreeCredit,
@@ -319,7 +320,8 @@ func (s *walletService) TopUpWallet(ctx context.Context, walletID string, req *d
 	if lo.FromPtr(req.IdempotencyKey) != "" {
 		idempotencyKey = lo.FromPtr(req.IdempotencyKey)
 	} else {
-		idempotencyKey = s.idempGen.GenerateKey(idempotency.ScopeWalletTopUp, map[string]interface{}{
+		generator := idempotency.NewGenerator()
+		idempotencyKey = generator.GenerateKey(idempotency.ScopeWalletTopUp, map[string]interface{}{
 			"wallet_id":          walletID,
 			"credits_to_add":     req.CreditsToAdd,
 			"transaction_reason": req.TransactionReason,

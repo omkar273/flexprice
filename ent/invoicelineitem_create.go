@@ -355,6 +355,34 @@ func (ilic *InvoiceLineItemCreate) SetNillablePeriodEnd(t *time.Time) *InvoiceLi
 	return ilic
 }
 
+// SetCreditsApplied sets the "credits_applied" field.
+func (ilic *InvoiceLineItemCreate) SetCreditsApplied(d decimal.Decimal) *InvoiceLineItemCreate {
+	ilic.mutation.SetCreditsApplied(d)
+	return ilic
+}
+
+// SetNillableCreditsApplied sets the "credits_applied" field if the given value is not nil.
+func (ilic *InvoiceLineItemCreate) SetNillableCreditsApplied(d *decimal.Decimal) *InvoiceLineItemCreate {
+	if d != nil {
+		ilic.SetCreditsApplied(*d)
+	}
+	return ilic
+}
+
+// SetCreditAmountApplied sets the "credit_amount_applied" field.
+func (ilic *InvoiceLineItemCreate) SetCreditAmountApplied(d decimal.Decimal) *InvoiceLineItemCreate {
+	ilic.mutation.SetCreditAmountApplied(d)
+	return ilic
+}
+
+// SetNillableCreditAmountApplied sets the "credit_amount_applied" field if the given value is not nil.
+func (ilic *InvoiceLineItemCreate) SetNillableCreditAmountApplied(d *decimal.Decimal) *InvoiceLineItemCreate {
+	if d != nil {
+		ilic.SetCreditAmountApplied(*d)
+	}
+	return ilic
+}
+
 // SetMetadata sets the "metadata" field.
 func (ilic *InvoiceLineItemCreate) SetMetadata(m map[string]string) *InvoiceLineItemCreate {
 	ilic.mutation.SetMetadata(m)
@@ -634,6 +662,14 @@ func (ilic *InvoiceLineItemCreate) createSpec() (*InvoiceLineItem, *sqlgraph.Cre
 	if value, ok := ilic.mutation.PeriodEnd(); ok {
 		_spec.SetField(invoicelineitem.FieldPeriodEnd, field.TypeTime, value)
 		_node.PeriodEnd = &value
+	}
+	if value, ok := ilic.mutation.CreditsApplied(); ok {
+		_spec.SetField(invoicelineitem.FieldCreditsApplied, field.TypeOther, value)
+		_node.CreditsApplied = &value
+	}
+	if value, ok := ilic.mutation.CreditAmountApplied(); ok {
+		_spec.SetField(invoicelineitem.FieldCreditAmountApplied, field.TypeOther, value)
+		_node.CreditAmountApplied = &value
 	}
 	if value, ok := ilic.mutation.Metadata(); ok {
 		_spec.SetField(invoicelineitem.FieldMetadata, field.TypeJSON, value)

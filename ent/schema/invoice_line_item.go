@@ -142,6 +142,20 @@ func (InvoiceLineItem) Fields() []ent.Field {
 		field.Time("period_end").
 			Optional().
 			Nillable(),
+		field.Other("credits_applied", decimal.Decimal{}).
+			SchemaType(map[string]string{
+				"postgres": "numeric(20,8)",
+			}).
+			Optional().
+			Nillable().
+			Comment("Amount of credits applied to this line item"),
+		field.Other("credit_amount_applied", decimal.Decimal{}).
+			SchemaType(map[string]string{
+				"postgres": "numeric(20,8)",
+			}).
+			Optional().
+			Nillable().
+			Comment("Credit amount (in credits) applied to this line item"),
 		field.JSON("metadata", map[string]string{}).
 			Optional().
 			SchemaType(map[string]string{

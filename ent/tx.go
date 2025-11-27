@@ -34,6 +34,8 @@ type Tx struct {
 	CouponApplication *CouponApplicationClient
 	// CouponAssociation is the client for interacting with the CouponAssociation builders.
 	CouponAssociation *CouponAssociationClient
+	// CreditApplication is the client for interacting with the CreditApplication builders.
+	CreditApplication *CreditApplicationClient
 	// CreditGrant is the client for interacting with the CreditGrant builders.
 	CreditGrant *CreditGrantClient
 	// CreditGrantApplication is the client for interacting with the CreditGrantApplication builders.
@@ -243,6 +245,7 @@ func (tx *Tx) init() {
 	tx.Coupon = NewCouponClient(tx.config)
 	tx.CouponApplication = NewCouponApplicationClient(tx.config)
 	tx.CouponAssociation = NewCouponAssociationClient(tx.config)
+	tx.CreditApplication = NewCreditApplicationClient(tx.config)
 	tx.CreditGrant = NewCreditGrantClient(tx.config)
 	tx.CreditGrantApplication = NewCreditGrantApplicationClient(tx.config)
 	tx.CreditNote = NewCreditNoteClient(tx.config)

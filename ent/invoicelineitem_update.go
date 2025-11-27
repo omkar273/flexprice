@@ -14,6 +14,7 @@ import (
 	"github.com/flexprice/flexprice/ent/couponapplication"
 	"github.com/flexprice/flexprice/ent/invoicelineitem"
 	"github.com/flexprice/flexprice/ent/predicate"
+	"github.com/shopspring/decimal"
 )
 
 // InvoiceLineItemUpdate is the builder for updating InvoiceLineItem entities.
@@ -106,6 +107,46 @@ func (iliu *InvoiceLineItemUpdate) SetNillablePeriodEnd(t *time.Time) *InvoiceLi
 // ClearPeriodEnd clears the value of the "period_end" field.
 func (iliu *InvoiceLineItemUpdate) ClearPeriodEnd() *InvoiceLineItemUpdate {
 	iliu.mutation.ClearPeriodEnd()
+	return iliu
+}
+
+// SetCreditsApplied sets the "credits_applied" field.
+func (iliu *InvoiceLineItemUpdate) SetCreditsApplied(d decimal.Decimal) *InvoiceLineItemUpdate {
+	iliu.mutation.SetCreditsApplied(d)
+	return iliu
+}
+
+// SetNillableCreditsApplied sets the "credits_applied" field if the given value is not nil.
+func (iliu *InvoiceLineItemUpdate) SetNillableCreditsApplied(d *decimal.Decimal) *InvoiceLineItemUpdate {
+	if d != nil {
+		iliu.SetCreditsApplied(*d)
+	}
+	return iliu
+}
+
+// ClearCreditsApplied clears the value of the "credits_applied" field.
+func (iliu *InvoiceLineItemUpdate) ClearCreditsApplied() *InvoiceLineItemUpdate {
+	iliu.mutation.ClearCreditsApplied()
+	return iliu
+}
+
+// SetCreditAmountApplied sets the "credit_amount_applied" field.
+func (iliu *InvoiceLineItemUpdate) SetCreditAmountApplied(d decimal.Decimal) *InvoiceLineItemUpdate {
+	iliu.mutation.SetCreditAmountApplied(d)
+	return iliu
+}
+
+// SetNillableCreditAmountApplied sets the "credit_amount_applied" field if the given value is not nil.
+func (iliu *InvoiceLineItemUpdate) SetNillableCreditAmountApplied(d *decimal.Decimal) *InvoiceLineItemUpdate {
+	if d != nil {
+		iliu.SetCreditAmountApplied(*d)
+	}
+	return iliu
+}
+
+// ClearCreditAmountApplied clears the value of the "credit_amount_applied" field.
+func (iliu *InvoiceLineItemUpdate) ClearCreditAmountApplied() *InvoiceLineItemUpdate {
+	iliu.mutation.ClearCreditAmountApplied()
 	return iliu
 }
 
@@ -284,6 +325,18 @@ func (iliu *InvoiceLineItemUpdate) sqlSave(ctx context.Context) (n int, err erro
 	if iliu.mutation.PeriodEndCleared() {
 		_spec.ClearField(invoicelineitem.FieldPeriodEnd, field.TypeTime)
 	}
+	if value, ok := iliu.mutation.CreditsApplied(); ok {
+		_spec.SetField(invoicelineitem.FieldCreditsApplied, field.TypeOther, value)
+	}
+	if iliu.mutation.CreditsAppliedCleared() {
+		_spec.ClearField(invoicelineitem.FieldCreditsApplied, field.TypeOther)
+	}
+	if value, ok := iliu.mutation.CreditAmountApplied(); ok {
+		_spec.SetField(invoicelineitem.FieldCreditAmountApplied, field.TypeOther, value)
+	}
+	if iliu.mutation.CreditAmountAppliedCleared() {
+		_spec.ClearField(invoicelineitem.FieldCreditAmountApplied, field.TypeOther)
+	}
 	if value, ok := iliu.mutation.Metadata(); ok {
 		_spec.SetField(invoicelineitem.FieldMetadata, field.TypeJSON, value)
 	}
@@ -432,6 +485,46 @@ func (iliuo *InvoiceLineItemUpdateOne) SetNillablePeriodEnd(t *time.Time) *Invoi
 // ClearPeriodEnd clears the value of the "period_end" field.
 func (iliuo *InvoiceLineItemUpdateOne) ClearPeriodEnd() *InvoiceLineItemUpdateOne {
 	iliuo.mutation.ClearPeriodEnd()
+	return iliuo
+}
+
+// SetCreditsApplied sets the "credits_applied" field.
+func (iliuo *InvoiceLineItemUpdateOne) SetCreditsApplied(d decimal.Decimal) *InvoiceLineItemUpdateOne {
+	iliuo.mutation.SetCreditsApplied(d)
+	return iliuo
+}
+
+// SetNillableCreditsApplied sets the "credits_applied" field if the given value is not nil.
+func (iliuo *InvoiceLineItemUpdateOne) SetNillableCreditsApplied(d *decimal.Decimal) *InvoiceLineItemUpdateOne {
+	if d != nil {
+		iliuo.SetCreditsApplied(*d)
+	}
+	return iliuo
+}
+
+// ClearCreditsApplied clears the value of the "credits_applied" field.
+func (iliuo *InvoiceLineItemUpdateOne) ClearCreditsApplied() *InvoiceLineItemUpdateOne {
+	iliuo.mutation.ClearCreditsApplied()
+	return iliuo
+}
+
+// SetCreditAmountApplied sets the "credit_amount_applied" field.
+func (iliuo *InvoiceLineItemUpdateOne) SetCreditAmountApplied(d decimal.Decimal) *InvoiceLineItemUpdateOne {
+	iliuo.mutation.SetCreditAmountApplied(d)
+	return iliuo
+}
+
+// SetNillableCreditAmountApplied sets the "credit_amount_applied" field if the given value is not nil.
+func (iliuo *InvoiceLineItemUpdateOne) SetNillableCreditAmountApplied(d *decimal.Decimal) *InvoiceLineItemUpdateOne {
+	if d != nil {
+		iliuo.SetCreditAmountApplied(*d)
+	}
+	return iliuo
+}
+
+// ClearCreditAmountApplied clears the value of the "credit_amount_applied" field.
+func (iliuo *InvoiceLineItemUpdateOne) ClearCreditAmountApplied() *InvoiceLineItemUpdateOne {
+	iliuo.mutation.ClearCreditAmountApplied()
 	return iliuo
 }
 
@@ -639,6 +732,18 @@ func (iliuo *InvoiceLineItemUpdateOne) sqlSave(ctx context.Context) (_node *Invo
 	}
 	if iliuo.mutation.PeriodEndCleared() {
 		_spec.ClearField(invoicelineitem.FieldPeriodEnd, field.TypeTime)
+	}
+	if value, ok := iliuo.mutation.CreditsApplied(); ok {
+		_spec.SetField(invoicelineitem.FieldCreditsApplied, field.TypeOther, value)
+	}
+	if iliuo.mutation.CreditsAppliedCleared() {
+		_spec.ClearField(invoicelineitem.FieldCreditsApplied, field.TypeOther)
+	}
+	if value, ok := iliuo.mutation.CreditAmountApplied(); ok {
+		_spec.SetField(invoicelineitem.FieldCreditAmountApplied, field.TypeOther, value)
+	}
+	if iliuo.mutation.CreditAmountAppliedCleared() {
+		_spec.ClearField(invoicelineitem.FieldCreditAmountApplied, field.TypeOther)
 	}
 	if value, ok := iliuo.mutation.Metadata(); ok {
 		_spec.SetField(invoicelineitem.FieldMetadata, field.TypeJSON, value)

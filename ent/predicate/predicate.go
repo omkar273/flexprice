@@ -36,6 +36,9 @@ type CouponApplication func(*sql.Selector)
 // CouponAssociation is the predicate function for couponassociation builders.
 type CouponAssociation func(*sql.Selector)
 
+// CreditApplication is the predicate function for creditapplication builders.
+type CreditApplication func(*sql.Selector)
+
 // CreditGrant is the predicate function for creditgrant builders.
 type CreditGrant func(*sql.Selector)
 

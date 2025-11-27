@@ -72,6 +72,10 @@ type InvoiceLineItem struct {
 	PeriodStart *time.Time `json:"period_start,omitempty"`
 	// PeriodEnd holds the value of the "period_end" field.
 	PeriodEnd *time.Time `json:"period_end,omitempty"`
+	// Amount of credits applied to this line item
+	CreditsApplied *decimal.Decimal `json:"credits_applied,omitempty"`
+	// Credit amount (in credits) applied to this line item
+	CreditAmountApplied *decimal.Decimal `json:"credit_amount_applied,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]string `json:"metadata,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -116,7 +120,7 @@ func (*InvoiceLineItem) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case invoicelineitem.FieldPriceUnitAmount:
+		case invoicelineitem.FieldPriceUnitAmount, invoicelineitem.FieldCreditsApplied, invoicelineitem.FieldCreditAmountApplied:
 			values[i] = &sql.NullScanner{S: new(decimal.Decimal)}
 		case invoicelineitem.FieldMetadata:
 			values[i] = new([]byte)
@@ -317,6 +321,20 @@ func (ili *InvoiceLineItem) assignValues(columns []string, values []any) error {
 				ili.PeriodEnd = new(time.Time)
 				*ili.PeriodEnd = value.Time
 			}
+		case invoicelineitem.FieldCreditsApplied:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field credits_applied", values[i])
+			} else if value.Valid {
+				ili.CreditsApplied = new(decimal.Decimal)
+				*ili.CreditsApplied = *value.S.(*decimal.Decimal)
+			}
+		case invoicelineitem.FieldCreditAmountApplied:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field credit_amount_applied", values[i])
+			} else if value.Valid {
+				ili.CreditAmountApplied = new(decimal.Decimal)
+				*ili.CreditAmountApplied = *value.S.(*decimal.Decimal)
+			}
 		case invoicelineitem.FieldMetadata:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata", values[i])
@@ -475,6 +493,16 @@ func (ili *InvoiceLineItem) String() string {
 	if v := ili.PeriodEnd; v != nil {
 		builder.WriteString("period_end=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := ili.CreditsApplied; v != nil {
+		builder.WriteString("credits_applied=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := ili.CreditAmountApplied; v != nil {
+		builder.WriteString("credit_amount_applied=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
