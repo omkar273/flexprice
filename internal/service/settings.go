@@ -81,6 +81,7 @@ func getDefaultValue[T any](key types.SettingKey) (T, error) {
 //   - Use this when you need the setting value as a typed struct in your business logic
 //   - Use this in other services (e.g., subscription service needs InvoiceConfig)
 //   - Returns default values if setting doesn't exist
+//   - Automatically merges stored values with default struct values
 //   - Use this for type-safe access to setting values
 //
 // WHEN NOT TO USE:
@@ -98,20 +99,40 @@ func getDefaultValue[T any](key types.SettingKey) (T, error) {
 func GetSetting[T any](s *settingsService, ctx context.Context, key types.SettingKey) (T, error) {
 	var zero T
 
+	// Get default value as typed struct (has all fields with defaults)
+	defaultValue, err := getDefaultValue[T](key)
+	if err != nil {
+		return zero, err
+	}
+
+	// Convert default to map
+	defaultMap, err := utils.ToMap(defaultValue)
+	if err != nil {
+		return zero, ierr.WithError(err).
+			WithHintf("Failed to convert default setting %s to map", key).
+			Mark(ierr.ErrValidation)
+	}
+
 	setting, err := s.fetchSetting(ctx, key)
 	if ent.IsNotFound(err) {
 		// Return default value if setting doesn't exist
-		return getDefaultValue[T](key)
+		return defaultValue, nil
 	}
 	if err != nil {
 		return zero, err
 	}
 
-	// Convert map to typed struct
-	typedValue, err := utils.ToStruct[T](setting.Value)
+	// Merge stored values into default map (stored values override defaults)
+	// This ensures new fields in struct get their defaults, and removed fields are ignored
+	for k, v := range setting.Value {
+		defaultMap[k] = v
+	}
+
+	// Convert merged map back to typed struct
+	typedValue, err := utils.ToStruct[T](defaultMap)
 	if err != nil {
 		return zero, ierr.WithError(err).
-			WithHintf("Failed to convert setting %s", key).
+			WithHintf("Failed to convert merged setting %s to struct", key).
 			Mark(ierr.ErrValidation)
 	}
 
@@ -187,6 +208,8 @@ func UpdateSetting[T types.SettingConfig](s *settingsService, ctx context.Contex
 //   - Use this for API endpoints (GET /api/v1/settings/{key})
 //   - Returns the full Setting object with all metadata (ID, timestamps, etc.)
 //   - Returns default values if setting doesn't exist (without ID)
+//   - Automatically merges stored values with default struct values
+//   - New fields in struct automatically get their defaults without migration
 //
 // WHEN NOT TO USE:
 //   - Don't use in business logic if you only need the typed struct (use GetSetting instead)
@@ -274,36 +297,54 @@ func (s *settingsService) DeleteSettingByKey(ctx context.Context, key types.Sett
 
 // getSettingByKey fetches a setting and returns it as a DTO response
 // Internal helper used by GetSettingByKey to handle type-specific logic
+// Automatically merges stored values with default struct values
 func getSettingByKey[T any](s *settingsService, ctx context.Context, key types.SettingKey) (*dto.SettingResponse, error) {
-	setting, err := s.fetchSetting(ctx, key)
+	// Get default value as typed struct (has all fields with defaults)
+	defaultValue, err := getDefaultValue[T](key)
+	if err != nil {
+		return nil, err
+	}
 
+	// Convert default to map
+	defaultMap, err := utils.ToMap(defaultValue)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHintf("Failed to convert default setting %s to map", key).
+			Mark(ierr.ErrValidation)
+	}
+
+	setting, err := s.fetchSetting(ctx, key)
 	if ent.IsNotFound(err) {
 		// Setting doesn't exist, return default value
-		config, err := getDefaultValue[T](key)
-		if err != nil {
-			return nil, err
-		}
-
-		// Convert typed struct to map for response
-		valueMap, err := utils.ToMap(config)
-		if err != nil {
-			return nil, err
-		}
-
 		// Return default setting (no ID since it doesn't exist in DB)
 		return dto.NewSettingResponse(&settings.Setting{
 			ID:        types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SETTING),
 			BaseModel: types.GetDefaultBaseModel(ctx),
 			Key:       key,
-			Value:     valueMap,
+			Value:     defaultMap,
 		}), nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	// Use the actual Setting object fetched from DB (with all metadata: ID, timestamps, etc.)
-	return dto.NewSettingResponse(setting), nil
+	// Merge stored values into default map (stored values override defaults)
+	// This ensures new fields in struct get their defaults, and removed fields are ignored
+	for k, v := range setting.Value {
+		defaultMap[k] = v
+	}
+
+	// Create a merged setting object with the merged values
+	// Preserve the original Setting metadata (ID, timestamps, etc.) but use merged values
+	mergedSetting := &settings.Setting{
+		ID:            setting.ID,
+		BaseModel:     setting.BaseModel,
+		Key:           setting.Key,
+		Value:         defaultMap,
+		EnvironmentID: setting.EnvironmentID,
+	}
+
+	return dto.NewSettingResponse(mergedSetting), nil
 }
 
 // updateSettingByKey updates a setting with partial values from a request
@@ -339,6 +380,6 @@ func updateSettingByKey[T types.SettingConfig](s *settingsService, ctx context.C
 		return nil, err
 	}
 
-	// Return updated setting
+	// Return updated setting (which will automatically merge with defaults again)
 	return s.GetSettingByKey(ctx, key)
 }

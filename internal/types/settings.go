@@ -2,6 +2,7 @@ package types
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	ierr "github.com/flexprice/flexprice/internal/errors"
@@ -104,90 +105,103 @@ type TenantEnvSubscriptionConfig struct {
 	*SubscriptionConfig
 }
 
+var (
+	defaultSettingsOnce sync.Once
+	defaultSettings     map[SettingKey]DefaultSettingValue
+	defaultSettingsErr  error
+)
+
 // GetDefaultSettings returns the default settings configuration for all setting keys
 // Uses typed structs and converts them to maps using ToMap utility from conversion.go
 func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
-	// Define defaults as typed structs
-	defaultInvoiceConfig := InvoiceConfig{
-		InvoiceNumberPrefix:                    "INV",
-		InvoiceNumberFormat:                    InvoiceNumberFormatYYYYMM,
-		InvoiceNumberStartSequence:             1,
-		InvoiceNumberTimezone:                  "UTC",
-		InvoiceNumberSeparator:                 "-",
-		InvoiceNumberSuffixLength:              5,
-		DueDateDays:                            lo.ToPtr(1),
-		AutoCompletePurchasedCreditTransaction: false,
-	}
+	defaultSettingsOnce.Do(func() {
+		// Define defaults as typed structs
+		defaultInvoiceConfig := InvoiceConfig{
+			InvoiceNumberPrefix:                    "INV",
+			InvoiceNumberFormat:                    InvoiceNumberFormatYYYYMM,
+			InvoiceNumberStartSequence:             1,
+			InvoiceNumberTimezone:                  "UTC",
+			InvoiceNumberSeparator:                 "-",
+			InvoiceNumberSuffixLength:              5,
+			DueDateDays:                            lo.ToPtr(1),
+			AutoCompletePurchasedCreditTransaction: false,
+		}
 
-	defaultSubscriptionConfig := SubscriptionConfig{
-		GracePeriodDays:         3,
-		AutoCancellationEnabled: false,
-	}
+		defaultSubscriptionConfig := SubscriptionConfig{
+			GracePeriodDays:         3,
+			AutoCancellationEnabled: false,
+		}
 
-	defaultInvoicePDFConfig := InvoicePDFConfig{
-		TemplateName: TemplateInvoiceDefault,
-		GroupBy:      []string{},
-	}
+		defaultInvoicePDFConfig := InvoicePDFConfig{
+			TemplateName: TemplateInvoiceDefault,
+			GroupBy:      []string{},
+		}
 
-	defaultEnvConfig := EnvConfig{
-		Production:  1,
-		Development: 2,
-	}
+		defaultEnvConfig := EnvConfig{
+			Production:  1,
+			Development: 2,
+		}
 
-	// Note: WorkflowConfig is now defined in service package to avoid import cycles
-	// We'll use a map for the default config to avoid importing service package here
-	defaultCustomerOnboardingConfig := map[string]interface{}{
-		"workflow_type": "customer_onboarding",
-		"actions":       []interface{}{},
-	}
+		// Note: WorkflowConfig is now defined in service package to avoid import cycles
+		// We'll use a map for the default config to avoid importing service package here
+		defaultCustomerOnboardingConfig := map[string]interface{}{
+			"workflow_type": "customer_onboarding",
+			"actions":       []interface{}{},
+		}
 
-	// Convert typed structs to maps using centralized utility
-	invoiceConfigMap, err := utils.ToMap(defaultInvoiceConfig)
-	if err != nil {
-		return nil, err
-	}
-	subscriptionConfigMap, err := utils.ToMap(defaultSubscriptionConfig)
-	if err != nil {
-		return nil, err
-	}
-	invoicePDFConfigMap, err := utils.ToMap(defaultInvoicePDFConfig)
-	if err != nil {
-		return nil, err
-	}
-	envConfigMap, err := utils.ToMap(defaultEnvConfig)
-	if err != nil {
-		return nil, err
-	}
-	// Already a map, no conversion needed
-	customerOnboardingConfigMap := defaultCustomerOnboardingConfig
+		// Convert typed structs to maps using centralized utility
+		invoiceConfigMap, err := utils.ToMap(defaultInvoiceConfig)
+		if err != nil {
+			defaultSettingsErr = err
+			return
+		}
+		subscriptionConfigMap, err := utils.ToMap(defaultSubscriptionConfig)
+		if err != nil {
+			defaultSettingsErr = err
+			return
+		}
+		invoicePDFConfigMap, err := utils.ToMap(defaultInvoicePDFConfig)
+		if err != nil {
+			defaultSettingsErr = err
+			return
+		}
+		envConfigMap, err := utils.ToMap(defaultEnvConfig)
+		if err != nil {
+			defaultSettingsErr = err
+			return
+		}
+		// Already a map, no conversion needed
+		customerOnboardingConfigMap := defaultCustomerOnboardingConfig
 
-	return map[SettingKey]DefaultSettingValue{
-		SettingKeyInvoiceConfig: {
-			Key:          SettingKeyInvoiceConfig,
-			DefaultValue: invoiceConfigMap,
-			Description:  "Default configuration for invoice generation and management",
-		},
-		SettingKeySubscriptionConfig: {
-			Key:          SettingKeySubscriptionConfig,
-			DefaultValue: subscriptionConfigMap,
-			Description:  "Default configuration for subscription auto-cancellation (grace period and enabled flag)",
-		},
-		SettingKeyInvoicePDFConfig: {
-			Key:          SettingKeyInvoicePDFConfig,
-			DefaultValue: invoicePDFConfigMap,
-			Description:  "Default configuration for invoice PDF generation",
-		},
-		SettingKeyEnvConfig: {
-			Key:          SettingKeyEnvConfig,
-			DefaultValue: envConfigMap,
-			Description:  "Default configuration for environment creation limits (production and sandbox)",
-		},
-		SettingKeyCustomerOnboarding: {
-			Key:          SettingKeyCustomerOnboarding,
-			DefaultValue: customerOnboardingConfigMap,
-			Description:  "Default configuration for customer onboarding workflow",
-		},
-	}, nil
+		defaultSettings = map[SettingKey]DefaultSettingValue{
+			SettingKeyInvoiceConfig: {
+				Key:          SettingKeyInvoiceConfig,
+				DefaultValue: invoiceConfigMap,
+				Description:  "Default configuration for invoice generation and management",
+			},
+			SettingKeySubscriptionConfig: {
+				Key:          SettingKeySubscriptionConfig,
+				DefaultValue: subscriptionConfigMap,
+				Description:  "Default configuration for subscription auto-cancellation (grace period and enabled flag)",
+			},
+			SettingKeyInvoicePDFConfig: {
+				Key:          SettingKeyInvoicePDFConfig,
+				DefaultValue: invoicePDFConfigMap,
+				Description:  "Default configuration for invoice PDF generation",
+			},
+			SettingKeyEnvConfig: {
+				Key:          SettingKeyEnvConfig,
+				DefaultValue: envConfigMap,
+				Description:  "Default configuration for environment creation limits (production and sandbox)",
+			},
+			SettingKeyCustomerOnboarding: {
+				Key:          SettingKeyCustomerOnboarding,
+				DefaultValue: customerOnboardingConfigMap,
+				Description:  "Default configuration for customer onboarding workflow",
+			},
+		}
+	})
+	return defaultSettings, defaultSettingsErr
 }
 
 // IsValidSettingKey checks if a setting key is valid
