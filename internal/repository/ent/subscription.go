@@ -592,6 +592,11 @@ func (o *SubscriptionQueryOptions) applyEntityQueryOptions(_ context.Context, f 
 		query = query.Where(subscription.SubscriptionStatusIn(f.SubscriptionStatus...))
 	}
 
+	// Default to active subscription if not specified
+	if f.SubscriptionStatus == nil {
+		query = query.Where(subscription.SubscriptionStatusEQ(types.SubscriptionStatusActive))
+	}
+
 	// Apply billing cadence filter
 	if len(f.BillingCadence) > 0 {
 		query = query.Where(subscription.BillingCadenceIn(f.BillingCadence...))
