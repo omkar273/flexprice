@@ -501,40 +501,33 @@ func (s *creditGrantService) applyCreditGrantToWallet(ctx context.Context, grant
 
 		// Check if CGA period start is within current subscription period
 		// Start is inclusive, end is exclusive
-		if (effectiveDate.Equal(subscription.CurrentPeriodStart) || effectiveDate.After(subscription.CurrentPeriodStart)) &&
-			effectiveDate.Before(subscription.CurrentPeriodEnd) {
-			expiryDate = lo.ToPtr(subscription.CurrentPeriodEnd)
-		} else {
+		periods, err := types.CalculateBillingPeriods(
+			subscription.StartDate,
+			subscription.EndDate,
+			subscription.BillingAnchor,
+			subscription.BillingPeriodCount,
+			subscription.BillingPeriod,
+		)
+		if err != nil {
+			return err
+		}
 
-			periods, err := types.CalculateBillingPeriods(
-				subscription.StartDate,
-				subscription.EndDate,
-				subscription.BillingAnchor,
-				subscription.BillingPeriodCount,
-				subscription.BillingPeriod,
-			)
-			if err != nil {
-				return err
+		// Find the period where CGA period start falls (start inclusive, end exclusive)
+		// Expected behavior: subPeriod.Start <= effectiveDate < subPeriod.End (start inclusive, end exclusive)
+		for _, subPeriod := range periods {
+			if (effectiveDate.Equal(subPeriod.Start) || effectiveDate.After(subPeriod.Start)) && effectiveDate.Before(subPeriod.End) {
+
+				s.Logger.Infow("found matching subscription period for CGA period start",
+					"cga_period_start", effectiveDate,
+					"subscription_period_start", subPeriod.Start,
+					"subscription_period_end", subPeriod.End,
+					"effective_date", effectiveDate,
+					"expiry_date", subPeriod.End,
+				)
+
+				expiryDate = lo.ToPtr(subPeriod.End)
+				break
 			}
-
-			// Find the period where CGA period start falls (start inclusive, end exclusive)
-			// Expected behavior: subPeriod.Start <= effectiveDate < subPeriod.End (start inclusive, end exclusive)
-			for _, subPeriod := range periods {
-				if (effectiveDate.Equal(subPeriod.Start) || effectiveDate.After(subPeriod.Start)) && effectiveDate.Before(subPeriod.End) {
-
-					s.Logger.Infow("found matching subscription period for CGA period start",
-						"cga_period_start", effectiveDate,
-						"subscription_period_start", subPeriod.Start,
-						"subscription_period_end", subPeriod.End,
-						"effective_date", effectiveDate,
-						"expiry_date", subPeriod.End,
-					)
-
-					expiryDate = lo.ToPtr(subPeriod.End)
-					break
-				}
-			}
-
 		}
 	}
 
