@@ -2220,9 +2220,6 @@ func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, custom
 	return nil
 }
 
-// GetWalletBalanceV2 is a variant that uses GetFeatureUsageBySubscription instead of GetUsageBySubscription.
-// It follows the same prepaid/postpaid logic as GetWalletBalance but uses the feature-based usage query.
-// TODO: Consider consolidating with GetWalletBalance once feature usage becomes the standard.
 func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string) (*dto.WalletBalanceResponse, error) {
 	if walletID == "" {
 		return nil, ierr.NewError("wallet_id is required").
@@ -2230,12 +2227,14 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 			Mark(ierr.ErrValidation)
 	}
 
+	// Get wallet details
 	w, err := s.WalletRepo.GetWalletByID(ctx, walletID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Return zero balance for inactive wallets
+	// Safety check: Return zero balance for inactive wallets
+	// This prevents any calculations on invalid wallet states
 	if w.WalletStatus != types.WalletStatusActive {
 		return &dto.WalletBalanceResponse{
 			Wallet:                w,
@@ -2247,7 +2246,6 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 	}
 
 	var pendingUsageCharges decimal.Decimal
-	var unpaidInvoicesAmount decimal.Decimal
 	var totalPendingCharges decimal.Decimal
 
 	// PRE_PAID wallets: calculate pending usage charges (unpaid invoices are postpaid, excluded)
@@ -2295,7 +2293,7 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 	} else {
 		// POST_PAID wallets: get unpaid invoices to show what's available to pay
 		invoiceService := NewInvoiceService(s.ServiceParams)
-		resp, err := invoiceService.GetUnpaidInvoicesToBePaid(ctx, dto.GetUnpaidInvoicesToBePaidRequest{
+		_, err := invoiceService.GetUnpaidInvoicesToBePaid(ctx, dto.GetUnpaidInvoicesToBePaidRequest{
 			CustomerID: w.CustomerID,
 			Currency:   w.Currency,
 		})
@@ -2354,21 +2352,17 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 
 			totalPendingCharges = totalPendingCharges.Add(usageTotal)
 		}
-
-		unpaidInvoicesAmount = resp.TotalUnpaidUsageCharges
 	}
 
 	// Calculate real-time balance
 	realTimeBalance := w.Balance.Sub(totalPendingCharges)
 
-	s.Logger.Debugw("detailed balance calculation V2",
+	s.Logger.Debugw("detailed balance calculation",
 		"wallet_id", w.ID,
-		"wallet_type", w.WalletType,
 		"current_balance", w.Balance,
-		"pending_usage_charges", pendingUsageCharges,
-		"unpaid_invoices", unpaidInvoicesAmount,
-		"total_pending_charges", totalPendingCharges,
-		"real_time_balance", realTimeBalance)
+		"pending_charges", totalPendingCharges,
+		"real_time_balance", realTimeBalance,
+		"credit_balance", w.CreditBalance)
 
 	// Convert real-time balance to credit balance
 	realTimeCreditBalance := s.GetCreditsFromCurrencyAmount(realTimeBalance, w.ConversionRate)
@@ -2414,7 +2408,6 @@ func (s *walletService) GetWalletBalanceFromCache(ctx context.Context, walletID 
 		lo.Contains(w.Config.AllowedPriceTypes, types.WalletConfigPriceTypeUsage) ||
 		lo.Contains(w.Config.AllowedPriceTypes, types.WalletConfigPriceTypeAll)
 
-	var unpaidInvoicesAmount decimal.Decimal
 	totalPendingCharges := decimal.Zero
 	cachedBalance := s.getWalletRealtimeBalanceFromCache(ctx, walletID)
 	if cachedBalance != nil {
@@ -2521,7 +2514,6 @@ func (s *walletService) GetWalletBalanceFromCache(ctx context.Context, walletID 
 		RealTimeCreditBalance: &realTimeCreditBalance,
 		BalanceUpdatedAt:      lo.ToPtr(w.UpdatedAt),
 		CurrentPeriodUsage:    &totalPendingCharges,
-		UnpaidInvoicesAmount:  lo.ToPtr(unpaidInvoicesAmount),
 	}, nil
 }
 
