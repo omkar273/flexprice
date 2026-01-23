@@ -107,7 +107,7 @@ type SubscriptionService interface {
 
 	// Auto-cancellation methods
 	ProcessAutoCancellationSubscriptions(ctx context.Context) error
-	CancelOldSandboxSubscriptions(ctx context.Context) error
+	CancelOldSandboxSubscriptions(ctx context.Context) (int, error)
 	// Renewal due alert methods
 	ProcessSubscriptionRenewalDueAlert(ctx context.Context) error
 

@@ -4456,7 +4456,7 @@ func (s *subscriptionService) ProcessAutoCancellationSubscriptions(ctx context.C
 // Processes subscriptions from development environments older than the default threshold (90 days).
 func (s *subscriptionService) CancelOldSandboxSubscriptions(
 	ctx context.Context,
-) error {
+) (int, error) {
 	olderThanDays := types.DefaultOldSandboxSubscriptionDays
 	s.Logger.Infow("starting cancellation of old sandbox subscriptions",
 		"older_than_days", olderThanDays)
@@ -4470,7 +4470,7 @@ func (s *subscriptionService) CancelOldSandboxSubscriptions(
 		subs, err := s.SubRepo.ListOldSandboxSubscriptions(ctx, olderThanDays, cursor, limit)
 		if err != nil {
 			s.Logger.Errorw("failed to list old sandbox subscriptions", "error", err)
-			return ierr.WithError(err).
+			return 0, ierr.WithError(err).
 				WithHint("Failed to list old sandbox subscriptions").
 				Mark(ierr.ErrDatabase)
 		}
@@ -4536,7 +4536,7 @@ func (s *subscriptionService) CancelOldSandboxSubscriptions(
 		"total_cancelled", totalCancelled,
 		"older_than_days", olderThanDays)
 
-	return nil
+	return totalCancelled, nil
 }
 
 // Helper functions for enhanced cancellation

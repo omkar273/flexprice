@@ -126,3 +126,31 @@ func (s *SubscriptionActivities) ScheduleBillingActivity(ctx context.Context, in
 	logger.Info("Completed processing all subscriptions", "total_processed", totalProcessed)
 	return response, nil
 }
+
+// CancelOldSandboxSubscriptionsActivity cancels old sandbox subscriptions
+// This method will be registered as "CancelOldSandboxSubscriptionsActivity" in Temporal
+func (s *SubscriptionActivities) CancelOldSandboxSubscriptionsActivity(ctx context.Context, input subscriptionModels.CancelOldSandboxSubscriptionsWorkflowInput) (*subscriptionModels.CancelOldSandboxSubscriptionsWorkflowResult, error) {
+	logger := activity.GetLogger(ctx)
+	result := &subscriptionModels.CancelOldSandboxSubscriptionsWorkflowResult{
+		TotalCancelled: 0,
+	}
+
+	// Validate input
+	if err := input.Validate(); err != nil {
+		return result, err
+	}
+
+	logger.Info("Starting cancellation of old sandbox subscriptions")
+
+	// Call the service method to cancel old sandbox subscriptions
+	// Note: The service method handles tenant context internally via the repository query
+	totalCancelled, err := s.subscriptionService.CancelOldSandboxSubscriptions(ctx)
+	if err != nil {
+		logger.Error("Failed to cancel old sandbox subscriptions", "error", err)
+		return result, err
+	}
+
+	result.TotalCancelled = totalCancelled
+	logger.Info("Completed cancellation of old sandbox subscriptions", "total_cancelled", totalCancelled)
+	return result, nil
+}

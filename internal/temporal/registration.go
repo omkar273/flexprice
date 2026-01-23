@@ -201,10 +201,13 @@ func buildWorkerConfig(
 			workflowsList,
 			subscriptionWorkflows.ScheduleSubscriptionBillingWorkflow,
 			subscriptionWorkflows.ProcessSubscriptionBillingWorkflow,
+			subscriptionWorkflows.CancelOldSandboxSubscriptionsWorkflow,
 		)
 		activitiesList = append(activitiesList,
 			// Schedule billing activities
 			scheduleBillingActivities.ScheduleBillingActivity,
+			// Cancel old sandbox subscriptions activity
+			scheduleBillingActivities.CancelOldSandboxSubscriptionsActivity,
 			// Subscription billing period activities
 			billingActivities.CheckDraftSubscriptionActivity,
 			billingActivities.CalculatePeriodsActivity,

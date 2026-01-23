@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/domain/subscription"
@@ -462,6 +463,69 @@ func (s *InMemorySubscriptionStore) GetRecentSubscriptionsByPlan(ctx context.Con
 	}
 
 	return result, nil
+}
+
+// ListOldSandboxSubscriptions retrieves old sandbox subscriptions for cleanup.
+// Used by cron/workflow jobs that run daily to cancel subscriptions older than the specified days.
+func (s *InMemorySubscriptionStore) ListOldSandboxSubscriptions(ctx context.Context, olderThanDays int, cursor string, limit int) ([]*subscription.OldSandboxSubscription, error) {
+	cutoffDate := time.Now().UTC().AddDate(0, 0, -olderThanDays)
+
+	// Get all subscriptions
+	allSubs, err := s.ListAll(ctx, &types.SubscriptionFilter{
+		QueryFilter: types.NewNoLimitQueryFilter(),
+	})
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to list subscriptions").
+			Mark(ierr.ErrDatabase)
+	}
+
+	// Filter subscriptions that match criteria:
+	// 1. Start date older than cutoff
+	// 2. Subscription status is active or trialing
+	// 3. Environment type is development (sandbox)
+	// Note: In test environment, we can't easily check environment type, so we'll return
+	// subscriptions that match the date and status criteria
+	var matchingSubs []*subscription.OldSandboxSubscription
+	for _, sub := range allSubs {
+		// Check start date
+		if !sub.StartDate.Before(cutoffDate) {
+			continue
+		}
+
+		// Check subscription status
+		if sub.SubscriptionStatus != types.SubscriptionStatusActive && sub.SubscriptionStatus != types.SubscriptionStatusTrialing {
+			continue
+		}
+
+		// Check status
+		if sub.Status != types.StatusPublished {
+			continue
+		}
+
+		// Apply cursor pagination
+		if cursor != "" && sub.ID <= cursor {
+			continue
+		}
+
+		matchingSubs = append(matchingSubs, &subscription.OldSandboxSubscription{
+			SubscriptionID: sub.ID,
+			TenantID:       sub.TenantID,
+			EnvironmentID:  sub.EnvironmentID,
+		})
+	}
+
+	// Sort by ID for consistent pagination
+	sort.Slice(matchingSubs, func(i, j int) bool {
+		return matchingSubs[i].SubscriptionID < matchingSubs[j].SubscriptionID
+	})
+
+	// Apply limit
+	if limit > 0 && len(matchingSubs) > limit {
+		matchingSubs = matchingSubs[:limit]
+	}
+
+	return matchingSubs, nil
 }
 
 // Clear removes all data from the store

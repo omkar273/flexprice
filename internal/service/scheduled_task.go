@@ -32,6 +32,7 @@ type ScheduledTaskService interface {
 
 	CalculateIntervalBoundaries(currentTime time.Time, interval types.ScheduledTaskInterval) (startTime, endTime time.Time)
 	ScheduleUpdateBillingPeriod(ctx context.Context) (string, error)
+	ScheduleCancelOldSandboxSubscriptions(ctx context.Context) (string, error)
 }
 
 type scheduledTaskService struct {
@@ -809,4 +810,47 @@ func (s *scheduledTaskService) ScheduleUpdateBillingPeriod(ctx context.Context) 
 	}
 
 	return "Triggered update billing period workflow successfully", nil
+}
+
+// ScheduleCancelOldSandboxSubscriptions creates a Temporal schedule to cancel old sandbox subscriptions daily at 00:00:00 UTC
+func (s *scheduledTaskService) ScheduleCancelOldSandboxSubscriptions(ctx context.Context) (string, error) {
+	scheduleID := types.GenerateUUIDWithPrefix("schtask_sandbox_cleanup")
+	// Cron expression: "0 0 * * *" runs at 00:00:00 UTC every day
+	cronExpr := "0 0 * * *"
+
+	scheduleSpec := client.ScheduleSpec{
+		CronExpressions: []string{cronExpr},
+	}
+
+	action := &client.ScheduleWorkflowAction{
+		Workflow: subscriptionWorkflows.CancelOldSandboxSubscriptionsWorkflow,
+		Args: []interface{}{
+			subscriptionModels.CancelOldSandboxSubscriptionsWorkflowInput{},
+		},
+		TaskQueue:                string(types.TemporalTaskQueueSubscription),
+		WorkflowExecutionTimeout: 2 * time.Hour,
+		WorkflowRunTimeout:       2 * time.Hour,
+		WorkflowTaskTimeout:      2 * time.Hour,
+	}
+
+	scheduleOptions := models.CreateScheduleOptions{
+		ID:     scheduleID,
+		Spec:   scheduleSpec,
+		Action: action,
+		Paused: false,
+	}
+
+	_, err := s.temporalClient.CreateSchedule(ctx, scheduleOptions)
+	if err != nil {
+		s.logger.Errorw("failed to create temporal schedule for old sandbox subscription cleanup", "error", err)
+		return "", ierr.WithError(err).
+			WithHint("Failed to create Temporal schedule for old sandbox subscription cleanup").
+			Mark(ierr.ErrInternal)
+	}
+
+	s.logger.Infow("created temporal schedule for old sandbox subscription cleanup",
+		"schedule_id", scheduleID,
+		"cron", cronExpr)
+
+	return "Created schedule for old sandbox subscription cleanup successfully", nil
 }
