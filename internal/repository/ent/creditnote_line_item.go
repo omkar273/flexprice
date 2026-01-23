@@ -53,7 +53,7 @@ func (r *creditnoteLineItemRepository) Create(ctx context.Context, item *domainC
 		SetInvoiceLineItemID(item.InvoiceLineItemID).
 		SetDisplayName(item.DisplayName).
 		SetAmount(item.Amount).
-		SetCurrency(item.Currency).
+		SetCurrency(string(item.Currency)).
 		SetMetadata(item.Metadata).
 		SetTenantID(item.TenantID).
 		SetEnvironmentID(item.EnvironmentID).
@@ -236,7 +236,7 @@ func (r *creditnoteLineItemRepository) CreateBulk(ctx context.Context, items []*
 			SetInvoiceLineItemID(item.InvoiceLineItemID).
 			SetDisplayName(item.DisplayName).
 			SetAmount(item.Amount).
-			SetCurrency(item.Currency).
+			SetCurrency(string(item.Currency)).
 			SetMetadata(item.Metadata).
 			SetTenantID(item.TenantID).
 			SetEnvironmentID(item.EnvironmentID).

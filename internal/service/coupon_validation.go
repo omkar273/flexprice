@@ -107,8 +107,8 @@ func (s *couponValidationService) validateCouponBusinessRules(coupon coupon.Coup
 	}
 
 	// Currency validation (if subscription exists and has currency)
-	if subscription != nil && subscription.Currency != "" {
-		if err := s.validateCouponCurrency(coupon, subscription.Currency); err != nil {
+	if subscription != nil && string(subscription.Currency) != "" {
+		if err := s.validateCouponCurrency(coupon, subscription.Currency.String()); err != nil {
 			return err
 		}
 	}
@@ -156,8 +156,8 @@ func (s *couponValidationService) validateCouponDateRange(coupon coupon.Coupon) 
 // Currency validation
 func (s *couponValidationService) validateCouponCurrency(coupon coupon.Coupon, targetCurrency string) error {
 	// If coupon has specific currency, it must match target currency
-	if coupon.Currency != "" {
-		if coupon.Currency != targetCurrency {
+	if string(coupon.Currency) != "" {
+		if !coupon.Currency.Equal(types.Currency(targetCurrency)) {
 			return &CouponValidationError{
 				Code:    types.CouponValidationErrorCodeCurrencyMismatch,
 				Message: "Coupon currency does not match target currency",

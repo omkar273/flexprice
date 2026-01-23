@@ -162,7 +162,7 @@ func (s *InvoiceSyncService) buildInvoiceRequest(
 
 	// Build request
 	req := &CreateInvoiceRequest{
-		Currency: strings.ToUpper(flexInvoice.Currency),
+		Currency: strings.ToUpper(string(flexInvoice.Currency)),
 		Items:    items,
 		Customer: nomodCustomerID,
 		DueDate:  dueDateStr,

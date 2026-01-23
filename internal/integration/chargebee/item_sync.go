@@ -735,7 +735,7 @@ func (s *PlanSyncService) SyncPlanToChargebee(ctx context.Context, plan *plan.Pl
 			Name:         itemPriceID,
 			ExternalName: itemPriceExternalName, // Customer-facing name on invoices
 			PricingModel: pricingModel,
-			CurrencyCode: p.Currency,
+			CurrencyCode: string(p.Currency),
 			Description:  plan.Description,
 		}
 
@@ -752,7 +752,7 @@ func (s *PlanSyncService) SyncPlanToChargebee(ctx context.Context, plan *plan.Pl
 					FlatAmount: p.Tiers[i].FlatAmount,
 				}
 			}
-			itemPriceReq.Tiers = convertTiersForChargebee(tiers, p.Currency)
+			itemPriceReq.Tiers = convertTiersForChargebee(tiers, string(p.Currency))
 			s.Logger.Infow("syncing tiered pricing to Chargebee",
 				"price_id", p.ID,
 				"tier_mode", p.TierMode,
@@ -760,7 +760,7 @@ func (s *PlanSyncService) SyncPlanToChargebee(ctx context.Context, plan *plan.Pl
 
 		case types.BILLING_MODEL_PACKAGE:
 			// For package pricing, set price and optionally period
-			itemPriceReq.Price = convertAmountToSmallestUnit(p.Amount.InexactFloat64(), p.Currency)
+			itemPriceReq.Price = convertAmountToSmallestUnit(p.Amount.InexactFloat64(), string(p.Currency))
 			if p.TransformQuantity.DivideBy > 0 {
 				divideBy := p.TransformQuantity.DivideBy
 				itemPriceReq.Period = &divideBy
@@ -768,11 +768,11 @@ func (s *PlanSyncService) SyncPlanToChargebee(ctx context.Context, plan *plan.Pl
 
 		case types.BILLING_MODEL_FLAT_FEE:
 			// For flat fee, just set the price
-			itemPriceReq.Price = convertAmountToSmallestUnit(p.Amount.InexactFloat64(), p.Currency)
+			itemPriceReq.Price = convertAmountToSmallestUnit(p.Amount.InexactFloat64(), string(p.Currency))
 
 		default:
 			// Default to flat fee
-			itemPriceReq.Price = convertAmountToSmallestUnit(p.Amount.InexactFloat64(), p.Currency)
+			itemPriceReq.Price = convertAmountToSmallestUnit(p.Amount.InexactFloat64(), string(p.Currency))
 		}
 
 		itemPrice, err := s.itemPriceService.CreateItemPrice(ctx, itemPriceReq)

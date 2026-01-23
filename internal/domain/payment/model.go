@@ -35,7 +35,7 @@ type Payment struct {
 	// The amount field specifies the payment value in the given currency
 	Amount decimal.Decimal `json:"amount" swaggertype:"string"`
 	// The currency field uses a three-letter ISO code (USD, EUR, GBP, etc.)
-	Currency string `json:"currency"`
+	Currency types.Currency `json:"currency"`
 	// The payment_status shows the current state of this payment (pending, succeeded, failed, etc.)
 	PaymentStatus types.PaymentStatus `json:"payment_status"`
 	// The track_attempts flag indicates whether payment processing attempts are being monitored
@@ -104,7 +104,7 @@ func (p *Payment) Validate() error {
 			WithHint("Payment method type is invalid").
 			Mark(ierr.ErrValidation)
 	}
-	if p.Currency == "" {
+	if string(p.Currency) == "" {
 		return ierr.NewError("invalid currency").
 			WithHint("Currency is invalid").
 			Mark(ierr.ErrValidation)
@@ -179,7 +179,7 @@ func FromEnt(p *ent.Payment) *Payment {
 		GatewayTrackingID: p.GatewayTrackingID,
 		GatewayMetadata:   p.GatewayMetadata,
 		Amount:            p.Amount,
-		Currency:          p.Currency,
+		Currency:          types.Currency(p.Currency),
 		PaymentStatus:     types.PaymentStatus(p.PaymentStatus),
 		TrackAttempts:     p.TrackAttempts,
 		Metadata:          p.Metadata,

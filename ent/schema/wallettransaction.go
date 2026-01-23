@@ -112,7 +112,11 @@ func (WalletTransaction) Fields() []ent.Field {
 				"postgres": "varchar(10)",
 			}).
 			NotEmpty().
-			Immutable(),
+			Immutable().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 
 		field.Other("conversion_rate", decimal.Decimal{}).
 			SchemaType(map[string]string{

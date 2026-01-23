@@ -3,7 +3,6 @@ package dto
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/domain/price"
@@ -270,7 +269,7 @@ type CreateSubscriptionRequest struct {
 	InvoiceBilling *types.InvoiceBilling `json:"invoice_billing,omitempty"`
 
 	PlanID             string               `json:"plan_id" validate:"required"`
-	Currency           string               `json:"currency" validate:"required,len=3"`
+	Currency           types.Currency       `json:"currency" validate:"required"`
 	LookupKey          string               `json:"lookup_key"`
 	StartDate          *time.Time           `json:"start_date,omitempty"`
 	EndDate            *time.Time           `json:"end_date,omitempty"`
@@ -522,7 +521,7 @@ func (r *CreateSubscriptionRequest) Validate() error {
 	}
 
 	// Validate currency
-	if err := types.ValidateCurrencyCode(r.Currency); err != nil {
+	if err := r.Currency.Validate(); err != nil {
 		return err
 	}
 
@@ -986,7 +985,7 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
 		CustomerID:         r.CustomerID,
 		PlanID:             r.PlanID,
-		Currency:           strings.ToLower(r.Currency),
+		Currency:           r.Currency,
 		LookupKey:          r.LookupKey,
 		SubscriptionStatus: initialStatus,
 		StartDate:          startDate,
@@ -1467,7 +1466,7 @@ type GetUsageBySubscriptionRequest struct {
 
 type GetUsageBySubscriptionResponse struct {
 	Amount             float64                              `json:"amount"`
-	Currency           string                               `json:"currency"`
+	Currency           types.Currency                       `json:"currency"`
 	DisplayAmount      string                               `json:"display_amount"`
 	StartTime          time.Time                            `json:"start_time"`
 	EndTime            time.Time                            `json:"end_time"`
@@ -1481,7 +1480,7 @@ type GetUsageBySubscriptionResponse struct {
 
 type SubscriptionUsageByMetersResponse struct {
 	Amount           float64            `json:"amount"`
-	Currency         string             `json:"currency"`
+	Currency         types.Currency     `json:"currency"`
 	DisplayAmount    string             `json:"display_amount"`
 	Quantity         float64            `json:"quantity"`
 	FilterValues     price.JSONBFilters `json:"filter_values"`

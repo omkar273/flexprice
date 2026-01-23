@@ -55,7 +55,11 @@ func (Price) Fields() []ent.Field {
 				"postgres": "varchar(3)",
 			}).
 			Immutable().
-			NotEmpty(),
+			NotEmpty().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 
 		field.String("display_amount").
 			SchemaType(map[string]string{

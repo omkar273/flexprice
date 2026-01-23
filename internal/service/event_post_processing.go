@@ -679,7 +679,7 @@ func (s *eventPostProcessingService) prepareProcessedEvents(ctx context.Context,
 			// Set cost details on the processed event
 			processedEventCopy.UnitCost = costDetails.EffectiveUnitCost
 			processedEventCopy.Cost = costDetails.FinalCost
-			processedEventCopy.Currency = match.Price.Currency
+			processedEventCopy.Currency = match.Price.Currency.String()
 
 			processedEventsPerSub = append(processedEventsPerSub, processedEventCopy)
 		}
@@ -999,7 +999,7 @@ func (s *eventPostProcessingService) GetDetailedUsageAnalytics(ctx context.Conte
 	if len(subscriptions) > 0 {
 		currency := subscriptions[0].Currency
 		for _, sub := range subscriptions {
-			if sub.Currency != currency {
+			if !sub.Currency.Equal(currency) {
 				return nil, ierr.NewError("multiple currencies detected").
 					WithHint("Analytics is only supported for customers with a single currency across all subscriptions").
 					WithReportableDetails(map[string]interface{}{
@@ -1008,7 +1008,7 @@ func (s *eventPostProcessingService) GetDetailedUsageAnalytics(ctx context.Conte
 					Mark(ierr.ErrValidation)
 			}
 		}
-		finalCurrency = currency
+		finalCurrency = currency.String()
 	}
 
 	// Step 4: Create the parameters object for repository call

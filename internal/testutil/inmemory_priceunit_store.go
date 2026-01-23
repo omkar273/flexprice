@@ -279,7 +279,7 @@ func applyPriceUnitFilterCondition(pu *priceunit.PriceUnit, condition *types.Fil
 		}
 	case "base_currency":
 		if condition.Value != nil && condition.Value.String != nil {
-			return pu.BaseCurrency == *condition.Value.String
+			return pu.BaseCurrency.String() == *condition.Value.String
 		}
 	case "environment_id":
 		if condition.Value != nil && condition.Value.String != nil {

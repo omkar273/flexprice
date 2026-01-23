@@ -373,7 +373,7 @@ func (s *InvoiceService) buildLineItems(ctx context.Context, flexInvoice *invoic
 			// For flat_fee/per_unit/package pricing: Use Quantity=1 + exact amount for precision
 			// This ensures exact amount matching with FlexPrice's calculation
 			lineItem.Quantity = 1
-			lineItem.UnitAmount = convertAmountToSmallestUnit(item.Amount.InexactFloat64(), flexInvoice.Currency)
+			lineItem.UnitAmount = convertAmountToSmallestUnit(item.Amount.InexactFloat64(), string(flexInvoice.Currency))
 			s.Logger.Debugw("non-tiered price line item - using exact amount",
 				"item_price_id", chargebeeItemPriceID,
 				"quantity", 1,
@@ -779,7 +779,7 @@ func (s *InvoiceService) ProcessChargebeePaymentFromWebhook(
 	createPaymentReq := dto.CreatePaymentRequest{
 		IdempotencyKey:    chargebeeTransactionID, // Use transaction ID as idempotency key to prevent duplicates
 		Amount:            amount,
-		Currency:          currency,
+		Currency:          types.Currency(currency),
 		PaymentMethodType: types.PaymentMethodTypeCard, // Default to card
 		DestinationType:   types.PaymentDestinationTypeInvoice,
 		DestinationID:     flexpriceInvoiceID,

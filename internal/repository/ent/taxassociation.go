@@ -53,7 +53,7 @@ func (r *taxAssociationRepository) Create(ctx context.Context, t *domainTaxConfi
 		SetID(t.ID).
 		SetTaxRateID(t.TaxRateID).
 		SetEntityType(string(t.EntityType)).
-		SetCurrency(t.Currency).
+		SetCurrency(string(t.Currency)).
 		SetPriority(t.Priority).
 		SetAutoApply(t.AutoApply).
 		SetMetadata(t.Metadata).

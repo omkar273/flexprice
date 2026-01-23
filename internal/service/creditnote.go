@@ -496,7 +496,7 @@ func (s *creditNoteService) FinalizeCreditNote(ctx context.Context, id string) e
 
 			var selectedWallet *dto.WalletResponse
 			for _, w := range wallets {
-				if types.IsMatchingCurrency(w.Currency, inv.Currency) {
+				if w.Currency.Equal(inv.Currency) {
 					selectedWallet = w
 					break
 				}

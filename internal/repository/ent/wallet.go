@@ -55,7 +55,7 @@ func (r *walletRepository) CreateWallet(ctx context.Context, w *walletdomain.Wal
 		SetTenantID(w.TenantID).
 		SetCustomerID(w.CustomerID).
 		SetName(w.Name).
-		SetCurrency(w.Currency).
+		SetCurrency(string(w.Currency)).
 		SetDescription(w.Description).
 		SetMetadata(w.Metadata).
 		SetBalance(w.Balance).
@@ -391,7 +391,7 @@ func (r *walletRepository) CreateTransaction(ctx context.Context, tx *walletdoma
 		SetNillableExpiryDate(tx.ExpiryDate).
 		SetCreditBalanceBefore(tx.CreditBalanceBefore).
 		SetCreditBalanceAfter(tx.CreditBalanceAfter).
-		SetCurrency(tx.Currency).
+		SetCurrency(string(tx.Currency)).
 		SetNillableConversionRate(tx.ConversionRate).
 		SetNillableTopupConversionRate(tx.TopupConversionRate).
 		SetCreatedAt(tx.CreatedAt).

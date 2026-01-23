@@ -453,7 +453,7 @@ func (s *creditGrantService) applyCreditGrantToWallet(ctx context.Context, grant
 
 	var selectedWallet *dto.WalletResponse
 	for _, w := range wallets {
-		if !types.IsMatchingCurrency(w.Currency, subscription.Currency) {
+		if !w.Currency.Equal(subscription.Currency) {
 			continue
 		}
 

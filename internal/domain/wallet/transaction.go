@@ -28,7 +28,7 @@ type Transaction struct {
 	CreditsAvailable    decimal.Decimal             `db:"credits_available" json:"credits_available" swaggertype:"string"`
 	TransactionReason   types.TransactionReason     `db:"transaction_reason" json:"transaction_reason"`
 	Priority            *int                        `db:"priority" json:"priority"`
-	Currency            string                      `db:"currency" json:"currency"`
+	Currency            types.Currency               `db:"currency" json:"currency"`
 
 	// conversion_rate is the conversion rate for the transaction to the currency
 	ConversionRate *decimal.Decimal `db:"conversion_rate" json:"conversion_rate,omitempty" swaggertype:"string"`
@@ -97,7 +97,7 @@ func (t *Transaction) ToEnt() *ent.WalletTransaction {
 		CreditsAvailable:    t.CreditsAvailable,
 		TransactionReason:   t.TransactionReason,
 		Priority:            t.Priority,
-		Currency:            t.Currency,
+		Currency:            string(t.Currency),
 		ConversionRate:      t.ConversionRate,
 		TopupConversionRate: t.TopupConversionRate,
 		EnvironmentID:       t.EnvironmentID,
@@ -132,7 +132,7 @@ func TransactionFromEnt(e *ent.WalletTransaction) *Transaction {
 		CreditsAvailable:    e.CreditsAvailable,
 		CreditBalanceBefore: e.CreditBalanceBefore,
 		CreditBalanceAfter:  e.CreditBalanceAfter,
-		Currency:            e.Currency,
+		Currency:            types.Currency(e.Currency),
 		TransactionReason:   e.TransactionReason,
 		Priority:            e.Priority,
 		ConversionRate:      e.ConversionRate,

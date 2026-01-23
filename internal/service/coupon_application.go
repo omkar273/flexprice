@@ -108,7 +108,7 @@ func (s *couponApplicationService) ApplyCouponsToInvoice(ctx context.Context, in
 		return &CouponCalculationResult{
 			TotalDiscountAmount: decimal.Zero,
 			AppliedCoupons:      make([]*dto.CouponApplicationResponse, 0),
-			Currency:            inv.Currency,
+			Currency:            string(inv.Currency),
 			Metadata:            make(map[string]interface{}),
 		}, nil
 	}
@@ -321,7 +321,7 @@ func (s *couponApplicationService) ApplyCouponsToInvoice(ctx context.Context, in
 		result = &CouponCalculationResult{
 			TotalDiscountAmount: totalDiscount,
 			AppliedCoupons:      appliedCoupons,
-			Currency:            inv.Currency,
+			Currency:            string(inv.Currency),
 			Metadata: map[string]interface{}{
 				"total_coupons_processed":    len(invoiceCoupons) + len(lineItemCoupons),
 				"successful_applications":    len(appliedCoupons),

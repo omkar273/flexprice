@@ -80,7 +80,7 @@ func (s *walletPaymentService) ProcessInvoicePaymentWithWallets(
 	}
 
 	// Get wallets suitable for payment
-	wallets, err := s.GetWalletsForPayment(ctx, inv.CustomerID, inv.Currency, options)
+	wallets, err := s.GetWalletsForPayment(ctx, inv.CustomerID, inv.Currency.String(), options)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -136,7 +136,7 @@ func (s *walletPaymentService) GetWalletsForPayment(
 	activeWallets := make([]*wallet.Wallet, 0)
 	for _, w := range wallets {
 		if w.WalletStatus == types.WalletStatusActive &&
-			types.IsMatchingCurrency(w.Currency, currency) &&
+			w.Currency.Equal(types.Currency(currency)) &&
 			w.Balance.GreaterThan(decimal.Zero) {
 			activeWallets = append(activeWallets, w)
 		}

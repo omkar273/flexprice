@@ -72,7 +72,7 @@ func (s *InvoiceService) SyncInvoiceToQuickBooks(
 		return &QuickBooksInvoiceSyncResponse{
 			QuickBooksInvoiceID: existingMapping.ProviderEntityID,
 			Total:               flexInvoice.Total,
-			Currency:            flexInvoice.Currency,
+			Currency:            string(flexInvoice.Currency),
 		}, nil
 	}
 
@@ -145,7 +145,7 @@ func (s *InvoiceService) SyncInvoiceToQuickBooks(
 	return &QuickBooksInvoiceSyncResponse{
 		QuickBooksInvoiceID: quickBooksInvoice.ID,
 		Total:               quickBooksInvoice.TotalAmt,
-		Currency:            flexInvoice.Currency,
+		Currency:            flexInvoice.Currency.String(),
 	}, nil
 }
 

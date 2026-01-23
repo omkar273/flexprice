@@ -20,7 +20,7 @@ type TaxAssociation struct {
 	// Whether this tax should be automatically applied
 	AutoApply bool `json:"auto_apply,omitempty"`
 	// Currency
-	Currency string `json:"currency,omitempty"`
+	Currency types.Currency `json:"currency,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]string `json:"metadata,omitempty"`
 
@@ -38,7 +38,7 @@ func FromEnt(ent *ent.TaxAssociation) *TaxAssociation {
 		EntityID:      ent.EntityID,
 		Priority:      ent.Priority,
 		AutoApply:     ent.AutoApply,
-		Currency:      ent.Currency,
+		Currency:      types.Currency(ent.Currency),
 		EnvironmentID: ent.EnvironmentID,
 		Metadata:      ent.Metadata,
 		BaseModel: types.BaseModel{

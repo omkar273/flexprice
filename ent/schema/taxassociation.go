@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	baseMixin "github.com/flexprice/flexprice/ent/schema/mixin"
+	"github.com/flexprice/flexprice/internal/types"
 )
 
 const (
@@ -79,6 +80,13 @@ func (TaxAssociation) Fields() []ent.Field {
 			}).
 			Immutable().
 			NotEmpty().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				if s == "" {
+					return nil // Allow empty for optional fields
+				}
+				return types.Currency(s).Validate()
+			}).
 			Comment("Currency"),
 
 		field.JSON("metadata", map[string]string{}).

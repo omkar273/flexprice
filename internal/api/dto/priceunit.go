@@ -2,7 +2,6 @@ package dto
 
 import (
 	"context"
-	"strings"
 
 	"github.com/flexprice/flexprice/internal/domain/priceunit"
 	ierr "github.com/flexprice/flexprice/internal/errors"
@@ -17,7 +16,7 @@ type CreatePriceUnitRequest struct {
 	Symbol string `json:"symbol" validate:"required"`
 
 	// base_currency  is the currency that the price unit is based on
-	BaseCurrency string `json:"base_currency" validate:"required,len=3"`
+	BaseCurrency types.Currency `json:"base_currency" validate:"required"`
 
 	// ConversionRate defines the exchange rate from this price unit to the base currency.
 	// This rate is used to convert amounts in the custom price unit to the base currency for storage and billing.
@@ -41,7 +40,7 @@ func (r *CreatePriceUnitRequest) Validate() error {
 	}
 
 	// Ensure currency is lowercase
-	r.BaseCurrency = strings.ToLower(r.BaseCurrency)
+	// Currency type normalizes to uppercase automatically
 
 	// Validate conversion rate
 	conversionRate, err := decimal.NewFromString(r.ConversionRate)

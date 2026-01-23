@@ -41,7 +41,7 @@ type CreditNote struct {
 	Memo string `json:"memo"`
 
 	// currency is the three-letter ISO currency code (e.g., USD, EUR) for the credit note
-	Currency string `json:"currency"`
+	Currency types.Currency `json:"currency"`
 
 	// metadata contains additional custom key-value pairs for storing extra information
 	Metadata types.Metadata `json:"metadata"`
@@ -82,7 +82,7 @@ func FromEnt(e *ent.CreditNote) *CreditNote {
 		RefundStatus:     e.RefundStatus,
 		Reason:           e.Reason,
 		Memo:             e.Memo,
-		Currency:         e.Currency,
+		Currency:         types.Currency(e.Currency),
 		Metadata:         e.Metadata,
 		CustomerID:       e.CustomerID,
 		SubscriptionID:   e.SubscriptionID,

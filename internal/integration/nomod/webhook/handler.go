@@ -168,7 +168,7 @@ func (h *Handler) handleInvoicePayment(ctx context.Context, charge *nomod.Charge
 	now := time.Now()
 	createReq := dto.CreatePaymentRequest{
 		Amount:            amount,
-		Currency:          charge.Currency,
+		Currency:          types.Currency(charge.Currency),
 		DestinationID:     flexpriceInvoiceID,
 		DestinationType:   types.PaymentDestinationTypeInvoice,
 		PaymentMethodType: types.PaymentMethodTypeCard, // Mark as card payment (external payment on Nomod)

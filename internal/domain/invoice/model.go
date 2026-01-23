@@ -32,7 +32,7 @@ type Invoice struct {
 	PaymentStatus types.PaymentStatus `json:"payment_status"`
 
 	// currency is the three-letter ISO currency code (e.g., USD, EUR, GBP) that applies to all monetary amounts on this invoice
-	Currency string `json:"currency"`
+	Currency types.Currency `json:"currency"`
 
 	// amount_due is the total amount that needs to be paid for this invoice
 	AmountDue decimal.Decimal `json:"amount_due"`
@@ -147,7 +147,7 @@ func FromEnt(e *ent.Invoice) *Invoice {
 		InvoiceType:        types.InvoiceType(e.InvoiceType),
 		InvoiceStatus:      types.InvoiceStatus(e.InvoiceStatus),
 		PaymentStatus:      types.PaymentStatus(e.PaymentStatus),
-		Currency:           e.Currency,
+		Currency:           types.Currency(e.Currency),
 		AmountDue:          e.AmountDue,
 		AmountPaid:         e.AmountPaid,
 		Subtotal:           e.Subtotal,
@@ -240,7 +240,7 @@ func (i *Invoice) Validate() error {
 	// validate line items if present
 	if i.LineItems != nil {
 		for _, item := range i.LineItems {
-			if item.Currency != i.Currency {
+			if !item.Currency.Equal(i.Currency) {
 				return ierr.NewError("invoice validation failed").WithHint("line_items currency must match invoice currency").Mark(ierr.ErrValidation)
 			}
 			if err := item.Validate(); err != nil {

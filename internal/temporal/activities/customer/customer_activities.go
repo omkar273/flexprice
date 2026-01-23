@@ -110,7 +110,7 @@ func (a *CustomerActivities) CreateWalletActivity(ctx context.Context, input mod
 	// Convert workflow config to DTO
 	createWalletReq, err := input.WalletConfig.ToDTO(&models.WorkflowActionParams{
 		CustomerID: input.CustomerID,
-		Currency:   input.WalletConfig.Currency,
+		Currency:   input.WalletConfig.Currency.String(),
 	})
 	if err != nil {
 		return nil, ierr.WithError(err).
@@ -138,13 +138,13 @@ func (a *CustomerActivities) CreateWalletActivity(ctx context.Context, input mod
 	logger.Info("Successfully created wallet",
 		"customer_id", input.CustomerID,
 		"wallet_id", walletResp.ID,
-		"currency", walletResp.Currency,
+		"currency", walletResp.Currency.String(),
 		"conversion_rate", walletResp.ConversionRate)
 
 	return &models.CreateWalletActivityResult{
 		WalletID:       walletResp.ID,
 		CustomerID:     input.CustomerID,
-		Currency:       walletResp.Currency,
+		Currency:       walletResp.Currency.String(),
 		ConversionRate: walletResp.ConversionRate.String(),
 		WalletType:     walletResp.WalletType,
 		Status:         walletResp.WalletStatus,
@@ -183,8 +183,8 @@ func (a *CustomerActivities) CreateSubscriptionActivity(ctx context.Context, inp
 	}
 
 	currency := "USD"
-	if len(pricesResp.Items) > 0 && pricesResp.Items[0].Currency != "" {
-		currency = pricesResp.Items[0].Currency
+	if len(pricesResp.Items) > 0 && pricesResp.Items[0].Currency.String() != "" {
+		currency = pricesResp.Items[0].Currency.String()
 	}
 
 	// Validate subscription config for this customer

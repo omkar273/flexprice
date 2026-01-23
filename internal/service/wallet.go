@@ -90,7 +90,7 @@ type WalletService interface {
 	CheckBalanceThresholds(ctx context.Context, w *wallet.Wallet, balance *dto.WalletBalanceResponse) error
 
 	// TopUpWalletForProratedCharge tops up a wallet for proration credits from subscription changes
-	TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string) error
+	TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency types.Currency) error
 
 	// CompletePurchasedCreditTransaction completes a pending wallet transaction when payment succeeds
 	CompletePurchasedCreditTransactionWithRetry(ctx context.Context, walletTransactionID string) error
@@ -168,7 +168,7 @@ func (s *walletService) CreateWallet(ctx context.Context, req *dto.CreateWalletR
 	}
 
 	for _, w := range existingWallets {
-		if w.WalletStatus == types.WalletStatusActive && w.Currency == req.Currency && w.WalletType == req.WalletType {
+		if w.WalletStatus == types.WalletStatusActive && w.Currency.Equal(req.Currency) && w.WalletType == req.WalletType {
 			return nil, ierr.NewError("customer already has an active wallet with the same currency and wallet type").
 				WithHint("A customer can only have one active wallet per currency and wallet type").
 				WithReportableDetails(map[string]interface{}{
@@ -1164,7 +1164,7 @@ func (s *walletService) GetWalletBalance(ctx context.Context, walletID string) (
 		// Filter subscriptions by currency
 		filteredSubscriptions := make([]*subscription.Subscription, 0)
 		for _, sub := range subscriptions {
-			if sub.Currency == w.Currency {
+			if sub.Currency.Equal(w.Currency) {
 				filteredSubscriptions = append(filteredSubscriptions, sub)
 				s.Logger.Infow("found matching subscription",
 					"subscription_id", sub.ID,
@@ -2103,7 +2103,11 @@ func (s *walletService) CheckBalanceThresholds(ctx context.Context, w *wallet.Wa
 	return nil
 }
 
-func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string) error {
+func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency types.Currency) error {
+	if currency == "" {
+		currency = types.Currency("usd") // Default to USD if no currency provided
+	}
+
 	if customerID == "" {
 		return ierr.NewError("customer_id is required").
 			WithHint("Customer ID is required for wallet top-up").
@@ -2114,10 +2118,6 @@ func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, custom
 		return ierr.NewError("amount must be positive").
 			WithHint("Top-up amount must be greater than zero").
 			Mark(ierr.ErrValidation)
-	}
-
-	if currency == "" {
-		currency = "usd" // Default to USD if no currency provided
 	}
 
 	// Get customer to validate existence
@@ -2147,7 +2147,7 @@ func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, custom
 	var selectedWallet *dto.WalletResponse
 	for _, w := range existingWallets {
 		if w.WalletStatus == types.WalletStatusActive &&
-			types.IsMatchingCurrency(w.Currency, currency) &&
+			w.Currency.Equal(currency) &&
 			w.WalletType == types.WalletTypePrePaid {
 			selectedWallet = w
 			break
@@ -2261,7 +2261,7 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 		// Filter subscriptions by currency
 		filteredSubscriptions := make([]*subscription.Subscription, 0)
 		for _, sub := range subscriptions {
-			if sub.Currency == w.Currency {
+			if sub.Currency.Equal(w.Currency) {
 				filteredSubscriptions = append(filteredSubscriptions, sub)
 				s.Logger.Infow("found matching subscription",
 					"subscription_id", sub.ID,
@@ -2400,7 +2400,7 @@ func (s *walletService) GetWalletBalanceFromCache(ctx context.Context, walletID 
 		// Filter subscriptions by currency
 		filteredSubscriptions := make([]*subscription.Subscription, 0)
 		for _, sub := range subscriptions {
-			if sub.Currency == w.Currency {
+			if sub.Currency.Equal(w.Currency) {
 				filteredSubscriptions = append(filteredSubscriptions, sub)
 				s.Logger.Infow("found matching subscription",
 					"subscription_id", sub.ID,

@@ -141,7 +141,7 @@ func (s *prorationService) CalculateSubscriptionProration(
 
 	result := &proration.SubscriptionProrationResult{
 		LineItemResults: make(map[string]*proration.ProrationResult),
-		Currency:        params.Subscription.Currency,
+		Currency:        params.Subscription.Currency.String(),
 	}
 
 	// Only proceed if proration is needed
@@ -205,8 +205,8 @@ func (s *prorationService) CalculateSubscriptionProration(
 		}
 
 		// Set currency from the first valid price
-		if result.Currency == "" && price.Currency != "" {
-			result.Currency = price.Currency
+		if result.Currency == "" && string(price.Currency) != "" {
+			result.Currency = string(price.Currency)
 		}
 
 		prorationResult.BillingPeriod = params.Subscription.BillingPeriod
@@ -259,7 +259,7 @@ func (s *prorationService) CalculateSubscriptionCancellationProration(
 	result := &proration.SubscriptionProrationResult{
 		LineItemResults:      make(map[string]*proration.ProrationResult),
 		TotalProrationAmount: decimal.Zero,
-		Currency:             subscription.Currency,
+		Currency:             subscription.Currency.String(),
 	}
 
 	// Skip proration if behavior is none
@@ -489,7 +489,7 @@ func (s *prorationService) CreateProrationParamsForLineItemCancellation(
 		ProrationBehavior: behavior,
 		CustomerTimezone:  subscription.CustomerTimezone,
 		ProrationStrategy: types.StrategySecondBased,
-		Currency:          price.Currency,
+		Currency:          price.Currency.String(),
 		PlanDisplayName:   item.PlanDisplayName,
 		TerminationReason: types.TerminationReasonCancellation,
 
@@ -564,7 +564,7 @@ func (s *prorationService) CreateProrationParamsForLineItem(
 		OriginalAmountPaid:    decimal.Zero,
 		PreviousCreditsIssued: decimal.Zero,
 		ProrationStrategy:     types.StrategySecondBased,
-		Currency:              price.Currency,
+		Currency:              price.Currency.String(),
 		PlanDisplayName:       item.PlanDisplayName,
 	}, nil
 }

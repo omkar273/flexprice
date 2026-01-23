@@ -98,7 +98,7 @@ func (r *subscriptionLineItemRepository) Create(ctx context.Context, item *subsc
 		SetNillablePriceUnit(item.PriceUnit).
 		SetNillableDisplayName(types.ToNillableString(item.DisplayName)).
 		SetQuantity(item.Quantity).
-		SetCurrency(item.Currency).
+		SetCurrency(string(item.Currency)).
 		SetBillingPeriod(item.BillingPeriod).
 		SetNillableStartDate(types.ToNillableTime(item.StartDate)).
 		SetNillableEndDate(types.ToNillableTime(item.EndDate)).
@@ -235,7 +235,7 @@ func (r *subscriptionLineItemRepository) Update(ctx context.Context, item *subsc
 		SetNillablePriceUnit(item.PriceUnit).
 		SetNillableDisplayName(types.ToNillableString(item.DisplayName)).
 		SetQuantity(item.Quantity).
-		SetCurrency(item.Currency).
+		SetCurrency(string(item.Currency)).
 		SetBillingPeriod(item.BillingPeriod).
 		SetNillableStartDate(types.ToNillableTime(item.StartDate)).
 		SetNillableEndDate(types.ToNillableTime(item.EndDate)).
@@ -361,7 +361,7 @@ func (r *subscriptionLineItemRepository) CreateBulk(ctx context.Context, items [
 			SetNillablePriceUnit(item.PriceUnit).
 			SetNillableDisplayName(types.ToNillableString(item.DisplayName)).
 			SetQuantity(item.Quantity).
-			SetCurrency(item.Currency).
+			SetCurrency(string(item.Currency)).
 			SetBillingPeriod(item.BillingPeriod).
 			SetInvoiceCadence(item.InvoiceCadence).
 			SetTrialPeriod(item.TrialPeriod).
@@ -369,7 +369,7 @@ func (r *subscriptionLineItemRepository) CreateBulk(ctx context.Context, items [
 			SetNillableEndDate(types.ToNillableTime(item.EndDate)).
 			SetNillableSubscriptionPhaseID(item.SubscriptionPhaseID).
 			SetQuantity(item.Quantity).
-			SetCurrency(item.Currency).
+			SetCurrency(string(item.Currency)).
 			SetBillingPeriod(item.BillingPeriod).
 			SetInvoiceCadence(item.InvoiceCadence).
 			SetTrialPeriod(item.TrialPeriod).

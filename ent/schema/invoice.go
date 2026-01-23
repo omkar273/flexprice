@@ -73,7 +73,11 @@ func (Invoice) Fields() []ent.Field {
 				"postgres": "varchar(10)",
 			}).
 			NotEmpty().
-			Immutable(),
+			Immutable().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 		field.Other("amount_due", decimal.Decimal{}).
 			SchemaType(map[string]string{
 				"postgres": "numeric(20,8)",

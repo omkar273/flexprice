@@ -64,7 +64,7 @@ func (r *invoiceRepository) Create(ctx context.Context, inv *domainInvoice.Invoi
 		SetInvoiceType(inv.InvoiceType).
 		SetInvoiceStatus(inv.InvoiceStatus).
 		SetPaymentStatus(inv.PaymentStatus).
-		SetCurrency(inv.Currency).
+		SetCurrency(string(inv.Currency)).
 		SetAmountDue(inv.AmountDue).
 		SetAmountPaid(inv.AmountPaid).
 		SetAmountRemaining(inv.AmountRemaining).
@@ -166,7 +166,7 @@ func (r *invoiceRepository) CreateWithLineItems(ctx context.Context, inv *domain
 			SetInvoiceType(inv.InvoiceType).
 			SetInvoiceStatus(inv.InvoiceStatus).
 			SetPaymentStatus(inv.PaymentStatus).
-			SetCurrency(inv.Currency).
+			SetCurrency(string(inv.Currency)).
 			SetAmountDue(inv.AmountDue).
 			SetAmountPaid(inv.AmountPaid).
 			SetTotalTax(inv.TotalTax).
@@ -256,7 +256,7 @@ func (r *invoiceRepository) CreateWithLineItems(ctx context.Context, inv *domain
 					SetNillableDisplayName(item.DisplayName).
 					SetAmount(item.Amount).
 					SetQuantity(item.Quantity).
-					SetCurrency(item.Currency).
+					SetCurrency(string(item.Currency)).
 					SetNillablePeriodStart(item.PeriodStart).
 					SetNillablePeriodEnd(item.PeriodEnd).
 					SetMetadata(item.Metadata).
@@ -327,7 +327,7 @@ func (r *invoiceRepository) AddLineItems(ctx context.Context, invoiceID string, 
 				SetNillableDisplayName(item.DisplayName).
 				SetAmount(item.Amount).
 				SetQuantity(item.Quantity).
-				SetCurrency(item.Currency).
+				SetCurrency(string(item.Currency)).
 				SetNillablePeriodStart(item.PeriodStart).
 				SetNillablePeriodEnd(item.PeriodEnd).
 				SetMetadata(item.Metadata).

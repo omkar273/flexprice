@@ -155,7 +155,7 @@ func (s *InvoiceSyncService) createDraftInvoiceInStripe(ctx context.Context, fle
 	// Create invoice parameters
 	params := &stripe.InvoiceCreateParams{
 		Customer:    stripe.String(stripeCustomerID),
-		Currency:    stripe.String(strings.ToLower(flexInvoice.Currency)),
+		Currency:    stripe.String(strings.ToLower(string(flexInvoice.Currency))),
 		AutoAdvance: stripe.Bool(true),
 		Description: stripe.String(flexInvoice.Description),
 		Metadata:    metadata,
@@ -254,7 +254,7 @@ func (s *InvoiceSyncService) addLineItemToStripeInvoice(ctx context.Context, str
 	params := &stripe.InvoiceItemCreateParams{
 		Customer:    stripe.String(customerID),
 		Invoice:     stripe.String(stripeInvoiceID),
-		Currency:    stripe.String(strings.ToLower(lineItem.Currency)),
+		Currency:    stripe.String(strings.ToLower(string(lineItem.Currency))),
 		Description: stripe.String(lo.FromPtr(lineItem.DisplayName)),
 		Metadata: map[string]string{
 			"flexprice_line_item_id": lineItem.ID,

@@ -40,7 +40,7 @@ type InvoiceService interface {
 	UpdatePaymentStatus(ctx context.Context, id string, status types.PaymentStatus, amount *decimal.Decimal) error
 	CreateSubscriptionInvoice(ctx context.Context, req *dto.CreateSubscriptionInvoiceRequest, paymentParams *dto.PaymentParameters, flowType types.InvoiceFlowType, isDraftSubscription bool) (*dto.InvoiceResponse, *subscription.Subscription, error)
 	GetPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error)
-	GetCustomerInvoiceSummary(ctx context.Context, customerID string, currency string) (*dto.CustomerInvoiceSummary, error)
+	GetCustomerInvoiceSummary(ctx context.Context, customerID string, currency types.Currency) (*dto.CustomerInvoiceSummary, error)
 	GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.GetUnpaidInvoicesToBePaidRequest) (*dto.GetUnpaidInvoicesToBePaidResponse, error)
 	GetCustomerMultiCurrencyInvoiceSummary(ctx context.Context, customerID string) (*dto.CustomerMultiCurrencyInvoiceSummary, error)
 	AttemptPayment(ctx context.Context, id string) error
@@ -1562,10 +1562,10 @@ func (s *invoiceService) GetPreviewInvoice(ctx context.Context, req dto.GetPrevi
 	return response, nil
 }
 
-func (s *invoiceService) GetCustomerInvoiceSummary(ctx context.Context, customerID, currency string) (*dto.CustomerInvoiceSummary, error) {
+func (s *invoiceService) GetCustomerInvoiceSummary(ctx context.Context, customerID string, currency types.Currency) (*dto.CustomerInvoiceSummary, error) {
 	s.Logger.Debugw("getting customer invoice summary",
 		"customer_id", customerID,
-		"currency", currency,
+		"currency", types.Currency(currency),
 	)
 
 	// Get all non-voided invoices for the customer
@@ -1581,7 +1581,7 @@ func (s *invoiceService) GetCustomerInvoiceSummary(ctx context.Context, customer
 
 	summary := &dto.CustomerInvoiceSummary{
 		CustomerID:          customerID,
-		Currency:            currency,
+		Currency:            types.Currency(currency),
 		TotalRevenueAmount:  decimal.Zero,
 		TotalUnpaidAmount:   decimal.Zero,
 		TotalOverdueAmount:  decimal.Zero,
@@ -1597,7 +1597,7 @@ func (s *invoiceService) GetCustomerInvoiceSummary(ctx context.Context, customer
 	// Process each invoice
 	for _, inv := range invoicesResp.Items {
 		// Skip invoices with different currency
-		if !types.IsMatchingCurrency(inv.Currency, currency) {
+		if !inv.Currency.Equal(currency) {
 			continue
 		}
 
@@ -1669,7 +1669,7 @@ func (s *invoiceService) GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.
 
 	for _, inv := range invoicesResp.Items {
 		// filter by currency
-		if !types.IsMatchingCurrency(inv.Currency, req.Currency) {
+		if !inv.Currency.Equal(req.Currency) {
 			continue
 		}
 
@@ -1713,7 +1713,7 @@ func (s *invoiceService) GetCustomerMultiCurrencyInvoiceSummary(ctx context.Cont
 		return nil, err
 	}
 
-	currencies := make([]string, 0, len(subs))
+	currencies := make([]types.Currency, 0, len(subs))
 	for _, sub := range subs {
 		currencies = append(currencies, sub.Currency)
 
@@ -2052,7 +2052,7 @@ func (s *invoiceService) getInvoiceDataForPDFGen(
 	}
 
 	// Round to currency precision before converting to float64
-	precision := types.GetCurrencyPrecision(inv.Currency)
+	precision := int32(inv.Currency.Precision())
 	subtotal, _ := inv.Subtotal.Round(precision).Float64()
 	totalDiscount, _ := inv.TotalDiscount.Round(precision).Float64()
 	totalTax, _ := inv.TotalTax.Round(precision).Float64()
@@ -2065,8 +2065,8 @@ func (s *invoiceService) getInvoiceDataForPDFGen(
 		ID:              inv.ID,
 		InvoiceNumber:   invoiceNum,
 		InvoiceStatus:   string(inv.InvoiceStatus),
-		Currency:        types.GetCurrencySymbol(inv.Currency),
-		Precision:       types.GetCurrencyPrecision(inv.Currency),
+		Currency:        inv.Currency.Symbol(),
+		Precision:       int32(inv.Currency.Precision()),
 		AmountDue:       total,
 		Subtotal:        subtotal,
 		TotalDiscount:   totalDiscount,
@@ -2136,7 +2136,7 @@ func (s *invoiceService) getInvoiceDataForPDFGen(
 		}
 
 		// Round to currency precision before converting to float64
-		precision := types.GetCurrencyPrecision(item.Currency)
+		precision := int32(item.Currency.Precision())
 		amount, _ := item.Amount.Round(precision).Float64()
 
 		description := ""
@@ -2166,7 +2166,7 @@ func (s *invoiceService) getInvoiceDataForPDFGen(
 			Description:     description,
 			Amount:          amount, // Keep original sign
 			Quantity:        item.Quantity.InexactFloat64(),
-			Currency:        types.GetCurrencySymbol(item.Currency),
+			Currency:        item.Currency.Symbol(),
 			Type:            itemType,
 		}
 
@@ -3257,7 +3257,7 @@ func (s *invoiceService) getAppliedTaxesForPDF(ctx context.Context, invoiceID st
 	appliedTaxes := make([]pdf.AppliedTaxData, 0, len(appliedTaxesResponse.Items))
 	for _, appliedTax := range appliedTaxesResponse.Items {
 		// Round to currency precision before converting to float64
-		precision := types.GetCurrencyPrecision(appliedTax.Currency)
+		precision := int32(appliedTax.Currency.Precision())
 		taxableAmount, _ := appliedTax.TaxableAmount.Round(precision).Float64()
 		taxAmount, _ := appliedTax.TaxAmount.Round(precision).Float64()
 
@@ -3329,7 +3329,7 @@ func (s *invoiceService) getAppliedDiscountsForPDF(ctx context.Context, inv *dto
 	appliedDiscounts := make([]pdf.AppliedDiscountData, 0, len(couponApplications))
 	for _, couponApp := range couponApplications {
 		// Round to currency precision before converting to float64
-		precision := types.GetCurrencyPrecision(couponApp.Currency)
+		precision := int32(couponApp.Currency.Precision())
 		discountAmount, _ := couponApp.DiscountedAmount.Round(precision).Float64()
 
 		discountName := "Discount"

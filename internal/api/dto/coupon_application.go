@@ -19,7 +19,7 @@ type CreateCouponApplicationRequest struct {
 	DiscountedAmount    decimal.Decimal        `json:"discounted_amount" validate:"required" swaggertype:"string"`
 	DiscountType        types.CouponType       `json:"discount_type" validate:"required"`
 	DiscountPercentage  *decimal.Decimal       `json:"discount_percentage,omitempty" swaggertype:"string"`
-	Currency            string                 `json:"currency" validate:"required"`
+	Currency            types.Currency          `json:"currency" validate:"required"`
 	CouponSnapshot      map[string]interface{} `json:"coupon_snapshot,omitempty"`
 	Metadata            map[string]string      `json:"metadata,omitempty"`
 }
@@ -64,7 +64,7 @@ func (r *CreateCouponApplicationRequest) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 
-	if r.Currency == "" {
+	if string(r.Currency) == "" {
 		return ierr.NewError("currency is required").
 			WithHint("Please provide a currency code").
 			Mark(ierr.ErrValidation)

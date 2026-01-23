@@ -60,7 +60,11 @@ func (Subscription) Fields() []ent.Field {
 				"postgres": "varchar(10)",
 			}).
 			NotEmpty().
-			Immutable(),
+			Immutable().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 		field.Time("billing_anchor").
 			Default(time.Now),
 		field.Time("start_date").

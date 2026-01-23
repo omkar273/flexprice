@@ -15,7 +15,7 @@ type CreateTaxAssociationRequest struct {
 	EntityType  types.TaxRateEntityType `json:"entity_type" binding:"required"`
 	EntityID    string                  `json:"entity_id" binding:"required"`
 	Priority    int                     `json:"priority" binding:"omitempty"`
-	Currency    string                  `json:"currency" binding:"omitempty"`
+	Currency    types.Currency           `json:"currency" binding:"omitempty"`
 	AutoApply   bool                    `json:"auto_apply" binding:"omitempty"`
 	Metadata    map[string]string       `json:"metadata" binding:"omitempty"`
 }
@@ -111,7 +111,7 @@ type TaxAssociationResponse struct {
 	AutoApply     bool                    `json:"auto_apply"`
 	ValidFrom     *time.Time              `json:"valid_from,omitempty"`
 	ValidTo       *time.Time              `json:"valid_to,omitempty"`
-	Currency      string                  `json:"currency"`
+	Currency      types.Currency           `json:"currency"`
 	Metadata      map[string]string       `json:"metadata,omitempty"`
 	EnvironmentID string                  `json:"environment_id"`
 	TenantID      string                  `json:"tenant_id"`
@@ -163,7 +163,7 @@ type ListTaxAssociationsResponse = types.ListResponse[*TaxAssociationResponse]
 type TaxRateOverride struct {
 	TaxRateCode string            `json:"tax_rate_code" binding:"required"`
 	Priority    int               `json:"priority" binding:"omitempty"`
-	Currency    string            `json:"currency" binding:"required"`
+	Currency    types.Currency    `json:"currency" binding:"required"`
 	AutoApply   bool              `json:"auto_apply" binding:"omitempty" default:"true"`
 	Metadata    map[string]string `json:"metadata" binding:"omitempty"`
 }

@@ -90,12 +90,14 @@ func (s *dashboardService) getRevenueTrend(ctx context.Context, req *dto.Revenue
 			TotalRevenue: w.Revenue,
 		}
 
-		currency := strings.ToLower(strings.TrimSpace(w.Currency))
-		if currency == "" {
+		currencyCode := strings.TrimSpace(w.Currency)
+		if currencyCode == "" {
 			return nil, ierr.NewError("currency is missing for revenue data").
 				WithHint("Revenue data must include currency information").
 				Mark(ierr.ErrValidation)
 		}
+		// Normalize currency to lowercase for map key (for grouping)
+		currency := strings.ToLower(currencyCode)
 		currencyMap[currency] = append(currencyMap[currency], revenueWindow)
 	}
 

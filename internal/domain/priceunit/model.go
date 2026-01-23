@@ -16,7 +16,7 @@ type PriceUnit struct {
 	Name           string          `json:"name"`
 	Code           string          `json:"code"`
 	Symbol         string          `json:"symbol"`
-	BaseCurrency   string          `json:"base_currency"`
+	BaseCurrency   types.Currency   `json:"base_currency"`
 	ConversionRate decimal.Decimal `json:"conversion_rate" swaggertype:"string"`
 	Metadata       types.Metadata  `json:"metadata"`
 	EnvironmentID  string          `json:"environment_id"`
@@ -33,7 +33,7 @@ func FromEnt(ent *ent.PriceUnit) *PriceUnit {
 		Name:           ent.Name,
 		Code:           ent.Code,
 		Symbol:         ent.Symbol,
-		BaseCurrency:   ent.BaseCurrency,
+		BaseCurrency:   types.Currency(ent.BaseCurrency),
 		ConversionRate: ent.ConversionRate,
 		EnvironmentID:  ent.EnvironmentID,
 		Metadata:       ent.Metadata,
@@ -97,7 +97,7 @@ func ConvertToFiatCurrencyAmount(ctx context.Context, priceUnitAmount decimal.De
 //
 // Rounding strategy: Uses base currency precision to ensure consistent precision in stored values.
 // Price units inherit precision from their base currency, simplifying the model.
-func ConvertToPriceUnitAmount(ctx context.Context, fiatAmount decimal.Decimal, conversionRate decimal.Decimal, baseCurrency string) (decimal.Decimal, error) {
+func ConvertToPriceUnitAmount(ctx context.Context, fiatAmount decimal.Decimal, conversionRate decimal.Decimal, baseCurrency types.Currency) (decimal.Decimal, error) {
 	// Validate conversion rate
 	if err := validateConversionRate(conversionRate); err != nil {
 		return decimal.Zero, err
@@ -105,5 +105,5 @@ func ConvertToPriceUnitAmount(ctx context.Context, fiatAmount decimal.Decimal, c
 
 	// Convert and round to base currency precision
 	result := fiatAmount.Div(conversionRate)
-	return result.Round(int32(types.GetCurrencyPrecision(baseCurrency))), nil
+	return result.Round(int32(baseCurrency.Precision())), nil
 }

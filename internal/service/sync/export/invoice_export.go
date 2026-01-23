@@ -193,7 +193,7 @@ func (e *InvoiceExporter) convertToCSVRecords(invoices []*invoice.Invoice) ([]*I
 			InvoiceType:      string(inv.InvoiceType),
 			InvoiceStatus:    string(inv.InvoiceStatus),
 			PaymentStatus:    string(inv.PaymentStatus),
-			Currency:         inv.Currency,
+			Currency:         inv.Currency.String(),
 			AmountDue:        inv.AmountDue.String(),
 			AmountPaid:       inv.AmountPaid.String(),
 			AmountRemaining:  inv.AmountRemaining.String(),

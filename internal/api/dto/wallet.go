@@ -3,7 +3,6 @@ package dto
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/domain/wallet"
@@ -21,7 +20,7 @@ type CreateWalletRequest struct {
 	// external_customer_id is the customer id in the external system
 	ExternalCustomerID string              `json:"external_customer_id,omitempty"`
 	Name               string              `json:"name,omitempty"`
-	Currency           string              `json:"currency" binding:"required"`
+	Currency           types.Currency       `json:"currency" binding:"required"`
 	Description        string              `json:"description,omitempty"`
 	Metadata           types.Metadata      `json:"metadata,omitempty"`
 	WalletType         types.WalletType    `json:"wallet_type"`
@@ -111,7 +110,7 @@ func (r *CreateWalletRequest) ToWallet(ctx context.Context) *wallet.Wallet {
 	}
 
 	// Validate currency
-	if err := types.ValidateCurrencyCode(r.Currency); err != nil {
+	if err := r.Currency.Validate(); err != nil {
 		return nil
 	}
 
@@ -150,7 +149,7 @@ func (r *CreateWalletRequest) ToWallet(ctx context.Context) *wallet.Wallet {
 		ID:                  types.GenerateUUIDWithPrefix(types.UUID_PREFIX_WALLET),
 		CustomerID:          r.CustomerID,
 		Name:                r.Name,
-		Currency:            strings.ToLower(r.Currency),
+		Currency:            r.Currency,
 		Description:         r.Description,
 		Metadata:            r.Metadata,
 		AutoTopup:           r.AutoTopup,
@@ -170,7 +169,7 @@ func (r *CreateWalletRequest) ToWallet(ctx context.Context) *wallet.Wallet {
 }
 
 func (r *CreateWalletRequest) Validate() error {
-	if err := types.ValidateCurrencyCode(r.Currency); err != nil {
+	if err := r.Currency.Validate(); err != nil {
 		return err
 	}
 	if r.AutoTopup != nil {

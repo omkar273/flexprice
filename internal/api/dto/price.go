@@ -16,7 +16,7 @@ import (
 
 type CreatePriceRequest struct {
 	Amount             *decimal.Decimal         `json:"amount,omitempty" swaggertype:"string"`
-	Currency           string                   `json:"currency" validate:"required,len=3"`
+	Currency           types.Currency            `json:"currency" validate:"required"`
 	EntityType         types.PriceEntityType    `json:"entity_type" validate:"required"`
 	EntityID           string                   `json:"entity_id" validate:"required"`
 	Type               types.PriceType          `json:"type" validate:"required"`
@@ -57,7 +57,7 @@ type CreatePriceRequest struct {
 
 type PriceUnitConfig struct {
 	Amount         *decimal.Decimal  `json:"amount,omitempty" swaggertype:"string"`
-	PriceUnit      string            `json:"price_unit" validate:"required,len=3"`
+	PriceUnit      string            `json:"price_unit" validate:"required"`
 	PriceUnitTiers []CreatePriceTier `json:"price_unit_tiers,omitempty"`
 }
 
@@ -572,7 +572,7 @@ func (r *UpdatePriceRequest) ToCreatePriceRequest(existingPrice *price.Price) Cr
 	}
 
 	// Copy all non-critical, non-billing-model-specific fields from existing price
-	createReq.Currency = existingPrice.Currency
+	createReq.Currency = types.Currency(existingPrice.Currency)
 	createReq.Type = existingPrice.Type
 	createReq.BillingPeriod = existingPrice.BillingPeriod
 	createReq.BillingPeriodCount = existingPrice.BillingPeriodCount

@@ -26,7 +26,7 @@ type Subscription struct {
 	SubscriptionStatus types.SubscriptionStatus `db:"subscription_status" json:"subscription_status"`
 
 	// Currency is the currency of the subscription in lowercase 3 digit ISO codes
-	Currency string `db:"currency" json:"currency"`
+	Currency types.Currency `db:"currency" json:"currency"`
 
 	// BillingAnchor is the reference point that aligns future billing cycle dates.
 	// It sets the day of week for week intervals, the day of month for month and year intervals,
@@ -172,7 +172,7 @@ func GetSubscriptionFromEnt(sub *ent.Subscription) *Subscription {
 		CustomerID:             sub.CustomerID,
 		PlanID:                 sub.PlanID,
 		SubscriptionStatus:     types.SubscriptionStatus(sub.SubscriptionStatus),
-		Currency:               sub.Currency,
+		Currency:               types.Currency(sub.Currency),
 		BillingAnchor:          sub.BillingAnchor,
 		StartDate:              sub.StartDate,
 		EndDate:                sub.EndDate,

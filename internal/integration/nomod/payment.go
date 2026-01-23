@@ -115,7 +115,7 @@ func (s *PaymentService) CreatePaymentLink(ctx context.Context, req CreatePaymen
 	}
 
 	// Validate currency matches invoice currency
-	if req.Currency != invoiceResp.Currency {
+	if req.Currency != string(invoiceResp.Currency) {
 		return nil, ierr.NewError("payment currency does not match invoice currency").
 			WithHint("Payment currency must match the invoice currency").
 			WithReportableDetails(map[string]interface{}{

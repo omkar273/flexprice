@@ -1105,7 +1105,7 @@ func (s *InvoiceServiceSuite) TestGetCustomerInvoiceSummary() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			summary, err := s.service.GetCustomerInvoiceSummary(s.GetContext(), tc.customerID, tc.currency)
+			summary, err := s.service.GetCustomerInvoiceSummary(s.GetContext(), tc.customerID, types.Currency(tc.currency).Normalize())
 			if tc.expectedError {
 				s.Error(err)
 				return

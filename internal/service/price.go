@@ -952,7 +952,7 @@ func (s *priceService) calculateBucketedMaxCost(ctx context.Context, price *pric
 		}
 	}
 
-	return totalCost.Round(types.GetCurrencyPrecision(price.Currency))
+	return totalCost.Round(int32(price.Currency.Precision()))
 }
 
 // calculateSingletonCost calculates cost for a single value
@@ -1154,7 +1154,7 @@ func (s *priceService) CalculateCostWithBreakup(ctx context.Context, price *pric
 	}
 
 	if round {
-		result.FinalCost = result.FinalCost.Round(types.GetCurrencyPrecision(price.Currency))
+		result.FinalCost = result.FinalCost.Round(int32(price.Currency.Precision()))
 	}
 
 	return result
@@ -1395,7 +1395,7 @@ func (s *priceService) applyPriceUnitConversionToPrice(ctx context.Context, p *p
 	}
 
 	// 3. Validate base currency matches the price currency
-	if priceUnit.BaseCurrency != p.Currency {
+	if !priceUnit.BaseCurrency.Equal(p.Currency) {
 		return ierr.NewError("price unit base currency must match price currency").
 			WithHint("The price unit's base currency must match the price's currency").
 			WithReportableDetails(map[string]interface{}{

@@ -107,7 +107,11 @@ func (CreditNote) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
-			Immutable(),
+			Immutable().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 
 		field.String("idempotency_key").
 			SchemaType(map[string]string{

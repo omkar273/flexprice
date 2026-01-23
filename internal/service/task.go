@@ -771,7 +771,7 @@ func (p *PricesChunkProcessor) ProcessChunk(ctx context.Context, chunk [][]strin
 				amount, _ := decimal.NewFromString(value)
 				priceReq.Amount = &amount
 			case "currency":
-				priceReq.Currency = value
+				priceReq.Currency = types.Currency(value)
 			case "entity_type":
 				priceReq.EntityType = types.PriceEntityType(value)
 			case "entity_id":

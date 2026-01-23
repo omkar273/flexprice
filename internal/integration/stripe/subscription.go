@@ -444,7 +444,7 @@ func (s *stripeSubscriptionService) createFlexPriceSubscription(ctx context.Cont
 	createReq := dto.CreateSubscriptionRequest{
 		CustomerID:         customerID,
 		PlanID:             planID,
-		Currency:           strings.ToUpper(string(stripeSub.Currency)),
+		Currency:           types.Currency(strings.ToUpper(string(stripeSub.Currency))),
 		LookupKey:          stripeSub.ID,
 		StartDate:          &startDate,
 		EndDate:            endDate,
@@ -506,7 +506,7 @@ func (s *stripeSubscriptionService) createFlexPriceSubscriptionWithoutTx(ctx con
 	createReq := dto.CreateSubscriptionRequest{
 		CustomerID:         customerID,
 		PlanID:             planID,
-		Currency:           strings.ToUpper(string(stripeSub.Currency)),
+		Currency:           types.Currency(strings.ToUpper(string(stripeSub.Currency))),
 		LookupKey:          stripeSub.ID,
 		StartDate:          &startDate,
 		EndDate:            endDate,

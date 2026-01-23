@@ -2967,7 +2967,7 @@ func createChargeResponse(priceObj *price.Price, quantity decimal.Decimal, cost 
 func filterValidPricesForSubscription(prices []*dto.PriceResponse, subscription *subscription.Subscription) []*dto.PriceResponse {
 	var validPrices []*dto.PriceResponse
 	for _, p := range prices {
-		if types.IsMatchingCurrency(p.Price.Currency, subscription.Currency) &&
+		if p.Price.Currency.Equal(subscription.Currency) &&
 			p.Price.BillingPeriod == subscription.BillingPeriod &&
 			p.Price.BillingPeriodCount == subscription.BillingPeriodCount {
 			validPrices = append(validPrices, p)

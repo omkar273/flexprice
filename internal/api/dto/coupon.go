@@ -7,6 +7,7 @@ import (
 	coupon "github.com/flexprice/flexprice/internal/domain/coupon"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
 
@@ -23,7 +24,7 @@ type CreateCouponRequest struct {
 	Cadence           types.CouponCadence     `json:"cadence" validate:"required,oneof=once repeated forever"`
 	DurationInPeriods *int                    `json:"duration_in_periods,omitempty"`
 	Metadata          *map[string]string      `json:"metadata,omitempty"`
-	Currency          *string                 `json:"currency,omitempty"`
+	Currency          *types.Currency         `json:"currency,omitempty"`
 }
 
 // UpdateCouponRequest represents the request to update an existing coupon
@@ -121,9 +122,9 @@ func (r *UpdateCouponRequest) Validate() error {
 
 // ToCoupon converts the request to a domain coupon
 func (r *CreateCouponRequest) ToCoupon(ctx context.Context) *coupon.Coupon {
-	currency := ""
+	currency := types.Currency("")
 	if r.Currency != nil {
-		currency = *r.Currency
+		currency = lo.FromPtr(r.Currency)
 	}
 
 	return &coupon.Coupon{
@@ -140,7 +141,7 @@ func (r *CreateCouponRequest) ToCoupon(ctx context.Context) *coupon.Coupon {
 		Cadence:           r.Cadence,
 		DurationInPeriods: r.DurationInPeriods,
 		Metadata:          r.Metadata,
-		Currency:          currency,
+		Currency:          types.Currency(currency),
 		BaseModel:         types.GetDefaultBaseModel(ctx),
 		EnvironmentID:     types.GetEnvironmentID(ctx),
 	}

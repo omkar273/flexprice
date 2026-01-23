@@ -289,7 +289,7 @@ func (p *paymentProcessor) handleStripePaymentLinkCreation(ctx context.Context, 
 		InvoiceID:  paymentObj.DestinationID,
 		CustomerID: invoice.CustomerID,
 		Amount:     paymentObj.Amount,
-		Currency:   paymentObj.Currency,
+		Currency:   paymentObj.Currency.String(),
 		SuccessURL: successURL,
 		CancelURL:  cancelURL,
 		SaveCardAndMakeDefault: func() bool {
@@ -391,7 +391,7 @@ func (p *paymentProcessor) handleRazorpayPaymentLinkCreation(ctx context.Context
 		InvoiceID:     paymentObj.DestinationID,
 		CustomerID:    invoice.CustomerID,
 		Amount:        paymentObj.Amount,
-		Currency:      paymentObj.Currency,
+		Currency:      paymentObj.Currency.String(),
 		SuccessURL:    successURL,
 		CancelURL:     cancelURL,
 		Metadata:      linkMetadata,
@@ -484,7 +484,7 @@ func (p *paymentProcessor) handleNomodPaymentLinkCreation(ctx context.Context, p
 		InvoiceID:     paymentObj.DestinationID,
 		CustomerID:    invoice.CustomerID,
 		Amount:        paymentObj.Amount,
-		Currency:      paymentObj.Currency,
+		Currency:      paymentObj.Currency.String(),
 		SuccessURL:    successURL,
 		FailureURL:    cancelURL,
 		Metadata:      linkMetadata,
@@ -563,7 +563,7 @@ func (p *paymentProcessor) handleCreditsPayment(ctx context.Context, paymentObj 
 	}
 
 	// Validate currency match
-	if !types.IsMatchingCurrency(selectedWallet.Currency, paymentObj.Currency) {
+	if !selectedWallet.Currency.Equal(paymentObj.Currency) {
 		return ierr.NewError("wallet currency does not match payment currency").
 			WithHint("Wallet currency does not match payment currency").
 			WithReportableDetails(map[string]interface{}{
@@ -661,7 +661,7 @@ func (p *paymentProcessor) handleInvoicePostProcessing(ctx context.Context, paym
 	// Calculate total paid amount
 	totalPaid := decimal.Zero
 	for _, p := range payments {
-		if p.Currency != invoice.Currency {
+		if !p.Currency.Equal(invoice.Currency) {
 			return ierr.NewError("payment currency does not match invoice currency").
 				WithHint("Payment currency does not match invoice currency").
 				WithReportableDetails(map[string]interface{}{

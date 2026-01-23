@@ -26,7 +26,7 @@ type SubscriptionLineItem struct {
 	PriceUnit           *string                              `db:"price_unit" json:"price_unit"`
 	DisplayName         string                               `db:"display_name" json:"display_name,omitempty"`
 	Quantity            decimal.Decimal                      `db:"quantity" json:"quantity" swaggertype:"string"`
-	Currency            string                               `db:"currency" json:"currency"`
+	Currency            types.Currency                        `db:"currency" json:"currency"`
 	BillingPeriod       types.BillingPeriod                  `db:"billing_period" json:"billing_period"`
 	InvoiceCadence      types.InvoiceCadence                 `db:"invoice_cadence" json:"invoice_cadence"`
 	TrialPeriod         int                                  `db:"trial_period" json:"trial_period"`
@@ -150,7 +150,7 @@ func SubscriptionLineItemFromEnt(e *ent.SubscriptionLineItem) *SubscriptionLineI
 		PriceUnit:               e.PriceUnit,
 		DisplayName:             displayName,
 		Quantity:                e.Quantity,
-		Currency:                e.Currency,
+		Currency:                types.Currency(e.Currency),
 		BillingPeriod:           e.BillingPeriod,
 		InvoiceCadence:          e.InvoiceCadence,
 		TrialPeriod:             e.TrialPeriod,

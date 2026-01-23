@@ -8,6 +8,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	baseMixin "github.com/flexprice/flexprice/ent/schema/mixin"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -91,7 +92,14 @@ func (CouponApplication) Fields() []ent.Field {
 				"postgres": "varchar(10)",
 			}).
 			Optional().
-			Nillable(),
+			Nillable().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				if s == "" {
+					return nil // Allow empty for optional fields
+				}
+				return types.Currency(s).Validate()
+			}),
 		field.JSON("coupon_snapshot", map[string]interface{}{}).
 			Optional().
 			Comment("Frozen coupon configuration at time of application"),

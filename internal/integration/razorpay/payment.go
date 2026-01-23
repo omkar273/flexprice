@@ -95,7 +95,7 @@ func (s *PaymentService) CreatePaymentLink(ctx context.Context, req *CreatePayme
 	}
 
 	// Validate currency matches invoice currency
-	if req.Currency != invoiceResp.Currency {
+	if req.Currency != string(invoiceResp.Currency) {
 		return nil, ierr.NewError("payment currency does not match invoice currency").
 			WithHint("Payment currency must match the invoice currency").
 			WithReportableDetails(map[string]interface{}{
@@ -188,7 +188,7 @@ func (s *PaymentService) CreatePaymentLink(ctx context.Context, req *CreatePayme
 			}
 
 			// Add line item with amount in the format "name: amount currency"
-			notes[itemName] = fmt.Sprintf("%s %s", item.Amount.StringFixed(2), strings.ToUpper(item.Currency))
+			notes[itemName] = fmt.Sprintf("%s %s", item.Amount.StringFixed(2), strings.ToUpper(string(item.Currency)))
 		}
 
 		s.logger.Infow("added line items to notes",
@@ -594,7 +594,7 @@ func (s *PaymentService) createExternalPaymentRecord(
 		DestinationID:     invoiceID,
 		PaymentMethodType: types.PaymentMethodTypeCard, // Default to card
 		Amount:            amount,
-		Currency:          strings.ToUpper(currency),
+		Currency:          types.Currency(strings.ToUpper(currency)),
 		PaymentGateway:    &gatewayType,
 		ProcessPayment:    false, // Don't process - already succeeded in Razorpay
 		PaymentMethodID:   paymentMethodID,

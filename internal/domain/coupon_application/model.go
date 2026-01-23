@@ -22,7 +22,7 @@ type CouponApplication struct {
 	DiscountedAmount    decimal.Decimal        `json:"discounted_amount" db:"discounted_amount" swaggertype:"string"`
 	DiscountType        types.CouponType       `json:"discount_type" db:"discount_type"`
 	DiscountPercentage  *decimal.Decimal       `json:"discount_percentage,omitempty" db:"discount_percentage" swaggertype:"string"`
-	Currency            string                 `json:"currency" db:"currency"`
+	Currency            types.Currency          `json:"currency" db:"currency"`
 	CouponSnapshot      map[string]interface{} `json:"coupon_snapshot,omitempty" db:"coupon_snapshot"`
 	Metadata            map[string]string      `json:"metadata,omitempty" db:"metadata"`
 	EnvironmentID       string                 `json:"environment_id" db:"environment_id"`
@@ -70,7 +70,7 @@ func FromEnt(e *ent.CouponApplication) *CouponApplication {
 		ca.CouponAssociationID = *e.CouponAssociationID
 	}
 	if e.Currency != nil {
-		ca.Currency = *e.Currency
+		ca.Currency = types.Currency(*e.Currency)
 	}
 
 	return ca

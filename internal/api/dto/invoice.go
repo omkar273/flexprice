@@ -2,7 +2,6 @@ package dto
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/domain/invoice"
@@ -47,7 +46,7 @@ type CreateInvoiceRequest struct {
 	InvoiceType types.InvoiceType `json:"invoice_type"`
 
 	// currency is the three-letter ISO currency code (e.g., USD, EUR) for the invoice
-	Currency string `json:"currency" validate:"required"`
+	Currency types.Currency `json:"currency" validate:"required"`
 
 	// amount_due is the total amount that needs to be paid for this invoice
 	AmountDue decimal.Decimal `json:"amount_due" validate:"required" swaggertype:"string"`
@@ -150,7 +149,7 @@ type ProrationResult struct {
 	LineItemResults map[string]*ProrationLineItemResult `json:"line_item_results"`
 
 	// currency is the currency code
-	Currency string `json:"currency"`
+	Currency types.Currency `json:"currency"`
 }
 
 // ProrationLineItemResult represents proration results for a single line item
@@ -306,7 +305,7 @@ func (r *CreateInvoiceRequest) Validate() error {
 // ToInvoice converts a create invoice request to an invoice
 func (r *CreateInvoiceRequest) ToInvoice(ctx context.Context) (*invoice.Invoice, error) {
 	// Validate currency
-	if err := types.ValidateCurrencyCode(r.Currency); err != nil {
+	if err := r.Currency.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -315,7 +314,7 @@ func (r *CreateInvoiceRequest) ToInvoice(ctx context.Context) (*invoice.Invoice,
 		CustomerID:      r.CustomerID,
 		SubscriptionID:  r.SubscriptionID,
 		InvoiceType:     r.InvoiceType,
-		Currency:        strings.ToLower(r.Currency),
+		Currency:        r.Currency,
 		AmountDue:       r.AmountDue,
 		Total:           r.Total,
 		Subtotal:        r.Subtotal,
@@ -618,7 +617,7 @@ type InvoiceLineItemResponse struct {
 	Quantity decimal.Decimal `json:"quantity" swaggertype:"string"`
 
 	// currency is the three-letter ISO currency code for this line item
-	Currency string `json:"currency"`
+	Currency types.Currency `json:"currency"`
 
 	// period_start is the optional start date of the period this line item covers
 	PeriodStart *time.Time `json:"period_start,omitempty"`
@@ -780,7 +779,7 @@ type InvoiceResponse struct {
 	PaymentStatus types.PaymentStatus `json:"payment_status"`
 
 	// currency is the three-letter ISO currency code (e.g., USD, EUR) for the invoice
-	Currency string `json:"currency"`
+	Currency types.Currency `json:"currency"`
 
 	// amount_due is the total amount that needs to be paid for this invoice
 	AmountDue decimal.Decimal `json:"amount_due" swaggertype:"string"`
@@ -1055,7 +1054,7 @@ type CustomerInvoiceSummary struct {
 	CustomerID string `json:"customer_id"`
 
 	// currency is the three-letter ISO currency code for this summary
-	Currency string `json:"currency"`
+	Currency types.Currency `json:"currency"`
 
 	// total_revenue_amount is the total revenue generated from this customer in this currency
 	TotalRevenueAmount decimal.Decimal `json:"total_revenue_amount" swaggertype:"string"`
@@ -1088,7 +1087,7 @@ type CustomerMultiCurrencyInvoiceSummary struct {
 	CustomerID string `json:"customer_id"`
 
 	// default_currency is the primary currency for this customer
-	DefaultCurrency string `json:"default_currency"`
+	DefaultCurrency types.Currency `json:"default_currency"`
 
 	// summaries contains the invoice summaries for each currency
 	Summaries []*CustomerInvoiceSummary `json:"summaries"`
@@ -1231,7 +1230,7 @@ type GetUnpaidInvoicesToBePaidRequest struct {
 	CustomerID string `json:"customer_id" validate:"required"`
 
 	// currency is the three-letter ISO currency code for this request
-	Currency string `json:"currency" validate:"required"`
+	Currency types.Currency `json:"currency" validate:"required"`
 }
 
 func (r *GetUnpaidInvoicesToBePaidRequest) Validate() error {

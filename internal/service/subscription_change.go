@@ -538,7 +538,7 @@ func (s *subscriptionChangeService) calculateNextInvoicePreview(
 		Subtotal:  subtotal,
 		TaxAmount: decimal.Zero,
 		Total:     subtotal,
-		Currency:  currentSub.Currency,
+		Currency:  currentSub.Currency.String(),
 		LineItems: lineItems,
 	}, nil
 }
@@ -841,7 +841,7 @@ func (s *subscriptionChangeService) convertCancellationProrationToDetails(
 		CurrentPeriodEnd:   currentSub.CurrentPeriodEnd,
 		DaysUsed:           daysUsed,
 		DaysRemaining:      daysRemaining,
-		Currency:           currentSub.Currency,
+		Currency:           currentSub.Currency.String(),
 	}
 }
 

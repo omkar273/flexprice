@@ -68,7 +68,7 @@ func lineItemFilterFn(ctx context.Context, item *subscription.SubscriptionLineIt
 	}
 
 	// Filter by currencies
-	if len(f.Currencies) > 0 && !lo.Contains(f.Currencies, item.Currency) {
+	if len(f.Currencies) > 0 && !lo.Contains(f.Currencies, string(item.Currency)) {
 		return false
 	}
 

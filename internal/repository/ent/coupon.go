@@ -66,7 +66,7 @@ func (r *couponRepository) Create(ctx context.Context, c *domainCoupon.Coupon) e
 		SetCreatedBy(c.CreatedBy).
 		SetUpdatedBy(c.UpdatedBy).
 		SetEnvironmentID(c.EnvironmentID).
-		SetCurrency(c.Currency).
+		SetCurrency(string(c.Currency)).
 		SetNillableAmountOff(c.AmountOff).
 		SetNillablePercentageOff(c.PercentageOff).
 		SetNillableRedeemAfter(c.RedeemAfter).

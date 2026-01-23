@@ -14,7 +14,7 @@ import (
 type Wallet struct {
 	ID            string             `db:"id" json:"id"`
 	CustomerID    string             `db:"customer_id" json:"customer_id"`
-	Currency      string             `db:"currency" json:"currency"`
+	Currency      types.Currency      `db:"currency" json:"currency"`
 	Balance       decimal.Decimal    `db:"balance" json:"balance" swaggertype:"string"`
 	CreditBalance decimal.Decimal    `db:"credit_balance" json:"credit_balance" swaggertype:"string"`
 	WalletStatus  types.WalletStatus `db:"wallet_status" json:"wallet_status"`
@@ -106,7 +106,7 @@ func FromEnt(e *ent.Wallet) *Wallet {
 	return &Wallet{
 		ID:             e.ID,
 		CustomerID:     e.CustomerID,
-		Currency:       e.Currency,
+		Currency:       types.Currency(e.Currency),
 		Balance:        e.Balance,
 		CreditBalance:  e.CreditBalance,
 		WalletStatus:   e.WalletStatus,

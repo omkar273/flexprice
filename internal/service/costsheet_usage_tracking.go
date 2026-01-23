@@ -1305,7 +1305,7 @@ func (s *costsheetUsageTrackingService) calculateBucketedCost(ctx context.Contex
 	}
 
 	item.TotalCost = cost
-	item.Currency = price.Currency
+	item.Currency = string(price.Currency)
 }
 
 // calculateRegularCost calculates cost for regular meters
@@ -1316,7 +1316,7 @@ func (s *costsheetUsageTrackingService) calculateRegularCost(ctx context.Context
 	// Calculate total cost
 	cost := priceService.CalculateCost(ctx, price, item.TotalUsage)
 	item.TotalCost = cost
-	item.Currency = price.Currency
+	item.Currency = string(price.Currency)
 
 	// Calculate cost for each point
 	for i := range item.Points {

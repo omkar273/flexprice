@@ -65,7 +65,7 @@ func (r *couponApplicationRepository) Create(ctx context.Context, ca *domainCoup
 		SetFinalPrice(ca.FinalPrice).
 		SetDiscountedAmount(ca.DiscountedAmount).
 		SetDiscountType(string(ca.DiscountType)).
-		SetCurrency(ca.Currency).
+		SetCurrency(string(ca.Currency)).
 		SetStatus(string(ca.Status)).
 		SetCreatedAt(ca.CreatedAt).
 		SetUpdatedAt(ca.UpdatedAt).

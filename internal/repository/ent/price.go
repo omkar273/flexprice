@@ -59,7 +59,7 @@ func (r *priceRepository) Create(ctx context.Context, p *domainPrice.Price) erro
 		SetID(p.ID).
 		SetTenantID(p.TenantID).
 		SetAmount(p.Amount).
-		SetCurrency(p.Currency).
+		SetCurrency(string(p.Currency)).
 		SetDisplayAmount(p.DisplayAmount).
 		SetPriceUnitType(p.PriceUnitType).
 		SetType(p.Type).
@@ -368,7 +368,7 @@ func (r *priceRepository) CreateBulk(ctx context.Context, prices []*domainPrice.
 			SetID(p.ID).
 			SetTenantID(p.TenantID).
 			SetAmount(p.Amount).
-			SetCurrency(p.Currency).
+			SetCurrency(string(p.Currency)).
 			SetDisplayAmount(p.DisplayAmount).
 			SetEntityID(p.EntityID).
 			SetEntityType(p.EntityType).

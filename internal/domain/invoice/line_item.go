@@ -29,7 +29,7 @@ type InvoiceLineItem struct {
 	DisplayName      *string               `json:"display_name,omitempty"`
 	Amount           decimal.Decimal       `json:"amount"`
 	Quantity         decimal.Decimal       `json:"quantity"`
-	Currency         string                `json:"currency"`
+	Currency         types.Currency         `json:"currency"`
 	PeriodStart      *time.Time            `json:"period_start,omitempty"`
 	PeriodEnd        *time.Time            `json:"period_end,omitempty"`
 	Metadata         types.Metadata        `json:"metadata,omitempty"`
@@ -62,7 +62,7 @@ func (i *InvoiceLineItem) FromEnt(e *ent.InvoiceLineItem) *InvoiceLineItem {
 		DisplayName:      e.DisplayName,
 		Amount:           e.Amount,
 		Quantity:         e.Quantity,
-		Currency:         e.Currency,
+		Currency:         types.Currency(e.Currency),
 		PeriodStart:      e.PeriodStart,
 		PeriodEnd:        e.PeriodEnd,
 		Metadata:         e.Metadata,

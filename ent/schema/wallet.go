@@ -47,7 +47,11 @@ func (Wallet) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(10)",
 			}).
-			NotEmpty(),
+			NotEmpty().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 		field.String("description").
 			Optional(),
 		field.JSON("metadata", map[string]string{}).

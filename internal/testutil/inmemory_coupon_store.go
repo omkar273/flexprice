@@ -193,7 +193,7 @@ func applyFilterCondition(c *coupon.Coupon, condition *types.FilterCondition) bo
 		}
 	case "currency":
 		if condition.Value != nil && condition.Value.String != nil {
-			return c.Currency == *condition.Value.String
+			return c.Currency.String() == *condition.Value.String
 		}
 	case "status":
 		if condition.Value != nil && condition.Value.String != nil {

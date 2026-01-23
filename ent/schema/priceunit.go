@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	baseMixin "github.com/flexprice/flexprice/ent/schema/mixin"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -54,6 +55,10 @@ func (PriceUnit) Fields() []ent.Field {
 			NotEmpty(),
 
 		field.String("base_currency").
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}).
 			SchemaType(map[string]string{
 				"postgres": "varchar(3)",
 			}).

@@ -69,7 +69,7 @@ func (r *taxappliedRepository) Create(ctx context.Context, ta *domainTaxApplied.
 		SetNillableTaxAssociationID(ta.TaxAssociationID).
 		SetTaxableAmount(ta.TaxableAmount).
 		SetTaxAmount(ta.TaxAmount).
-		SetCurrency(ta.Currency).
+		SetCurrency(string(ta.Currency)).
 		SetAppliedAt(ta.AppliedAt).
 		SetEnvironmentID(ta.EnvironmentID).
 		SetMetadata(ta.Metadata).

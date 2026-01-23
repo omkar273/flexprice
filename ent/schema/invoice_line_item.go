@@ -138,7 +138,11 @@ func (InvoiceLineItem) Fields() []ent.Field {
 				"postgres": "varchar(10)",
 			}).
 			NotEmpty().
-			Immutable(),
+			Immutable().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 		field.Time("period_start").
 			Optional().
 			Nillable(),

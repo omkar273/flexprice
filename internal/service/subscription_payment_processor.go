@@ -919,7 +919,7 @@ func (s *subscriptionPaymentProcessor) checkAvailableCredits(
 
 	// Get wallets suitable for payment
 	walletPaymentService := NewWalletPaymentService(*s.ServiceParams)
-	wallets, err := walletPaymentService.GetWalletsForPayment(ctx, invoicingCustomerID, currency, WalletPaymentOptions{
+	wallets, err := walletPaymentService.GetWalletsForPayment(ctx, invoicingCustomerID, currency.String(), WalletPaymentOptions{
 		Strategy:        PromotionalFirstStrategy,
 		MaxWalletsToUse: 5,
 	})

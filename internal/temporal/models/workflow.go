@@ -258,7 +258,7 @@ func (c *CreateCustomerActionConfig) ToDTO(params interface{}) (interface{}, err
 // CreateWalletActionConfig represents configuration for creating a wallet action
 type CreateWalletActionConfig struct {
 	Action         WorkflowAction  `json:"action"` // Type discriminator - automatically set to "create_wallet"
-	Currency       string          `json:"currency" binding:"required"`
+	Currency       types.Currency  `json:"currency" binding:"required"`
 	ConversionRate decimal.Decimal `json:"conversion_rate" default:"1"`
 }
 
@@ -266,10 +266,16 @@ func (c *CreateWalletActionConfig) Validate() error {
 	if err := validator.ValidateRequest(c); err != nil {
 		return err
 	}
-	if c.Currency == "" {
+	if c.Currency.String() == "" {
 		return ierr.NewError("currency is required for create_wallet action").
 			WithHint("Please provide a currency").
+			WithReportableDetails(map[string]interface{}{
+				"currency": c.Currency,
+			}).
 			Mark(ierr.ErrValidation)
+	}
+	if err := c.Currency.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -296,7 +302,7 @@ func (c *CreateWalletActionConfig) ToDTO(params interface{}) (interface{}, error
 
 	return &dto.CreateWalletRequest{
 		CustomerID:     actionParams.CustomerID,
-		Currency:       c.Currency,
+		Currency:       types.Currency(c.Currency),
 		ConversionRate: conversionRate,
 	}, nil
 }
@@ -371,7 +377,7 @@ func (c *CreateSubscriptionActionConfig) ToDTO(params interface{}) (interface{},
 	return &dto.CreateSubscriptionRequest{
 		CustomerID:         actionParams.CustomerID,
 		PlanID:             c.PlanID,
-		Currency:           actionParams.Currency,
+		Currency:           types.Currency(actionParams.Currency),
 		StartDate:          startDate,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING, // Default to recurring
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,    // Default to monthly

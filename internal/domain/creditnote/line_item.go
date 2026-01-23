@@ -13,7 +13,7 @@ type CreditNoteLineItem struct {
 	InvoiceLineItemID string          `json:"invoice_line_item_id"`
 	DisplayName       string          `json:"display_name"`
 	Amount            decimal.Decimal `json:"amount" swaggertype:"string"`
-	Currency          string          `json:"currency"`
+	Currency          types.Currency  `json:"currency"`
 	Metadata          types.Metadata  `json:"metadata"`
 	EnvironmentID     string          `json:"environment_id"`
 	types.BaseModel
@@ -26,7 +26,7 @@ func (c *CreditNoteLineItem) FromEnt(e *ent.CreditNoteLineItem) {
 	c.InvoiceLineItemID = e.InvoiceLineItemID
 	c.DisplayName = e.DisplayName
 	c.Amount = e.Amount
-	c.Currency = e.Currency
+	c.Currency = types.Currency(e.Currency)
 	c.Metadata = e.Metadata
 	c.EnvironmentID = e.EnvironmentID
 	c.BaseModel = types.BaseModel{

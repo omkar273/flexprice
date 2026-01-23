@@ -106,6 +106,14 @@ func (SubscriptionLineItem) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(10)",
 			}).
+			NotEmpty().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}).
+			SchemaType(map[string]string{
+				"postgres": "varchar(10)",
+			}).
 			NotEmpty(),
 		field.String("billing_period").
 			SchemaType(map[string]string{

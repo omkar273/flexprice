@@ -149,7 +149,7 @@ func (s *paymentService) validateInvoicePaymentEligibility(_ context.Context, in
 			Mark(ierr.ErrValidation)
 	}
 
-	if !types.IsMatchingCurrency(invoice.Currency, p.Currency) {
+	if !invoice.Currency.Equal(p.Currency) {
 		return ierr.NewError("invoice currency does not match payment currency").
 			WithHint("Payment currency must match invoice currency").
 			WithReportableDetails(map[string]interface{}{
@@ -172,7 +172,7 @@ func (s *paymentService) selectWalletForPayment(ctx context.Context, invoice *in
 	options.MaxWalletsToUse = 1 // Only need one wallet for this payment
 
 	// Get wallets suitable for payment
-	wallets, err := walletPaymentService.GetWalletsForPayment(ctx, invoice.CustomerID, p.Currency, options)
+	wallets, err := walletPaymentService.GetWalletsForPayment(ctx, invoice.CustomerID, p.Currency.String(), options)
 	if err != nil {
 		return nil, ierr.WithError(err).
 			WithHint("Failed to find customer wallets").

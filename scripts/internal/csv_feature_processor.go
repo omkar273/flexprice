@@ -300,7 +300,7 @@ func (p *CSVFeatureProcessor) createPrice(ctx context.Context, record CSVFeature
 	// Create price request
 	priceReq := dto.CreatePriceRequest{
 		Amount:             lo.ToPtr(amount),
-		Currency:           record.Currency,
+		Currency:           types.Currency(record.Currency),
 		EntityType:         entityType,
 		EntityID:           entityID,
 		Type:               types.PRICE_TYPE_USAGE,

@@ -60,7 +60,7 @@ func (r *subscriptionRepository) Create(ctx context.Context, sub *domainSub.Subs
 		SetCustomerID(sub.CustomerID).
 		SetPlanID(sub.PlanID).
 		SetSubscriptionStatus(sub.SubscriptionStatus).
-		SetCurrency(sub.Currency).
+		SetCurrency(string(sub.Currency)).
 		SetBillingAnchor(sub.BillingAnchor).
 		SetStartDate(sub.StartDate).
 		SetNillableEndDate(sub.EndDate).
@@ -730,7 +730,7 @@ func (r *subscriptionRepository) CreateWithLineItems(ctx context.Context, sub *d
 				SetNillablePriceUnit(item.PriceUnit).
 				SetNillableDisplayName(types.ToNillableString(item.DisplayName)).
 				SetQuantity(item.Quantity).
-				SetCurrency(item.Currency).
+				SetCurrency(string(item.Currency)).
 				SetBillingPeriod(item.BillingPeriod).
 				SetNillableStartDate(types.ToNillableTime(item.StartDate)).
 				SetNillableEndDate(types.ToNillableTime(item.EndDate)).

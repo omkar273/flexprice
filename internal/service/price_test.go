@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -104,7 +103,7 @@ func (s *PriceServiceSuite) TestCreatePrice() {
 	s.Equal(*req.Amount, resp.Price.Amount) // Compare decimal.Decimal
 
 	// Normalize currency to lowercase for comparison
-	s.Equal(strings.ToLower(req.Currency), resp.Price.Currency)
+	s.Equal(string(req.Currency), string(resp.Price.Currency))
 }
 
 func (s *PriceServiceSuite) TestGetPrice() {

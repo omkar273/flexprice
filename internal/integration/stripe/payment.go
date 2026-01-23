@@ -112,7 +112,7 @@ func (s *PaymentService) CreatePaymentLink(ctx context.Context, req *dto.CreateS
 	}
 
 	// Validate currency matches invoice currency
-	if req.Currency != invoiceResp.Currency {
+	if req.Currency != string(invoiceResp.Currency) {
 		return nil, ierr.NewError("payment currency does not match invoice currency").
 			WithHint("Payment currency must match the invoice currency").
 			WithReportableDetails(map[string]interface{}{
@@ -1597,7 +1597,7 @@ func (s *PaymentService) createExternalPaymentRecord(ctx context.Context, paymen
 		DestinationID:     invoiceID,
 		PaymentMethodType: types.PaymentMethodTypeCard, // Mark as card payment
 		Amount:            amount,
-		Currency:          strings.ToUpper(string(paymentIntent.Currency)),
+		Currency:          types.Currency(strings.ToUpper(string(paymentIntent.Currency))),
 		PaymentGateway:    &gatewayType,
 		ProcessPayment:    false, // Don't process - already succeeded in Stripe
 		Metadata: types.Metadata{

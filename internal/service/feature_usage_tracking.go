@@ -2003,7 +2003,7 @@ func (s *featureUsageTrackingService) validateCurrency(subscriptions []*subscrip
 
 	currency := subscriptions[0].Currency
 	for _, sub := range subscriptions {
-		if sub.Currency != currency {
+		if !sub.Currency.Equal(currency) {
 			return "", ierr.NewError("multiple currencies detected").
 				WithHint("Analytics is only supported for customers with a single currency across all subscriptions").
 				WithReportableDetails(map[string]interface{}{
@@ -2013,7 +2013,7 @@ func (s *featureUsageTrackingService) validateCurrency(subscriptions []*subscrip
 		}
 	}
 
-	return currency, nil
+	return currency.String(), nil
 }
 
 // enrichWithMetadata enriches analytics data with feature, meter, and price information
@@ -2337,7 +2337,7 @@ func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context,
 	}
 
 	item.TotalCost = cost
-	item.Currency = price.Currency
+	item.Currency = price.Currency.String()
 }
 
 // calculateSumWithBucketCost calculates cost for sum with bucket meters
@@ -2457,7 +2457,7 @@ func (s *featureUsageTrackingService) calculateSumWithBucketCost(ctx context.Con
 	}
 
 	item.TotalCost = cost
-	item.Currency = price.Currency
+	item.Currency = price.Currency.String()
 }
 
 // calculateRegularCost calculates cost for regular meters
@@ -2509,7 +2509,7 @@ func (s *featureUsageTrackingService) calculateRegularCost(ctx context.Context, 
 	}
 
 	item.TotalCost = cost
-	item.Currency = price.Currency
+	item.Currency = price.Currency.String()
 
 	// Calculate cost for each point
 	for i := range item.Points {

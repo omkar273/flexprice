@@ -55,7 +55,7 @@ func (r *priceUnitRepository) Create(ctx context.Context, priceUnit *domainPrice
 		SetName(priceUnit.Name).
 		SetCode(priceUnit.Code).
 		SetSymbol(priceUnit.Symbol).
-		SetBaseCurrency(priceUnit.BaseCurrency).
+		SetBaseCurrency(string(priceUnit.BaseCurrency)).
 		SetConversionRate(priceUnit.ConversionRate).
 		SetTenantID(priceUnit.TenantID).
 		SetStatus(string(priceUnit.Status)).

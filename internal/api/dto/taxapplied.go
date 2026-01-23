@@ -15,7 +15,7 @@ type CreateTaxAppliedRequest struct {
 	EntityID         string                  `json:"entity_id" validate:"required"`
 	TaxableAmount    decimal.Decimal         `json:"taxable_amount" validate:"required" swaggertype:"string"`
 	TaxAmount        decimal.Decimal         `json:"tax_amount" validate:"required" swaggertype:"string"`
-	Currency         string                  `json:"currency" validate:"required"`
+	Currency         types.Currency           `json:"currency" validate:"required"`
 	TaxAssociationID *string                 `json:"tax_association_id,omitempty"`
 	Metadata         map[string]string       `json:"metadata,omitempty"`
 }

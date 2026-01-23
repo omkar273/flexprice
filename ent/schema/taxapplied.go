@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	baseMixin "github.com/flexprice/flexprice/ent/schema/mixin"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -90,6 +91,10 @@ func (TaxApplied) Fields() []ent.Field {
 			}).
 			NotEmpty().
 			Immutable().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}).
 			Comment("Currency code (ISO 4217)"),
 
 		field.Time("applied_at").

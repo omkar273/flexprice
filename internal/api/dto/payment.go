@@ -2,7 +2,6 @@ package dto
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/domain/payment"
@@ -21,7 +20,7 @@ type CreatePaymentRequest struct {
 	PaymentMethodID        string                       `json:"payment_method_id"`
 	PaymentGateway         *types.PaymentGatewayType    `json:"payment_gateway,omitempty"`
 	Amount                 decimal.Decimal              `json:"amount" binding:"required" swaggertype:"string"`
-	Currency               string                       `json:"currency" binding:"required"`
+	Currency               types.Currency                `json:"currency" binding:"required"`
 	SuccessURL             string                       `json:"success_url,omitempty"`
 	CancelURL              string                       `json:"cancel_url,omitempty"`
 	Metadata               types.Metadata               `json:"metadata,omitempty"`
@@ -50,7 +49,7 @@ type PaymentResponse struct {
 	PaymentMethodType      types.PaymentMethodType      `json:"payment_method_type"`
 	PaymentMethodID        string                       `json:"payment_method_id"`
 	Amount                 decimal.Decimal              `json:"amount" swaggertype:"string"`
-	Currency               string                       `json:"currency"`
+	Currency               types.Currency                `json:"currency"`
 	PaymentStatus          types.PaymentStatus          `json:"payment_status"`
 	TrackAttempts          bool                         `json:"track_attempts"`
 	PaymentGateway         *string                      `json:"payment_gateway,omitempty"`
@@ -165,7 +164,7 @@ func NewPaymentAttemptResponse(a *payment.PaymentAttempt) *PaymentAttemptRespons
 // ToPayment converts a create payment request to a payment
 func (r *CreatePaymentRequest) ToPayment(ctx context.Context) (*payment.Payment, error) {
 	// Validate currency
-	if err := types.ValidateCurrencyCode(r.Currency); err != nil {
+	if err := r.Currency.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -191,7 +190,7 @@ func (r *CreatePaymentRequest) ToPayment(ctx context.Context) (*payment.Payment,
 		PaymentMethodType: r.PaymentMethodType,
 		PaymentMethodID:   r.PaymentMethodID,
 		Amount:            r.Amount,
-		Currency:          strings.ToLower(r.Currency),
+		Currency:          r.Currency,
 		Metadata:          r.Metadata,
 		GatewayMetadata:   gatewayMetadata,
 		EnvironmentID:     types.GetEnvironmentID(ctx),
@@ -281,7 +280,7 @@ type ChargeSavedPaymentMethodRequest struct {
 	CustomerID      string          `json:"customer_id" binding:"required"`
 	PaymentMethodID string          `json:"payment_method_id" binding:"required"`
 	Amount          decimal.Decimal `json:"amount" binding:"required"`
-	Currency        string          `json:"currency" binding:"required"`
+	Currency        types.Currency  `json:"currency" binding:"required"`
 	InvoiceID       string          `json:"invoice_id,omitempty"`
 	PaymentID       string          `json:"payment_id,omitempty"`
 }
@@ -291,7 +290,7 @@ type PaymentIntentResponse struct {
 	ID            string          `json:"id"`
 	Status        string          `json:"status"`
 	Amount        decimal.Decimal `json:"amount"`
-	Currency      string          `json:"currency"`
+	Currency      types.Currency  `json:"currency"`
 	CustomerID    string          `json:"customer_id"`
 	PaymentMethod string          `json:"payment_method"`
 	CreatedAt     int64           `json:"created_at"`

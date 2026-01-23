@@ -62,7 +62,7 @@ func (r *creditnoteRepository) Create(ctx context.Context, cn *domainCreditNote.
 		SetNillableRefundStatus(cn.RefundStatus).
 		SetReason(cn.Reason).
 		SetMemo(cn.Memo).
-		SetCurrency(cn.Currency).
+		SetCurrency(string(cn.Currency)).
 		SetMetadata(cn.Metadata).
 		SetStatus(string(cn.Status)).
 		SetCreatedAt(cn.CreatedAt).
@@ -145,7 +145,7 @@ func (r *creditnoteRepository) CreateWithLineItems(ctx context.Context, cn *doma
 			SetNillableRefundStatus(cn.RefundStatus).
 			SetReason(cn.Reason).
 			SetMemo(cn.Memo).
-			SetCurrency(cn.Currency).
+			SetCurrency(string(cn.Currency)).
 			SetMetadata(cn.Metadata).
 			SetStatus(string(cn.Status)).
 			SetCreatedAt(cn.CreatedAt).
@@ -202,7 +202,7 @@ func (r *creditnoteRepository) CreateWithLineItems(ctx context.Context, cn *doma
 					SetInvoiceLineItemID(item.InvoiceLineItemID).
 					SetDisplayName(item.DisplayName).
 					SetAmount(item.Amount).
-					SetCurrency(item.Currency).
+					SetCurrency(string(item.Currency)).
 					SetMetadata(item.Metadata).
 					SetEnvironmentID(item.EnvironmentID).
 					SetStatus(string(item.Status)).
@@ -257,7 +257,7 @@ func (r *creditnoteRepository) AddLineItems(ctx context.Context, creditNoteID st
 				SetInvoiceLineItemID(item.InvoiceLineItemID).
 				SetDisplayName(item.DisplayName).
 				SetAmount(item.Amount).
-				SetCurrency(item.Currency).
+				SetCurrency(string(item.Currency)).
 				SetMetadata(item.Metadata).
 				SetStatus(string(item.Status)).
 				SetCreatedBy(item.CreatedBy).

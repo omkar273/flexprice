@@ -169,7 +169,7 @@ func (s *InvoiceSyncService) buildInvoiceData(
 
 	// Construct invoice data according to Razorpay API format
 	// Use invoice currency (convert to uppercase as Razorpay expects uppercase currency codes)
-	invoiceCurrency := strings.ToUpper(flexInvoice.Currency)
+	invoiceCurrency := strings.ToUpper(string(flexInvoice.Currency))
 	invoiceData := map[string]interface{}{
 		"type":         "invoice",
 		"customer_id":  razorpayCustomerID,
@@ -225,9 +225,9 @@ func (s *InvoiceSyncService) buildLineItems(flexInvoice *invoice.Invoice) (map[s
 		// Build Razorpay line item
 		// Use line item currency (convert to uppercase as Razorpay expects uppercase currency codes)
 		// Fallback to invoice currency if line item currency is empty
-		lineItemCurrency := strings.ToUpper(item.Currency)
+		lineItemCurrency := strings.ToUpper(string(item.Currency))
 		if lineItemCurrency == "" {
-			lineItemCurrency = strings.ToUpper(flexInvoice.Currency)
+			lineItemCurrency = strings.ToUpper(string(flexInvoice.Currency))
 		}
 		razorpayLineItem := RazorpayLineItem{
 			Name:        itemName,

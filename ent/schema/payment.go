@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	baseMixin "github.com/flexprice/flexprice/ent/schema/mixin"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -91,7 +92,11 @@ func (Payment) Fields() []ent.Field {
 				"postgres": "varchar(10)",
 			}).
 			NotEmpty().
-			Immutable(),
+			Immutable().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 		field.String("payment_status").
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",

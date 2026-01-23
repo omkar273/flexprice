@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	baseMixin "github.com/flexprice/flexprice/ent/schema/mixin"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -56,7 +57,11 @@ func (CreditNoteLineItem) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(10)",
 			}).
-			NotEmpty(),
+			NotEmpty().
+			GoType(types.Currency("")).
+			Validate(func(s string) error {
+				return types.Currency(s).Validate()
+			}),
 
 		field.JSON("metadata", map[string]string{}).
 			Optional(),

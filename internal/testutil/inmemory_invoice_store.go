@@ -393,7 +393,7 @@ func (s *InMemoryInvoiceStore) GetRevenueTrend(ctx context.Context, windowCount 
 		currencies := make(map[string]bool)
 		for _, inv := range invoices {
 			if inv.Currency != "" {
-				currencies[inv.Currency] = true
+				currencies[inv.Currency.String()] = true
 			}
 		}
 
@@ -401,7 +401,7 @@ func (s *InMemoryInvoiceStore) GetRevenueTrend(ctx context.Context, windowCount 
 		for currency := range currencies {
 			totalRevenue := decimal.Zero
 			for _, inv := range invoices {
-				if inv.Currency == currency && inv.FinalizedAt != nil {
+				if inv.Currency.String() == currency && inv.FinalizedAt != nil {
 					finalizedTime := *inv.FinalizedAt
 					if (finalizedTime.Equal(windowStart) || finalizedTime.After(windowStart)) &&
 						(finalizedTime.Equal(windowEnd) || finalizedTime.Before(windowEnd)) {

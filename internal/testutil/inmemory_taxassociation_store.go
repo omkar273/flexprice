@@ -68,7 +68,7 @@ func taxAssociationFilterFn(ctx context.Context, ta *taxassociation.TaxAssociati
 	}
 
 	// Filter by currency
-	if f.Currency != "" && ta.Currency != f.Currency {
+	if f.Currency != "" && string(ta.Currency) != string(f.Currency) {
 		return false
 	}
 

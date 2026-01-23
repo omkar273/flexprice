@@ -43,8 +43,8 @@ type Price struct {
 	// For USD: $12.50
 	DisplayAmount string `db:"display_amount" json:"display_amount"`
 
-	// Currency 3 digit ISO currency code in lowercase ex usd, eur, gbp
-	Currency string `db:"currency" json:"currency"`
+	// Currency 3 digit ISO currency code (normalized to uppercase)
+	Currency types.Currency `db:"currency" json:"currency"`
 
 	// PriceUnitType is the type of the price unit (FIAT, CUSTOM)
 	PriceUnitType types.PriceUnitType `db:"price_unit_type" json:"price_unit_type"`
@@ -138,7 +138,7 @@ func (p *Price) IsUsage() bool {
 
 // GetCurrencySymbol returns the currency symbol for the price
 func (p *Price) GetCurrencySymbol() string {
-	return types.GetCurrencySymbol(p.Currency)
+	return p.Currency.Symbol()
 }
 
 // ValidateAmount checks if amount is within valid range for price definition
@@ -162,8 +162,7 @@ func (p *Price) FormatAmountToString() string {
 // FormatAmountToStringWithPrecision formats the amount to string
 // It rounds off the amount according to currency precision
 func (p *Price) FormatAmountToStringWithPrecision() string {
-	config := types.GetCurrencyConfig(p.Currency)
-	return p.Amount.Round(config.Precision).String()
+	return p.Amount.Round(int32(p.Currency.Precision())).String()
 }
 
 // FormatAmountToFloat64 formats the amount to float64
@@ -174,8 +173,7 @@ func (p *Price) FormatAmountToFloat64() float64 {
 // FormatAmountToFloat64WithPrecision formats the amount to float64
 // It rounds off the amount according to currency precision
 func (p *Price) FormatAmountToFloat64WithPrecision() float64 {
-	config := types.GetCurrencyConfig(p.Currency)
-	return p.Amount.Round(config.Precision).InexactFloat64()
+	return p.Amount.Round(int32(p.Currency.Precision())).InexactFloat64()
 }
 
 // GetDisplayAmount returns the amount in the currency ex $12.00
@@ -201,8 +199,8 @@ func (p *Price) CalculateAmount(quantity decimal.Decimal) decimal.Decimal {
 	return result
 }
 
-// CalculateTierAmount performs calculation for tier price with flat and fixed ampunt
-func (pt *PriceTier) CalculateTierAmount(quantity decimal.Decimal, currency string) decimal.Decimal {
+// CalculateTierAmount performs calculation for tier price with flat and fixed amount
+func (pt *PriceTier) CalculateTierAmount(quantity decimal.Decimal, currency types.Currency) decimal.Decimal {
 	tierCost := pt.UnitAmount.Mul(quantity)
 	if pt.FlatAmount != nil {
 		tierCost = tierCost.Add(*pt.FlatAmount)
@@ -215,23 +213,21 @@ func (pt *PriceTier) GetPerUnitCost() decimal.Decimal {
 }
 
 // GetDisplayAmount returns the amount in the currency ex $12.00
-func GetDisplayAmountWithPrecision(amount decimal.Decimal, currency string) string {
+func GetDisplayAmountWithPrecision(amount decimal.Decimal, currency types.Currency) string {
 	val := FormatAmountToStringWithPrecision(amount, currency)
-	config := types.GetCurrencyConfig(currency)
-	return fmt.Sprintf("%s%s", config.Symbol, val)
+	return fmt.Sprintf("%s%s", currency.Symbol(), val)
 }
 
 // FormatAmountToStringWithPrecision formats the amount to string
 // It rounds off the amount according to currency precision
-func FormatAmountToStringWithPrecision(amount decimal.Decimal, currency string) string {
-	config := types.GetCurrencyConfig(currency)
-	return amount.Round(config.Precision).String()
+func FormatAmountToStringWithPrecision(amount decimal.Decimal, currency types.Currency) string {
+	return amount.Round(int32(currency.Precision())).String()
 }
 
 // FormatAmountToFloat64WithPrecision formats the amount to float64
 // It rounds off the amount according to currency precision
-func FormatAmountToFloat64WithPrecision(amount decimal.Decimal, currency string) float64 {
-	return amount.Round(types.GetCurrencyPrecision(currency)).InexactFloat64()
+func FormatAmountToFloat64WithPrecision(amount decimal.Decimal, currency types.Currency) float64 {
+	return amount.Round(int32(currency.Precision())).InexactFloat64()
 }
 
 // PriceTransform is the quantity transformation in case of PACKAGE billing model
@@ -411,7 +407,7 @@ func FromEnt(e *ent.Price) *Price {
 	return &Price{
 		ID:                     e.ID,
 		Amount:                 e.Amount,
-		Currency:               e.Currency,
+		Currency:               types.Currency(e.Currency),
 		DisplayAmount:          e.DisplayAmount,
 		PriceUnitType:          e.PriceUnitType,
 		Type:                   e.Type,
@@ -563,8 +559,8 @@ func (p *Price) GetDisplayName(entityName string, meterName string) string {
 
 // IsEligibleForSubscription checks if this price is compatible with a subscription
 // based on currency and billing period matching
-func (p *Price) IsEligibleForSubscription(subscriptionCurrency string, subscriptionBillingPeriod types.BillingPeriod, subscriptionBillingPeriodCount int) bool {
-	return types.IsMatchingCurrency(p.Currency, subscriptionCurrency) &&
+func (p *Price) IsEligibleForSubscription(subscriptionCurrency types.Currency, subscriptionBillingPeriod types.BillingPeriod, subscriptionBillingPeriodCount int) bool {
+	return p.Currency.Equal(subscriptionCurrency) &&
 		p.BillingPeriod == subscriptionBillingPeriod &&
 		p.BillingPeriodCount == subscriptionBillingPeriodCount
 }

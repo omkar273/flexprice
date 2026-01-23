@@ -699,8 +699,8 @@ func (s *billingService) CalculateUsageCharges(
 					}
 				}
 				// Round remaining commitment to currency precision (2 decimal places for most currencies)
-				precision := types.GetCurrencyPrecision(sub.Currency)
-				roundedRemainingCommitment := remainingCommitment.Round(precision)
+				precision := sub.Currency.Precision()
+				roundedRemainingCommitment := remainingCommitment.Round(int32(precision))
 				commitmentUtilized := commitmentAmount.Sub(roundedRemainingCommitment)
 				trueUpLineItem := dto.CreateInvoiceLineItemRequest{
 					EntityID:        lo.ToPtr(sub.PlanID),
@@ -1274,8 +1274,8 @@ func (s *billingService) CalculateFeatureUsageCharges(
 					}
 				}
 				// Round remaining commitment to currency precision (2 decimal places for most currencies)
-				precision := types.GetCurrencyPrecision(sub.Currency)
-				roundedRemainingCommitment := remainingCommitment.Round(precision)
+				precision := sub.Currency.Precision()
+				roundedRemainingCommitment := remainingCommitment.Round(int32(precision))
 				commitmentUtilized := commitmentAmount.Sub(roundedRemainingCommitment)
 				trueUpLineItem := dto.CreateInvoiceLineItemRequest{
 					EntityID:        lo.ToPtr(sub.PlanID),
@@ -1328,7 +1328,7 @@ func (s *billingService) CalculateAllCharges(
 		FixedCharges: fixedCharges,
 		UsageCharges: usageCharges,
 		TotalAmount:  fixedTotal.Add(usageTotal),
-		Currency:     sub.Currency,
+		Currency:     string(sub.Currency),
 	}, nil
 }
 
@@ -1355,7 +1355,7 @@ func (s *billingService) calculateAllChargesForPreview(
 		FixedCharges: fixedCharges,
 		UsageCharges: usageCharges,
 		TotalAmount:  fixedTotal.Add(usageTotal),
-		Currency:     sub.Currency,
+		Currency:     string(sub.Currency),
 	}, nil
 }
 
@@ -1483,7 +1483,7 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 			FixedCharges: append(arrearResult.FixedCharges, advanceResult.FixedCharges...),
 			UsageCharges: arrearResult.UsageCharges, // Only arrear has usage
 			TotalAmount:  arrearResult.TotalAmount.Add(advanceResult.TotalAmount),
-			Currency:     sub.Currency,
+			Currency:     string(sub.Currency),
 		}
 
 		description = fmt.Sprintf("Invoice for subscription %s", sub.ID)
@@ -1523,7 +1523,7 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 			FixedCharges: append(arrearResult.FixedCharges, advanceResult.FixedCharges...),
 			UsageCharges: arrearResult.UsageCharges, // Only arrear has usage
 			TotalAmount:  arrearResult.TotalAmount.Add(advanceResult.TotalAmount),
-			Currency:     sub.Currency,
+			Currency:     string(sub.Currency),
 		}
 
 		description = fmt.Sprintf("Preview invoice for subscription %s", sub.ID)
@@ -1552,7 +1552,7 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 			FixedCharges: arrearResult.FixedCharges,
 			UsageCharges: arrearResult.UsageCharges, // Only arrear has usage
 			TotalAmount:  arrearResult.TotalAmount,
-			Currency:     sub.Currency,
+			Currency:     string(sub.Currency),
 		}
 
 		description = fmt.Sprintf("Invoice for subscription %s", sub.ID)
@@ -1841,7 +1841,7 @@ func (s *billingService) CreateInvoiceRequestForCharges(
 		// prepare result for zero amount invoice
 		result = &BillingCalculationResult{
 			TotalAmount:  decimal.Zero,
-			Currency:     sub.Currency,
+			Currency:     string(sub.Currency),
 			FixedCharges: make([]dto.CreateInvoiceLineItemRequest, 0),
 			UsageCharges: make([]dto.CreateInvoiceLineItemRequest, 0),
 		}
