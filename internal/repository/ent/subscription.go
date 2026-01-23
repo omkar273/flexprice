@@ -1135,3 +1135,83 @@ func (r *subscriptionRepository) GetRecentSubscriptionsByPlan(ctx context.Contex
 	SetSpanSuccess(span)
 	return results, nil
 }
+
+// ListOldSandboxSubscriptions retrieves old sandbox subscriptions for cleanup.
+// Used by cron/workflow jobs that run daily. Returns subscription IDs with tenant and environment context.
+// Query is tenant-agnostic to support cross-tenant cleanup operations.
+func (r *subscriptionRepository) ListOldSandboxSubscriptions(
+	ctx context.Context,
+	olderThanDays int,
+	cursor string,
+	limit int,
+) ([]*domainSub.OldSandboxSubscription, error) {
+	span := StartRepositorySpan(ctx, "subscription", "list_old_sandbox_subscriptions", map[string]interface{}{
+		"older_than_days": olderThanDays,
+		"cursor":          cursor,
+		"limit":           limit,
+	})
+	defer FinishSpan(span)
+
+	publishedStatus := string(types.StatusPublished)
+	devEnvType := string(types.EnvironmentDevelopment)
+	cutoffDate := time.Now().UTC().AddDate(0, 0, -olderThanDays)
+
+	// Build tenant-agnostic query with all conditions
+	query := `
+		SELECT s.id, s.tenant_id, s.environment_id
+		FROM subscriptions s
+		WHERE s.status = $1
+			AND s.start_date < $2
+			AND s.subscription_status IN ('active', 'trialing')
+			AND s.environment_id IN (
+				SELECT id FROM environments
+				WHERE type = $3
+					AND status = $1
+			)`
+
+	args := []interface{}{publishedStatus, cutoffDate, devEnvType}
+
+	// Add cursor pagination if provided
+	if cursor != "" {
+		query += " AND s.id > $4"
+		args = append(args, cursor)
+	}
+
+	// Add ordering and limit
+	query += " ORDER BY s.id ASC LIMIT $" + fmt.Sprintf("%d", len(args)+1)
+	args = append(args, limit)
+
+	// Execute query
+	rows, err := r.client.Reader(ctx).QueryContext(ctx, query, args...)
+	if err != nil {
+		SetSpanError(span, err)
+		r.logger.Errorw("failed to query old sandbox subscriptions", "error", err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to list old sandbox subscriptions").
+			Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	// Collect results
+	var results []*domainSub.OldSandboxSubscription
+	for rows.Next() {
+		var sub domainSub.OldSandboxSubscription
+		if err := rows.Scan(&sub.SubscriptionID, &sub.TenantID, &sub.EnvironmentID); err != nil {
+			SetSpanError(span, err)
+			return nil, ierr.WithError(err).
+				WithHint("Failed to scan subscription data").
+				Mark(ierr.ErrDatabase)
+		}
+		results = append(results, &sub)
+	}
+
+	if err := rows.Err(); err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to read subscription data").
+			Mark(ierr.ErrDatabase)
+	}
+
+	SetSpanSuccess(span)
+	return results, nil
+}

@@ -1310,7 +1310,7 @@ func (s *subscriptionService) GetSubscription(ctx context.Context, id string) (*
 		if err != nil {
 			return nil, err
 		}
-		response.Pauses = pauses
+		response.Subscription.Pauses = pauses
 	}
 
 	// expand plan
@@ -4448,6 +4448,93 @@ func (s *subscriptionService) ProcessAutoCancellationSubscriptions(ctx context.C
 		"total_tenants_processed", len(enabledConfigs),
 		"total_canceled", totalCanceledCount,
 		"total_failed", totalFailedCount)
+
+	return nil
+}
+
+// CancelOldSandboxSubscriptions is a cron/workflow method that runs daily to cancel old sandbox subscriptions.
+// Processes subscriptions from development environments older than the default threshold (90 days).
+func (s *subscriptionService) CancelOldSandboxSubscriptions(
+	ctx context.Context,
+) error {
+	olderThanDays := types.DefaultOldSandboxSubscriptionDays
+	s.Logger.Infow("starting cancellation of old sandbox subscriptions",
+		"older_than_days", olderThanDays)
+
+	cursor := ""
+	limit := 50
+	totalCancelled := 0
+
+	for {
+		// Get batch of old subscriptions with tenant and environment context
+		subs, err := s.SubRepo.ListOldSandboxSubscriptions(ctx, olderThanDays, cursor, limit)
+		if err != nil {
+			s.Logger.Errorw("failed to list old sandbox subscriptions", "error", err)
+			return ierr.WithError(err).
+				WithHint("Failed to list old sandbox subscriptions").
+				Mark(ierr.ErrDatabase)
+		}
+
+		// Break if no more subscriptions
+		if len(subs) == 0 {
+			break
+		}
+
+		// Cancel each subscription in the batch
+		for _, subInfo := range subs {
+			// Inject tenant and environment into context for this subscription
+			subCtx := types.SetTenantID(ctx, subInfo.TenantID)
+			subCtx = types.SetEnvironmentID(subCtx, subInfo.EnvironmentID)
+
+			// Get full subscription to check status
+			sub, err := s.SubRepo.Get(subCtx, subInfo.SubscriptionID)
+			if err != nil {
+				s.Logger.Errorw("failed to get subscription for cancellation",
+					"subscription_id", subInfo.SubscriptionID,
+					"tenant_id", subInfo.TenantID,
+					"environment_id", subInfo.EnvironmentID,
+					"error", err)
+				// Continue with next subscription instead of failing entire batch
+				continue
+			}
+
+			// Skip if already cancelled
+			if sub.SubscriptionStatus == types.SubscriptionStatusCancelled {
+				continue
+			}
+
+			_, err = s.CancelSubscription(subCtx, subInfo.SubscriptionID, &dto.CancelSubscriptionRequest{
+				CancellationType:  types.CancellationTypeImmediate,
+				Reason:            "old_sandbox_subscription_cleanup",
+				ProrationBehavior: types.ProrationBehaviorNone, // Simple cancellation, no proration
+				SuppressWebhook:   true,                        // Suppress webhooks for batch operations
+			})
+
+			if err != nil {
+				s.Logger.Errorw("failed to cancel old subscription",
+					"subscription_id", subInfo.SubscriptionID,
+					"tenant_id", subInfo.TenantID,
+					"environment_id", subInfo.EnvironmentID,
+					"error", err)
+				// Continue with next subscription instead of failing entire batch
+				continue
+			}
+
+			totalCancelled++
+		}
+
+		// Break if this was the last page
+		if len(subs) < limit {
+			break
+		}
+
+		// Set cursor for next iteration (use last subscription ID)
+		cursor = subs[len(subs)-1].SubscriptionID
+	}
+
+	s.Logger.Infow("completed cancellation of old sandbox subscriptions",
+		"total_cancelled", totalCancelled,
+		"older_than_days", olderThanDays)
 
 	return nil
 }

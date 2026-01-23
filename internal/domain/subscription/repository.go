@@ -31,4 +31,7 @@ type Repository interface {
 
 	// Dashboard methods
 	GetRecentSubscriptionsByPlan(ctx context.Context) ([]types.SubscriptionPlanCount, error)
+
+	// Used by cron/workflow jobs that run daily to cancel old sandbox subscriptions.
+	ListOldSandboxSubscriptions(ctx context.Context, olderThanDays int, cursor string, limit int) ([]*OldSandboxSubscription, error)
 }

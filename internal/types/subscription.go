@@ -63,6 +63,9 @@ const (
 	SubscriptionStatusDraft      SubscriptionStatus = "draft"
 )
 
+// DefaultOldSandboxSubscriptionDays is the default number of days to consider a sandbox subscription as "old"
+const DefaultOldSandboxSubscriptionDays = 90
+
 func (s SubscriptionStatus) String() string {
 	return string(s)
 }

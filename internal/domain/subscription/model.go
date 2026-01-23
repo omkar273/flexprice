@@ -127,6 +127,14 @@ type Subscription struct {
 	types.BaseModel
 }
 
+// OldSandboxSubscription represents a subscription that needs to be cancelled
+// along with its tenant and environment context.
+type OldSandboxSubscription struct {
+	SubscriptionID string `json:"subscription_id"`
+	TenantID       string `json:"tenant_id"`
+	EnvironmentID  string `json:"environment_id"`
+}
+
 // GetInvoicingCustomerID returns the invoicing customer ID if available, otherwise falls back to the subscription customer ID.
 // This provides backward compatibility for subscriptions that don't have an invoicing customer ID set.
 func (s *Subscription) GetInvoicingCustomerID() string {
