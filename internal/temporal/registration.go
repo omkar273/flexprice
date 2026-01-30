@@ -252,9 +252,11 @@ func buildWorkerConfig(
 	case types.TemporalTaskQueueReprocessEvents:
 		workflowsList = append(workflowsList,
 			eventsWorkflows.ReprocessEventsWorkflow,
+			eventsWorkflows.ReprocessEventsForPlanWorkflow,
 		)
 		activitiesList = append(activitiesList,
 			reprocessEventsActivities.ReprocessEvents,
+			planActivities.ReprocessEventsForPlan,
 		)
 	}
 	return WorkerConfig{
