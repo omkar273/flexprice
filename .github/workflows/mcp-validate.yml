@@ -1,0 +1,64 @@
+name: MCP Validate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".speakeasy/**"
+      - "docs/swagger/**"
+      - "scripts/swagger_*.py"
+      - "Makefile"
+      - ".github/workflows/mcp-validate.yml"
+
+jobs:
+  validate-mcp-generation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Speakeasy
+        run: make speakeasy-install
+
+      - name: Generate OpenAPI
+        run: make swagger
+
+      - name: Capture baseline changed files
+        run: |
+          git diff --name-only > /tmp/pre_mcp_changes.txt
+
+      - name: Generate MCP server (first pass)
+        run: make speakeasy-mcp-generate
+
+      - name: Verify MCP output isolation
+        run: |
+          NEW_CHANGES="$(comm -13 <(sort /tmp/pre_mcp_changes.txt) <(git diff --name-only | sort))"
+          if [ -n "$NEW_CHANGES" ] && echo "$NEW_CHANGES" | rg -v '^sdk/mcp-server/'; then
+            echo "MCP generation changed files outside sdk/mcp-server:"
+            echo "$NEW_CHANGES" | rg -v '^sdk/mcp-server/'
+            exit 1
+          fi
+
+      - name: Generate MCP server (second pass)
+        run: make speakeasy-mcp-generate
+
+      - name: Verify MCP idempotency
+        run: git diff --exit-code -- sdk/mcp-server
+
+      - name: Go SDK regression guard
+        run: make go-sdk

@@ -16,6 +16,7 @@ generation:
     requestResponseComponentNamesFeb2024: true
     securityFeb2025: true
     sharedErrorComponentsApr2025: true
+    sharedNestedComponentsJan2026: false
   auth:
     oAuth2ClientCredentialsEnabled: true
     oAuth2PasswordEnabled: true
@@ -25,6 +26,7 @@ generation:
   schemas:
     allOfMergeStrategy: shallowMerge
   requestBodyFieldName: body
+  versioningStrategy: automatic
   persistentEdits:
     enabled: "false"
   tests:
@@ -58,6 +60,7 @@ go:
   outputModelSuffix: Output
   packageName: github.com/flexprice/go-sdk-temp
   respectRequiredFields: false
+  respectTitlesForPrimitiveUnionMembers: true
   responseFormat: flat
   sdkPackageName: ""
   templateVersion: v2

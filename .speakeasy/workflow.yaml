@@ -25,8 +25,7 @@ targets:
         source: flexprice-api
         output: ./api/python
         publish:
-            pypi:
-                token: ""
+            pypi: {}
         codeSamples:
             registry:
                 location: registry.speakeasyapi.dev/flexprice/develop-cw0/flexprice-api-python-code-samples

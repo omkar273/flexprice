@@ -1,0 +1,30 @@
+# Managed by FlexPrice MCP generation pipeline.
+# This file is copied to sdk/mcp-server/.gitignore after each generation.
+
+# Package manager artifacts
+/node_modules
+/examples/node_modules
+
+# Build and temp output
+/dist
+/temp
+/.tsbuildinfo
+/.eslintcache
+/.tshy
+/.tshy-*
+
+# Speakeasy transient files
+**/.speakeasy/temp/
+**/.speakeasy/logs/
+/.speakeasy/reports
+
+# Optional local/dev assets not needed in git
+/.devcontainer
+/docs
+/examples
+
+# Environment/local OS files
+.env
+.env.local
+.env.*.local
+.DS_Store

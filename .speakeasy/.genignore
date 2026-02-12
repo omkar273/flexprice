@@ -36,6 +36,10 @@ examples/
 src/utils/**
 src/extensions/**
 
+# MCP Server SDK output location: sdk/mcp-server
+# Preserve any manually maintained customizations under the MCP output root.
+custom/**
+
 # ----------------
 # Shared / Docs
 # ----------------

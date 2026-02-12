@@ -1,0 +1,47 @@
+configVersion: 2.0.0
+generation:
+  devContainers:
+    enabled: true
+    schemaPath: ""
+  sdkClassName: FlexPriceMCP
+  maintainOpenAPIOrder: true
+  usageSnippets:
+    optionalPropertyRendering: withExample
+    sdkInitStyle: constructor
+  fixes:
+    nameResolutionDec2023: true
+    nameResolutionFeb2025: true
+    parameterOrderingFeb2024: true
+    requestResponseComponentNamesFeb2024: true
+    securityFeb2025: true
+    sharedErrorComponentsApr2025: true
+  auth:
+    hoistGlobalSecurity: true
+  schemas:
+    allOfMergeStrategy: shallowMerge
+  requestBodyFieldName: body
+  tests:
+    generateTests: false
+    generateNewTests: true
+typescript:
+  version: 1.0.48
+  baseErrorName: FlexPriceError
+  clientServerStatusCodesAsErrors: true
+  defaultErrorName: SDKError
+  enableCustomCodeRegions: false
+  enableMCPServer: true
+  enableReactQuery: false
+  flattenGlobalSecurity: true
+  flatteningOrder: parameters-first
+  inferUnionDiscriminators: true
+  inputModelSuffix: Input
+  maxMethodParams: 4
+  methodArguments: require-security-and-request
+  modelPropertyCasing: camel
+  moduleFormat: commonjs
+  outputModelSuffix: Output
+  packageName: flexprice-mcp-server
+  preApplyUnionDiscriminators: true
+  responseFormat: flat
+  templateVersion: v2
+  useIndexModules: true

@@ -57,6 +57,22 @@ scripts/hacks/*
 build/
 
 # =============================================================================
+# MCP SERVER (SPEAKEASY OUTPUT)
+# =============================================================================
+# Historical output locations (prevent accidental re-add)
+generated/mcp-server/
+api/mcp-server/
+
+# Current MCP output transient artifacts
+sdk/mcp-server/node_modules/
+sdk/mcp-server/examples/node_modules/
+sdk/mcp-server/dist/
+sdk/mcp-server/temp/
+sdk/mcp-server/.speakeasy/temp/
+sdk/mcp-server/.speakeasy/logs/
+sdk/mcp-server/.speakeasy/reports/
+
+# =============================================================================
 # API SDK GENERATION RULES
 # =============================================================================
 

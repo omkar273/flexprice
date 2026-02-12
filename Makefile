@@ -9,8 +9,12 @@ install-swag:
 .PHONY: swagger
 swagger: swagger-2-0 swagger-3-0
 
+.PHONY: swagger-ensure-descriptions
+swagger-ensure-descriptions:
+	@python3 scripts/swagger_ensure_descriptions.py
+
 .PHONY: swagger-2-0
-swagger-2-0: install-swag
+swagger-2-0: install-swag swagger-ensure-descriptions
 	$(shell go env GOPATH)/bin/swag init \
 		--generalInfo cmd/server/main.go \
 		--dir . \
@@ -32,6 +36,7 @@ swagger-3-0: install-swag
 		-H 'accept: application/json' \
 		-H 'Content-Type: application/json' \
 		-d @docs/swagger/swagger.json > docs/swagger/swagger-3-0.json
+	@python3 scripts/swagger_enhance_openapi.py docs/swagger/swagger-3-0.json
 	@echo "Conversion complete. Output saved to docs/swagger/swagger-3-0.json"
 
 .PHONY: swagger-fix-refs
@@ -421,7 +426,9 @@ test-github-workflow:
 # Speakeasy SDK Generation (New Pipeline)
 # =============================================================================
 
-.PHONY: speakeasy-install speakeasy-generate speakeasy-validate speakeasy-test
+.PHONY: speakeasy-install speakeasy-generate speakeasy-validate speakeasy-test speakeasy-mcp-clean speakeasy-mcp-prune speakeasy-mcp-generate build-mcp run-mcp run-mcp-sdk
+
+OPENAPI_SPEC_PATH := docs/swagger/swagger-3-0.json
 
 speakeasy-install:
 	@echo "Installing Speakeasy CLI..."
@@ -430,7 +437,7 @@ speakeasy-install:
 
 speakeasy-validate:
 	@echo "Validating OpenAPI spec..."
-	@speakeasy validate openapi --schema docs/swagger/swagger-3-0.json
+	@speakeasy validate openapi --schema "$(OPENAPI_SPEC_PATH)"
 
 speakeasy-clean:
 	@echo "Cleaning generated SDK files..."
@@ -458,6 +465,66 @@ speakeasy-clean:
 speakeasy-generate:
 	@echo "Generating SDKs with Speakeasy..."
 	@speakeasy run
+
+speakeasy-mcp-clean:
+	@echo "Cleaning generated MCP server files..."
+	@rm -rf sdk/mcp-server
+	@echo "✓ MCP output cleaned"
+
+speakeasy-mcp-prune:
+	@echo "Pruning non-runtime MCP artifacts..."
+	@if [ -d "sdk/mcp-server" ]; then \
+		rm -rf sdk/mcp-server/.devcontainer sdk/mcp-server/docs sdk/mcp-server/examples sdk/mcp-server/temp; \
+		rm -rf sdk/mcp-server/.speakeasy/logs sdk/mcp-server/.speakeasy/temp sdk/mcp-server/.speakeasy/reports; \
+		find sdk/mcp-server -type f \( -name "*.map" -o -name "*.d.ts" -o -name "*.d.ts.map" \) -delete; \
+	fi
+	@echo "✓ MCP runtime footprint minimized"
+
+speakeasy-mcp-generate:
+	@echo "Generating MCP server with Speakeasy..."
+	@which speakeasy > /dev/null || (echo "❌ Speakeasy CLI not found. Run 'make speakeasy-install' first."; exit 1)
+	@test -f "$(OPENAPI_SPEC_PATH)" || (echo "❌ Missing OpenAPI spec at $(OPENAPI_SPEC_PATH). Run 'make swagger' first."; exit 1)
+	@set -e; \
+	TMP_DIR="$$(mktemp -d /tmp/flexprice-mcp-speakeasy.XXXXXX)"; \
+	trap 'rm -rf "$$TMP_DIR"' EXIT; \
+	mkdir -p "$$TMP_DIR/.speakeasy"; \
+	cp .speakeasy/workflow.mcp.yaml "$$TMP_DIR/.speakeasy/workflow.yaml"; \
+	cp .speakeasy/gen.mcp.yaml "$$TMP_DIR/.speakeasy/gen.yaml"; \
+	ln -s "$$(pwd)/.speakeasy/overlays.yaml" "$$TMP_DIR/.speakeasy/overlays.yaml"; \
+	mkdir -p "$$TMP_DIR/docs/swagger"; \
+	cp "$(OPENAPI_SPEC_PATH)" "$$TMP_DIR/docs/swagger/swagger-3-0.json"; \
+	mkdir -p "$$TMP_DIR/sdk"; \
+	( cd "$$TMP_DIR" && speakeasy run --target flexprice-mcp ); \
+	rm -rf "$$(pwd)/sdk/mcp-server"; \
+	mkdir -p "$$(pwd)/sdk"; \
+	cp -R "$$TMP_DIR/sdk/mcp-server" "$$(pwd)/sdk/mcp-server"
+	@test -d sdk/mcp-server || (echo "❌ MCP generation failed: sdk/mcp-server not found."; exit 1)
+	@test -f .speakeasy/mcp.gitignore || (echo "❌ Missing .speakeasy/mcp.gitignore template."; exit 1)
+	@cp .speakeasy/mcp.gitignore sdk/mcp-server/.gitignore
+	@$(MAKE) speakeasy-mcp-prune
+	@echo "✅ MCP server generated at sdk/mcp-server"
+
+build-mcp:
+	@echo "Building MCP server..."
+	@if [ -f "$(OPENAPI_SPEC_PATH)" ]; then \
+		echo "ℹ️ Using OpenAPI spec: $(OPENAPI_SPEC_PATH)"; \
+	else \
+		echo "OpenAPI spec not found at $(OPENAPI_SPEC_PATH). Generating default docs/swagger/swagger-3-0.json..."; \
+		$(MAKE) swagger; \
+	fi
+	@$(MAKE) speakeasy-mcp-clean
+	@$(MAKE) speakeasy-mcp-generate
+	@echo "✅ build-mcp complete"
+
+run-mcp:
+	@echo "Starting MCP server (Node/Speakeasy runtime wrapper)..."
+	@test -x scripts/run-flexprice-mcp-sdk.sh || chmod +x scripts/run-flexprice-mcp-sdk.sh
+	@bash scripts/run-flexprice-mcp-sdk.sh
+
+run-mcp-sdk:
+	@echo "Starting MCP server (Node/Speakeasy runtime wrapper)..."
+	@test -x scripts/run-flexprice-mcp-sdk.sh || chmod +x scripts/run-flexprice-mcp-sdk.sh
+	@bash scripts/run-flexprice-mcp-sdk.sh
 
 regenerate-sdk: go-sdk
 	@echo "✓ Go SDK regenerated (Python/JS commented out for now)"
