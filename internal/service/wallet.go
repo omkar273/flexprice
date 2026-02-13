@@ -1034,51 +1034,44 @@ func (s *walletService) completePurchasedCreditTransaction(ctx context.Context, 
 // logCreditBalanceAlert logs a credit balance alert for a wallet after a balance change
 func (s *walletService) logCreditBalanceAlert(ctx context.Context, w *wallet.Wallet, newCreditBalance decimal.Decimal) error {
 	// Check credit balance alerts after wallet operation
-	var alertSettings *types.AlertSettings
+	var thresholdValue decimal.Decimal
 	var alertStatus types.AlertState
 
-	// Get wallet alert settings or fall back to tenant-level settings
-	if w.AlertSettings != nil {
-		alertSettings = w.AlertSettings
+	// Get wallet threshold or fall back to tenant-level settings
+	if w.AlertConfig != nil && w.AlertConfig.Threshold != nil {
+		thresholdValue = w.AlertConfig.Threshold.Value
 	} else {
 		// Fall back to tenant-level settings (GetSetting handles defaults automatically)
 		settingsSvc := NewSettingsService(s.ServiceParams).(*settingsService)
-		walletAlertSettings, err := GetSetting[types.AlertSettings](settingsSvc, ctx, types.SettingKeyWalletBalanceAlertConfig)
+		walletAlertConfig, err := GetSetting[types.AlertConfig](settingsSvc, ctx, types.SettingKeyWalletBalanceAlertConfig)
 		if err != nil {
 			s.Logger.Errorw("failed to get wallet alert config from tenant settings",
 				"error", err,
 				"wallet_id", w.ID,
 			)
-			// Use default settings if tenant settings fetch fails
-			alertSettings = &types.AlertSettings{
-				Critical: &types.AlertThreshold{
-					Threshold: decimal.NewFromFloat(0.0),
-					Condition: types.AlertConditionBelow,
-				},
-				AlertEnabled: lo.ToPtr(true),
-			}
-		} else {
-			alertSettings = &walletAlertSettings
 		}
+		thresholdValue = walletAlertConfig.Threshold.Value
 	}
 
-	// Determine alert status based on balance vs alert settings
-	var err error
-	alertStatus, err = alertSettings.AlertState(newCreditBalance)
-	if err != nil {
-		s.Logger.Errorw("failed to determine alert status",
-			"error", err,
-			"wallet_id", w.ID,
-			"new_credit_balance", newCreditBalance,
-		)
-		return err
+	// Threshold is stored in credits, credit balance is in credits - direct comparison
+	// Determine alert status based on balance vs threshold (<= threshold triggers alert)
+	if newCreditBalance.LessThanOrEqual(thresholdValue) {
+		alertStatus = types.AlertStateInAlarm
+	} else {
+		alertStatus = types.AlertStateOk
 	}
 
 	// Create alert info
 	alertInfo := types.AlertInfo{
-		AlertSettings: alertSettings,
-		ValueAtTime:   newCreditBalance,
-		Timestamp:     time.Now().UTC(),
+		AlertSettings: &types.AlertSettings{
+			Critical: &types.AlertThreshold{
+				Threshold: thresholdValue,
+				Condition: types.AlertConditionBelow,
+			},
+			AlertEnabled: lo.ToPtr(true),
+		},
+		ValueAtTime: newCreditBalance,
+		Timestamp:   time.Now().UTC(),
 	}
 
 	// Log the alert
@@ -1104,7 +1097,7 @@ func (s *walletService) logCreditBalanceAlert(ctx context.Context, w *wallet.Wal
 			"error", err,
 			"wallet_id", w.ID,
 			"new_credit_balance", newCreditBalance,
-			"alert_settings", alertSettings,
+			"threshold", thresholdValue,
 			"alert_status", alertStatus,
 		)
 		return err
@@ -1113,7 +1106,7 @@ func (s *walletService) logCreditBalanceAlert(ctx context.Context, w *wallet.Wal
 	s.Logger.Infow("credit balance alert logged successfully",
 		"wallet_id", w.ID,
 		"new_credit_balance", newCreditBalance,
-		"alert_settings", alertSettings,
+		"threshold", thresholdValue,
 		"alert_status", alertStatus,
 	)
 	return nil
@@ -1363,14 +1356,30 @@ func (s *walletService) UpdateWallet(ctx context.Context, id string, req *dto.Up
 		existing.Config = *req.Config
 	}
 
-	// Update alert settings if provided
-	if req.AlertSettings != nil {
-		// Update wallet alert settings
-		existing.AlertSettings = req.AlertSettings
+	// Update alert config
+	if req.AlertEnabled != nil {
+		existing.AlertEnabled = *req.AlertEnabled
+		// If alerts are disabled, clear the config and state
+		if !*req.AlertEnabled {
+			existing.AlertConfig = nil
+			existing.AlertState = string(types.AlertStateOk)
+		}
+	}
 
-		// If alerts are being disabled (AlertSettings.AlertEnabled = false), reset state
-		if !req.AlertSettings.IsAlertEnabled() {
-			existing.AlertState = types.AlertStateOk
+	// Update alert config if provided and alerts are enabled
+	if req.AlertConfig != nil {
+		if !existing.AlertEnabled {
+			return nil, ierr.NewError("cannot set alert config when alerts are disabled").
+				WithHint("Enable alerts first before setting alert config").
+				Mark(ierr.ErrValidation)
+		}
+
+		// Convert AlertConfig to types.AlertConfig
+		existing.AlertConfig = &types.AlertConfig{
+			Threshold: &types.WalletAlertThreshold{
+				Type:  types.AlertThresholdType(req.AlertConfig.Threshold.Type),
+				Value: req.AlertConfig.Threshold.Value,
+			},
 		}
 	}
 
@@ -1946,7 +1955,7 @@ func (s *walletService) UpdateWalletAlertState(ctx context.Context, walletID str
 	}
 
 	// Update alert state directly
-	w.AlertState = state
+	w.AlertState = string(state)
 
 	return s.WalletRepo.UpdateWallet(ctx, walletID, w)
 }
@@ -1977,7 +1986,7 @@ func (s *walletService) PublishEvent(ctx context.Context, eventName string, w *w
 	}
 
 	// Add alert info for alert events
-	if w.AlertSettings != nil {
+	if w.AlertConfig != nil && w.AlertConfig.Threshold != nil {
 		currentBalance := balance.RealTimeBalance
 		if currentBalance == nil {
 			currentBalance = &w.Balance
@@ -1988,10 +1997,11 @@ func (s *walletService) PublishEvent(ctx context.Context, eventName string, w *w
 		}
 
 		internalEvent.Alert = &webhookDto.WalletAlertInfo{
-			State:          string(w.AlertState),
+			State:          w.AlertState,
+			Threshold:      w.AlertConfig.Threshold.Value,
 			CurrentBalance: *currentBalance,
 			CreditBalance:  *creditBalance,
-			AlertSettings:  w.AlertSettings,
+			AlertConfig:    w.AlertConfig,
 			AlertType:      getAlertType(eventName),
 		}
 
@@ -1999,7 +2009,7 @@ func (s *walletService) PublishEvent(ctx context.Context, eventName string, w *w
 			"wallet_id", w.ID,
 			"alert_state", w.AlertState,
 			"alert_type", getAlertType(eventName),
-			"alert_settings", w.AlertSettings,
+			"threshold", w.AlertConfig.Threshold.Value,
 			"current_balance", *currentBalance,
 			"credit_balance", *creditBalance,
 		)
@@ -2028,7 +2038,7 @@ func (s *walletService) PublishEvent(ctx context.Context, eventName string, w *w
 		"event_name", eventName,
 		"wallet_id", w.ID,
 		"alert_state", w.AlertState,
-		"alert_settings", w.AlertSettings,
+		"alert_config", w.AlertConfig,
 	)
 
 	return s.WebhookPublisher.PublishWebhook(ctx, webhookEvent)
@@ -2047,12 +2057,12 @@ func getAlertType(eventName string) string {
 
 // CheckBalanceThresholds checks if wallet balance is below threshold and triggers alerts
 func (s *walletService) CheckBalanceThresholds(ctx context.Context, w *wallet.Wallet, balance *dto.WalletBalanceResponse) error {
-	// Skip if alerts not enabled
-	if !w.IsAlertEnabled() {
+	// Skip if alerts not enabled or no config
+	if !w.AlertEnabled || w.AlertConfig == nil || w.AlertConfig.Threshold == nil {
 		return nil
 	}
 
-	alertSettings := w.AlertSettings
+	threshold := w.AlertConfig.Threshold.Value
 	currentBalance := balance.RealTimeBalance
 	if currentBalance == nil {
 		currentBalance = &w.Balance
@@ -2064,49 +2074,29 @@ func (s *walletService) CheckBalanceThresholds(ctx context.Context, w *wallet.Wa
 
 	s.Logger.Infow("checking balance thresholds",
 		"wallet_id", w.ID,
-		"alert_settings", alertSettings,
+		"threshold", threshold,
 		"current_balance", currentBalance,
 		"credit_balance", creditBalance,
 		"alert_state", w.AlertState,
 	)
 
-	// Determine alert status for current balance
-	currentBalanceAlertStatus, err := alertSettings.AlertState(*currentBalance)
-	if err != nil {
-		s.Logger.Errorw("failed to determine current balance alert status",
-			"wallet_id", w.ID,
-			"error", err,
-		)
-		return err
-	}
+	// Check if any balance is below threshold
+	isCurrentBalanceBelowThreshold := currentBalance.LessThanOrEqual(threshold)
+	isCreditBalanceBelowThreshold := creditBalance.LessThanOrEqual(threshold)
+	isAnyBalanceBelowThreshold := isCurrentBalanceBelowThreshold || isCreditBalanceBelowThreshold
 
-	// Determine alert status for credit balance
-	creditBalanceAlertStatus, err := alertSettings.AlertState(*creditBalance)
-	if err != nil {
-		s.Logger.Errorw("failed to determine credit balance alert status",
+	// Handle balance above threshold (recovery)
+	if !isAnyBalanceBelowThreshold {
+		s.Logger.Infow("all balances above threshold - checking recovery",
 			"wallet_id", w.ID,
-			"error", err,
-		)
-		return err
-	}
-
-	// Check if any balance triggered an alert (critical, warning, or info)
-	isCurrentBalanceInAlert := currentBalanceAlertStatus != types.AlertStateOk
-	isCreditBalanceInAlert := creditBalanceAlertStatus != types.AlertStateOk
-	isAnyBalanceInAlert := isCurrentBalanceInAlert || isCreditBalanceInAlert
-
-	// Handle balance recovery (all balances are OK)
-	if !isAnyBalanceInAlert {
-		s.Logger.Infow("all balances OK - checking recovery",
-			"wallet_id", w.ID,
-			"alert_settings", alertSettings,
+			"threshold", threshold,
 			"current_balance", currentBalance,
 			"credit_balance", creditBalance,
 			"alert_state", w.AlertState,
 		)
 
 		// If current state is alert, update to ok (recovery)
-		if w.AlertState == types.AlertStateInAlarm {
+		if w.AlertState == string(types.AlertStateInAlarm) {
 			if err := s.UpdateWalletAlertState(ctx, w.ID, types.AlertStateOk); err != nil {
 				s.Logger.Errorw("failed to update wallet alert state",
 					"wallet_id", w.ID,
@@ -2123,20 +2113,18 @@ func (s *walletService) CheckBalanceThresholds(ctx context.Context, w *wallet.Wa
 	}
 
 	// Skip if already in alert state
-	if w.AlertState == types.AlertStateInAlarm {
+	if w.AlertState == string(types.AlertStateInAlarm) {
 		s.Logger.Infow("skipping alert - already in alert state",
 			"wallet_id", w.ID,
 		)
 		return nil
 	}
 
-	s.Logger.Infow("balance triggered alert - updating state",
+	s.Logger.Infow("balance below/equal threshold - triggering alert",
 		"wallet_id", w.ID,
-		"alert_settings", alertSettings,
+		"threshold", threshold,
 		"current_balance", currentBalance,
 		"credit_balance", creditBalance,
-		"current_balance_alert_status", currentBalanceAlertStatus,
-		"credit_balance_alert_status", creditBalanceAlertStatus,
 	)
 
 	// Update wallet state to alert
@@ -2148,13 +2136,13 @@ func (s *walletService) CheckBalanceThresholds(ctx context.Context, w *wallet.Wa
 		return err
 	}
 
-	// Trigger alerts based on which balance triggered an alert
+	// Trigger alerts based on which balance is below threshold
 	var errs []error
-	if isCreditBalanceInAlert {
+	if isCreditBalanceBelowThreshold {
 		s.Logger.Infow("triggering credit balance alert",
 			"wallet_id", w.ID,
 			"credit_balance", creditBalance,
-			"alert_status", creditBalanceAlertStatus,
+			"threshold", threshold,
 		)
 		if err := s.PublishEvent(ctx, types.WebhookEventWalletCreditBalanceDropped, w); err != nil {
 			s.Logger.Errorw("failed to publish credit balance alert",
@@ -2164,11 +2152,11 @@ func (s *walletService) CheckBalanceThresholds(ctx context.Context, w *wallet.Wa
 			errs = append(errs, err)
 		}
 	}
-	if isCurrentBalanceInAlert {
+	if isCurrentBalanceBelowThreshold {
 		s.Logger.Infow("triggering ongoing balance alert",
 			"wallet_id", w.ID,
 			"balance", currentBalance,
-			"alert_status", currentBalanceAlertStatus,
+			"threshold", threshold,
 		)
 		if err := s.PublishEvent(ctx, types.WebhookEventWalletOngoingBalanceDropped, w); err != nil {
 			s.Logger.Errorw("failed to publish ongoing balance alert",
@@ -2725,8 +2713,8 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 		s.Logger.Debugw("processing wallet for alert check",
 			"wallet_id", w.ID,
 			"customer_id", w.CustomerID,
-			"alert_enabled", w.IsAlertEnabled(),
-			"has_wallet_alert_settings", w.AlertSettings != nil,
+			"alert_enabled", w.AlertEnabled,
+			"has_wallet_alert_config", w.AlertConfig != nil,
 			"event_id", req.ID,
 		)
 		balance, err := s.GetWalletBalanceV2(ctx, w.ID)
@@ -2739,32 +2727,11 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 			continue
 		}
 
-		// Determine alert settings: wallet-level settings take precedence over tenant-level settings
-		var alertSettings *types.AlertSettings
-		if w.AlertSettings != nil {
-			// Use wallet-level alert settings
-			alertSettings = w.AlertSettings
-		} else {
-			// Fall back to tenant-level settings (GetSetting handles defaults automatically)
-			walletAlertSettings, err := GetSetting[types.AlertSettings](settingsSvc, ctx, types.SettingKeyWalletBalanceAlertConfig)
-			if err != nil {
-				s.Logger.Errorw("failed to get wallet alert config from tenant settings, skipping wallet",
-					"error", err,
-					"wallet_id", w.ID,
-					"event_id", req.ID,
-				)
-				continue
-			}
-
-			alertSettings = &walletAlertSettings
-		}
-
-		// Skip if alerts are disabled (check after determining settings)
-		if !alertSettings.IsAlertEnabled() {
+		// Skip if alerts are disabled for this wallet
+		if !w.AlertEnabled {
 			s.Logger.Debugw("skipping wallet - alerts disabled",
 				"wallet_id", w.ID,
-				"has_wallet_settings", w.AlertSettings != nil,
-				"alert_enabled", alertSettings.IsAlertEnabled(),
+				"alert_enabled", w.AlertEnabled,
 				"event_id", req.ID,
 			)
 			// Trigger auto top-up if enabled
@@ -2776,6 +2743,26 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 				)
 			}
 			continue
+		}
+
+		// Determine threshold: wallet-level config takes precedence over tenant-level settings
+		var threshold decimal.Decimal
+		if w.AlertConfig != nil && w.AlertConfig.Threshold != nil {
+			// Use wallet-level threshold
+			threshold = w.AlertConfig.Threshold.Value
+		} else {
+			// Fall back to tenant-level settings (GetSetting handles defaults automatically)
+			walletAlertConfig, err := GetSetting[types.AlertConfig](settingsSvc, ctx, types.SettingKeyWalletBalanceAlertConfig)
+			if err != nil {
+				s.Logger.Errorw("failed to get wallet alert config from tenant settings, skipping wallet",
+					"error", err,
+					"wallet_id", w.ID,
+					"event_id", req.ID,
+				)
+				continue
+			}
+
+			threshold = walletAlertConfig.Threshold.Value
 		}
 
 		// GetWalletBalanceV2 returns:
@@ -2793,7 +2780,7 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 			"wallet_id", w.ID,
 			"real_time_balance", balance.RealTimeBalance,
 			"wallet_current_balance", balance.Wallet.Balance,
-			"alert_settings", alertSettings,
+			"threshold", threshold,
 			"pending_charges_currency", balance.CurrentPeriodUsage,
 			"conversion_rate", w.ConversionRate,
 			"event_id", req.ID,
@@ -2863,22 +2850,23 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 			)
 		}
 
-		// Ongoing balance alert check using alert settings
-		// Determine alert status based on ongoing balance vs alert settings
-		alertStatus, err := alertSettings.AlertState(ongoingBalance)
-		if err != nil {
-			s.Logger.Errorw("failed to determine wallet alert status",
-				"wallet_id", w.ID,
-				"ongoing_balance", ongoingBalance,
-				"error", err,
-			)
-			continue
+		// Ongoing balance alert check
+		// Check if ongoing balance is <= threshold (below or equal triggers alert)
+		isOngoingBalanceBelowOrEqualThreshold := ongoingBalance.LessThanOrEqual(threshold)
+
+		// Determine alert status based on balance check
+		var alertStatus types.AlertState
+		if isOngoingBalanceBelowOrEqualThreshold {
+			alertStatus = types.AlertStateInAlarm
+		} else {
+			alertStatus = types.AlertStateOk
 		}
 
 		s.Logger.Infow("ongoing balance alert check - determined status",
 			"wallet_id", w.ID,
 			"ongoing_balance", ongoingBalance,
-			"alert_settings", alertSettings,
+			"threshold", threshold,
+			"is_below_or_equal_threshold", isOngoingBalanceBelowOrEqualThreshold,
 			"alert_status", alertStatus,
 			"event_id", req.ID,
 		)
@@ -2897,9 +2885,15 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 			AlertType:   types.AlertTypeLowOngoingBalance,
 			AlertStatus: alertStatus,
 			AlertInfo: types.AlertInfo{
-				AlertSettings: alertSettings,
-				ValueAtTime:   ongoingBalance,
-				Timestamp:     time.Now().UTC(),
+				AlertSettings: &types.AlertSettings{
+					Critical: &types.AlertThreshold{
+						Threshold: threshold,
+						Condition: types.AlertConditionBelow,
+					},
+					AlertEnabled: lo.ToPtr(true),
+				},
+				ValueAtTime: ongoingBalance,
+				Timestamp:   time.Now().UTC(),
 			},
 		}
 
@@ -2912,7 +2906,7 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 				"alert_type", types.AlertTypeLowOngoingBalance,
 				"alert_status", alertStatus,
 				"ongoing_balance", ongoingBalance,
-				"alert_settings", alertSettings,
+				"threshold", threshold,
 				"event_id", req.ID,
 			)
 			continue
@@ -2922,7 +2916,7 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 			"wallet_id", w.ID,
 			"alert_status", alertStatus,
 			"ongoing_balance", ongoingBalance,
-			"alert_settings", alertSettings,
+			"threshold", threshold,
 			"event_id", req.ID,
 		)
 
@@ -2938,7 +2932,7 @@ func (s *walletService) CheckWalletBalanceAlert(ctx context.Context, req *wallet
 			continue
 		}
 
-		if currentWallet.AlertState != alertStatus {
+		if currentWallet.AlertState != string(alertStatus) {
 			s.Logger.Debugw("updating wallet alert state",
 				"wallet_id", w.ID,
 				"old_state", currentWallet.AlertState,

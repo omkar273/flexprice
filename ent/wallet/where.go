@@ -153,6 +153,11 @@ func TopupConversionRate(v decimal.Decimal) predicate.Wallet {
 	return predicate.Wallet(sql.FieldEQ(FieldTopupConversionRate, v))
 }
 
+// AlertEnabled applies equality check predicate on the "alert_enabled" field. It's identical to AlertEnabledEQ.
+func AlertEnabled(v bool) predicate.Wallet {
+	return predicate.Wallet(sql.FieldEQ(FieldAlertEnabled, v))
+}
+
 // AlertState applies equality check predicate on the "alert_state" field. It's identical to AlertStateEQ.
 func AlertState(v types.AlertState) predicate.Wallet {
 	vc := string(v)
@@ -1242,14 +1247,34 @@ func ConfigNotNil() predicate.Wallet {
 	return predicate.Wallet(sql.FieldNotNull(FieldConfig))
 }
 
-// AlertSettingsIsNil applies the IsNil predicate on the "alert_settings" field.
-func AlertSettingsIsNil() predicate.Wallet {
-	return predicate.Wallet(sql.FieldIsNull(FieldAlertSettings))
+// AlertConfigIsNil applies the IsNil predicate on the "alert_config" field.
+func AlertConfigIsNil() predicate.Wallet {
+	return predicate.Wallet(sql.FieldIsNull(FieldAlertConfig))
 }
 
-// AlertSettingsNotNil applies the NotNil predicate on the "alert_settings" field.
-func AlertSettingsNotNil() predicate.Wallet {
-	return predicate.Wallet(sql.FieldNotNull(FieldAlertSettings))
+// AlertConfigNotNil applies the NotNil predicate on the "alert_config" field.
+func AlertConfigNotNil() predicate.Wallet {
+	return predicate.Wallet(sql.FieldNotNull(FieldAlertConfig))
+}
+
+// AlertEnabledEQ applies the EQ predicate on the "alert_enabled" field.
+func AlertEnabledEQ(v bool) predicate.Wallet {
+	return predicate.Wallet(sql.FieldEQ(FieldAlertEnabled, v))
+}
+
+// AlertEnabledNEQ applies the NEQ predicate on the "alert_enabled" field.
+func AlertEnabledNEQ(v bool) predicate.Wallet {
+	return predicate.Wallet(sql.FieldNEQ(FieldAlertEnabled, v))
+}
+
+// AlertEnabledIsNil applies the IsNil predicate on the "alert_enabled" field.
+func AlertEnabledIsNil() predicate.Wallet {
+	return predicate.Wallet(sql.FieldIsNull(FieldAlertEnabled))
+}
+
+// AlertEnabledNotNil applies the NotNil predicate on the "alert_enabled" field.
+func AlertEnabledNotNil() predicate.Wallet {
+	return predicate.Wallet(sql.FieldNotNull(FieldAlertEnabled))
 }
 
 // AlertStateEQ applies the EQ predicate on the "alert_state" field.

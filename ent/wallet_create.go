@@ -254,16 +254,30 @@ func (wc *WalletCreate) SetNillableConfig(tc *types.WalletConfig) *WalletCreate 
 	return wc
 }
 
-// SetAlertSettings sets the "alert_settings" field.
-func (wc *WalletCreate) SetAlertSettings(ts types.AlertSettings) *WalletCreate {
-	wc.mutation.SetAlertSettings(ts)
+// SetAlertConfig sets the "alert_config" field.
+func (wc *WalletCreate) SetAlertConfig(tc types.AlertConfig) *WalletCreate {
+	wc.mutation.SetAlertConfig(tc)
 	return wc
 }
 
-// SetNillableAlertSettings sets the "alert_settings" field if the given value is not nil.
-func (wc *WalletCreate) SetNillableAlertSettings(ts *types.AlertSettings) *WalletCreate {
-	if ts != nil {
-		wc.SetAlertSettings(*ts)
+// SetNillableAlertConfig sets the "alert_config" field if the given value is not nil.
+func (wc *WalletCreate) SetNillableAlertConfig(tc *types.AlertConfig) *WalletCreate {
+	if tc != nil {
+		wc.SetAlertConfig(*tc)
+	}
+	return wc
+}
+
+// SetAlertEnabled sets the "alert_enabled" field.
+func (wc *WalletCreate) SetAlertEnabled(b bool) *WalletCreate {
+	wc.mutation.SetAlertEnabled(b)
+	return wc
+}
+
+// SetNillableAlertEnabled sets the "alert_enabled" field if the given value is not nil.
+func (wc *WalletCreate) SetNillableAlertEnabled(b *bool) *WalletCreate {
+	if b != nil {
+		wc.SetAlertEnabled(*b)
 	}
 	return wc
 }
@@ -359,6 +373,10 @@ func (wc *WalletCreate) defaults() {
 		v := wallet.DefaultTopupConversionRate
 		wc.mutation.SetTopupConversionRate(v)
 	}
+	if _, ok := wc.mutation.AlertEnabled(); !ok {
+		v := wallet.DefaultAlertEnabled
+		wc.mutation.SetAlertEnabled(v)
+	}
 	if _, ok := wc.mutation.AlertState(); !ok {
 		v := wallet.DefaultAlertState
 		wc.mutation.SetAlertState(v)
@@ -430,9 +448,9 @@ func (wc *WalletCreate) check() error {
 			return &ValidationError{Name: "config", err: fmt.Errorf(`ent: validator failed for field "Wallet.config": %w`, err)}
 		}
 	}
-	if v, ok := wc.mutation.AlertSettings(); ok {
+	if v, ok := wc.mutation.AlertConfig(); ok {
 		if err := v.Validate(); err != nil {
-			return &ValidationError{Name: "alert_settings", err: fmt.Errorf(`ent: validator failed for field "Wallet.alert_settings": %w`, err)}
+			return &ValidationError{Name: "alert_config", err: fmt.Errorf(`ent: validator failed for field "Wallet.alert_config": %w`, err)}
 		}
 	}
 	return nil
@@ -550,9 +568,13 @@ func (wc *WalletCreate) createSpec() (*Wallet, *sqlgraph.CreateSpec) {
 		_spec.SetField(wallet.FieldConfig, field.TypeJSON, value)
 		_node.Config = value
 	}
-	if value, ok := wc.mutation.AlertSettings(); ok {
-		_spec.SetField(wallet.FieldAlertSettings, field.TypeJSON, value)
-		_node.AlertSettings = value
+	if value, ok := wc.mutation.AlertConfig(); ok {
+		_spec.SetField(wallet.FieldAlertConfig, field.TypeJSON, value)
+		_node.AlertConfig = value
+	}
+	if value, ok := wc.mutation.AlertEnabled(); ok {
+		_spec.SetField(wallet.FieldAlertEnabled, field.TypeBool, value)
+		_node.AlertEnabled = value
 	}
 	if value, ok := wc.mutation.AlertState(); ok {
 		_spec.SetField(wallet.FieldAlertState, field.TypeString, value)

@@ -37,19 +37,15 @@ type Wallet struct {
 	// ex if topup_conversion_rate is 0.5, then 1 USD = 2 credits
 	TopupConversionRate decimal.Decimal `db:"topup_conversion_rate" json:"topup_conversion_rate" swaggertype:"string"`
 
-	EnvironmentID string               `db:"environment_id" json:"environment_id"`
-	AlertSettings *types.AlertSettings `db:"alert_settings" json:"alert_settings,omitempty"`
-	AlertState    types.AlertState     `db:"alert_state" json:"alert_state"`
+	EnvironmentID string             `db:"environment_id" json:"environment_id"`
+	AlertEnabled  bool               `db:"alert_enabled" json:"alert_enabled"`
+	AlertConfig   *types.AlertConfig `db:"alert_config" json:"alert_config,omitempty"`
+	AlertState    string             `db:"alert_state" json:"alert_state"`
 	types.BaseModel
 }
 
 func (w *Wallet) TableName() string {
 	return "wallets"
-}
-
-// IsAlertEnabled returns true if alerts are enabled for this wallet
-func (w *Wallet) IsAlertEnabled() bool {
-	return w.AlertSettings != nil && w.AlertSettings.IsAlertEnabled()
 }
 
 func (w *Wallet) Validate() error {
@@ -102,11 +98,9 @@ func FromEnt(e *ent.Wallet) *Wallet {
 		return nil
 	}
 
-	// Extract alert settings from Ent entity
-	var alertSettings *types.AlertSettings
-	// Check if any threshold is set to determine if alert settings exist
-	if e.AlertSettings.Critical != nil || e.AlertSettings.Warning != nil || e.AlertSettings.Info != nil {
-		alertSettings = &e.AlertSettings
+	alertConfig := lo.ToPtr(e.AlertConfig)
+	if alertConfig == nil || alertConfig.Threshold == nil {
+		alertConfig = nil
 	}
 
 	return &Wallet{
@@ -124,8 +118,9 @@ func FromEnt(e *ent.Wallet) *Wallet {
 		Config:         e.Config,
 		ConversionRate: e.ConversionRate,
 		EnvironmentID:  e.EnvironmentID,
-		AlertSettings:  alertSettings,
-		AlertState:     e.AlertState,
+		AlertEnabled:   e.AlertEnabled,
+		AlertConfig:    alertConfig,
+		AlertState:     string(e.AlertState),
 		// TODO: remove this after migration
 		TopupConversionRate: lo.FromPtrOr(e.TopupConversionRate, decimal.NewFromInt(1)),
 		BaseModel: types.BaseModel{
