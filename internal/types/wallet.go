@@ -310,6 +310,13 @@ func (c WalletConfig) Validate() error {
 	return nil
 }
 
+type CheckAlertsRequest struct {
+	TenantIDs []string              `json:"tenant_ids"`
+	EnvIDs    []string              `json:"env_ids"`
+	WalletIDs []string              `json:"wallet_ids"`
+	Threshold *WalletAlertThreshold `json:"threshold,omitempty"`
+}
+
 // CreditExpirySkipReason is the reason a credit grant was skipped during expiry.
 type CreditExpirySkipReason string
 
@@ -330,8 +337,9 @@ type ExpireCreditsResult struct {
 // WalletFilter represents the filter options for wallets
 type WalletFilter struct {
 	*QueryFilter
-	WalletIDs []string      `json:"wallet_ids,omitempty" form:"wallet_ids"`
-	Status    *WalletStatus `json:"status,omitempty" form:"status"`
+	WalletIDs    []string      `json:"wallet_ids,omitempty" form:"wallet_ids"`
+	Status       *WalletStatus `json:"status,omitempty" form:"status"`
+	AlertEnabled *bool         `json:"alert_enabled,omitempty" form:"alert_enabled"`
 }
 
 func NewWalletFilter() *WalletFilter {

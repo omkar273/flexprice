@@ -55,8 +55,10 @@ const (
 	FieldTopupConversionRate = "topup_conversion_rate"
 	// FieldConfig holds the string denoting the config field in the database.
 	FieldConfig = "config"
-	// FieldAlertSettings holds the string denoting the alert_settings field in the database.
-	FieldAlertSettings = "alert_settings"
+	// FieldAlertConfig holds the string denoting the alert_config field in the database.
+	FieldAlertConfig = "alert_config"
+	// FieldAlertEnabled holds the string denoting the alert_enabled field in the database.
+	FieldAlertEnabled = "alert_enabled"
 	// FieldAlertState holds the string denoting the alert_state field in the database.
 	FieldAlertState = "alert_state"
 	// Table holds the table name of the wallet in the database.
@@ -86,7 +88,8 @@ var Columns = []string{
 	FieldConversionRate,
 	FieldTopupConversionRate,
 	FieldConfig,
-	FieldAlertSettings,
+	FieldAlertConfig,
+	FieldAlertEnabled,
 	FieldAlertState,
 }
 
@@ -127,6 +130,8 @@ var (
 	DefaultConversionRate decimal.Decimal
 	// DefaultTopupConversionRate holds the default value on creation for the "topup_conversion_rate" field.
 	DefaultTopupConversionRate decimal.Decimal
+	// DefaultAlertEnabled holds the default value on creation for the "alert_enabled" field.
+	DefaultAlertEnabled bool
 	// DefaultAlertState holds the default value on creation for the "alert_state" field.
 	DefaultAlertState types.AlertState
 )
@@ -222,6 +227,11 @@ func ByConversionRate(opts ...sql.OrderTermOption) OrderOption {
 // ByTopupConversionRate orders the results by the topup_conversion_rate field.
 func ByTopupConversionRate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTopupConversionRate, opts...).ToFunc()
+}
+
+// ByAlertEnabled orders the results by the alert_enabled field.
+func ByAlertEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAlertEnabled, opts...).ToFunc()
 }
 
 // ByAlertState orders the results by the alert_state field.

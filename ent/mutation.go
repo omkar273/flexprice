@@ -62218,7 +62218,8 @@ type WalletMutation struct {
 	conversion_rate       *decimal.Decimal
 	topup_conversion_rate *decimal.Decimal
 	_config               *types.WalletConfig
-	alert_settings        *types.AlertSettings
+	alert_config          *types.AlertConfig
+	alert_enabled         *bool
 	alert_state           *types.AlertState
 	clearedFields         map[string]struct{}
 	done                  bool
@@ -63167,53 +63168,102 @@ func (m *WalletMutation) ResetConfig() {
 	delete(m.clearedFields, wallet.FieldConfig)
 }
 
-// SetAlertSettings sets the "alert_settings" field.
-func (m *WalletMutation) SetAlertSettings(ts types.AlertSettings) {
-	m.alert_settings = &ts
+// SetAlertConfig sets the "alert_config" field.
+func (m *WalletMutation) SetAlertConfig(tc types.AlertConfig) {
+	m.alert_config = &tc
 }
 
-// AlertSettings returns the value of the "alert_settings" field in the mutation.
-func (m *WalletMutation) AlertSettings() (r types.AlertSettings, exists bool) {
-	v := m.alert_settings
+// AlertConfig returns the value of the "alert_config" field in the mutation.
+func (m *WalletMutation) AlertConfig() (r types.AlertConfig, exists bool) {
+	v := m.alert_config
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldAlertSettings returns the old "alert_settings" field's value of the Wallet entity.
+// OldAlertConfig returns the old "alert_config" field's value of the Wallet entity.
 // If the Wallet object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WalletMutation) OldAlertSettings(ctx context.Context) (v types.AlertSettings, err error) {
+func (m *WalletMutation) OldAlertConfig(ctx context.Context) (v types.AlertConfig, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAlertSettings is only allowed on UpdateOne operations")
+		return v, errors.New("OldAlertConfig is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAlertSettings requires an ID field in the mutation")
+		return v, errors.New("OldAlertConfig requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAlertSettings: %w", err)
+		return v, fmt.Errorf("querying old value for OldAlertConfig: %w", err)
 	}
-	return oldValue.AlertSettings, nil
+	return oldValue.AlertConfig, nil
 }
 
-// ClearAlertSettings clears the value of the "alert_settings" field.
-func (m *WalletMutation) ClearAlertSettings() {
-	m.alert_settings = nil
-	m.clearedFields[wallet.FieldAlertSettings] = struct{}{}
+// ClearAlertConfig clears the value of the "alert_config" field.
+func (m *WalletMutation) ClearAlertConfig() {
+	m.alert_config = nil
+	m.clearedFields[wallet.FieldAlertConfig] = struct{}{}
 }
 
-// AlertSettingsCleared returns if the "alert_settings" field was cleared in this mutation.
-func (m *WalletMutation) AlertSettingsCleared() bool {
-	_, ok := m.clearedFields[wallet.FieldAlertSettings]
+// AlertConfigCleared returns if the "alert_config" field was cleared in this mutation.
+func (m *WalletMutation) AlertConfigCleared() bool {
+	_, ok := m.clearedFields[wallet.FieldAlertConfig]
 	return ok
 }
 
-// ResetAlertSettings resets all changes to the "alert_settings" field.
-func (m *WalletMutation) ResetAlertSettings() {
-	m.alert_settings = nil
-	delete(m.clearedFields, wallet.FieldAlertSettings)
+// ResetAlertConfig resets all changes to the "alert_config" field.
+func (m *WalletMutation) ResetAlertConfig() {
+	m.alert_config = nil
+	delete(m.clearedFields, wallet.FieldAlertConfig)
+}
+
+// SetAlertEnabled sets the "alert_enabled" field.
+func (m *WalletMutation) SetAlertEnabled(b bool) {
+	m.alert_enabled = &b
+}
+
+// AlertEnabled returns the value of the "alert_enabled" field in the mutation.
+func (m *WalletMutation) AlertEnabled() (r bool, exists bool) {
+	v := m.alert_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAlertEnabled returns the old "alert_enabled" field's value of the Wallet entity.
+// If the Wallet object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WalletMutation) OldAlertEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAlertEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAlertEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAlertEnabled: %w", err)
+	}
+	return oldValue.AlertEnabled, nil
+}
+
+// ClearAlertEnabled clears the value of the "alert_enabled" field.
+func (m *WalletMutation) ClearAlertEnabled() {
+	m.alert_enabled = nil
+	m.clearedFields[wallet.FieldAlertEnabled] = struct{}{}
+}
+
+// AlertEnabledCleared returns if the "alert_enabled" field was cleared in this mutation.
+func (m *WalletMutation) AlertEnabledCleared() bool {
+	_, ok := m.clearedFields[wallet.FieldAlertEnabled]
+	return ok
+}
+
+// ResetAlertEnabled resets all changes to the "alert_enabled" field.
+func (m *WalletMutation) ResetAlertEnabled() {
+	m.alert_enabled = nil
+	delete(m.clearedFields, wallet.FieldAlertEnabled)
 }
 
 // SetAlertState sets the "alert_state" field.
@@ -63299,7 +63349,7 @@ func (m *WalletMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WalletMutation) Fields() []string {
-	fields := make([]string, 0, 22)
+	fields := make([]string, 0, 23)
 	if m.tenant_id != nil {
 		fields = append(fields, wallet.FieldTenantID)
 	}
@@ -63360,8 +63410,11 @@ func (m *WalletMutation) Fields() []string {
 	if m._config != nil {
 		fields = append(fields, wallet.FieldConfig)
 	}
-	if m.alert_settings != nil {
-		fields = append(fields, wallet.FieldAlertSettings)
+	if m.alert_config != nil {
+		fields = append(fields, wallet.FieldAlertConfig)
+	}
+	if m.alert_enabled != nil {
+		fields = append(fields, wallet.FieldAlertEnabled)
 	}
 	if m.alert_state != nil {
 		fields = append(fields, wallet.FieldAlertState)
@@ -63414,8 +63467,10 @@ func (m *WalletMutation) Field(name string) (ent.Value, bool) {
 		return m.TopupConversionRate()
 	case wallet.FieldConfig:
 		return m.Config()
-	case wallet.FieldAlertSettings:
-		return m.AlertSettings()
+	case wallet.FieldAlertConfig:
+		return m.AlertConfig()
+	case wallet.FieldAlertEnabled:
+		return m.AlertEnabled()
 	case wallet.FieldAlertState:
 		return m.AlertState()
 	}
@@ -63467,8 +63522,10 @@ func (m *WalletMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldTopupConversionRate(ctx)
 	case wallet.FieldConfig:
 		return m.OldConfig(ctx)
-	case wallet.FieldAlertSettings:
-		return m.OldAlertSettings(ctx)
+	case wallet.FieldAlertConfig:
+		return m.OldAlertConfig(ctx)
+	case wallet.FieldAlertEnabled:
+		return m.OldAlertEnabled(ctx)
 	case wallet.FieldAlertState:
 		return m.OldAlertState(ctx)
 	}
@@ -63620,12 +63677,19 @@ func (m *WalletMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetConfig(v)
 		return nil
-	case wallet.FieldAlertSettings:
-		v, ok := value.(types.AlertSettings)
+	case wallet.FieldAlertConfig:
+		v, ok := value.(types.AlertConfig)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetAlertSettings(v)
+		m.SetAlertConfig(v)
+		return nil
+	case wallet.FieldAlertEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAlertEnabled(v)
 		return nil
 	case wallet.FieldAlertState:
 		v, ok := value.(types.AlertState)
@@ -63691,8 +63755,11 @@ func (m *WalletMutation) ClearedFields() []string {
 	if m.FieldCleared(wallet.FieldConfig) {
 		fields = append(fields, wallet.FieldConfig)
 	}
-	if m.FieldCleared(wallet.FieldAlertSettings) {
-		fields = append(fields, wallet.FieldAlertSettings)
+	if m.FieldCleared(wallet.FieldAlertConfig) {
+		fields = append(fields, wallet.FieldAlertConfig)
+	}
+	if m.FieldCleared(wallet.FieldAlertEnabled) {
+		fields = append(fields, wallet.FieldAlertEnabled)
 	}
 	if m.FieldCleared(wallet.FieldAlertState) {
 		fields = append(fields, wallet.FieldAlertState)
@@ -63738,8 +63805,11 @@ func (m *WalletMutation) ClearField(name string) error {
 	case wallet.FieldConfig:
 		m.ClearConfig()
 		return nil
-	case wallet.FieldAlertSettings:
-		m.ClearAlertSettings()
+	case wallet.FieldAlertConfig:
+		m.ClearAlertConfig()
+		return nil
+	case wallet.FieldAlertEnabled:
+		m.ClearAlertEnabled()
 		return nil
 	case wallet.FieldAlertState:
 		m.ClearAlertState()
@@ -63812,8 +63882,11 @@ func (m *WalletMutation) ResetField(name string) error {
 	case wallet.FieldConfig:
 		m.ResetConfig()
 		return nil
-	case wallet.FieldAlertSettings:
-		m.ResetAlertSettings()
+	case wallet.FieldAlertConfig:
+		m.ResetAlertConfig()
+		return nil
+	case wallet.FieldAlertEnabled:
+		m.ResetAlertEnabled()
 		return nil
 	case wallet.FieldAlertState:
 		m.ResetAlertState()

@@ -692,36 +692,25 @@ func (s *walletService) processWalletOperation(ctx context.Context, req *wallet.
 }
 
 func (s *walletService) logCreditBalanceAlert(ctx context.Context, w *wallet.Wallet, newCreditBalance decimal.Decimal) error {
-	// Get wallet alert settings or use default
-	var alertSettings *types.AlertSettings
-	if w.AlertSettings != nil {
-		alertSettings = w.AlertSettings
-	} else {
-		// Use default settings
-		alertSettings = &types.AlertSettings{
-			Critical: &types.AlertThreshold{
-				Threshold: decimal.NewFromFloat(0.0),
-				Condition: types.AlertConditionBelow,
-			},
-			AlertEnabled: lo.ToPtr(true),
-		}
-	}
+	var thresholdValue decimal.Decimal
+	var alertStatus types.AlertState
 
-	// Determine alert status based on balance vs alert settings
-	alertStatus, err := alertSettings.AlertState(newCreditBalance)
-	if err != nil {
-		s.Logger.Errorw("failed to determine alert status",
-			"error", err,
-			"wallet_id", w.ID,
-			"new_credit_balance", newCreditBalance,
-		)
-		return err
+	if newCreditBalance.LessThanOrEqual(thresholdValue) {
+		alertStatus = types.AlertStateInAlarm
+	} else {
+		alertStatus = types.AlertStateOk
 	}
 
 	alertInfo := types.AlertInfo{
-		AlertSettings: alertSettings,
-		ValueAtTime:   newCreditBalance,
-		Timestamp:     time.Now().UTC(),
+		AlertSettings: &types.AlertSettings{
+			Critical: &types.AlertThreshold{
+				Threshold: thresholdValue,
+				Condition: types.AlertConditionBelow,
+			},
+			AlertEnabled: lo.ToPtr(true),
+		},
+		ValueAtTime: newCreditBalance,
+		Timestamp:   time.Now().UTC(),
 	}
 
 	alertService := service.NewAlertLogsService(s.ServiceParams)
@@ -744,7 +733,7 @@ func (s *walletService) logCreditBalanceAlert(ctx context.Context, w *wallet.Wal
 			"error", err,
 			"wallet_id", w.ID,
 			"new_credit_balance", newCreditBalance,
-			"alert_settings", alertSettings,
+			"threshold", thresholdValue,
 			"alert_status", alertStatus,
 		)
 		return err
@@ -753,7 +742,7 @@ func (s *walletService) logCreditBalanceAlert(ctx context.Context, w *wallet.Wal
 	s.Logger.Infow("credit balance alert logged successfully",
 		"wallet_id", w.ID,
 		"new_credit_balance", newCreditBalance,
-		"alert_settings", alertSettings,
+		"threshold", thresholdValue,
 		"alert_status", alertStatus,
 	)
 	return nil
