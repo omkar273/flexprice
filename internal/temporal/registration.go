@@ -3,7 +3,6 @@ package temporal
 import (
 	"fmt"
 
-	"github.com/flexprice/flexprice/internal/sentry"
 	"github.com/flexprice/flexprice/internal/service"
 	customerActivities "github.com/flexprice/flexprice/internal/temporal/activities/customer"
 	eventsActivities "github.com/flexprice/flexprice/internal/temporal/activities/events"
@@ -143,10 +142,8 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 	reprocessEventsActivities := eventsActivities.NewReprocessEventsActivities(featureUsageTrackingService)
 
 	// Reprocess raw events activities
-	// Create sentry service for raw events processing
-	sentryService := sentry.NewSentryService(params.Config, params.Logger)
-	rawEventsService := service.NewRawEventsService(params, sentryService)
-	reprocessRawEventsActivities := eventsActivities.NewReprocessRawEventsActivities(rawEventsService)
+	rawEventsReprocessingService := service.NewRawEventsReprocessingService(params)
+	reprocessRawEventsActivities := eventsActivities.NewReprocessRawEventsActivities(rawEventsReprocessingService)
 
 	// Get all task queues and register workflows/activities for each
 	for _, taskQueue := range types.GetAllTaskQueues() {
