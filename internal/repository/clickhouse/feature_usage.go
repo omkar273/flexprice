@@ -103,6 +103,13 @@ func buildConditionalAggregationColumnsForSubscription(aggTypes []types.Aggregat
 		columns = append(columns, "toDecimal128(0, 9) AS max_total")
 	}
 
+	// COUNT aggregation (count_distinct_ids) - returns UInt64
+	if aggSet[types.AggregationCount] {
+		columns = append(columns, "count(DISTINCT id) AS count_distinct_ids")
+	} else {
+		columns = append(columns, "COUNT(id) AS count_distinct_ids")
+	}
+
 	// COUNT_UNIQUE aggregation (count_unique_qty) - returns UInt64
 	if aggSet[types.AggregationCountUnique] {
 		columns = append(columns, "count(DISTINCT unique_hash) AS count_unique_qty")
@@ -116,10 +123,6 @@ func buildConditionalAggregationColumnsForSubscription(aggTypes []types.Aggregat
 	} else {
 		columns = append(columns, "toDecimal128(0, 9) AS latest_qty")
 	}
-
-	// COUNT aggregation (count_distinct_ids) - returns UInt64 always
-	// This is done to ensure that the count_distinct_ids is always returned and not affected by the aggregation types
-	columns = append(columns, "count(DISTINCT id) AS count_distinct_ids")
 
 	return columns
 }
