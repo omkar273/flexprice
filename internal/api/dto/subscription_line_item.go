@@ -345,7 +345,7 @@ func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 		lineItem.Metadata["addon_status"] = string(types.AddonStatusActive)
 	}
 
-	// Set dates: effective start = max(subscription start, price start); request start_date may only push start later
+	// Set dates: effective start = max(subscription start, price start, request start)
 	startDate := params.Subscription.StartDate
 	if params.Price != nil && params.Price.StartDate != nil && params.Price.StartDate.After(startDate) {
 		startDate = lo.FromPtr(params.Price.StartDate)
@@ -354,8 +354,13 @@ func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 		startDate = lo.FromPtr(r.StartDate)
 	}
 	lineItem.StartDate = startDate.UTC()
+	// When end date is given: end = max(price/request end, line item start) so start is never after end
 	if r.EndDate != nil {
-		lineItem.EndDate = r.EndDate.UTC()
+		endDateVal := r.EndDate.UTC()
+		if startDate.After(endDateVal) {
+			endDateVal = startDate.UTC()
+		}
+		lineItem.EndDate = endDateVal
 	}
 
 	// Set commitment fields if provided
