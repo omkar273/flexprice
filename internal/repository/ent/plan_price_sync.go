@@ -364,7 +364,8 @@ func (r *planPriceSyncRepository) ListPlanLineItemsToCreate(
 					s.environment_id,
 					s.currency,
 					s.billing_period,
-					s.billing_period_count
+					s.billing_period_count,
+					s.start_date
 				FROM
 					subscriptions s, params p
 				WHERE
@@ -385,7 +386,8 @@ func (r *planPriceSyncRepository) ListPlanLineItemsToCreate(
 					p.currency,
 					p.billing_period,
 					p.billing_period_count,
-					p.parent_price_id
+					p.parent_price_id,
+					p.end_date
 				FROM
 					prices p
 				WHERE
@@ -406,7 +408,8 @@ func (r *planPriceSyncRepository) ListPlanLineItemsToCreate(
 				AND p.billing_period = s.billing_period
 				AND p.billing_period_count = s.billing_period_count
 		WHERE
-			NOT EXISTS (
+			(p.end_date IS NULL OR s.start_date <= p.end_date)
+			AND NOT EXISTS (
 				SELECT
 					1
 				FROM
