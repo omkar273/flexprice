@@ -2696,6 +2696,67 @@ const docTemplate = `{
                     }
                 }
             },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update a customer by id or external_customer_id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "Update a customer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Customer External ID",
+                        "name": "external_customer_id",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Customer",
+                        "name": "customer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCustomerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CustomerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -2952,6 +3013,11 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "name": "expand",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "name": "id",
                         "in": "query"
                     },
@@ -3023,62 +3089,6 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CustomerResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update a customer",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Customers"
-                ],
-                "summary": "Update a customer",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Customer ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Customer",
-                        "name": "customer",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateCustomerRequest"
-                        }
                     }
                 ],
                 "responses": {
@@ -4701,6 +4711,52 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieve event details and processing status with debug information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get event by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetEventByIDResponse"
                         }
                     },
                     "404": {
@@ -7165,6 +7221,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/portal/{external_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Generate a dashboard URL/token for a customer to access their billing information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CustomerPortal"
+                ],
+                "summary": "Create a customer portal session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer External ID",
+                        "name": "external_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PortalSessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/prices": {
             "get": {
                 "security": [
@@ -7424,6 +7535,55 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/dto.CreateBulkPriceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/prices/lookup/{lookup_key}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get price by lookup key",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prices"
+                ],
+                "summary": "Get price by lookup key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Lookup key",
+                        "name": "lookup_key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PriceResponse"
                         }
                     },
                     "400": {
@@ -9591,6 +9751,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/subscriptions/{id}/v2": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a subscription by ID with optional expand parameters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get subscription V2",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated list of fields to expand (e.g., 'subscription_line_items,prices,plan')",
+                        "name": "expand",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubscriptionResponseV2"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tasks": {
             "get": {
                 "security": [
@@ -9624,13 +9836,15 @@ const docTemplate = `{
                         "enum": [
                             "EVENTS",
                             "PRICES",
-                            "CUSTOMERS"
+                            "CUSTOMERS",
+                            "FEATURES"
                         ],
                         "type": "string",
                         "x-enum-varnames": [
                             "EntityTypeEvents",
                             "EntityTypePrices",
-                            "EntityTypeCustomers"
+                            "EntityTypeCustomers",
+                            "EntityTypeFeatures"
                         ],
                         "name": "entity_type",
                         "in": "query"
@@ -10289,6 +10503,64 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.TaskResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/download": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Generate a presigned URL for downloading an exported file (supports both Flexprice-managed and customer-owned S3)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Download task export file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
@@ -11310,6 +11582,158 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/subscription-schedules": {
+            "get": {
+                "description": "Retrieves subscription schedules with optional filtering",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "List all subscription schedules",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Filter to pending schedules only",
+                        "name": "pending_only",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by subscription ID",
+                        "name": "subscription_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit results",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetPendingSchedulesResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/subscription-schedules/{id}": {
+            "get": {
+                "description": "Retrieves details of a specific subscription schedule",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get subscription schedule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Schedule ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubscriptionScheduleResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/subscriptions/schedules/{schedule_id}/cancel": {
+            "post": {
+                "description": "Cancels a pending subscription schedule. Supports two modes: 1) By schedule ID in path, or 2) By subscription ID + schedule type in request body",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Cancel subscription schedule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Schedule ID (optional if using request body)",
+                        "name": "schedule_id",
+                        "in": "path"
+                    },
+                    {
+                        "description": "Cancel request (optional if using path parameter)",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CancelScheduleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CancelScheduleResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/subscriptions/{subscription_id}/schedules": {
+            "get": {
+                "description": "Retrieves all schedules for a specific subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "List subscription schedules",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "subscription_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetPendingSchedulesResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/wallets": {
             "get": {
                 "security": [
@@ -11388,6 +11812,12 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "name": "wallet_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Expand fields (e.g., credits_available_breakdown)",
+                        "name": "expand",
                         "in": "query"
                     }
                 ],
@@ -11710,6 +12140,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Expand fields (e.g., credits_available_breakdown)",
+                        "name": "expand",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -12600,6 +13036,13 @@ const docTemplate = `{
                 "addon_id": {
                     "type": "string"
                 },
+                "line_item_commitments": {
+                    "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
+                    }
+                },
                 "metadata": {
                     "type": "object",
                     "additionalProperties": true
@@ -12620,6 +13063,13 @@ const docTemplate = `{
             "properties": {
                 "addon_id": {
                     "type": "string"
+                },
+                "line_item_commitments": {
+                    "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
+                    }
                 },
                 "metadata": {
                     "type": "object",
@@ -12975,6 +13425,46 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.IngestEventRequest"
                     }
+                }
+            }
+        },
+        "dto.CancelScheduleRequest": {
+            "description": "Request to cancel a subscription schedule (supports two modes)",
+            "type": "object",
+            "properties": {
+                "schedule_id": {
+                    "description": "schedule_id is the ID of the schedule to cancel (optional if subscription_id and schedule_type are provided)",
+                    "type": "string"
+                },
+                "schedule_type": {
+                    "description": "schedule_type is the type of schedule to cancel (required if schedule_id is not provided)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionScheduleChangeType"
+                        }
+                    ]
+                },
+                "subscription_id": {
+                    "description": "subscription_id is the ID of the subscription (required if schedule_id is not provided)",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CancelScheduleResponse": {
+            "description": "Confirmation of schedule cancellation",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "message is a confirmation message",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "status is the new status (should be \"cancelled\")",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ScheduleStatus"
+                        }
+                    ]
                 }
             }
         },
@@ -13716,6 +14206,10 @@ const docTemplate = `{
                 "cadence": {
                     "$ref": "#/definitions/types.CreditGrantCadence"
                 },
+                "conversion_rate": {
+                    "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
+                },
                 "credits": {
                     "type": "string"
                 },
@@ -13750,6 +14244,10 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.CreditGrantScope"
                 },
                 "subscription_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
                     "type": "string"
                 }
             }
@@ -15104,6 +15602,10 @@ const docTemplate = `{
                     "description": "price_unit is the code of the price unit to use for wallet creation\nIf provided, the price unit will be used to set the currency and conversion rate of the wallet:\n- currency: set to price unit's base_currency\n- conversion_rate: set to price unit's conversion_rate",
                     "type": "string"
                 },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
+                },
                 "wallet_type": {
                     "$ref": "#/definitions/types.WalletType"
                 }
@@ -15186,6 +15688,10 @@ const docTemplate = `{
                 "cadence": {
                     "$ref": "#/definitions/types.CreditGrantCadence"
                 },
+                "conversion_rate": {
+                    "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -15247,6 +15753,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tenant_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
                     "type": "string"
                 },
                 "updated_at": {
@@ -15458,6 +15968,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CustomerLookupResult": {
+            "type": "object",
+            "properties": {
+                "customer": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_customer.Customer"
+                },
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                }
+            }
+        },
         "dto.CustomerMultiCurrencyInvoiceSummary": {
             "type": "object",
             "properties": {
@@ -15577,6 +16101,26 @@ const docTemplate = `{
                 },
                 "period": {
                     "$ref": "#/definitions/dto.BillingPeriodInfo"
+                }
+            }
+        },
+        "dto.DebugTracker": {
+            "type": "object",
+            "properties": {
+                "customer_lookup": {
+                    "$ref": "#/definitions/dto.CustomerLookupResult"
+                },
+                "failure_point": {
+                    "$ref": "#/definitions/types.FailurePoint"
+                },
+                "meter_matching": {
+                    "$ref": "#/definitions/dto.MeterMatchingResult"
+                },
+                "price_lookup": {
+                    "$ref": "#/definitions/dto.PriceLookupResult"
+                },
+                "subscription_line_item_lookup": {
+                    "$ref": "#/definitions/dto.SubscriptionLineItemLookupResult"
                 }
             }
         },
@@ -15908,6 +16452,35 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.FeatureUsageInfo": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "feature_id": {
+                    "type": "string"
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "processed_at": {
+                    "type": "string"
+                },
+                "qty_total": {
+                    "type": "string"
+                },
+                "sub_line_item_id": {
+                    "type": "string"
+                },
+                "subscription_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.FeatureUsageSummary": {
             "type": "object",
             "properties": {
@@ -16032,6 +16605,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.GetEventByIDResponse": {
+            "type": "object",
+            "properties": {
+                "debug_tracker": {
+                    "$ref": "#/definitions/dto.DebugTracker"
+                },
+                "event": {
+                    "$ref": "#/definitions/dto.Event"
+                },
+                "processed_events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.FeatureUsageInfo"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.EventProcessingStatusType"
+                }
+            }
+        },
         "dto.GetEventsRequest": {
             "type": "object",
             "properties": {
@@ -16153,6 +16746,23 @@ const docTemplate = `{
                 },
                 "total_count": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.GetPendingSchedulesResponse": {
+            "description": "List of pending schedules for a subscription",
+            "type": "object",
+            "properties": {
+                "count": {
+                    "description": "count is the number of pending schedules",
+                    "type": "integer"
+                },
+                "schedules": {
+                    "description": "schedules is the list of pending schedules",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SubscriptionScheduleResponse"
+                    }
                 }
             }
         },
@@ -17463,6 +18073,83 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.MatchedMeter": {
+            "type": "object",
+            "properties": {
+                "event_name": {
+                    "type": "string"
+                },
+                "meter": {
+                    "$ref": "#/definitions/meter.Meter"
+                },
+                "meter_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MatchedPrice": {
+            "type": "object",
+            "properties": {
+                "meter_id": {
+                    "type": "string"
+                },
+                "price": {
+                    "$ref": "#/definitions/price.Price"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MatchedSubscriptionLineItem": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "is_active_for_event": {
+                    "type": "boolean"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "sub_line_item_id": {
+                    "type": "string"
+                },
+                "subscription_id": {
+                    "type": "string"
+                },
+                "subscription_line_item": {
+                    "$ref": "#/definitions/subscription.SubscriptionLineItem"
+                },
+                "timestamp_within_range": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.MeterMatchingResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "matched_meters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MatchedMeter"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                }
+            }
+        },
         "dto.MeterResponse": {
             "type": "object",
             "properties": {
@@ -17548,6 +18235,17 @@ const docTemplate = `{
                 "price_id": {
                     "description": "PriceID references the plan price to override",
                     "type": "string"
+                },
+                "price_unit_amount": {
+                    "description": "PriceUnitAmount is the amount of the price unit (for CUSTOM type, FLAT_FEE/PACKAGE billing models)",
+                    "type": "string"
+                },
+                "price_unit_tiers": {
+                    "description": "PriceUnitTiers are the tiers for the price unit (for CUSTOM type, TIERED billing model)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreatePriceTier"
+                    }
                 },
                 "quantity": {
                     "description": "Quantity for this line item (optional)",
@@ -17834,6 +18532,37 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PortalSessionResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PriceLookupResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "matched_prices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MatchedPrice"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                }
+            }
+        },
         "dto.PriceResponse": {
             "type": "object",
             "properties": {
@@ -17860,7 +18589,7 @@ const docTemplate = `{
                 },
                 "conversion_rate": {
                     "description": "ConversionRate is the conversion rate of the price unit to the fiat currency",
-                    "type": "number"
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
@@ -17938,7 +18667,8 @@ const docTemplate = `{
                 },
                 "min_quantity": {
                     "description": "MinQuantity is the minimum quantity of the price",
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
                 },
                 "parent_price_id": {
                     "description": "ParentPriceID references the root price (always set for price lineage tracking)",
@@ -17953,7 +18683,7 @@ const docTemplate = `{
                 },
                 "price_unit_amount": {
                     "description": "PriceUnitAmount is the amount of the price unit",
-                    "type": "number"
+                    "type": "string"
                 },
                 "price_unit_id": {
                     "description": "PriceUnitID is the id of the price unit (for CUSTOM type)",
@@ -18375,6 +19105,10 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "is_scheduled": {
+                    "description": "is_scheduled indicates if the change was scheduled or executed immediately",
+                    "type": "boolean"
+                },
                 "metadata": {
                     "description": "metadata from the request",
                     "type": "object",
@@ -18383,7 +19117,7 @@ const docTemplate = `{
                     }
                 },
                 "new_subscription": {
-                    "description": "new_subscription contains the new subscription details",
+                    "description": "new_subscription contains the new subscription details (only if is_scheduled=false)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/dto.SubscriptionSummary"
@@ -18391,7 +19125,7 @@ const docTemplate = `{
                     ]
                 },
                 "old_subscription": {
-                    "description": "old_subscription contains the archived subscription details",
+                    "description": "old_subscription contains the archived subscription details (only if is_scheduled=false)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/dto.SubscriptionSummary"
@@ -18405,6 +19139,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/dto.ProrationDetails"
                         }
                     ]
+                },
+                "schedule_id": {
+                    "description": "schedule_id is the ID of the created schedule (only if is_scheduled=true)",
+                    "type": "string"
+                },
+                "scheduled_at": {
+                    "description": "scheduled_at is when the change will execute (only if is_scheduled=true)",
+                    "type": "string"
                 }
             }
         },
@@ -18524,6 +19266,14 @@ const docTemplate = `{
                     "type": "integer",
                     "default": 1
                 },
+                "change_at": {
+                    "description": "change_at determines when the change should take effect (optional)\nIf not provided or null: change executes immediately\nIf \"immediate\": change executes immediately (explicit)\nIf \"period_end\": change is scheduled for the end of the current billing period",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ScheduleType"
+                        }
+                    ]
+                },
                 "metadata": {
                     "description": "metadata contains additional key-value pairs for storing extra information",
                     "type": "object",
@@ -18559,6 +19309,23 @@ const docTemplate = `{
                 },
                 "subscription_id": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.SubscriptionLineItemLookupResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "matched_line_items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MatchedSubscriptionLineItem"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.DebugTrackerStatus"
                 }
             }
         },
@@ -19046,6 +19813,288 @@ const docTemplate = `{
                 "version": {
                     "description": "Version is used for optimistic locking",
                     "type": "integer"
+                }
+            }
+        },
+        "dto.SubscriptionResponseV2": {
+            "type": "object",
+            "properties": {
+                "active_pause_id": {
+                    "description": "ActivePauseID references the current active pause configuration\nThis will be null if no pause is active or scheduled",
+                    "type": "string"
+                },
+                "billing_anchor": {
+                    "description": "BillingAnchor is the reference point that aligns future billing cycle dates.\nIt sets the day of week for week intervals, the day of month for month and year intervals,\nand the month of year for year intervals. The timestamp is in UTC format.",
+                    "type": "string"
+                },
+                "billing_cadence": {
+                    "$ref": "#/definitions/types.BillingCadence"
+                },
+                "billing_cycle": {
+                    "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.BillingCycle"
+                        }
+                    ]
+                },
+                "billing_period": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "billing_period_count": {
+                    "description": "BillingPeriodCount is the total number units of the billing period.",
+                    "type": "integer",
+                    "default": 1
+                },
+                "cancel_at": {
+                    "description": "CancelAt is the date the subscription will be canceled",
+                    "type": "string"
+                },
+                "cancel_at_period_end": {
+                    "description": "CancelAtPeriodEnd is whether the subscription was canceled at the end of the current period",
+                    "type": "boolean"
+                },
+                "cancelled_at": {
+                    "description": "CanceledAt is the date the subscription was canceled",
+                    "type": "string"
+                },
+                "collection_method": {
+                    "description": "CollectionMethod determines how invoices are collected",
+                    "type": "string"
+                },
+                "commitment_amount": {
+                    "description": "CommitmentAmount is the minimum amount a customer commits to paying for a billing period",
+                    "type": "string"
+                },
+                "coupon_associations": {
+                    "description": "CouponAssociations are included when \"coupon_associations\" is in expand parameter",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CouponAssociationResponse"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "credit_grants": {
+                    "description": "CreditGrants are included when \"credit_grants\" is in expand parameter",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
+                    }
+                },
+                "currency": {
+                    "description": "Currency is the currency of the subscription in lowercase 3 digit ISO codes",
+                    "type": "string"
+                },
+                "current_period_end": {
+                    "description": "CurrentPeriodEnd is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created.",
+                    "type": "string"
+                },
+                "current_period_start": {
+                    "description": "CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created.",
+                    "type": "string"
+                },
+                "customer": {
+                    "description": "Customer is expanded only if \"customer\" is in expand parameter",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.CustomerResponse"
+                        }
+                    ]
+                },
+                "customer_id": {
+                    "description": "CustomerID is the identifier for the customer in our system",
+                    "type": "string"
+                },
+                "customer_timezone": {
+                    "type": "string"
+                },
+                "enable_true_up": {
+                    "type": "boolean"
+                },
+                "end_date": {
+                    "description": "EndDate is the end date of the subscription",
+                    "type": "string"
+                },
+                "environment_id": {
+                    "description": "EnvironmentID is the environment identifier for the subscription",
+                    "type": "string"
+                },
+                "gateway_payment_method_id": {
+                    "description": "GatewayPaymentMethodID is the gateway payment method ID for this subscription",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID is the unique identifier for the subscription",
+                    "type": "string"
+                },
+                "invoicing_customer_id": {
+                    "description": "InvoicingCustomerID is the customer ID to use for invoicing\nThis can differ from the subscription customer (e.g., parent company invoicing for child company)",
+                    "type": "string"
+                },
+                "line_items": {
+                    "description": "LineItems is expanded only if \"subscription_line_items\" is in expand parameter\nEach line item can optionally include expanded price data",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
+                    }
+                },
+                "lookup_key": {
+                    "description": "LookupKey is the key used to lookup the subscription in our system",
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
+                "overage_factor": {
+                    "description": "OverageFactor is a multiplier applied to usage beyond the commitment amount",
+                    "type": "string"
+                },
+                "pause_status": {
+                    "$ref": "#/definitions/types.PauseStatus"
+                },
+                "pauses": {
+                    "description": "Pauses are included when subscription has pause status",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/subscription.SubscriptionPause"
+                    }
+                },
+                "payment_behavior": {
+                    "description": "PaymentBehavior determines how subscription payments are handled",
+                    "type": "string"
+                },
+                "phases": {
+                    "description": "Phases are included when \"phases\" is in expand parameter",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SubscriptionPhaseResponse"
+                    }
+                },
+                "plan": {
+                    "description": "Plan is expanded only if \"plan\" is in expand parameter",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.PlanResponse"
+                        }
+                    ]
+                },
+                "plan_id": {
+                    "description": "PlanID is the identifier for the plan in our system",
+                    "type": "string"
+                },
+                "proration_behavior": {
+                    "$ref": "#/definitions/types.ProrationBehavior"
+                },
+                "start_date": {
+                    "description": "StartDate is the start date of the subscription",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "subscription_status": {
+                    "$ref": "#/definitions/types.SubscriptionStatus"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "trial_end": {
+                    "description": "TrialEnd is the end date of the trial period",
+                    "type": "string"
+                },
+                "trial_start": {
+                    "description": "TrialStart is the start date of the trial period",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "version": {
+                    "description": "Version is used for optimistic locking",
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.SubscriptionScheduleResponse": {
+            "description": "Full details of a subscription schedule",
+            "type": "object",
+            "properties": {
+                "can_be_cancelled": {
+                    "description": "can_be_cancelled indicates if the schedule can be cancelled",
+                    "type": "boolean"
+                },
+                "cancelled_at": {
+                    "description": "cancelled_at is when the schedule was cancelled",
+                    "type": "string"
+                },
+                "configuration": {
+                    "description": "configuration contains type-specific configuration (e.g., target_plan_id for plan changes)"
+                },
+                "created_at": {
+                    "description": "created_at timestamp",
+                    "type": "string"
+                },
+                "days_until_execution": {
+                    "description": "days_until_execution is the number of days until execution",
+                    "type": "integer"
+                },
+                "error_message": {
+                    "description": "error_message contains the error if execution failed",
+                    "type": "string"
+                },
+                "executed_at": {
+                    "description": "executed_at is when the schedule was executed",
+                    "type": "string"
+                },
+                "execution_result": {
+                    "description": "execution_result contains type-specific execution result"
+                },
+                "id": {
+                    "description": "id of the schedule",
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "metadata from the schedule",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "schedule_type": {
+                    "description": "schedule_type is the type of schedule (plan_change, addon_change, etc.)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionScheduleChangeType"
+                        }
+                    ]
+                },
+                "scheduled_at": {
+                    "description": "scheduled_at is when the schedule will execute",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "status is the current status of the schedule",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ScheduleStatus"
+                        }
+                    ]
+                },
+                "subscription_id": {
+                    "description": "subscription_id is the ID of the subscription",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "updated_at timestamp",
+                    "type": "string"
                 }
             }
         },
@@ -19943,6 +20992,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "display_name": {
+                    "type": "string"
+                },
                 "effective_from": {
                     "type": "string"
                 },
@@ -19958,6 +21010,17 @@ const docTemplate = `{
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
+                    }
+                },
+                "price_unit_amount": {
+                    "description": "PriceUnitAmount is the price unit amount (for CUSTOM price unit type, FLAT_FEE/PACKAGE billing models)",
+                    "type": "string"
+                },
+                "price_unit_tiers": {
+                    "description": "PriceUnitTiers are the price unit tiers (for CUSTOM price unit type, TIERED billing model)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "tier_mode": {
@@ -20423,6 +21486,9 @@ const docTemplate = `{
                 "credit_balance": {
                     "type": "string"
                 },
+                "credits_available_breakdown": {
+                    "$ref": "#/definitions/types.CreditBreakdown"
+                },
                 "currency": {
                     "type": "string"
                 },
@@ -20457,6 +21523,10 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Status"
                 },
                 "tenant_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
                     "type": "string"
                 },
                 "unpaid_invoices_amount": {
@@ -20498,13 +21568,20 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WalletConfig"
                 },
                 "conversion_rate": {
+                    "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
                     "type": "string"
                 },
                 "created_at": {
                     "type": "string"
                 },
+                "created_by": {
+                    "type": "string"
+                },
                 "credit_balance": {
                     "type": "string"
+                },
+                "credits_available_breakdown": {
+                    "$ref": "#/definitions/types.CreditBreakdown"
                 },
                 "currency": {
                     "type": "string"
@@ -20513,6 +21590,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "environment_id": {
                     "type": "string"
                 },
                 "id": {
@@ -20524,7 +21604,20 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
+                },
                 "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 },
                 "wallet_status": {
@@ -20539,6 +21632,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "amount": {
+                    "type": "string"
+                },
+                "conversion_rate": {
+                    "description": "conversion_rate is the conversion rate for the transaction to the currency",
                     "type": "string"
                 },
                 "created_at": {
@@ -20602,6 +21699,10 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Status"
                 },
                 "tenant_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency",
                     "type": "string"
                 },
                 "transaction_reason": {
@@ -21138,7 +22239,7 @@ const docTemplate = `{
                 },
                 "conversion_rate": {
                     "description": "ConversionRate is the conversion rate of the price unit to the fiat currency",
-                    "type": "number"
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
@@ -21210,7 +22311,8 @@ const docTemplate = `{
                 },
                 "min_quantity": {
                     "description": "MinQuantity is the minimum quantity of the price",
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
                 },
                 "parent_price_id": {
                     "description": "ParentPriceID references the root price (always set for price lineage tracking)",
@@ -21222,7 +22324,7 @@ const docTemplate = `{
                 },
                 "price_unit_amount": {
                     "description": "PriceUnitAmount is the amount of the price unit",
-                    "type": "number"
+                    "type": "string"
                 },
                 "price_unit_id": {
                     "description": "PriceUnitID is the id of the price unit (for CUSTOM type)",
@@ -22164,6 +23266,17 @@ const docTemplate = `{
                 "CouponTypePercentage"
             ]
         },
+        "types.CreditBreakdown": {
+            "type": "object",
+            "properties": {
+                "free": {
+                    "type": "string"
+                },
+                "purchased": {
+                    "type": "string"
+                }
+            }
+        },
         "types.CreditGrantApplicationReason": {
             "type": "string",
             "enum": [
@@ -22375,6 +23488,21 @@ const docTemplate = `{
                 "DataTypeArray"
             ]
         },
+        "types.DebugTrackerStatus": {
+            "type": "string",
+            "enum": [
+                "unprocessed",
+                "not_found",
+                "found",
+                "error"
+            ],
+            "x-enum-varnames": [
+                "DebugTrackerStatusUnprocessed",
+                "DebugTrackerStatusNotFound",
+                "DebugTrackerStatusFound",
+                "DebugTrackerStatusError"
+            ]
+        },
         "types.EntitlementEntityType": {
             "type": "string",
             "enum": [
@@ -22500,12 +23628,53 @@ const docTemplate = `{
             "enum": [
                 "EVENTS",
                 "PRICES",
-                "CUSTOMERS"
+                "CUSTOMERS",
+                "FEATURES"
             ],
             "x-enum-varnames": [
                 "EntityTypeEvents",
                 "EntityTypePrices",
-                "EntityTypeCustomers"
+                "EntityTypeCustomers",
+                "EntityTypeFeatures"
+            ]
+        },
+        "types.EventProcessingStatusType": {
+            "type": "string",
+            "enum": [
+                "processed",
+                "processing",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "EventProcessingStatusTypeProcessed",
+                "EventProcessingStatusTypeProcessing",
+                "EventProcessingStatusTypeFailed"
+            ]
+        },
+        "types.FailurePoint": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "failure_point_type": {
+                    "$ref": "#/definitions/types.FailurePointType"
+                }
+            }
+        },
+        "types.FailurePointType": {
+            "type": "string",
+            "enum": [
+                "customer_lookup",
+                "meter_lookup",
+                "price_lookup",
+                "subscription_line_item_lookup"
+            ],
+            "x-enum-varnames": [
+                "FailurePointTypeCustomerLookup",
+                "FailurePointTypeMeterLookup",
+                "FailurePointTypePriceLookup",
+                "FailurePointTypeSubscriptionLineItemLookup"
             ]
         },
         "types.FeatureFilter": {
@@ -22648,6 +23817,7 @@ const docTemplate = `{
             "enum": [
                 "eq",
                 "contains",
+                "not_contains",
                 "gt",
                 "lt",
                 "in",
@@ -22658,6 +23828,7 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "EQUAL",
                 "CONTAINS",
+                "NOT_CONTAINS",
                 "GREATER_THAN",
                 "LESS_THAN",
                 "IN",
@@ -23321,6 +24492,43 @@ const docTemplate = `{
                 "S3EncryptionTypeAwsKmsDsse"
             ]
         },
+        "types.S3ExportConfig": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "description": "S3 bucket name",
+                    "type": "string"
+                },
+                "compression": {
+                    "description": "Compression type: \"gzip\", \"none\" (default: \"none\")",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.S3CompressionType"
+                        }
+                    ]
+                },
+                "encryption": {
+                    "description": "Encryption type: \"AES256\", \"aws:kms\", \"aws:kms:dsse\" (default: \"AES256\")",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.S3EncryptionType"
+                        }
+                    ]
+                },
+                "is_flexprice_managed": {
+                    "description": "If true, use Flexprice-managed S3 credentials instead of user-provided",
+                    "type": "boolean"
+                },
+                "key_prefix": {
+                    "description": "Optional prefix for S3 keys (e.g., \"flexprice-exports/\")",
+                    "type": "string"
+                },
+                "region": {
+                    "description": "AWS region (e.g., \"us-west-2\")",
+                    "type": "string"
+                }
+            }
+        },
         "types.S3JobConfig": {
             "type": "object",
             "properties": {
@@ -23361,6 +24569,34 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
+        },
+        "types.ScheduleStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "executing",
+                "executed",
+                "cancelled",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "ScheduleStatusPending",
+                "ScheduleStatusExecuting",
+                "ScheduleStatusExecuted",
+                "ScheduleStatusCancelled",
+                "ScheduleStatusFailed"
+            ]
+        },
+        "types.ScheduleType": {
+            "type": "string",
+            "enum": [
+                "immediate",
+                "end_of_period"
+            ],
+            "x-enum-varnames": [
+                "ScheduleTypeImmediate",
+                "ScheduleTypePeriodEnd"
+            ]
         },
         "types.ScheduledTaskEntityType": {
             "type": "string",
@@ -23612,6 +24848,17 @@ const docTemplate = `{
                 "SubscriptionLineItemEntityTypeAddon"
             ]
         },
+        "types.SubscriptionScheduleChangeType": {
+            "type": "string",
+            "enum": [
+                "plan_change",
+                "cancellation"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionScheduleChangeTypePlanChange",
+                "SubscriptionScheduleChangeTypeCancellation"
+            ]
+        },
         "types.SubscriptionStatus": {
             "type": "string",
             "enum": [
@@ -23663,6 +24910,14 @@ const docTemplate = `{
                 },
                 "quote": {
                     "$ref": "#/definitions/types.EntitySyncConfig"
+                },
+                "s3": {
+                    "description": "S3 connection metadata (for Flexprice-managed S3 connections)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.S3ExportConfig"
+                        }
+                    ]
                 },
                 "subscription": {
                     "$ref": "#/definitions/types.EntitySyncConfig"
@@ -24094,6 +25349,7 @@ const docTemplate = `{
                 "12HOUR",
                 "DAY",
                 "WEEK",
+                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
@@ -24106,7 +25362,8 @@ const docTemplate = `{
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth"
+                "WindowSizeMonth",
+                "DefaultWindowSize"
             ]
         }
     },

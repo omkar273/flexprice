@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/security"
+	temporalService "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/types"
 )
 
@@ -266,6 +268,43 @@ func (s *connectionService) encryptMetadata(encryptedSecretData types.Connection
 
 		encryptedMetadata.Nomod = nomodMeta
 
+	case types.SecretProviderMoyasar:
+		if encryptedSecretData.Moyasar == nil {
+			s.Logger.Warnw("Moyasar metadata is nil, cannot encrypt", "provider_type", providerType)
+			return types.ConnectionMetadata{}, ierr.NewError("Moyasar metadata is required").
+				WithHint("Moyasar connection requires encrypted_secret_data with secret_key").
+				Mark(ierr.ErrValidation)
+		}
+		// Encrypt secret key (required)
+		encryptedSecretKey, err := s.encryptionService.Encrypt(encryptedSecretData.Moyasar.SecretKey)
+		if err != nil {
+			return types.ConnectionMetadata{}, err
+		}
+
+		moyasarMeta := &types.MoyasarConnectionMetadata{
+			SecretKey: encryptedSecretKey,
+		}
+
+		// Encrypt publishable key if provided (optional)
+		if encryptedSecretData.Moyasar.PublishableKey != "" {
+			encryptedPublishableKey, err := s.encryptionService.Encrypt(encryptedSecretData.Moyasar.PublishableKey)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+			moyasarMeta.PublishableKey = encryptedPublishableKey
+		}
+
+		// Encrypt webhook secret if provided (optional)
+		if encryptedSecretData.Moyasar.WebhookSecret != "" {
+			encryptedWebhookSecret, err := s.encryptionService.Encrypt(encryptedSecretData.Moyasar.WebhookSecret)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+			moyasarMeta.WebhookSecret = encryptedWebhookSecret
+		}
+
+		encryptedMetadata.Moyasar = moyasarMeta
+
 	default:
 		// For other providers or unknown types, use generic format
 		if encryptedSecretData.Generic != nil {
@@ -350,12 +389,47 @@ func (s *connectionService) CreateConnection(ctx context.Context, req dto.Create
 	conn.CreatedBy = types.GetUserID(ctx)
 	conn.UpdatedBy = types.GetUserID(ctx)
 
+	// Check if this is a Flexprice-managed S3 connection
+	if conn.ProviderType == types.SecretProviderS3 && conn.SyncConfig != nil && conn.SyncConfig.S3 != nil && conn.SyncConfig.S3.IsFlexpriceManaged {
+		s.Logger.Infow("creating flexprice-managed S3 connection",
+			"tenant_id", conn.TenantID,
+			"connection_id", conn.ID)
+
+		// Validate that Flexprice config has required credentials
+		if s.Config.FlexpriceS3Exports.AWSAccessKeyID == "" || s.Config.FlexpriceS3Exports.AWSSecretAccessKey == "" {
+			return nil, ierr.NewError("flexprice S3 exports not configured").
+				WithHint("FlexpriceS3Exports credentials are missing from configuration").
+				Mark(ierr.ErrSystem)
+		}
+
+		// Inject Flexprice credentials from config
+		conn.EncryptedSecretData.S3 = &types.S3ConnectionMetadata{
+			AWSAccessKeyID:     s.Config.FlexpriceS3Exports.AWSAccessKeyID,
+			AWSSecretAccessKey: s.Config.FlexpriceS3Exports.AWSSecretAccessKey,
+			AWSSessionToken:    s.Config.FlexpriceS3Exports.AWSSessionToken,
+		}
+
+		// Set bucket and region from config
+		conn.SyncConfig.S3.Bucket = s.Config.FlexpriceS3Exports.Bucket
+		conn.SyncConfig.S3.Region = s.Config.FlexpriceS3Exports.Region
+		// Tenant + Environment isolation: tenant_id/environment_id
+		conn.SyncConfig.S3.KeyPrefix = fmt.Sprintf("%s/%s", conn.TenantID, conn.EnvironmentID)
+
+		s.Logger.Infow("injected flexprice S3 credentials",
+			"bucket", conn.SyncConfig.S3.Bucket,
+			"region", conn.SyncConfig.S3.Region,
+			"key_prefix", conn.SyncConfig.S3.KeyPrefix,
+			"tenant_id", conn.TenantID,
+			"environment_id", conn.EnvironmentID)
+	}
+
 	// Encrypt metadata
 	s.Logger.Debugw("encrypting metadata",
 		"provider_type", conn.ProviderType,
 		"has_quickbooks", conn.EncryptedSecretData.QuickBooks != nil,
 		"has_stripe", conn.EncryptedSecretData.Stripe != nil,
-		"has_chargebee", conn.EncryptedSecretData.Chargebee != nil)
+		"has_chargebee", conn.EncryptedSecretData.Chargebee != nil,
+		"has_s3", conn.EncryptedSecretData.S3 != nil)
 	encryptedMetadata, err := s.encryptMetadata(conn.EncryptedSecretData, conn.ProviderType)
 	if err != nil {
 		s.Logger.Errorw("failed to encrypt metadata", "error", err)
@@ -508,6 +582,31 @@ func (s *connectionService) DeleteConnection(ctx context.Context, id string) err
 	if err != nil {
 		s.Logger.Errorw("failed to get connection for deletion", "error", err, "connection_id", id)
 		return err
+	}
+
+	// Get all scheduled tasks for the connection
+	schedTasks, err := s.ScheduledTaskRepo.GetByConnection(ctx, conn.ID)
+	if err != nil {
+		s.Logger.Errorw("failed to get scheduled tasks by connection", "error", err, "connection_id", id)
+		return err
+	}
+
+	scheduledTaskService := NewScheduledTaskService(
+		s.ScheduledTaskRepo,
+		s.ConnectionRepo,
+		temporalService.GetGlobalTemporalClient(),
+		s.Logger,
+		s.Config,
+	)
+
+	// Scheduled tasks cleanup
+	for _, schedTask := range schedTasks {
+		if err := scheduledTaskService.DeleteScheduledTask(ctx, schedTask.ID); err != nil {
+			s.Logger.Errorw("failed to delete scheduled task", "error", err, "scheduled_task_id", schedTask.ID)
+			return ierr.WithError(err).
+				WithHint("Failed to delete scheduled task").
+				Mark(ierr.ErrDatabase)
+		}
 	}
 
 	conn.UpdatedAt = time.Now()

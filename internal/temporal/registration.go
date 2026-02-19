@@ -5,16 +5,21 @@ import (
 
 	"github.com/flexprice/flexprice/internal/service"
 	customerActivities "github.com/flexprice/flexprice/internal/temporal/activities/customer"
+	eventsActivities "github.com/flexprice/flexprice/internal/temporal/activities/events"
 	exportActivities "github.com/flexprice/flexprice/internal/temporal/activities/export"
 	hubspotActivities "github.com/flexprice/flexprice/internal/temporal/activities/hubspot"
 	invoiceActivities "github.com/flexprice/flexprice/internal/temporal/activities/invoice"
+	moyasarActivities "github.com/flexprice/flexprice/internal/temporal/activities/moyasar"
 	nomodActivities "github.com/flexprice/flexprice/internal/temporal/activities/nomod"
 	planActivities "github.com/flexprice/flexprice/internal/temporal/activities/plan"
+	prepareProcessedEventsActivities "github.com/flexprice/flexprice/internal/temporal/activities/prepareprocessedevents"
 	qbActivities "github.com/flexprice/flexprice/internal/temporal/activities/quickbooks"
 	subscriptionActivities "github.com/flexprice/flexprice/internal/temporal/activities/subscription"
 	taskActivities "github.com/flexprice/flexprice/internal/temporal/activities/task"
+	workflowActivities "github.com/flexprice/flexprice/internal/temporal/activities/workflow"
 	temporalService "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/temporal/workflows"
+	eventsWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/events"
 	exportWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/export"
 	invoiceWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/invoice"
 	subscriptionWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/subscription"
@@ -30,9 +35,18 @@ type WorkerConfig struct {
 
 // RegisterWorkflowsAndActivities registers all workflows and activities with the temporal service
 func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalService, params service.ServiceParams) error {
+	// Create workflow tracking activity (follows standard activity pattern)
+	workflowTrackingActivities := workflowActivities.NewWorkflowTrackingActivities(
+		params,
+		params.WorkflowExecutionRepo,
+		params.Logger,
+	)
+
 	// Create activity instances with dependencies
 	planService := service.NewPlanService(params)
 	planActivities := planActivities.NewPlanActivities(planService)
+
+	prepareEventsActivities := prepareProcessedEventsActivities.NewPrepareProcessedEventsActivities(params)
 
 	taskService := service.NewTaskService(params)
 	taskActivities := taskActivities.NewTaskActivities(taskService)
@@ -52,8 +66,10 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 	// Note: temporal client is nil because activity only uses CalculateIntervalBoundaries method
 	scheduledTaskService := service.NewScheduledTaskService(
 		params.ScheduledTaskRepo,
+		params.ConnectionRepo,
 		nil, // temporal client not needed for boundary calculations
 		params.Logger,
+		params.Config,
 	)
 
 	scheduledTaskActivity := exportActivities.NewScheduledTaskActivity(
@@ -64,7 +80,7 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 	)
 	// Create wallet service for credit usage export
 	walletService := service.NewWalletService(params)
-	exportActivity := exportActivities.NewExportActivity(params.FeatureUsageRepo, params.InvoiceRepo, params.WalletRepo, walletService, params.CustomerRepo, params.ConnectionRepo, params.IntegrationFactory, params.Logger)
+	exportActivity := exportActivities.NewExportActivity(params.FeatureUsageRepo, params.PriceRepo, params.InvoiceRepo, params.WalletRepo, walletService, params.CustomerRepo, params.ConnectionRepo, params.IntegrationFactory, params.Logger)
 
 	// HubSpot activities - clean and simple, delegates to existing services
 	hubspotDealSyncActivities := hubspotActivities.NewDealSyncActivities(
@@ -103,15 +119,35 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 		customerService,
 		params.Logger,
 	)
+
+	// Moyasar activities
+	moyasarInvoiceSyncActivities := moyasarActivities.NewInvoiceSyncActivities(
+		params.IntegrationFactory,
+		customerService,
+		params.Logger,
+	)
+
 	// Customer activities
 	customerActivities := customerActivities.NewCustomerActivities(
 		params,
 		params.Logger,
 	)
 
+	// Reprocess events activities
+	featureUsageTrackingService := service.NewFeatureUsageTrackingService(
+		params,
+		params.EventRepo,
+		params.FeatureUsageRepo,
+	)
+	reprocessEventsActivities := eventsActivities.NewReprocessEventsActivities(featureUsageTrackingService)
+
+	// Reprocess raw events activities
+	rawEventsReprocessingService := service.NewRawEventsReprocessingService(params)
+	reprocessRawEventsActivities := eventsActivities.NewReprocessRawEventsActivities(rawEventsReprocessingService)
+
 	// Get all task queues and register workflows/activities for each
 	for _, taskQueue := range types.GetAllTaskQueues() {
-		config := buildWorkerConfig(taskQueue, planActivities, taskActivities, taskActivity, scheduledTaskActivity, exportActivity, hubspotDealSyncActivities, hubspotInvoiceSyncActivities, hubspotQuoteSyncActivities, qbPriceSyncActivities, nomodInvoiceSyncActivities, customerActivities, scheduleBillingActivities, billingActivities, invoiceActs)
+		config := buildWorkerConfig(taskQueue, workflowTrackingActivities, planActivities, prepareEventsActivities, taskActivities, taskActivity, scheduledTaskActivity, exportActivity, hubspotDealSyncActivities, hubspotInvoiceSyncActivities, hubspotQuoteSyncActivities, qbPriceSyncActivities, nomodInvoiceSyncActivities, moyasarInvoiceSyncActivities, customerActivities, scheduleBillingActivities, billingActivities, invoiceActs, reprocessEventsActivities, reprocessRawEventsActivities)
 		if err := registerWorker(temporalService, config); err != nil {
 			return fmt.Errorf("failed to register worker for task queue %s: %w", taskQueue, err)
 		}
@@ -123,7 +159,9 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 // buildWorkerConfig creates a worker configuration for a specific task queue
 func buildWorkerConfig(
 	taskQueue types.TemporalTaskQueue,
+	workflowTrackingActivities *workflowActivities.WorkflowTrackingActivities,
 	planActivities *planActivities.PlanActivities,
+	prepareEventsActivities *prepareProcessedEventsActivities.PrepareProcessedEventsActivities,
 	taskActivities *taskActivities.TaskActivities,
 	taskActivity *exportActivities.TaskActivity,
 	scheduledTaskActivity *exportActivities.ScheduledTaskActivity,
@@ -133,13 +171,20 @@ func buildWorkerConfig(
 	hubspotQuoteSyncActivities *hubspotActivities.QuoteSyncActivities,
 	qbPriceSyncActivities *qbActivities.QuickBooksPriceSyncActivities,
 	nomodInvoiceSyncActivities *nomodActivities.InvoiceSyncActivities,
+	moyasarInvoiceSyncActivities *moyasarActivities.InvoiceSyncActivities,
 	customerActivities *customerActivities.CustomerActivities,
 	scheduleBillingActivities *subscriptionActivities.SubscriptionActivities,
 	billingActivities *subscriptionActivities.BillingActivities,
 	invoiceActs *invoiceActivities.InvoiceActivities,
+	reprocessEventsActivities *eventsActivities.ReprocessEventsActivities,
+	reprocessRawEventsActivities *eventsActivities.ReprocessRawEventsActivities,
 ) WorkerConfig {
 	workflowsList := []interface{}{}
-	activitiesList := []interface{}{}
+	// Add tracking activity to all task queues
+	activitiesList := []interface{}{
+		workflowTrackingActivities.TrackWorkflowStart,
+		workflowTrackingActivities.TrackWorkflowEnd,
+	}
 
 	switch taskQueue {
 	case types.TemporalTaskQueueTask:
@@ -149,6 +194,7 @@ func buildWorkerConfig(
 			workflows.HubSpotInvoiceSyncWorkflow,
 			workflows.HubSpotQuoteSyncWorkflow,
 			workflows.NomodInvoiceSyncWorkflow,
+			workflows.MoyasarInvoiceSyncWorkflow,
 		)
 		activitiesList = append(activitiesList,
 			taskActivities.ProcessTask,
@@ -157,6 +203,7 @@ func buildWorkerConfig(
 			hubspotInvoiceSyncActivities.SyncInvoiceToHubSpot,
 			hubspotQuoteSyncActivities.CreateQuoteAndLineItems,
 			nomodInvoiceSyncActivities.SyncInvoiceToNomod,
+			moyasarInvoiceSyncActivities.SyncInvoiceToMoyasar,
 		)
 
 	case types.TemporalTaskQueuePrice:
@@ -197,6 +244,7 @@ func buildWorkerConfig(
 			billingActivities.CreateDraftInvoicesActivity,
 			billingActivities.UpdateCurrentPeriodActivity,
 			billingActivities.CheckCancellationActivity,
+			billingActivities.ProcessPendingPlanChangesActivity,
 			billingActivities.TriggerInvoiceWorkflowActivity,
 		)
 
@@ -216,12 +264,27 @@ func buildWorkerConfig(
 		// Customer workflows
 		workflowsList = append(workflowsList,
 			workflows.CustomerOnboardingWorkflow,
+			workflows.PrepareProcessedEventsWorkflow,
 		)
 		// Customer activities
 		activitiesList = append(activitiesList,
 			customerActivities.CreateCustomerActivity,
 			customerActivities.CreateWalletActivity,
 			customerActivities.CreateSubscriptionActivity,
+			prepareEventsActivities.CreateFeatureAndPriceActivity,
+			prepareEventsActivities.RolloutToSubscriptionsActivity,
+			planActivities.SyncPlanPrices,
+		)
+	case types.TemporalTaskQueueReprocessEvents:
+		workflowsList = append(workflowsList,
+			eventsWorkflows.ReprocessEventsWorkflow,
+			eventsWorkflows.ReprocessRawEventsWorkflow,
+			eventsWorkflows.ReprocessEventsForPlanWorkflow,
+		)
+		activitiesList = append(activitiesList,
+			reprocessEventsActivities.ReprocessEvents,
+			reprocessRawEventsActivities.ReprocessRawEvents,
+			planActivities.ReprocessEventsForPlan,
 		)
 	}
 	return WorkerConfig{

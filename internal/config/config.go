@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/Shopify/sarama"
@@ -32,14 +33,17 @@ type Configuration struct {
 	Secrets                    SecretsConfig                    `validate:"required"`
 	Billing                    BillingConfig                    `validate:"omitempty"`
 	S3                         S3Config                         `validate:"required"`
+	FlexpriceS3Exports         FlexpriceS3ExportsConfig         `mapstructure:"flexprice_s3_exports" validate:"omitempty"`
 	Cache                      CacheConfig                      `validate:"required"`
 	EventProcessing            EventProcessingConfig            `mapstructure:"event_processing" validate:"required"`
 	EventProcessingLazy        EventProcessingLazyConfig        `mapstructure:"event_processing_lazy" validate:"required"`
+	EventProcessingReplay      EventProcessingReplayConfig      `mapstructure:"event_processing_replay" validate:"required"`
 	CostSheetUsageTracking     CostSheetUsageTrackingConfig     `mapstructure:"costsheet_usage_tracking" validate:"required"`
 	CostSheetUsageTrackingLazy CostSheetUsageTrackingLazyConfig `mapstructure:"costsheet_usage_tracking_lazy" validate:"required"`
 	EventPostProcessing        EventPostProcessingConfig        `mapstructure:"event_post_processing" validate:"required"`
 	FeatureUsageTracking       FeatureUsageTrackingConfig       `mapstructure:"feature_usage_tracking" validate:"required"`
 	FeatureUsageTrackingLazy   FeatureUsageTrackingLazyConfig   `mapstructure:"feature_usage_tracking_lazy" validate:"required"`
+	FeatureUsageTrackingReplay FeatureUsageTrackingReplayConfig `mapstructure:"feature_usage_tracking_replay" validate:"required"`
 	EnvAccess                  EnvAccessConfig                  `mapstructure:"env_access" json:"env_access" validate:"omitempty"`
 	FeatureFlag                FeatureFlagConfig                `mapstructure:"feature_flag" validate:"required"`
 	Email                      EmailConfig                      `mapstructure:"email" validate:"required"`
@@ -47,10 +51,14 @@ type Configuration struct {
 	OAuth                      OAuthConfig                      `mapstructure:"oauth" validate:"required"`
 	WalletBalanceAlert         WalletBalanceAlertConfig         `mapstructure:"wallet_balance_alert" validate:"required"`
 	CustomerPortal             CustomerPortalConfig             `mapstructure:"customer_portal" validate:"required"`
+	Redis                      RedisConfig                      `mapstructure:"redis" validate:"required"`
+	RawEventsReprocessing      RawEventsReprocessingConfig      `mapstructure:"raw_events_reprocessing" validate:"required"`
+	RawEventConsumption        RawEventConsumptionConfig        `mapstructure:"raw_event_consumption" validate:"required"`
 }
 
 type CacheConfig struct {
-	Enabled bool `mapstructure:"enabled" validate:"required"`
+	Enabled bool   `mapstructure:"enabled" validate:"required"`
+	Type    string `mapstructure:"type" validate:"required"`
 }
 
 type S3Config struct {
@@ -63,6 +71,14 @@ type BucketConfig struct {
 	Bucket                string `mapstructure:"bucket" validate:"required"`
 	PresignExpiryDuration string `mapstructure:"presign_expiry_duration" validate:"required"`
 	KeyPrefix             string `mapstructure:"key_prefix" validate:"omitempty"`
+}
+
+type FlexpriceS3ExportsConfig struct {
+	Bucket             string `mapstructure:"bucket" validate:"required"`
+	Region             string `mapstructure:"region" validate:"required"`
+	AWSAccessKeyID     string `mapstructure:"aws_access_key_id" validate:"required"`
+	AWSSecretAccessKey string `mapstructure:"aws_secret_access_key" validate:"required"`
+	AWSSessionToken    string `mapstructure:"aws_session_token,omitempty"`
 }
 
 type DeploymentConfig struct {
@@ -108,7 +124,13 @@ type ClickHouseConfig struct {
 }
 
 type LoggingConfig struct {
-	Level types.LogLevel `mapstructure:"level" validate:"required"`
+	Level   types.LogLevel `mapstructure:"level" validate:"required"`
+	DBLevel types.LogLevel `mapstructure:"db_level" validate:"required"`
+
+	// Fluentd configuration
+	FluentdEnabled bool   `mapstructure:"fluentd_enabled" default:"false"`
+	FluentdHost    string `mapstructure:"fluentd_host" validate:"omitempty"`
+	FluentdPort    int    `mapstructure:"fluentd_port" validate:"omitempty"`
 }
 
 type PostgresConfig struct {
@@ -178,6 +200,7 @@ type BillingConfig struct {
 
 type EventProcessingConfig struct {
 	// Rate limit in messages consumed per second
+	Enabled               bool   `mapstructure:"enabled" default:"true"`
 	Topic                 string `mapstructure:"topic" default:"events"`
 	RateLimit             int64  `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup         string `mapstructure:"consumer_group" default:"v1_event_processing"`
@@ -188,6 +211,7 @@ type EventProcessingConfig struct {
 
 type EventPostProcessingConfig struct {
 	// Rate limit in messages consumed per second
+	Enabled               bool   `mapstructure:"enabled" default:"true"`
 	Topic                 string `mapstructure:"topic" default:"events_post_processing"`
 	RateLimit             int64  `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup         string `mapstructure:"consumer_group" default:"v1_events_post_processing"`
@@ -197,6 +221,7 @@ type EventPostProcessingConfig struct {
 }
 
 type EventProcessingLazyConfig struct {
+	Enabled               bool   `mapstructure:"enabled" default:"true"`
 	Topic                 string `mapstructure:"topic" default:"events_lazy"`
 	RateLimit             int64  `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup         string `mapstructure:"consumer_group" default:"v1_event_processing_lazy"`
@@ -204,17 +229,28 @@ type EventProcessingLazyConfig struct {
 	RateLimitBackfill     int64  `mapstructure:"rate_limit_backfill" default:"1"`
 	ConsumerGroupBackfill string `mapstructure:"consumer_group_backfill" default:"v1_event_processing_lazy_backfill"`
 }
+
+type EventProcessingReplayConfig struct {
+	Enabled       bool   `mapstructure:"enabled" default:"true"`
+	Topic         string `mapstructure:"topic" default:"v1_event_processing_replay"`
+	RateLimit     int64  `mapstructure:"rate_limit" default:"1"`
+	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_event_processing_replay"`
+}
 type FeatureUsageTrackingConfig struct {
 	// Rate limit in messages consumed per second
-	Topic                 string `mapstructure:"topic" default:"events"`
-	RateLimit             int64  `mapstructure:"rate_limit" default:"1"`
-	ConsumerGroup         string `mapstructure:"consumer_group" default:"v1_feature_tracking_service"`
-	TopicBackfill         string `mapstructure:"topic_backfill" default:"v1_feature_tracking_service_backfill"`
-	RateLimitBackfill     int64  `mapstructure:"rate_limit_backfill" default:"1"`
-	ConsumerGroupBackfill string `mapstructure:"consumer_group_backfill" default:"v1_feature_tracking_service_backfill"`
+	Enabled                bool   `mapstructure:"enabled" default:"true"`
+	Topic                  string `mapstructure:"topic" default:"events"`
+	RateLimit              int64  `mapstructure:"rate_limit" default:"1"`
+	ConsumerGroup          string `mapstructure:"consumer_group" default:"v1_feature_tracking_service"`
+	TopicBackfill          string `mapstructure:"topic_backfill" default:"v1_feature_tracking_service_backfill"`
+	RateLimitBackfill      int64  `mapstructure:"rate_limit_backfill" default:"1"`
+	ConsumerGroupBackfill  string `mapstructure:"consumer_group_backfill" default:"v1_feature_tracking_service_backfill"`
+	BackfillEnabled        bool   `mapstructure:"backfill_enabled" default:"false"`
+	WalletAlertPushEnabled bool   `mapstructure:"wallet_alert_push_enabled" default:"true"`
 }
 
 type FeatureUsageTrackingLazyConfig struct {
+	Enabled               bool   `mapstructure:"enabled" default:"true"`
 	Topic                 string `mapstructure:"topic" default:"events_lazy"`
 	RateLimit             int64  `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup         string `mapstructure:"consumer_group" default:"v1_feature_tracking_service_realtime"`
@@ -223,11 +259,32 @@ type FeatureUsageTrackingLazyConfig struct {
 	ConsumerGroupBackfill string `mapstructure:"consumer_group_backfill" default:"v1_feature_tracking_service_lazy_backfill"`
 }
 
+type FeatureUsageTrackingReplayConfig struct {
+	Enabled       bool   `mapstructure:"enabled" default:"true"`
+	Topic         string `mapstructure:"topic" default:"v1_feature_tracking_service_replay"`
+	RateLimit     int64  `mapstructure:"rate_limit" default:"1"`
+	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_feature_tracking_service_replay"`
+}
+
 type WalletBalanceAlertConfig struct {
 	// Rate limit in messages consumed per second
+	Enabled       bool   `mapstructure:"enabled" default:"true"`
 	Topic         string `mapstructure:"topic" default:"wallet_alert"`
 	RateLimit     int64  `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_wallet_alert_service"`
+}
+
+type RawEventsReprocessingConfig struct {
+	Enabled     bool   `mapstructure:"enabled" default:"true"`
+	OutputTopic string `mapstructure:"output_topic" default:"prod_events_v4"`
+}
+
+type RawEventConsumptionConfig struct {
+	Enabled       bool   `mapstructure:"enabled" default:"true"`
+	Topic         string `mapstructure:"topic" default:"raw_events"`
+	OutputTopic   string `mapstructure:"output_topic" default:"events"`
+	RateLimit     int64  `mapstructure:"rate_limit" default:"10"`
+	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_raw_event_processing"`
 }
 
 type EnvAccessConfig struct {
@@ -256,12 +313,14 @@ type EmailConfig struct {
 	ZapierWebhookURL string `mapstructure:"zapier_webhook_url" validate:"omitempty"`
 }
 type CostSheetUsageTrackingConfig struct {
+	Enabled       bool   `mapstructure:"enabled" default:"true"`
 	Topic         string `mapstructure:"topic" default:"events"`
 	RateLimit     int64  `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_costsheet_usage_tracking_service"`
 }
 
 type CostSheetUsageTrackingLazyConfig struct {
+	Enabled       bool   `mapstructure:"enabled" default:"true"`
 	Topic         string `mapstructure:"topic" default:"events_lazy"`
 	RateLimit     int64  `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_costsheet_usage_tracking_service_lazy"`
@@ -270,6 +329,18 @@ type CostSheetUsageTrackingLazyConfig struct {
 type CustomerPortalConfig struct {
 	URL               string `mapstructure:"url" validate:"required"`
 	TokenTimeoutHours int    `mapstructure:"token_timeout_hours" validate:"required"`
+}
+
+// RedisConfig holds configuration for Redis
+type RedisConfig struct {
+	Host      string        `mapstructure:"host" default:"localhost"`
+	Port      int           `mapstructure:"port" default:"6379"`
+	Password  string        `mapstructure:"password" default:""`
+	DB        int           `mapstructure:"db" default:"0"`
+	UseTLS    bool          `mapstructure:"use_tls" default:"false"`
+	PoolSize  int           `mapstructure:"pool_size" default:"10"`
+	Timeout   time.Duration `mapstructure:"timeout" default:"5s"`
+	KeyPrefix string        `mapstructure:"key_prefix" default:"flexprice"`
 }
 
 func NewConfig() (*Configuration, error) {

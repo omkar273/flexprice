@@ -5,6 +5,8 @@ import (
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/addonassociation"
+	"github.com/flexprice/flexprice/internal/domain/invoice"
+	"github.com/flexprice/flexprice/internal/domain/planpricesync"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	"github.com/flexprice/flexprice/internal/postgres"
 	"github.com/flexprice/flexprice/internal/types"
@@ -52,12 +54,8 @@ type PlanService interface {
 	UpdatePlan(ctx context.Context, id string, req dto.UpdatePlanRequest) (*dto.PlanResponse, error)
 	DeletePlan(ctx context.Context, id string) error
 	SyncPlanPrices(ctx context.Context, id string) (*dto.SyncPlanPricesResponse, error)
-
-	// SyncSubscriptionWithPlanPrices synchronizes a single subscription with plan prices
-	// NOTE: This method is primarily intended for internal use and testing.
-	// For API handlers, use SyncPlanPrices instead which provides comprehensive
-	// synchronization across all subscriptions for a plan.
-	SyncSubscriptionWithPlanPrices(params *dto.SubscriptionSyncParams) *dto.SubscriptionSyncResult
+	SyncPlanPricesV2(ctx context.Context, id string) (*dto.SyncPlanPricesV2Response, error)
+	ReprocessEventsForMissingPairs(ctx context.Context, missingPairs []planpricesync.PlanLineItemCreationDelta) error
 }
 
 type EntityIntegrationMappingService interface {
@@ -77,6 +75,7 @@ type RevenueAnalyticsService interface {
 type SubscriptionService interface {
 	CreateSubscription(ctx context.Context, req dto.CreateSubscriptionRequest) (*dto.SubscriptionResponse, error)
 	GetSubscription(ctx context.Context, id string) (*dto.SubscriptionResponse, error)
+	GetSubscriptionV2(ctx context.Context, id string, expand types.Expand) (*dto.SubscriptionResponseV2, error)
 	UpdateSubscription(ctx context.Context, subscriptionID string, req dto.UpdateSubscriptionRequest) (*dto.SubscriptionResponse, error)
 	CancelSubscription(ctx context.Context, subscriptionID string, req *dto.CancelSubscriptionRequest) (*dto.CancelSubscriptionResponse, error)
 	ActivateIncompleteSubscription(ctx context.Context, subscriptionID string) error
@@ -129,6 +128,9 @@ type SubscriptionService interface {
 
 	GetActiveAddonAssociations(ctx context.Context, subscriptionID string) (*dto.ListAddonAssociationsResponse, error)
 
+	// TriggerSubscriptionWorkflow triggers the subscription billing workflow
+	TriggerSubscriptionWorkflow(ctx context.Context, subscriptionID string) (*dto.TriggerSubscriptionWorkflowResponse, error)
+
 	// Cron methods
 
 	// Calculate Billing Periods for the subscription
@@ -136,6 +138,9 @@ type SubscriptionService interface {
 
 	// Create Draft Invoice for the subscription
 	CreateDraftInvoiceForSubscription(ctx context.Context, subscriptionID string, period dto.Period) (*dto.InvoiceResponse, error)
+
+	// Mark cancellation schedule as executed (used by cron and Temporal workflows)
+	MarkCancellationScheduleAsExecuted(ctx context.Context, subscriptionID string) error
 }
 
 type PriceUnitService interface {
@@ -147,6 +152,12 @@ type PriceUnitService interface {
 	DeletePriceUnit(ctx context.Context, id string) error
 }
 
+// CreditAdjustmentService defines the interface for credit adjustment operations
+type CreditAdjustmentService interface {
+	// ApplyCreditsToInvoice applies wallet credits to invoice line items
+	ApplyCreditsToInvoice(ctx context.Context, inv *invoice.Invoice) (*dto.CreditAdjustmentResult, error)
+}
+
 type ServiceDependencies struct {
 	CustomerService                 CustomerService
 	PaymentService                  PaymentService
@@ -155,5 +166,6 @@ type ServiceDependencies struct {
 	SubscriptionService             SubscriptionService
 	EntityIntegrationMappingService EntityIntegrationMappingService
 	PriceUnitService                PriceUnitService
+	CreditAdjustmentService         CreditAdjustmentService
 	DB                              postgres.IClient
 }

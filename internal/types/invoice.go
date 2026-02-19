@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/validator"
 	"github.com/samber/lo"
@@ -12,8 +14,9 @@ import (
 type InvoiceLineItemEntityType string
 
 const (
-	InvoiceLineItemEntityTypePlan  InvoiceLineItemEntityType = "plan"
-	InvoiceLineItemEntityTypeAddon InvoiceLineItemEntityType = "addon"
+	InvoiceLineItemEntityTypePlan         InvoiceLineItemEntityType = "plan"
+	InvoiceLineItemEntityTypeAddon        InvoiceLineItemEntityType = "addon"
+	InvoiceLineItemEntityTypeSubscription InvoiceLineItemEntityType = "subscription"
 )
 
 // InvoiceCadence defines when an invoice is generated relative to the billing period
@@ -344,6 +347,15 @@ type InvoiceFilter struct {
 	// amount_remaining_gt filters invoices with an outstanding balance greater than the specified value
 	// Useful for finding invoices that still have significant unpaid amounts
 	AmountRemainingGt *decimal.Decimal `json:"amount_remaining_gt,omitempty" form:"amount_remaining_gt"`
+
+	// period_start_gte filters invoices with period_start >= value
+	PeriodStartGTE *time.Time `json:"period_start_gte,omitempty" form:"period_start_gte" validate:"omitempty,time_rfc3339"`
+	// period_start_lte filters invoices with period_start <= value
+	PeriodStartLTE *time.Time `json:"period_start_lte,omitempty" form:"period_start_lte" validate:"omitempty,time_rfc3339"`
+	// period_end_gte filters invoices with period_end >= value
+	PeriodEndGTE *time.Time `json:"period_end_gte,omitempty" form:"period_end_gte" validate:"omitempty,time_rfc3339"`
+	// period_end_lte filters invoices with period_end <= value
+	PeriodEndLTE *time.Time `json:"period_end_lte,omitempty" form:"period_end_lte" validate:"omitempty,time_rfc3339"`
 
 	// SkipLineItems if true, will not include line items in the response
 	SkipLineItems bool `json:"skip_line_items,omitempty" form:"skip_line_items"`

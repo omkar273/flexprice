@@ -66,6 +66,8 @@ const (
 	PrefixWalletAlertThrottle      = "wallet_alert_throttle:v1:"
 	PrefixCostsheet                = "costsheet:v1:"
 	PrefixPriceUnit                = "price_unit:v1:"
+	PrefixWalletRealTimeBalance    = "wallet_realtime_balance:v1:"
+	PrefixWorkflowExecution        = "workflow_execution:v1:"
 )
 
 // GenerateKey creates a cache key from a prefix and a set of parameters

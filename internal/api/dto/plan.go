@@ -143,6 +143,29 @@ type UpdatePlanRequest struct {
 type ListPlansResponse = types.ListResponse[*PlanResponse]
 
 type SyncPlanPricesResponse struct {
+	PlanID  string                `json:"plan_id"`
+	Message string                `json:"message"`
+	Summary SyncPlanPricesSummary `json:"summary"`
+}
+
+type SyncPlanPricesSummary struct {
+	LineItemsFoundForCreation int `json:"line_items_found_for_creation"`
+	LineItemsCreated          int `json:"line_items_created"`
+	LineItemsTerminated       int `json:"line_items_terminated"`
+}
+
+// SubscriptionSyncResult contains the results of syncing a subscription with plan prices
+type SubscriptionSyncResult struct {
+	PricesProcessed                   int
+	LineItemsCreated                  int
+	LineItemsTerminated               int
+	LineItemsSkippedAlreadyTerminated int
+	LineItemsSkippedOverridden        int
+	LineItemsSkippedIncompatible      int
+	LineItemsFailed                   int
+}
+
+type SyncPlanPricesV2Response struct {
 	Message                string                 `json:"message"`
 	PlanID                 string                 `json:"plan_id"`
 	PlanName               string                 `json:"plan_name"`
@@ -176,15 +199,4 @@ type SubscriptionSyncParams struct {
 	PlanPriceMap         map[string]*price.Price
 	LineItems            []*subscription.SubscriptionLineItem
 	SubscriptionPriceMap map[string]*PriceResponse
-}
-
-// SubscriptionSyncResult contains the results of syncing a subscription with plan prices
-type SubscriptionSyncResult struct {
-	PricesProcessed                   int
-	LineItemsCreated                  int
-	LineItemsTerminated               int
-	LineItemsSkippedAlreadyTerminated int
-	LineItemsSkippedOverridden        int
-	LineItemsSkippedIncompatible      int
-	LineItemsFailed                   int
 }

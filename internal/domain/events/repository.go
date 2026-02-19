@@ -14,6 +14,7 @@ type Repository interface {
 	GetUsage(ctx context.Context, params *UsageParams) (*AggregationResult, error)
 	GetUsageWithFilters(ctx context.Context, params *UsageWithFiltersParams) ([]*AggregationResult, error)
 	GetEvents(ctx context.Context, params *GetEventsParams) ([]*Event, uint64, error)
+	GetEventByID(ctx context.Context, eventID string) (*Event, error)
 	FindUnprocessedEvents(ctx context.Context, params *FindUnprocessedEventsParams) ([]*Event, error)
 	FindUnprocessedEventsFromFeatureUsage(ctx context.Context, params *FindUnprocessedEventsParams) ([]*Event, error)
 	GetDistinctEventNames(ctx context.Context, externalCustomerID string, startTime, endTime time.Time) ([]string, error)
@@ -50,6 +51,12 @@ type ProcessedEventRepository interface {
 
 	// GetDetailedUsageAnalytics provides comprehensive usage analytics with filtering, grouping, and time-series data
 	GetDetailedUsageAnalytics(ctx context.Context, params *UsageAnalyticsParams) ([]*DetailedUsageAnalytic, error)
+}
+
+// RawEventRepository defines operations for raw events
+type RawEventRepository interface {
+	// FindRawEvents finds raw events with filtering and keyset pagination
+	FindRawEvents(ctx context.Context, params *FindRawEventsParams) ([]*RawEvent, error)
 }
 
 // Additional types needed for the new methods

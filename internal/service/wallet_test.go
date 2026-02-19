@@ -561,7 +561,12 @@ func (s *WalletServiceSuite) setupWallet() {
 		ConversionRate:      decimal.NewFromFloat(1.0),
 		TopupConversionRate: decimal.NewFromFloat(1.0),
 		WalletStatus:        types.WalletStatusActive,
-		BaseModel:           types.GetDefaultBaseModel(s.GetContext()),
+		Config: types.WalletConfig{
+			AllowedPriceTypes: []types.WalletConfigPriceType{
+				types.WalletConfigPriceTypeUsage,
+			},
+		},
+		BaseModel: types.GetDefaultBaseModel(s.GetContext()),
 	}
 	s.NoError(s.GetStores().WalletRepo.CreateWallet(s.GetContext(), s.testData.wallet))
 }
@@ -1985,4 +1990,66 @@ func (s *WalletServiceSuite) TestGetWalletBalanceWithEntitlements() {
 				tt.expectedCurrentUsage, lo.FromPtr(resp.CurrentPeriodUsage))
 		})
 	}
+}
+
+func (s *WalletServiceSuite) TestGetCreditsAvailableBreakdown() {
+	ctx := s.GetContext()
+
+	// Create a test wallet
+	testWallet := &wallet.Wallet{
+		ID:                  "wallet_breakdown_test",
+		CustomerID:          s.testData.customer.ID,
+		Currency:            "usd",
+		Balance:             decimal.NewFromInt(150),
+		CreditBalance:       decimal.NewFromInt(150),
+		ConversionRate:      decimal.NewFromFloat(1.0),
+		TopupConversionRate: decimal.NewFromFloat(1.0),
+		WalletStatus:        types.WalletStatusActive,
+		WalletType:          types.WalletTypePrePaid,
+		BaseModel:           types.GetDefaultBaseModel(ctx),
+	}
+
+	err := s.GetStores().WalletRepo.CreateWallet(ctx, testWallet)
+	s.NoError(err)
+
+	// Create purchased credit transaction
+	purchasedTx := &wallet.Transaction{
+		ID:                "tx_purchased_001",
+		WalletID:          testWallet.ID,
+		CustomerID:        testWallet.CustomerID,
+		Type:              types.TransactionTypeCredit,
+		TransactionReason: types.TransactionReasonPurchasedCreditInvoiced,
+		CreditAmount:      decimal.NewFromInt(50),
+		CreditsAvailable:  decimal.NewFromInt(50),
+		TxStatus:          types.TransactionStatusCompleted,
+		BaseModel:         types.GetDefaultBaseModel(ctx),
+	}
+
+	err = s.GetStores().WalletRepo.CreateTransaction(ctx, purchasedTx)
+	s.NoError(err)
+
+	// Create free credit transaction
+	freeTx := &wallet.Transaction{
+		ID:                "tx_free_001",
+		WalletID:          testWallet.ID,
+		CustomerID:        testWallet.CustomerID,
+		Type:              types.TransactionTypeCredit,
+		TransactionReason: types.TransactionReasonFreeCredit,
+		CreditAmount:      decimal.NewFromInt(100),
+		CreditsAvailable:  decimal.NewFromInt(100),
+		TxStatus:          types.TransactionStatusCompleted,
+		BaseModel:         types.GetDefaultBaseModel(ctx),
+	}
+
+	err = s.GetStores().WalletRepo.CreateTransaction(ctx, freeTx)
+	s.NoError(err)
+
+	// Test GetCreditsAvailableBreakdown
+	breakdown, err := s.service.GetCreditsAvailableBreakdown(ctx, testWallet.ID)
+	s.NoError(err)
+	s.NotNil(breakdown)
+	s.True(breakdown.Purchased.Equal(decimal.NewFromInt(50)),
+		"Expected purchased credits to be 50, got %s", breakdown.Purchased)
+	s.True(breakdown.Free.Equal(decimal.NewFromInt(100)),
+		"Expected free credits to be 100, got %s", breakdown.Free)
 }

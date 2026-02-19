@@ -351,6 +351,7 @@ func (r *creditGrantRepository) Update(ctx context.Context, cg *domainCreditGran
 		SetScope(cg.Scope).
 		SetStatus(string(cg.Status)).
 		SetUpdatedAt(time.Now().UTC()).
+		SetNillableEndDate(cg.EndDate).
 		SetUpdatedBy(types.GetUserID(ctx)).
 		SetMetadata(cg.Metadata)
 
@@ -585,6 +586,11 @@ func (o CreditGrantQueryOptions) applyEntityQueryOptions(_ context.Context, f *t
 		if f.EndTime != nil {
 			query = query.Where(creditgrant.CreatedAtLTE(*f.EndTime))
 		}
+	}
+
+	// Apply credit grant IDs filter if specified
+	if len(f.CreditGrantIDs) > 0 {
+		query = query.Where(creditgrant.IDIn(f.CreditGrantIDs...))
 	}
 
 	return query

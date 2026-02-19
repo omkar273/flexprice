@@ -19,13 +19,16 @@ type CreateWalletRequest struct {
 	CustomerID string `json:"customer_id,omitempty"`
 
 	// external_customer_id is the customer id in the external system
-	ExternalCustomerID string              `json:"external_customer_id,omitempty"`
-	Name               string              `json:"name,omitempty"`
-	Currency           string              `json:"currency" binding:"required"`
-	Description        string              `json:"description,omitempty"`
-	Metadata           types.Metadata      `json:"metadata,omitempty"`
-	WalletType         types.WalletType    `json:"wallet_type"`
-	Config             *types.WalletConfig `json:"config,omitempty"`
+	ExternalCustomerID string           `json:"external_customer_id,omitempty"`
+	Name               string           `json:"-"`
+	Currency           string           `json:"currency" binding:"required"`
+	Description        string           `json:"description,omitempty"`
+	Metadata           types.Metadata   `json:"metadata,omitempty"`
+	WalletType         types.WalletType `json:"wallet_type"`
+
+	// config is the configuration for the wallet (optional)
+	// currently config only have allowed_price_types field which isnt used by api, but is used by service
+	Config *types.WalletConfig `json:"-"`
 
 	// amount in the currency =  number of credits * conversion_rate
 	// ex if conversion_rate is 1, then 1 USD = 1 credit
@@ -53,12 +56,9 @@ type CreateWalletRequest struct {
 	// ex 2025-01-01 00:00:00 UTC
 	InitialCreditsExpiryDateUTC *time.Time `json:"initial_credits_expiry_date_utc,omitempty"`
 
-	// alert_enabled is the flag to enable alerts for the wallet
-	// defaults to true, can be explicitly set to false to disable alerts
-	AlertEnabled bool `json:"alert_enabled,omitempty"`
-
-	// alert_config is the alert configuration for the wallet (optional)
-	AlertConfig *AlertConfig `json:"alert_config,omitempty"`
+	// alert_settings is the alert settings for the wallet (optional)
+	// If not provided, tenant level alert settings will be used
+	AlertSettings *types.AlertSettings `json:"alert_settings,omitempty"`
 
 	// auto top-up object
 	AutoTopup *types.AutoTopup `json:"auto_topup,omitempty"`
@@ -70,24 +70,14 @@ type CreateWalletRequest struct {
 	PriceUnit *string `json:"price_unit,omitempty"`
 }
 
-type AlertConfig struct {
-	Threshold *Threshold `json:"threshold,omitempty"`
-}
-
-type Threshold struct {
-	Type  string          `json:"type"` //amount
-	Value decimal.Decimal `json:"value" swaggertype:"string"`
-}
-
 // UpdateWalletRequest represents the request to update a wallet
 type UpdateWalletRequest struct {
-	Name         *string             `json:"name,omitempty"`
-	Description  *string             `json:"description,omitempty"`
-	Metadata     *types.Metadata     `json:"metadata,omitempty"`
-	AutoTopup    *types.AutoTopup    `json:"auto_topup,omitempty"`
-	Config       *types.WalletConfig `json:"config,omitempty"`
-	AlertEnabled *bool               `json:"alert_enabled,omitempty"`
-	AlertConfig  *AlertConfig        `json:"alert_config,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	Metadata      *types.Metadata      `json:"metadata,omitempty"`
+	AutoTopup     *types.AutoTopup     `json:"auto_topup,omitempty"`
+	Config        *types.WalletConfig  `json:"config,omitempty"`
+	AlertSettings *types.AlertSettings `json:"alert_settings,omitempty"`
 }
 
 func (r *UpdateWalletRequest) Validate() error {
@@ -118,6 +108,14 @@ func (r *CreateWalletRequest) ToWallet(ctx context.Context) *wallet.Wallet {
 	if r.Config == nil {
 		r.Config = types.GetDefaultWalletConfig()
 	}
+	// Set default allowed price types if not already configured
+	// this is done to ensure that the wallet is created with the correct allowed price types
+	switch r.WalletType {
+	case types.WalletTypePrePaid:
+		r.Config.AllowedPriceTypes = []types.WalletConfigPriceType{types.WalletConfigPriceTypeUsage}
+	case types.WalletTypePostPaid:
+		r.Config.AllowedPriceTypes = []types.WalletConfigPriceType{types.WalletConfigPriceTypeAll}
+	}
 
 	if r.ConversionRate.LessThanOrEqual(decimal.NewFromInt(0)) {
 		r.ConversionRate = decimal.NewFromInt(1)
@@ -128,21 +126,12 @@ func (r *CreateWalletRequest) ToWallet(ctx context.Context) *wallet.Wallet {
 	}
 
 	if r.Name == "" {
-		if r.WalletType == types.WalletTypePrePaid {
-			r.Name = fmt.Sprintf("Prepaid Wallet - %s", r.Currency)
-		} else if r.WalletType == types.WalletTypePromotional {
-			r.Name = fmt.Sprintf("Promotional Wallet - %s", r.Currency)
-		}
-	}
-
-	// Convert AlertConfig to types.AlertConfig
-	var alertConfig *types.AlertConfig
-	if r.AlertConfig != nil {
-		alertConfig = &types.AlertConfig{
-			Threshold: &types.WalletAlertThreshold{
-				Type:  types.AlertThresholdType(r.AlertConfig.Threshold.Type),
-				Value: r.AlertConfig.Threshold.Value,
-			},
+		currency := strings.ToUpper(r.Currency)
+		switch r.WalletType {
+		case types.WalletTypePrePaid:
+			r.Name = fmt.Sprintf("Prepaid Wallet - %s", currency)
+		case types.WalletTypePostPaid:
+			r.Name = fmt.Sprintf("Postpaid Wallet - %s", currency)
 		}
 	}
 
@@ -162,9 +151,8 @@ func (r *CreateWalletRequest) ToWallet(ctx context.Context) *wallet.Wallet {
 		WalletType:          r.WalletType,
 		Config:              lo.FromPtr(r.Config),
 		ConversionRate:      r.ConversionRate,
-		AlertEnabled:        true, // Always enabled by default
-		AlertConfig:         alertConfig,
-		AlertState:          string(types.AlertStateOk), // Always starts in "ok" state
+		AlertSettings:       r.AlertSettings,
+		AlertState:          types.AlertStateOk, // Always starts in "ok" state
 		TopupConversionRate: lo.FromPtr(r.TopupConversionRate),
 	}
 }
@@ -227,22 +215,10 @@ func (r *CreateWalletRequest) Validate() error {
 		}
 	}
 
-	// Validate alert config if provided
-	if r.AlertConfig != nil {
-		if r.AlertConfig.Threshold == nil {
-			return ierr.NewError("alert_config.threshold is required").
-				WithHint("Threshold must be provided when alert config is set").
-				Mark(ierr.ErrValidation)
-		}
-		if r.AlertConfig.Threshold.Type == "" {
-			return ierr.NewError("alert_config.threshold.type is required").
-				WithHint("Threshold type must be provided when alert config is set").
-				Mark(ierr.ErrValidation)
-		}
-		if r.AlertConfig.Threshold.Value.IsZero() {
-			return ierr.NewError("alert_config.threshold.value must be greater than 0").
-				WithHint("Threshold value must be provided when alert config is set").
-				Mark(ierr.ErrValidation)
+	// Validate alert settings if provided
+	if r.AlertSettings != nil {
+		if err := r.AlertSettings.Validate(); err != nil {
+			return err
 		}
 	}
 
@@ -252,6 +228,7 @@ func (r *CreateWalletRequest) Validate() error {
 // WalletResponse represents a wallet in API responses
 type WalletResponse struct {
 	*wallet.Wallet
+	CreditsAvailableBreakdown *types.CreditBreakdown `json:"credits_available_breakdown,omitempty"`
 }
 
 // ToWalletResponse converts domain Wallet to WalletResponse
@@ -380,30 +357,39 @@ type TopUpWalletResponse struct {
 // WalletBalanceResponse represents the response for getting wallet balance
 type WalletBalanceResponse struct {
 	*wallet.Wallet
-	RealTimeBalance       *decimal.Decimal `json:"real_time_balance,omitempty" swaggertype:"string"`
-	RealTimeCreditBalance *decimal.Decimal `json:"real_time_credit_balance,omitempty" swaggertype:"string"`
-	BalanceUpdatedAt      *time.Time       `json:"balance_updated_at,omitempty"`
-	CurrentPeriodUsage    *decimal.Decimal `json:"current_period_usage,omitempty" swaggertype:"string"`
-	UnpaidInvoicesAmount  *decimal.Decimal `json:"unpaid_invoices_amount,omitempty" swaggertype:"string"`
+	RealTimeBalance           *decimal.Decimal       `json:"real_time_balance,omitempty" swaggertype:"string"`
+	RealTimeCreditBalance     *decimal.Decimal       `json:"real_time_credit_balance,omitempty" swaggertype:"string"`
+	BalanceUpdatedAt          *time.Time             `json:"balance_updated_at,omitempty"`
+	CurrentPeriodUsage        *decimal.Decimal       `json:"current_period_usage,omitempty" swaggertype:"string"`
+	UnpaidInvoicesAmount      *decimal.Decimal       `json:"unpaid_invoices_amount,omitempty" swaggertype:"string"`
+	CreditsAvailableBreakdown *types.CreditBreakdown `json:"credits_available_breakdown,omitempty"`
 }
 
 type ExpiredCreditsResponseItem struct {
-	TenantID      string `json:"tenant_id"`
-	EnvironmentID string `json:"environment_id"`
-	Count         int    `json:"count"`
+	TenantID                       string `json:"tenant_id"`
+	EnvironmentID                  string `json:"environment_id"`
+	Count                          int    `json:"count"`
+	Success                        int    `json:"success"`
+	Failed                         int    `json:"failed"`
+	SkippedDueToActiveSubscription int    `json:"skipped_due_to_active_subscription"`
+	SkippedDueToActiveInvoice      int    `json:"skipped_due_to_active_invoice"`
 }
 
 type ExpiredCreditsResponse struct {
-	Items   []*ExpiredCreditsResponseItem `json:"items"`
-	Total   int                           `json:"total"`
-	Success int                           `json:"success"`
-	Failed  int                           `json:"failed"`
+	Items                          []*ExpiredCreditsResponseItem `json:"items"`
+	Total                          int                           `json:"total"`
+	Success                        int                           `json:"success"`
+	Failed                         int                           `json:"failed"`
+	SkippedDueToActiveSubscription int                           `json:"skipped_due_to_active_subscription"`
+	SkippedDueToActiveInvoice      int                           `json:"skipped_due_to_active_invoice"`
 }
 
 type GetCustomerWalletsRequest struct {
 	ID                     string `form:"id"`
 	LookupKey              string `form:"lookup_key"`
 	IncludeRealTimeBalance bool   `form:"include_real_time_balance" default:"false"`
+	Expand                 string `form:"expand"`
+	FromCache              bool   `form:"from_cache" default:"false"`
 }
 
 func (r *GetCustomerWalletsRequest) Validate() error {

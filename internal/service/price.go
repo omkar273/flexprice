@@ -38,6 +38,8 @@ type PriceService interface {
 	// CalculateCostSheetPrice calculates the cost for a given price and quantity
 	// specifically for costsheet calculations
 	CalculateCostSheetPrice(ctx context.Context, price *price.Price, quantity decimal.Decimal) decimal.Decimal
+
+	GetByLookupKey(ctx context.Context, lookupKey string) (*dto.PriceResponse, error)
 }
 
 type priceService struct {
@@ -57,6 +59,27 @@ func (s *priceService) CreatePrice(ctx context.Context, req dto.CreatePriceReque
 	if !req.SkipEntityValidation {
 		if err := s.validateEntityExists(ctx, req.EntityType, req.EntityID); err != nil {
 			return nil, err
+		}
+
+		// Validate that the entity has less than 1000 active prices
+		filter := types.NewNoLimitPriceFilter().
+			WithEntityIDs([]string{req.EntityID}).
+			WithStatus(types.StatusPublished).
+			WithEntityType(req.EntityType)
+
+		count, err := s.PriceRepo.Count(ctx, filter)
+		if err != nil {
+			return nil, err
+		}
+		if count >= price.MAX_ACTIVE_PRICES {
+			return nil, ierr.NewError("entity has too many active prices").
+				WithHint("The specified entity has too many active prices").
+				WithReportableDetails(map[string]interface{}{
+					"entity_id":   req.EntityID,
+					"entity_type": req.EntityType,
+					"count":       count,
+				}).
+				Mark(ierr.ErrValidation)
 		}
 	}
 
@@ -102,6 +125,23 @@ func (s *priceService) preparePriceForCreation(ctx context.Context, req *dto.Cre
 	p, err := req.ToPrice(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	// Validate meter for USAGE prices: must be set and must exist
+	if p.Type == types.PRICE_TYPE_USAGE {
+		if p.MeterID == "" {
+			return nil, ierr.NewError("meter_id is required when type is USAGE").
+				WithHint("Please select a metered feature to set up usage pricing").
+				WithReportableDetails(map[string]interface{}{
+					"type": p.Type,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+
+		if _, err := s.MeterRepo.GetMeter(ctx, p.MeterID); err != nil {
+			return nil, err
+		}
+
 	}
 
 	// Apply price unit conversion if price type is CUSTOM
@@ -217,8 +257,72 @@ func (s *priceService) validateEntityExists(ctx context.Context, entityType type
 	return nil
 }
 
+// validateBulkPriceEntityLimits validates that entities don't exceed the maximum number of active prices
+// when creating bulk prices. It checks each unique entity and ensures that the total count of existing
+// plus new prices doesn't exceed MAX_ACTIVE_PRICES.
+func (s *priceService) validateBulkPriceEntityLimits(ctx context.Context, items []dto.CreatePriceRequest) error {
+	// Create a map of entityID -> entityType using lo
+	entityIDToType := lo.SliceToMap(items, func(priceReq dto.CreatePriceRequest) (string, types.PriceEntityType) {
+		return priceReq.EntityID, priceReq.EntityType
+	})
+
+	// Group prices by entityID to count how many prices are being added for each entity
+	entityGroups := lo.GroupBy(items, func(priceReq dto.CreatePriceRequest) string {
+		return priceReq.EntityID
+	})
+
+	// Validate price limit for each unique entity
+	for entityID, entityType := range entityIDToType {
+		// Check if we should skip validation (check first item with this entityID)
+		itemsForEntity := entityGroups[entityID]
+
+		firstItem := itemsForEntity[0]
+		if firstItem.SkipEntityValidation {
+			continue
+		}
+
+		// Count existing active prices for this entity
+		filter := types.NewNoLimitPriceFilter().
+			WithEntityIDs([]string{entityID}).
+			WithStatus(types.StatusPublished).
+			WithEntityType(entityType)
+
+		existingCount, err := s.PriceRepo.Count(ctx, filter)
+		if err != nil {
+			return err
+		}
+
+		// Count how many new prices are being added for this entity
+		newPricesCount := len(entityGroups[entityID])
+
+		// Check if adding these prices would exceed the limit
+		// If existingCount + newPricesCount > MAX_ACTIVE_PRICES, reject
+		// This allows exactly MAX_ACTIVE_PRICES total (e.g., 999 existing + 1 new = 1000, which is allowed)
+		if existingCount+newPricesCount > price.MAX_ACTIVE_PRICES {
+			return ierr.NewError("entity has too many active prices").
+				WithHint("The specified entity has too many active prices").
+				WithReportableDetails(map[string]interface{}{
+					"entity_id":        entityID,
+					"entity_type":      entityType,
+					"existing_count":   existingCount,
+					"new_prices_count": newPricesCount,
+					"total_count":      existingCount + newPricesCount,
+					"max_allowed":      price.MAX_ACTIVE_PRICES,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	}
+
+	return nil
+}
+
 func (s *priceService) CreateBulkPrice(ctx context.Context, req dto.CreateBulkPriceRequest) (*dto.CreateBulkPriceResponse, error) {
 	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	// Validate price limit for each unique entity
+	if err := s.validateBulkPriceEntityLimits(ctx, req.Items); err != nil {
 		return nil, err
 	}
 
@@ -707,6 +811,18 @@ func (s *priceService) UpdatePrice(ctx context.Context, id string, req dto.Updat
 			terminationEndDate = *req.EffectiveFrom
 		}
 
+		// Effective date must not be before the price's start date (avoids end_date < start_date)
+		if existingPrice.StartDate != nil && terminationEndDate.Before(lo.FromPtr(existingPrice.StartDate)) {
+			return nil, ierr.NewError("effective date must be on or after price start date").
+				WithHint("The effective date for terminating this price cannot be before the price's start date").
+				WithReportableDetails(map[string]interface{}{
+					"price_id":         id,
+					"price_start_date": existingPrice.StartDate,
+					"effective_from":   terminationEndDate,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+
 		if err := s.DB.WithTx(ctx, func(ctx context.Context) error {
 			// Terminate the existing price
 			existingPrice.EndDate = &terminationEndDate
@@ -824,10 +940,10 @@ func (s *priceService) DeletePrice(ctx context.Context, id string, req dto.Delet
 		endDate = time.Now().UTC()
 	}
 
-	// Validate end date is after start date
+	// Validate end date is on or after start date
 	if price.StartDate != nil && price.StartDate.After(endDate) {
-		return ierr.NewError("end date must be after start date").
-			WithHint("The termination date must be after the price's start date").
+		return ierr.NewError("end date must be on or after start date").
+			WithHint("The termination date must be on or after the price's start date").
 			WithReportableDetails(map[string]interface{}{
 				"price_id":   id,
 				"start_date": price.StartDate,
@@ -1454,4 +1570,19 @@ func (s *priceService) syncPriceToQuickBooksIfEnabled(ctx context.Context, price
 		"plan_id", planID,
 		"workflow_id", workflowRun.GetID(),
 		"run_id", workflowRun.GetRunID())
+}
+
+func (s *priceService) GetByLookupKey(ctx context.Context, lookupKey string) (*dto.PriceResponse, error) {
+	if lookupKey == "" {
+		return nil, ierr.NewError("lookup key is required").
+			WithHint("Lookup key is required").
+			Mark(ierr.ErrValidation)
+	}
+
+	price, err := s.PriceRepo.GetByLookupKey(ctx, lookupKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.PriceResponse{Price: price}, nil
 }

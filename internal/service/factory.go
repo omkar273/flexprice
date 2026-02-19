@@ -25,6 +25,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/meter"
 	"github.com/flexprice/flexprice/internal/domain/payment"
 	"github.com/flexprice/flexprice/internal/domain/plan"
+	"github.com/flexprice/flexprice/internal/domain/planpricesync"
 	"github.com/flexprice/flexprice/internal/domain/price"
 	"github.com/flexprice/flexprice/internal/domain/priceunit"
 	"github.com/flexprice/flexprice/internal/domain/proration"
@@ -39,6 +40,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/tenant"
 	"github.com/flexprice/flexprice/internal/domain/user"
 	"github.com/flexprice/flexprice/internal/domain/wallet"
+	"github.com/flexprice/flexprice/internal/domain/workflowexecution"
 	"github.com/flexprice/flexprice/internal/httpclient"
 	"github.com/flexprice/flexprice/internal/integration"
 	"github.com/flexprice/flexprice/internal/logger"
@@ -67,6 +69,7 @@ type ServiceParams struct {
 	CostSheetUsageRepo           events.CostSheetUsageRepository
 	ProcessedEventRepo           events.ProcessedEventRepository
 	FeatureUsageRepo             events.FeatureUsageRepository
+	RawEventRepo                 events.RawEventRepository
 	MeterRepo                    meter.Repository
 	PriceRepo                    price.Repository
 	PriceUnitRepo                priceunit.Repository
@@ -75,6 +78,7 @@ type ServiceParams struct {
 	SubRepo                      subscription.Repository
 	SubscriptionLineItemRepo     subscription.LineItemRepository
 	SubscriptionPhaseRepo        subscription.SubscriptionPhaseRepository
+	SubScheduleRepo              subscription.SubscriptionScheduleRepository
 	WalletRepo                   wallet.Repository
 	TenantRepo                   tenant.Repository
 	InvoiceRepo                  invoice.Repository
@@ -103,6 +107,8 @@ type ServiceParams struct {
 	AlertLogsRepo                alertlogs.Repository
 	GroupRepo                    group.Repository
 	ScheduledTaskRepo            scheduledtask.Repository
+	PlanPriceSyncRepo            planpricesync.Repository
+	WorkflowExecutionRepo        workflowexecution.Repository
 
 	// Publishers
 	EventPublisher   publisher.EventPublisher
@@ -134,6 +140,7 @@ func NewServiceParams(
 	costSheetUsageRepo events.CostSheetUsageRepository,
 	processedEventRepo events.ProcessedEventRepository,
 	featureUsageRepo events.FeatureUsageRepository,
+	rawEventRepo events.RawEventRepository,
 	meterRepo meter.Repository,
 	priceRepo price.Repository,
 	priceUnitRepo priceunit.Repository,
@@ -142,6 +149,7 @@ func NewServiceParams(
 	subRepo subscription.Repository,
 	subscriptionLineItemRepo subscription.LineItemRepository,
 	subscriptionPhaseRepo subscription.SubscriptionPhaseRepository,
+	subScheduleRepo subscription.SubscriptionScheduleRepository,
 	walletRepo wallet.Repository,
 	tenantRepo tenant.Repository,
 	invoiceRepo invoice.Repository,
@@ -178,6 +186,8 @@ func NewServiceParams(
 	integrationFactory *integration.Factory,
 	walletBalanceAlertPubSub types.WalletBalanceAlertPubSub,
 	webhookPubSub pubsub.PubSub,
+	planPriceSyncRepo planpricesync.Repository,
+	workflowExecutionRepo workflowexecution.Repository,
 ) ServiceParams {
 	return ServiceParams{
 		Logger:                       logger,
@@ -190,6 +200,7 @@ func NewServiceParams(
 		CostSheetUsageRepo:           costSheetUsageRepo,
 		ProcessedEventRepo:           processedEventRepo,
 		FeatureUsageRepo:             featureUsageRepo,
+		RawEventRepo:                 rawEventRepo,
 		MeterRepo:                    meterRepo,
 		PriceRepo:                    priceRepo,
 		PriceUnitRepo:                priceUnitRepo,
@@ -198,6 +209,7 @@ func NewServiceParams(
 		SubRepo:                      subRepo,
 		SubscriptionLineItemRepo:     subscriptionLineItemRepo,
 		SubscriptionPhaseRepo:        subscriptionPhaseRepo,
+		SubScheduleRepo:              subScheduleRepo,
 		WalletRepo:                   walletRepo,
 		TenantRepo:                   tenantRepo,
 		InvoiceRepo:                  invoiceRepo,
@@ -234,5 +246,7 @@ func NewServiceParams(
 		IntegrationFactory:           integrationFactory,
 		WalletBalanceAlertPubSub:     walletBalanceAlertPubSub,
 		WebhookPubSub:                webhookPubSub,
+		PlanPriceSyncRepo:            planPriceSyncRepo,
+		WorkflowExecutionRepo:        workflowExecutionRepo,
 	}
 }

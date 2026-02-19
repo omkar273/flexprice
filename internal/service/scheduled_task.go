@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
+	"github.com/flexprice/flexprice/internal/config"
+	"github.com/flexprice/flexprice/internal/domain/connection"
 	"github.com/flexprice/flexprice/internal/domain/scheduledtask"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
@@ -15,6 +17,7 @@ import (
 	exportWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/export"
 	subscriptionWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/subscription"
 	"github.com/flexprice/flexprice/internal/types"
+	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
 )
 
@@ -33,20 +36,26 @@ type ScheduledTaskService interface {
 
 type scheduledTaskService struct {
 	repo           scheduledtask.Repository
+	connectionRepo connection.Repository
 	temporalClient temporalClient.TemporalClient
 	logger         *logger.Logger
+	config         *config.Configuration
 }
 
 // NewScheduledTaskService creates a new scheduled task service
 func NewScheduledTaskService(
 	repo scheduledtask.Repository,
+	connectionRepo connection.Repository,
 	temporalClient temporalClient.TemporalClient,
 	logger *logger.Logger,
+	config *config.Configuration,
 ) ScheduledTaskService {
 	return &scheduledTaskService{
 		repo:           repo,
+		connectionRepo: connectionRepo,
 		temporalClient: temporalClient,
 		logger:         logger,
+		config:         config,
 	}
 }
 
@@ -66,7 +75,76 @@ func (s *scheduledTaskService) CreateScheduledTask(ctx context.Context, req dto.
 	s.logger.Infow("creating scheduled task",
 		"tenant_id", tenantID,
 		"environment_id", envID,
-		"entity_type", req.EntityType)
+		"entity_type", req.EntityType,
+		"connection_id", req.ConnectionID)
+
+	// Fetch the connection to check if it's Flexprice-managed
+	conn, err := s.connectionRepo.Get(ctx, req.ConnectionID)
+	if err != nil {
+		s.logger.Errorw("failed to get connection", "connection_id", req.ConnectionID, "error", err)
+		return nil, ierr.WithError(err).
+			WithHint("Connection not found").
+			Mark(ierr.ErrNotFound)
+	}
+
+	// Check if this is a Flexprice-managed S3 connection
+	jobConfig := req.JobConfig
+	if conn.ProviderType == types.SecretProviderS3 && conn.SyncConfig != nil && conn.SyncConfig.S3 != nil && conn.SyncConfig.S3.IsFlexpriceManaged {
+		s.logger.Infow("handling flexprice-managed S3 connection for scheduled task",
+			"connection_id", req.ConnectionID,
+			"tenant_id", tenantID)
+
+		// For Flexprice-managed: validate only compression and encryption first
+		if req.JobConfig == nil {
+			return nil, ierr.NewError("job config is required for flexprice-managed S3").
+				WithHint("S3 job configuration must be provided").
+				Mark(ierr.ErrValidation)
+		}
+
+		if err := req.JobConfig.ValidateForFlexpriceManaged(); err != nil {
+			s.logger.Errorw("invalid job config for flexprice-managed S3", "error", err)
+			return nil, err
+		}
+
+		// Populate bucket, region, and key_prefix from config
+		jobConfig = &types.S3JobConfig{
+			Bucket:      s.config.FlexpriceS3Exports.Bucket,
+			Region:      s.config.FlexpriceS3Exports.Region,
+			KeyPrefix:   conn.SyncConfig.S3.KeyPrefix, // Tenant + Environment isolation
+			Compression: req.JobConfig.Compression,
+			Encryption:  req.JobConfig.Encryption,
+		}
+
+		// Set defaults if not provided
+		if jobConfig.Compression == "" {
+			jobConfig.Compression = types.S3CompressionTypeNone
+		}
+		if jobConfig.Encryption == "" {
+			jobConfig.Encryption = types.S3EncryptionTypeAES256
+		}
+
+		s.logger.Infow("populated job config for flexprice-managed S3",
+			"bucket", jobConfig.Bucket,
+			"region", jobConfig.Region,
+			"key_prefix", jobConfig.KeyPrefix,
+			"tenant_id", tenantID,
+			"environment_id", envID,
+			"compression", jobConfig.Compression,
+			"encryption", jobConfig.Encryption)
+
+		// Final validation after population
+		if err := jobConfig.Validate(); err != nil {
+			s.logger.Errorw("invalid populated job config for flexprice-managed S3", "error", err)
+			return nil, err
+		}
+	} else {
+		// For non-managed connections: full validation required
+		if err := req.JobConfig.Validate(); err != nil {
+			s.logger.Errorw("invalid job config for custom S3 connection", "error", err)
+			return nil, err
+		}
+		jobConfig = req.JobConfig
+	}
 
 	// Generate task ID upfront
 	taskID := types.GenerateUUIDWithPrefix("schtask")
@@ -85,7 +163,7 @@ func (s *scheduledTaskService) CreateScheduledTask(ctx context.Context, req dto.
 		EntityType:         req.EntityType,
 		Interval:           req.Interval,
 		Enabled:            req.Enabled,
-		JobConfig:          req.JobConfig,
+		JobConfig:          jobConfig,
 		TemporalScheduleID: temporalScheduleID, // Set upfront!
 		Status:             types.StatusPublished,
 		CreatedAt:          now,
@@ -95,7 +173,7 @@ func (s *scheduledTaskService) CreateScheduledTask(ctx context.Context, req dto.
 	}
 
 	// Save to database
-	err := s.repo.Create(ctx, task)
+	err = s.repo.Create(ctx, task)
 	if err != nil {
 		s.logger.Errorw("failed to create scheduled task", "error", err)
 		return nil, ierr.WithError(err).
@@ -396,9 +474,9 @@ func (s *scheduledTaskService) startScheduledTask(ctx context.Context, task *sch
 			},
 		},
 		TaskQueue:                string(types.TemporalTaskQueueExport),
-		WorkflowExecutionTimeout: 15 * time.Minute,
-		WorkflowRunTimeout:       15 * time.Minute,
-		WorkflowTaskTimeout:      15 * time.Minute,
+		WorkflowExecutionTimeout: 60 * time.Minute,
+		WorkflowRunTimeout:       60 * time.Minute,
+		WorkflowTaskTimeout:      60 * time.Minute,
 	}
 
 	scheduleOptions := models.CreateScheduleOptions{
@@ -505,6 +583,13 @@ func (s *scheduledTaskService) deleteTemporalSchedule(ctx context.Context, task 
 	handle := s.temporalClient.GetScheduleHandle(ctx, task.TemporalScheduleID)
 	err := handle.Delete(ctx)
 	if err != nil {
+		// Deleting a schedule is allowed to be idempotent. If it's already gone, treat it as success.
+		var notFound *serviceerror.NotFound
+		if errors.As(err, &notFound) {
+			s.logger.Infow("temporal schedule not found; treating as deleted", "task_id", task.ID, "schedule_id", task.TemporalScheduleID)
+			return nil
+		}
+
 		s.logger.Errorw("failed to delete temporal schedule", "schedule_id", task.TemporalScheduleID, "error", err)
 		return ierr.WithError(err).
 			WithHint("Failed to delete Temporal schedule").
@@ -561,20 +646,23 @@ func (s *scheduledTaskService) triggerForceRun(ctx context.Context, taskID strin
 			"duration", endTime.Sub(startTime))
 	}
 
-	// Generate workflow ID for force run
-	workflowID := fmt.Sprintf("%s-export", types.GenerateUUIDWithPrefix(types.UUID_PREFIX_TASK))
+	// Generate task ID and use it as workflow ID (they must be the same)
+	// This ensures the task record ID matches the Temporal workflow ID
+	exportTaskID := types.GenerateUUIDWithPrefix(types.UUID_PREFIX_TASK)
+	workflowID := exportTaskID
 
 	s.logger.Infow("triggering force run export",
 		"workflow_id", workflowID,
+		"export_task_id", exportTaskID,
 		"scheduled_task_id", taskID,
 		"mode", mode)
 
 	workflowOptions := models.StartWorkflowOptions{
 		ID:                       workflowID,
 		TaskQueue:                string(types.TemporalTaskQueueExport),
-		WorkflowExecutionTimeout: 15 * time.Minute, // 15 minutes for export tasks
-		WorkflowRunTimeout:       15 * time.Minute, // 15 minutes for single workflow run
-		WorkflowTaskTimeout:      15 * time.Minute, // 15 minute for workflow task processing
+		WorkflowExecutionTimeout: 60 * time.Minute, // 60 minutes for export tasks
+		WorkflowRunTimeout:       60 * time.Minute, // 60 minutes for single workflow run
+		WorkflowTaskTimeout:      60 * time.Minute, // 60 minutes for workflow task processing
 	}
 
 	input := exportWorkflows.ExecuteExportWorkflowInput{

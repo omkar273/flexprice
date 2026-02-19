@@ -127,6 +127,13 @@ func (Subscription) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "decimal(20,6)",
 			}),
+		field.String("commitment_duration").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Optional().
+			Nillable().
+			GoType(types.BillingPeriod("")),
 		field.Other("overage_factor", decimal.Decimal{}).
 			Optional().
 			Nillable().
@@ -172,6 +179,22 @@ func (Subscription) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Customer ID to use for invoicing (can differ from the subscription customer)"),
+		field.String("parent_subscription_id").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Optional().
+			Nillable().
+			Comment("Parent subscription ID for hierarchy (e.g. child subscription under a parent)"),
+		// Payment terms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+		field.String("payment_terms").
+			SchemaType(map[string]string{
+				"postgres": "varchar(20)",
+			}).
+			Optional().
+			Nillable().
+			GoType(types.PaymentTerms("")).
+			Comment("Payment terms for invoice due date (e.g. 15 NET, 30 NET, 45 NET, 60 NET, 75 NET, 90 NET)"),
 	}
 }
 
@@ -181,6 +204,8 @@ func (Subscription) Edges() []ent.Edge {
 		edge.To("line_items", SubscriptionLineItem.Type),
 		edge.To("pauses", SubscriptionPause.Type),
 		edge.To("phases", SubscriptionPhase.Type),
+		edge.To("schedules", SubscriptionSchedule.Type).
+			Comment("Subscription can have multiple schedules for plan changes, addons, etc."),
 		edge.To("credit_grants", CreditGrant.Type),
 		edge.To("coupon_associations", CouponAssociation.Type).
 			Comment("Subscription can have multiple coupon associations"),

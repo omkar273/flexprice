@@ -114,6 +114,9 @@ type SubscriptionPause func(*sql.Selector)
 // SubscriptionPhase is the predicate function for subscriptionphase builders.
 type SubscriptionPhase func(*sql.Selector)
 
+// SubscriptionSchedule is the predicate function for subscriptionschedule builders.
+type SubscriptionSchedule func(*sql.Selector)
+
 // Task is the predicate function for task builders.
 type Task func(*sql.Selector)
 
@@ -137,3 +140,6 @@ type Wallet func(*sql.Selector)
 
 // WalletTransaction is the predicate function for wallettransaction builders.
 type WalletTransaction func(*sql.Selector)
+
+// WorkflowExecution is the predicate function for workflowexecution builders.
+type WorkflowExecution func(*sql.Selector)

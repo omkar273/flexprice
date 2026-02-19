@@ -18,20 +18,22 @@ import (
 )
 
 type EventsHandler struct {
-	eventService                service.EventService
-	eventPostProcessingService  service.EventPostProcessingService
-	featureUsageTrackingService service.FeatureUsageTrackingService
-	config                      *config.Configuration
-	log                         *logger.Logger
+	eventService                 service.EventService
+	eventPostProcessingService   service.EventPostProcessingService
+	featureUsageTrackingService  service.FeatureUsageTrackingService
+	rawEventsReprocessingService service.RawEventsReprocessingService
+	config                       *config.Configuration
+	log                          *logger.Logger
 }
 
-func NewEventsHandler(eventService service.EventService, eventPostProcessingService service.EventPostProcessingService, featureUsageTrackingService service.FeatureUsageTrackingService, config *config.Configuration, log *logger.Logger) *EventsHandler {
+func NewEventsHandler(eventService service.EventService, eventPostProcessingService service.EventPostProcessingService, featureUsageTrackingService service.FeatureUsageTrackingService, rawEventsReprocessingService service.RawEventsReprocessingService, config *config.Configuration, log *logger.Logger) *EventsHandler {
 	return &EventsHandler{
-		eventService:                eventService,
-		eventPostProcessingService:  eventPostProcessingService,
-		featureUsageTrackingService: featureUsageTrackingService,
-		config:                      config,
-		log:                         log,
+		eventService:                 eventService,
+		eventPostProcessingService:   eventPostProcessingService,
+		featureUsageTrackingService:  featureUsageTrackingService,
+		rawEventsReprocessingService: rawEventsReprocessingService,
+		config:                       config,
+		log:                          log,
 	}
 }
 
@@ -490,4 +492,173 @@ func (h *EventsHandler) GetHuggingFaceBillingData(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+func (h *EventsHandler) BenchmarkV1(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	var req dto.BenchmarkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("Failed to bind JSON", "error", err)
+		c.Error(ierr.WithError(err).
+			WithHint("Invalid request payload").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		c.Error(err)
+		return
+	}
+
+	// Convert to event
+	event := req.ToEvent(ctx)
+
+	result, err := h.featureUsageTrackingService.BenchmarkPrepareV1(ctx, event)
+	if err != nil {
+		h.log.Error("Failed to benchmark V1", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *EventsHandler) BenchmarkV2(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	var req dto.BenchmarkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("Failed to bind JSON", "error", err)
+		c.Error(ierr.WithError(err).
+			WithHint("Invalid request payload").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		c.Error(err)
+		return
+	}
+
+	// Convert to event
+	event := req.ToEvent(ctx)
+
+	result, err := h.featureUsageTrackingService.BenchmarkPrepareV2(ctx, event)
+	if err != nil {
+		h.log.Error("Failed to benchmark V2", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// @Summary Get event by ID
+// @Description Retrieve event details and processing status with debug information
+// @Tags Events
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path string true "Event ID"
+// @Success 200 {object} dto.GetEventByIDResponse
+// @Failure 404 {object} ierr.ErrorResponse
+// @Failure 500 {object} ierr.ErrorResponse
+// @Router /events/{id} [get]
+func (h *EventsHandler) GetEventByID(c *gin.Context) {
+	ctx := c.Request.Context()
+	eventID := c.Param("id")
+
+	if eventID == "" {
+		c.Error(ierr.NewError("event ID is required").
+			WithHint("Please provide a valid event ID").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	response, err := h.featureUsageTrackingService.DebugEvent(ctx, eventID)
+	if err != nil {
+		h.log.Error("Failed to debug event", "error", err, "event_id", eventID)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *EventsHandler) ReprocessEvents(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req dto.ReprocessEventsRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("Failed to bind JSON", "error", err)
+		c.Error(ierr.WithError(err).
+			WithHint("Invalid request format").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	result, err := h.featureUsageTrackingService.TriggerReprocessEventsWorkflow(ctx, &req)
+	if err != nil {
+		h.log.Error("Failed to trigger reprocess events workflow", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *EventsHandler) ReprocessEventsInternal(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req dto.InternalReprocessEventsRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("Failed to bind JSON", "error", err)
+		c.Error(ierr.WithError(err).
+			WithHint("Invalid request format").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	result, err := h.featureUsageTrackingService.TriggerReprocessEventsWorkflowInternal(ctx, &req)
+	if err != nil {
+		h.log.Error("Failed to trigger internal reprocess events workflow", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *EventsHandler) ReprocessRawEvents(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req dto.ReprocessRawEventsRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("Failed to bind JSON", "error", err)
+		c.Error(ierr.WithError(err).
+			WithHint("Invalid request format").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		h.log.Error("Failed to validate request", "error", err)
+		c.Error(err)
+		return
+	}
+
+	result, err := h.rawEventsReprocessingService.TriggerReprocessRawEventsWorkflow(ctx, &service.ReprocessRawEventsRequest{
+		ExternalCustomerID: req.ExternalCustomerID,
+		EventName:          req.EventName,
+		StartDate:          req.StartDate,
+		EndDate:            req.EndDate,
+		BatchSize:          req.BatchSize,
+	})
+	if err != nil {
+		h.log.Error("Failed to trigger reprocess raw events workflow", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }

@@ -13,12 +13,13 @@ type TemporalTaskQueue string
 
 const (
 	// Task Queues - logical groupings to limit worker count
-	TemporalTaskQueueTask         TemporalTaskQueue = "task"
-	TemporalTaskQueuePrice        TemporalTaskQueue = "price"
-	TemporalTaskQueueExport       TemporalTaskQueue = "export"
-	TemporalTaskQueueWorkflows    TemporalTaskQueue = "workflows"
-	TemporalTaskQueueSubscription TemporalTaskQueue = "subscription"
-	TemporalTaskQueueInvoice      TemporalTaskQueue = "invoice"
+	TemporalTaskQueueTask            TemporalTaskQueue = "task"
+	TemporalTaskQueuePrice           TemporalTaskQueue = "price"
+	TemporalTaskQueueExport          TemporalTaskQueue = "export"
+	TemporalTaskQueueWorkflows       TemporalTaskQueue = "workflows"
+	TemporalTaskQueueSubscription    TemporalTaskQueue = "subscription"
+	TemporalTaskQueueInvoice         TemporalTaskQueue = "invoice"
+	TemporalTaskQueueReprocessEvents TemporalTaskQueue = "events"
 )
 
 // String returns the string representation of the task queue
@@ -35,6 +36,7 @@ func (tq TemporalTaskQueue) Validate() error {
 		TemporalTaskQueueSubscription,
 		TemporalTaskQueueWorkflows,
 		TemporalTaskQueueInvoice,
+		TemporalTaskQueueReprocessEvents,
 	}
 	if lo.Contains(allowedQueues, tq) {
 		return nil
@@ -60,11 +62,31 @@ const (
 	TemporalHubSpotInvoiceSyncWorkflow          TemporalWorkflowType = "HubSpotInvoiceSyncWorkflow"
 	TemporalHubSpotQuoteSyncWorkflow            TemporalWorkflowType = "HubSpotQuoteSyncWorkflow"
 	TemporalNomodInvoiceSyncWorkflow            TemporalWorkflowType = "NomodInvoiceSyncWorkflow"
+	TemporalMoyasarInvoiceSyncWorkflow          TemporalWorkflowType = "MoyasarInvoiceSyncWorkflow"
 	TemporalCustomerOnboardingWorkflow          TemporalWorkflowType = "CustomerOnboardingWorkflow"
+	TemporalPrepareProcessedEventsWorkflow      TemporalWorkflowType = "PrepareProcessedEventsWorkflow"
 	TemporalScheduleSubscriptionBillingWorkflow TemporalWorkflowType = "ScheduleSubscriptionBillingWorkflow"
 	TemporalProcessSubscriptionBillingWorkflow  TemporalWorkflowType = "ProcessSubscriptionBillingWorkflow"
 	TemporalProcessInvoiceWorkflow              TemporalWorkflowType = "ProcessInvoiceWorkflow"
+	TemporalReprocessEventsWorkflow             TemporalWorkflowType = "ReprocessEventsWorkflow"
+	TemporalReprocessRawEventsWorkflow          TemporalWorkflowType = "ReprocessRawEventsWorkflow"
+	TemporalReprocessEventsForPlanWorkflow      TemporalWorkflowType = "ReprocessEventsForPlanWorkflow"
 )
+
+// WorkflowTypesExcludedFromTracking are workflow types that are not persisted to the
+// workflow_execution table and do not run start/end tracking in the interceptor.
+// Use the existing TemporalWorkflowType enums so the list stays type-safe and discoverable.
+var WorkflowTypesExcludedFromTracking = []TemporalWorkflowType{
+	TemporalScheduleSubscriptionBillingWorkflow,
+	TemporalProcessSubscriptionBillingWorkflow,
+	TemporalProcessInvoiceWorkflow,
+}
+
+// ShouldTrackWorkflowType returns false if this workflow type is excluded from tracking
+// (no DB save, no interceptor start/end logic). Used by the workflow tracking interceptor.
+func ShouldTrackWorkflowType(w TemporalWorkflowType) bool {
+	return !lo.Contains(WorkflowTypesExcludedFromTracking, w)
+}
 
 // String returns the string representation of the workflow type
 func (w TemporalWorkflowType) String() string {
@@ -84,10 +106,15 @@ func (w TemporalWorkflowType) Validate() error {
 		TemporalHubSpotInvoiceSyncWorkflow,          // "HubSpotInvoiceSyncWorkflow"
 		TemporalHubSpotQuoteSyncWorkflow,            // "HubSpotQuoteSyncWorkflow"
 		TemporalNomodInvoiceSyncWorkflow,            // "NomodInvoiceSyncWorkflow"
+		TemporalMoyasarInvoiceSyncWorkflow,          // "MoyasarInvoiceSyncWorkflow"
 		TemporalCustomerOnboardingWorkflow,          // "CustomerOnboardingWorkflow"
+		TemporalPrepareProcessedEventsWorkflow,      // "PrepareProcessedEventsWorkflow"
 		TemporalScheduleSubscriptionBillingWorkflow, // "ScheduleSubscriptionBillingWorkflow"
 		TemporalProcessSubscriptionBillingWorkflow,  // "ProcessSubscriptionBillingWorkflow"
 		TemporalProcessInvoiceWorkflow,              // "ProcessInvoiceWorkflow"
+		TemporalReprocessEventsWorkflow,             // "ReprocessEventsWorkflow"
+		TemporalReprocessRawEventsWorkflow,          // "ReprocessRawEventsWorkflow"
+		TemporalReprocessEventsForPlanWorkflow,      // "ReprocessEventsForPlanWorkflow"
 	}
 	if lo.Contains(allowedWorkflows, w) {
 		return nil
@@ -101,7 +128,7 @@ func (w TemporalWorkflowType) Validate() error {
 // TaskQueue returns the logical task queue for the workflow
 func (w TemporalWorkflowType) TaskQueue() TemporalTaskQueue {
 	switch w {
-	case TemporalTaskProcessingWorkflow, TemporalSubscriptionChangeWorkflow, TemporalSubscriptionCreationWorkflow, TemporalHubSpotDealSyncWorkflow, TemporalHubSpotInvoiceSyncWorkflow, TemporalHubSpotQuoteSyncWorkflow, TemporalNomodInvoiceSyncWorkflow:
+	case TemporalTaskProcessingWorkflow, TemporalSubscriptionChangeWorkflow, TemporalSubscriptionCreationWorkflow, TemporalHubSpotDealSyncWorkflow, TemporalHubSpotInvoiceSyncWorkflow, TemporalHubSpotQuoteSyncWorkflow, TemporalNomodInvoiceSyncWorkflow, TemporalMoyasarInvoiceSyncWorkflow:
 		return TemporalTaskQueueTask
 	case TemporalPriceSyncWorkflow, TemporalQuickBooksPriceSyncWorkflow:
 		return TemporalTaskQueuePrice
@@ -113,8 +140,10 @@ func (w TemporalWorkflowType) TaskQueue() TemporalTaskQueue {
 		return TemporalTaskQueueSubscription
 	case TemporalProcessInvoiceWorkflow:
 		return TemporalTaskQueueInvoice
-	case TemporalCustomerOnboardingWorkflow:
+	case TemporalCustomerOnboardingWorkflow, TemporalPrepareProcessedEventsWorkflow:
 		return TemporalTaskQueueWorkflows
+	case TemporalReprocessEventsWorkflow, TemporalReprocessRawEventsWorkflow, TemporalReprocessEventsForPlanWorkflow:
+		return TemporalTaskQueueReprocessEvents
 	default:
 		return TemporalTaskQueueTask // Default fallback
 	}
@@ -140,6 +169,7 @@ func GetWorkflowsForTaskQueue(taskQueue TemporalTaskQueue) []TemporalWorkflowTyp
 			TemporalHubSpotInvoiceSyncWorkflow,
 			TemporalHubSpotQuoteSyncWorkflow,
 			TemporalNomodInvoiceSyncWorkflow,
+			TemporalMoyasarInvoiceSyncWorkflow,
 		}
 	case TemporalTaskQueuePrice:
 		return []TemporalWorkflowType{
@@ -162,6 +192,13 @@ func GetWorkflowsForTaskQueue(taskQueue TemporalTaskQueue) []TemporalWorkflowTyp
 	case TemporalTaskQueueWorkflows:
 		return []TemporalWorkflowType{
 			TemporalCustomerOnboardingWorkflow,
+			TemporalPrepareProcessedEventsWorkflow,
+		}
+	case TemporalTaskQueueReprocessEvents:
+		return []TemporalWorkflowType{
+			TemporalReprocessEventsWorkflow,
+			TemporalReprocessRawEventsWorkflow,
+			TemporalReprocessEventsForPlanWorkflow,
 		}
 	default:
 		return []TemporalWorkflowType{}
@@ -177,5 +214,22 @@ func GetAllTaskQueues() []TemporalTaskQueue {
 		TemporalTaskQueueSubscription,
 		TemporalTaskQueueInvoice,
 		TemporalTaskQueueWorkflows,
+		TemporalTaskQueueReprocessEvents,
 	}
 }
+
+// WorkflowExecutionStatus represents the execution state of a Temporal workflow run.
+// Values align with Temporal's workflow execution status.
+type WorkflowExecutionStatus string
+
+const (
+	WorkflowExecutionStatusRunning        WorkflowExecutionStatus = "Running"
+	WorkflowExecutionStatusCompleted      WorkflowExecutionStatus = "Completed"
+	WorkflowExecutionStatusFailed         WorkflowExecutionStatus = "Failed"
+	WorkflowExecutionStatusCanceled       WorkflowExecutionStatus = "Canceled"
+	WorkflowExecutionStatusTerminated     WorkflowExecutionStatus = "Terminated"
+	WorkflowExecutionStatusContinuedAsNew WorkflowExecutionStatus = "ContinuedAsNew"
+	WorkflowExecutionStatusTimedOut       WorkflowExecutionStatus = "TimedOut"
+	// WorkflowExecutionStatusUnknown is used when we have a DB record but haven't synced status from Temporal yet
+	WorkflowExecutionStatusUnknown WorkflowExecutionStatus = "Unknown"
+)
