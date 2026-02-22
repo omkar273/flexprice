@@ -91,6 +91,8 @@ type SubscriptionLineItem struct {
 	CommitmentWindowed bool `json:"commitment_windowed,omitempty"`
 	// CommitmentDuration holds the value of the "commitment_duration" field.
 	CommitmentDuration *types.BillingPeriod `json:"commitment_duration,omitempty"`
+	// BillingPeriodCount holds the value of the "billing_period_count" field.
+	BillingPeriodCount int `json:"billing_period_count,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SubscriptionLineItemQuery when eager-loading is set.
 	Edges        SubscriptionLineItemEdges `json:"edges"`
@@ -141,7 +143,7 @@ func (*SubscriptionLineItem) scanValues(columns []string) ([]any, error) {
 			values[i] = new(decimal.Decimal)
 		case subscriptionlineitem.FieldCommitmentTrueUpEnabled, subscriptionlineitem.FieldCommitmentWindowed:
 			values[i] = new(sql.NullBool)
-		case subscriptionlineitem.FieldTrialPeriod:
+		case subscriptionlineitem.FieldTrialPeriod, subscriptionlineitem.FieldBillingPeriodCount:
 			values[i] = new(sql.NullInt64)
 		case subscriptionlineitem.FieldID, subscriptionlineitem.FieldTenantID, subscriptionlineitem.FieldStatus, subscriptionlineitem.FieldCreatedBy, subscriptionlineitem.FieldUpdatedBy, subscriptionlineitem.FieldEnvironmentID, subscriptionlineitem.FieldSubscriptionID, subscriptionlineitem.FieldCustomerID, subscriptionlineitem.FieldEntityID, subscriptionlineitem.FieldEntityType, subscriptionlineitem.FieldPlanDisplayName, subscriptionlineitem.FieldPriceID, subscriptionlineitem.FieldPriceType, subscriptionlineitem.FieldMeterID, subscriptionlineitem.FieldMeterDisplayName, subscriptionlineitem.FieldPriceUnitID, subscriptionlineitem.FieldPriceUnit, subscriptionlineitem.FieldDisplayName, subscriptionlineitem.FieldCurrency, subscriptionlineitem.FieldBillingPeriod, subscriptionlineitem.FieldInvoiceCadence, subscriptionlineitem.FieldSubscriptionPhaseID, subscriptionlineitem.FieldCommitmentType, subscriptionlineitem.FieldCommitmentDuration:
 			values[i] = new(sql.NullString)
@@ -396,6 +398,12 @@ func (sli *SubscriptionLineItem) assignValues(columns []string, values []any) er
 				sli.CommitmentDuration = new(types.BillingPeriod)
 				*sli.CommitmentDuration = types.BillingPeriod(value.String)
 			}
+		case subscriptionlineitem.FieldBillingPeriodCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field billing_period_count", values[i])
+			} else if value.Valid {
+				sli.BillingPeriodCount = int(value.Int64)
+			}
 		default:
 			sli.selectValues.Set(columns[i], values[i])
 		}
@@ -578,6 +586,9 @@ func (sli *SubscriptionLineItem) String() string {
 		builder.WriteString("commitment_duration=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
+	builder.WriteString(", ")
+	builder.WriteString("billing_period_count=")
+	builder.WriteString(fmt.Sprintf("%v", sli.BillingPeriodCount))
 	builder.WriteByte(')')
 	return builder.String()
 }

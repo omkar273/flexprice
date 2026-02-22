@@ -48743,6 +48743,8 @@ type SubscriptionLineItemMutation struct {
 	commitment_true_up_enabled *bool
 	commitment_windowed        *bool
 	commitment_duration        *types.BillingPeriod
+	billing_period_count       *int
+	addbilling_period_count    *int
 	clearedFields              map[string]struct{}
 	subscription               *string
 	clearedsubscription        bool
@@ -50411,6 +50413,62 @@ func (m *SubscriptionLineItemMutation) ResetCommitmentDuration() {
 	delete(m.clearedFields, subscriptionlineitem.FieldCommitmentDuration)
 }
 
+// SetBillingPeriodCount sets the "billing_period_count" field.
+func (m *SubscriptionLineItemMutation) SetBillingPeriodCount(i int) {
+	m.billing_period_count = &i
+	m.addbilling_period_count = nil
+}
+
+// BillingPeriodCount returns the value of the "billing_period_count" field in the mutation.
+func (m *SubscriptionLineItemMutation) BillingPeriodCount() (r int, exists bool) {
+	v := m.billing_period_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBillingPeriodCount returns the old "billing_period_count" field's value of the SubscriptionLineItem entity.
+// If the SubscriptionLineItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionLineItemMutation) OldBillingPeriodCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBillingPeriodCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBillingPeriodCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBillingPeriodCount: %w", err)
+	}
+	return oldValue.BillingPeriodCount, nil
+}
+
+// AddBillingPeriodCount adds i to the "billing_period_count" field.
+func (m *SubscriptionLineItemMutation) AddBillingPeriodCount(i int) {
+	if m.addbilling_period_count != nil {
+		*m.addbilling_period_count += i
+	} else {
+		m.addbilling_period_count = &i
+	}
+}
+
+// AddedBillingPeriodCount returns the value that was added to the "billing_period_count" field in this mutation.
+func (m *SubscriptionLineItemMutation) AddedBillingPeriodCount() (r int, exists bool) {
+	v := m.addbilling_period_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBillingPeriodCount resets all changes to the "billing_period_count" field.
+func (m *SubscriptionLineItemMutation) ResetBillingPeriodCount() {
+	m.billing_period_count = nil
+	m.addbilling_period_count = nil
+}
+
 // ClearSubscription clears the "subscription" edge to the Subscription entity.
 func (m *SubscriptionLineItemMutation) ClearSubscription() {
 	m.clearedsubscription = true
@@ -50526,7 +50584,7 @@ func (m *SubscriptionLineItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SubscriptionLineItemMutation) Fields() []string {
-	fields := make([]string, 0, 35)
+	fields := make([]string, 0, 36)
 	if m.tenant_id != nil {
 		fields = append(fields, subscriptionlineitem.FieldTenantID)
 	}
@@ -50632,6 +50690,9 @@ func (m *SubscriptionLineItemMutation) Fields() []string {
 	if m.commitment_duration != nil {
 		fields = append(fields, subscriptionlineitem.FieldCommitmentDuration)
 	}
+	if m.billing_period_count != nil {
+		fields = append(fields, subscriptionlineitem.FieldBillingPeriodCount)
+	}
 	return fields
 }
 
@@ -50710,6 +50771,8 @@ func (m *SubscriptionLineItemMutation) Field(name string) (ent.Value, bool) {
 		return m.CommitmentWindowed()
 	case subscriptionlineitem.FieldCommitmentDuration:
 		return m.CommitmentDuration()
+	case subscriptionlineitem.FieldBillingPeriodCount:
+		return m.BillingPeriodCount()
 	}
 	return nil, false
 }
@@ -50789,6 +50852,8 @@ func (m *SubscriptionLineItemMutation) OldField(ctx context.Context, name string
 		return m.OldCommitmentWindowed(ctx)
 	case subscriptionlineitem.FieldCommitmentDuration:
 		return m.OldCommitmentDuration(ctx)
+	case subscriptionlineitem.FieldBillingPeriodCount:
+		return m.OldBillingPeriodCount(ctx)
 	}
 	return nil, fmt.Errorf("unknown SubscriptionLineItem field %s", name)
 }
@@ -51043,6 +51108,13 @@ func (m *SubscriptionLineItemMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetCommitmentDuration(v)
 		return nil
+	case subscriptionlineitem.FieldBillingPeriodCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBillingPeriodCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SubscriptionLineItem field %s", name)
 }
@@ -51054,6 +51126,9 @@ func (m *SubscriptionLineItemMutation) AddedFields() []string {
 	if m.addtrial_period != nil {
 		fields = append(fields, subscriptionlineitem.FieldTrialPeriod)
 	}
+	if m.addbilling_period_count != nil {
+		fields = append(fields, subscriptionlineitem.FieldBillingPeriodCount)
+	}
 	return fields
 }
 
@@ -51064,6 +51139,8 @@ func (m *SubscriptionLineItemMutation) AddedField(name string) (ent.Value, bool)
 	switch name {
 	case subscriptionlineitem.FieldTrialPeriod:
 		return m.AddedTrialPeriod()
+	case subscriptionlineitem.FieldBillingPeriodCount:
+		return m.AddedBillingPeriodCount()
 	}
 	return nil, false
 }
@@ -51079,6 +51156,13 @@ func (m *SubscriptionLineItemMutation) AddField(name string, value ent.Value) er
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddTrialPeriod(v)
+		return nil
+	case subscriptionlineitem.FieldBillingPeriodCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBillingPeriodCount(v)
 		return nil
 	}
 	return fmt.Errorf("unknown SubscriptionLineItem numeric field %s", name)
@@ -51340,6 +51424,9 @@ func (m *SubscriptionLineItemMutation) ResetField(name string) error {
 		return nil
 	case subscriptionlineitem.FieldCommitmentDuration:
 		m.ResetCommitmentDuration()
+		return nil
+	case subscriptionlineitem.FieldBillingPeriodCount:
+		m.ResetBillingPeriodCount()
 		return nil
 	}
 	return fmt.Errorf("unknown SubscriptionLineItem field %s", name)

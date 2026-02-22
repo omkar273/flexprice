@@ -242,6 +242,11 @@ func CommitmentDuration(v types.BillingPeriod) predicate.SubscriptionLineItem {
 	return predicate.SubscriptionLineItem(sql.FieldEQ(FieldCommitmentDuration, vc))
 }
 
+// BillingPeriodCount applies equality check predicate on the "billing_period_count" field. It's identical to BillingPeriodCountEQ.
+func BillingPeriodCount(v int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldEQ(FieldBillingPeriodCount, v))
+}
+
 // TenantIDEQ applies the EQ predicate on the "tenant_id" field.
 func TenantIDEQ(v string) predicate.SubscriptionLineItem {
 	return predicate.SubscriptionLineItem(sql.FieldEQ(FieldTenantID, v))
@@ -2420,6 +2425,46 @@ func CommitmentDurationEqualFold(v types.BillingPeriod) predicate.SubscriptionLi
 func CommitmentDurationContainsFold(v types.BillingPeriod) predicate.SubscriptionLineItem {
 	vc := string(v)
 	return predicate.SubscriptionLineItem(sql.FieldContainsFold(FieldCommitmentDuration, vc))
+}
+
+// BillingPeriodCountEQ applies the EQ predicate on the "billing_period_count" field.
+func BillingPeriodCountEQ(v int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldEQ(FieldBillingPeriodCount, v))
+}
+
+// BillingPeriodCountNEQ applies the NEQ predicate on the "billing_period_count" field.
+func BillingPeriodCountNEQ(v int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldNEQ(FieldBillingPeriodCount, v))
+}
+
+// BillingPeriodCountIn applies the In predicate on the "billing_period_count" field.
+func BillingPeriodCountIn(vs ...int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldIn(FieldBillingPeriodCount, vs...))
+}
+
+// BillingPeriodCountNotIn applies the NotIn predicate on the "billing_period_count" field.
+func BillingPeriodCountNotIn(vs ...int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldNotIn(FieldBillingPeriodCount, vs...))
+}
+
+// BillingPeriodCountGT applies the GT predicate on the "billing_period_count" field.
+func BillingPeriodCountGT(v int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldGT(FieldBillingPeriodCount, v))
+}
+
+// BillingPeriodCountGTE applies the GTE predicate on the "billing_period_count" field.
+func BillingPeriodCountGTE(v int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldGTE(FieldBillingPeriodCount, v))
+}
+
+// BillingPeriodCountLT applies the LT predicate on the "billing_period_count" field.
+func BillingPeriodCountLT(v int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldLT(FieldBillingPeriodCount, v))
+}
+
+// BillingPeriodCountLTE applies the LTE predicate on the "billing_period_count" field.
+func BillingPeriodCountLTE(v int) predicate.SubscriptionLineItem {
+	return predicate.SubscriptionLineItem(sql.FieldLTE(FieldBillingPeriodCount, v))
 }
 
 // HasSubscription applies the HasEdge predicate on the "subscription" edge.

@@ -176,6 +176,10 @@ func (SubscriptionLineItem) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			GoType(types.BillingPeriod("")),
+
+		field.Int("billing_period_count").
+			Default(1).
+			Immutable(),
 	}
 }
 

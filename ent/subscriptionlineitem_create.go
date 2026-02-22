@@ -458,6 +458,20 @@ func (slic *SubscriptionLineItemCreate) SetNillableCommitmentDuration(tp *types.
 	return slic
 }
 
+// SetBillingPeriodCount sets the "billing_period_count" field.
+func (slic *SubscriptionLineItemCreate) SetBillingPeriodCount(i int) *SubscriptionLineItemCreate {
+	slic.mutation.SetBillingPeriodCount(i)
+	return slic
+}
+
+// SetNillableBillingPeriodCount sets the "billing_period_count" field if the given value is not nil.
+func (slic *SubscriptionLineItemCreate) SetNillableBillingPeriodCount(i *int) *SubscriptionLineItemCreate {
+	if i != nil {
+		slic.SetBillingPeriodCount(*i)
+	}
+	return slic
+}
+
 // SetID sets the "id" field.
 func (slic *SubscriptionLineItemCreate) SetID(s string) *SubscriptionLineItemCreate {
 	slic.mutation.SetID(s)
@@ -555,6 +569,10 @@ func (slic *SubscriptionLineItemCreate) defaults() {
 		v := subscriptionlineitem.DefaultCommitmentWindowed
 		slic.mutation.SetCommitmentWindowed(v)
 	}
+	if _, ok := slic.mutation.BillingPeriodCount(); !ok {
+		v := subscriptionlineitem.DefaultBillingPeriodCount
+		slic.mutation.SetBillingPeriodCount(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -645,6 +663,9 @@ func (slic *SubscriptionLineItemCreate) check() error {
 		if err := v.Validate(); err != nil {
 			return &ValidationError{Name: "commitment_duration", err: fmt.Errorf(`ent: validator failed for field "SubscriptionLineItem.commitment_duration": %w`, err)}
 		}
+	}
+	if _, ok := slic.mutation.BillingPeriodCount(); !ok {
+		return &ValidationError{Name: "billing_period_count", err: errors.New(`ent: missing required field "SubscriptionLineItem.billing_period_count"`)}
 	}
 	if len(slic.mutation.SubscriptionIDs()) == 0 {
 		return &ValidationError{Name: "subscription", err: errors.New(`ent: missing required edge "SubscriptionLineItem.subscription"`)}
@@ -819,6 +840,10 @@ func (slic *SubscriptionLineItemCreate) createSpec() (*SubscriptionLineItem, *sq
 	if value, ok := slic.mutation.CommitmentDuration(); ok {
 		_spec.SetField(subscriptionlineitem.FieldCommitmentDuration, field.TypeString, value)
 		_node.CommitmentDuration = &value
+	}
+	if value, ok := slic.mutation.BillingPeriodCount(); ok {
+		_spec.SetField(subscriptionlineitem.FieldBillingPeriodCount, field.TypeInt, value)
+		_node.BillingPeriodCount = value
 	}
 	if nodes := slic.mutation.SubscriptionIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
