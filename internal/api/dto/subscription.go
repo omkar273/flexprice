@@ -1092,10 +1092,11 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 
 // SubscriptionLineItemRequest represents the request to create a subscription line item
 type SubscriptionLineItemRequest struct {
-	PriceID     string            `json:"price_id" validate:"required"`
-	Quantity    decimal.Decimal   `json:"quantity" validate:"required" swaggertype:"string"`
-	DisplayName string            `json:"display_name,omitempty"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	PriceID            string            `json:"price_id" validate:"required"`
+	Quantity           decimal.Decimal   `json:"quantity" validate:"required" swaggertype:"string"`
+	DisplayName        string            `json:"display_name,omitempty"`
+	Metadata           map[string]string `json:"metadata,omitempty"`
+	BillingPeriodCount int               `json:"billing_period_count,omitempty"` // optional; 0 means default 1
 
 	// Commitment fields
 	CommitmentAmount        *decimal.Decimal     `json:"commitment_amount,omitempty"`
@@ -1495,14 +1496,19 @@ func (r *OverrideLineItemRequest) Validate(
 
 // ToSubscriptionLineItem converts a request to a domain subscription line item
 func (r *SubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.Context) *subscription.SubscriptionLineItem {
+	billingPeriodCount := 1
+	if r.BillingPeriodCount >= 1 {
+		billingPeriodCount = r.BillingPeriodCount
+	}
 	lineItem := &subscription.SubscriptionLineItem{
-		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
-		PriceID:       r.PriceID,
-		Quantity:      r.Quantity,
-		DisplayName:   r.DisplayName,
-		Metadata:      r.Metadata,
-		EnvironmentID: types.GetEnvironmentID(ctx),
-		BaseModel:     types.GetDefaultBaseModel(ctx),
+		ID:                  types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
+		PriceID:             r.PriceID,
+		Quantity:            r.Quantity,
+		DisplayName:         r.DisplayName,
+		Metadata:            r.Metadata,
+		BillingPeriodCount:  billingPeriodCount,
+		EnvironmentID:       types.GetEnvironmentID(ctx),
+		BaseModel:           types.GetDefaultBaseModel(ctx),
 	}
 
 	// Set commitment fields if provided

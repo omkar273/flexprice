@@ -4093,6 +4093,10 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, priceResponse *dto.PriceResponse, sub *subscription.Subscription, addonID, addonName string) *subscription.SubscriptionLineItem {
 	price := priceResponse.Price
 
+	billingPeriodCount := 1
+	if price.BillingPeriodCount >= 1 {
+		billingPeriodCount = price.BillingPeriodCount
+	}
 	lineItem := &subscription.SubscriptionLineItem{
 		ID:             types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
 		SubscriptionID: sub.ID,
@@ -4101,10 +4105,11 @@ func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, price
 		EntityType:     types.SubscriptionLineItemEntityTypeAddon,
 		PriceID:        price.ID,
 		PriceType:      price.Type,
-		Currency:       sub.Currency,
-		BillingPeriod:  price.BillingPeriod,
-		InvoiceCadence: price.InvoiceCadence,
-		TrialPeriod:    0,
+		Currency:           sub.Currency,
+		BillingPeriod:      price.BillingPeriod,
+		BillingPeriodCount: billingPeriodCount,
+		InvoiceCadence:     price.InvoiceCadence,
+		TrialPeriod:         0,
 		StartDate:      time.Now(),
 		EndDate:        time.Time{},
 		Metadata: map[string]string{

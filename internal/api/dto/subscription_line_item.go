@@ -93,6 +93,7 @@ type CreateSubscriptionLineItemRequest struct {
 	DisplayName          string                          `json:"display_name,omitempty"`
 	SubscriptionPhaseID  *string                         `json:"subscription_phase_id,omitempty"`
 	SkipEntitlementCheck bool                            `json:"-"` // This is used to skip entitlement check when creating a subscription line item
+	BillingPeriodCount   int                             `json:"billing_period_count,omitempty"` // optional; 0 means use price or default 1
 
 	// Commitment fields
 	CommitmentAmount        *decimal.Decimal     `json:"commitment_amount,omitempty"`
@@ -436,6 +437,7 @@ func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 		PriceType:           params.Price.Type,
 		Currency:            params.Subscription.Currency,
 		BillingPeriod:       params.Price.BillingPeriod,
+		BillingPeriodCount:  1,
 		InvoiceCadence:      params.Price.InvoiceCadence,
 		TrialPeriod:         params.Price.TrialPeriod,
 		EntityType:          params.EntityType,
@@ -443,6 +445,11 @@ func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 		SubscriptionPhaseID: r.SubscriptionPhaseID,
 		EnvironmentID:       types.GetEnvironmentID(ctx),
 		BaseModel:           types.GetDefaultBaseModel(ctx),
+	}
+	if r.BillingPeriodCount >= 1 {
+		lineItem.BillingPeriodCount = r.BillingPeriodCount
+	} else if params.Price != nil && params.Price.BillingPeriodCount >= 1 {
+		lineItem.BillingPeriodCount = params.Price.BillingPeriodCount
 	}
 
 	// Always use price display name (priority: request > price display name)
@@ -591,14 +598,15 @@ func (r *UpdateSubscriptionLineItemRequest) ShouldCreateNewLineItem() bool {
 func (r *UpdateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.Context, existingLineItem *subscription.SubscriptionLineItem, newPriceID string) *subscription.SubscriptionLineItem {
 	// Start with the existing line item as base
 	newLineItem := &subscription.SubscriptionLineItem{
-		ID:               types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
-		SubscriptionID:   existingLineItem.SubscriptionID,
-		CustomerID:       existingLineItem.CustomerID,
-		PriceID:          newPriceID,
-		PriceType:        existingLineItem.PriceType,
-		Currency:         existingLineItem.Currency,
-		BillingPeriod:    existingLineItem.BillingPeriod,
-		InvoiceCadence:   existingLineItem.InvoiceCadence,
+		ID:                  types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
+		SubscriptionID:      existingLineItem.SubscriptionID,
+		CustomerID:          existingLineItem.CustomerID,
+		PriceID:             newPriceID,
+		PriceType:           existingLineItem.PriceType,
+		Currency:            existingLineItem.Currency,
+		BillingPeriod:       existingLineItem.BillingPeriod,
+		BillingPeriodCount:  existingLineItem.BillingPeriodCount,
+		InvoiceCadence:      existingLineItem.InvoiceCadence,
 		TrialPeriod:      existingLineItem.TrialPeriod,
 		EntityType:       existingLineItem.EntityType,
 		EntityID:         existingLineItem.EntityID,
