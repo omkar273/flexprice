@@ -164,12 +164,14 @@ cache:
 event_processing:
   enabled: true
   topic: "events"
+  topic_dlq: "events_dlq"
   rate_limit: 12
   consumer_group: "flexprice-consumer-local"
 
 event_processing_lazy:
   enabled: true
   topic: "events_lazy"
+  topic_dlq: "events_lazy_dlq"
   rate_limit: 12
   consumer_group: "v1_event_processing_lazy"
 
@@ -192,6 +194,7 @@ event_post_processing:
 feature_usage_tracking:
   enabled: true
   topic: "events"
+  topic_dlq: "feature_usage_dlq"
   rate_limit: 1
   consumer_group: "v1_feature_tracking_service"
   backfill_enabled: true
