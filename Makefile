@@ -23,6 +23,7 @@ swagger-2-0: install-swag
 		--parseVendor \
 		--outputTypes go,json,yaml
 	@make swagger-fix-refs
+	@./scripts/fix_swagger_internal_types.sh
 
 .PHONY: swagger-3-0
 swagger-3-0: install-swag

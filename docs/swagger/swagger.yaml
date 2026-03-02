@@ -13,7 +13,7 @@ definitions:
       filters:
         description: Filters contains custom filtering conditions
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       lookupKey:
         description: LookupKey filters by lookup key
@@ -23,23 +23,23 @@ definitions:
         type: string
       queryFilter:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.QueryFilter'
+        - $ref: '#/definitions/types.QueryFilter'
         description: QueryFilter contains pagination and basic query parameters
       sort:
         description: Sort specifies result ordering preferences
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        - $ref: '#/definitions/types.Status'
         description: Status filters by costsheet status
       tenantID:
         description: TenantID filters by specific tenant ID
         type: string
       timeRangeFilter:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TimeRangeFilter'
+        - $ref: '#/definitions/types.TimeRangeFilter'
         description: TimeRangeFilter allows filtering by time periods
     type: object
   coupon_application.CouponApplication:
@@ -62,7 +62,7 @@ definitions:
       discount_percentage:
         type: string
       discount_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponType'
+        $ref: '#/definitions/types.CouponType'
       discounted_amount:
         type: string
       environment_id:
@@ -82,7 +82,7 @@ definitions:
       original_price:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
       tenant_id:
@@ -116,7 +116,7 @@ definitions:
       start_date:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         description: Mandatory
         type: string
@@ -156,7 +156,7 @@ definitions:
       metadata:
         $ref: '#/definitions/types.Metadata'
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -218,7 +218,7 @@ definitions:
       addon_id:
         type: string
       addon_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AddonStatus'
+        $ref: '#/definitions/types.AddonStatus'
       cancellation_reason:
         type: string
       cancelled_at:
@@ -232,7 +232,7 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AddonAssociationEntityType'
+        $ref: '#/definitions/types.AddonAssociationEntityType'
       environment_id:
         type: string
       id:
@@ -243,7 +243,7 @@ definitions:
       start_date:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription:
         $ref: '#/definitions/dto.SubscriptionResponse'
       tenant_id:
@@ -282,11 +282,11 @@ definitions:
           $ref: '#/definitions/dto.PriceResponse'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AddonType'
+        $ref: '#/definitions/types.AddonType'
       updated_at:
         type: string
       updated_by:
@@ -326,7 +326,7 @@ definitions:
       usage_limit:
         type: integer
       usage_reset_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod'
+        $ref: '#/definitions/types.EntitlementUsageResetPeriod'
     type: object
   dto.AggregatedFeature:
     properties:
@@ -342,11 +342,11 @@ definitions:
   dto.AlertLogResponse:
     properties:
       alert_info:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertInfo'
+        $ref: '#/definitions/types.AlertInfo'
       alert_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertState'
+        $ref: '#/definitions/types.AlertState'
       alert_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertType'
+        $ref: '#/definitions/types.AlertType'
       created_at:
         type: string
       created_by:
@@ -360,7 +360,7 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertEntityType'
+        $ref: '#/definitions/types.AlertEntityType'
       environment_id:
         type: string
       feature:
@@ -389,11 +389,11 @@ definitions:
         type: string
       billing_cadence:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        - $ref: '#/definitions/types.BillingCadence'
         description: billing_cadence is the billing cadence
       billing_period:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        - $ref: '#/definitions/types.BillingPeriod'
         description: billing_period is the billing period
       billing_period_count:
         default: 1
@@ -436,7 +436,7 @@ definitions:
         type: string
       schedule_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType'
+        - $ref: '#/definitions/types.SubscriptionScheduleChangeType'
         description: schedule_type is the type of schedule to cancel (required if
           schedule_id is not provided)
       subscription_id:
@@ -452,23 +452,23 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleStatus'
+        - $ref: '#/definitions/types.ScheduleStatus'
         description: status is the new status (should be "cancelled")
     type: object
   dto.CancelSubscriptionRequest:
     properties:
       cancel_immediately_inovice_policy:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CancelImmediatelyInvoicePolicy'
+        - $ref: '#/definitions/types.CancelImmediatelyInvoicePolicy'
         description: CancelImmediatelyInvoicePolicy controls whether to generate a
           final invoice on immediate cancellation. Defaults to skip.
       cancellation_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CancellationType'
+        - $ref: '#/definitions/types.CancellationType'
         description: CancellationType determines when the cancellation takes effect
       proration_behavior:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior'
+        - $ref: '#/definitions/types.ProrationBehavior'
         description: ProrationBehavior controls how proration is handled.
       reason:
         description: Reason for cancellation (for audit and business intelligence)
@@ -479,7 +479,7 @@ definitions:
   dto.CancelSubscriptionResponse:
     properties:
       cancellation_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CancellationType'
+        $ref: '#/definitions/types.CancellationType'
       effective_date:
         type: string
       message:
@@ -498,7 +498,7 @@ definitions:
       reason:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus'
+        $ref: '#/definitions/types.SubscriptionStatus'
       subscription_id:
         description: Basic cancellation info
         type: string
@@ -604,7 +604,7 @@ definitions:
           $ref: '#/definitions/dto.PriceResponse'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -632,7 +632,7 @@ definitions:
       discount_percentage:
         type: string
       discount_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponType'
+        $ref: '#/definitions/types.CouponType'
       discounted_amount:
         type: string
       environment_id:
@@ -652,7 +652,7 @@ definitions:
       original_price:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
       tenant_id:
@@ -686,7 +686,7 @@ definitions:
       start_date:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         description: Mandatory
         type: string
@@ -708,7 +708,7 @@ definitions:
       amount_off:
         type: string
       cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence'
+        $ref: '#/definitions/types.CouponCadence'
       created_at:
         type: string
       created_by:
@@ -739,13 +739,13 @@ definitions:
         additionalProperties: true
         type: object
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       total_redemptions:
         type: integer
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponType'
+        $ref: '#/definitions/types.CouponType'
       updated_at:
         type: string
       updated_by:
@@ -760,7 +760,7 @@ definitions:
       service_account_id:
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SecretType'
+        $ref: '#/definitions/types.SecretType'
     required:
     - name
     - type
@@ -784,7 +784,7 @@ definitions:
       name:
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AddonType'
+        $ref: '#/definitions/types.AddonType'
     required:
     - lookup_key
     - name
@@ -819,11 +819,11 @@ definitions:
           $ref: '#/definitions/dto.PriceResponse'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AddonType'
+        $ref: '#/definitions/types.AddonType'
       updated_at:
         type: string
       updated_by:
@@ -895,7 +895,7 @@ definitions:
         type: string
       cadence:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence'
+        - $ref: '#/definitions/types.CouponCadence'
         enum:
         - once
         - repeated
@@ -923,7 +923,7 @@ definitions:
         type: object
       type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponType'
+        - $ref: '#/definitions/types.CouponType'
         enum:
         - fixed
         - percentage
@@ -935,7 +935,7 @@ definitions:
   dto.CreateCreditGrantRequest:
     properties:
       cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantCadence'
+        $ref: '#/definitions/types.CreditGrantCadence'
       conversion_rate:
         description: |-
           amount in the currency =  number of credits * conversion_rate
@@ -950,15 +950,15 @@ definitions:
       expiration_duration:
         type: integer
       expiration_duration_unit:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit'
+        $ref: '#/definitions/types.CreditGrantExpiryDurationUnit'
       expiration_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType'
+        $ref: '#/definitions/types.CreditGrantExpiryType'
       metadata:
         $ref: '#/definitions/types.Metadata'
       name:
         type: string
       period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantPeriod'
+        $ref: '#/definitions/types.CreditGrantPeriod'
       period_count:
         type: integer
       plan_id:
@@ -966,7 +966,7 @@ definitions:
       priority:
         type: integer
       scope:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantScope'
+        $ref: '#/definitions/types.CreditGrantScope'
       start_date:
         type: string
       subscription_id:
@@ -1042,7 +1042,7 @@ definitions:
         type: boolean
       reason:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteReason'
+        - $ref: '#/definitions/types.CreditNoteReason'
         description: reason specifies the reason for creating this credit note (duplicate,
           fraudulent, order_change, product_unsatisfactory)
     required:
@@ -1133,11 +1133,11 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType'
+        $ref: '#/definitions/types.EntitlementEntityType'
       feature_id:
         type: string
       feature_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType'
+        $ref: '#/definitions/types.FeatureType'
       is_enabled:
         type: boolean
       is_soft_limit:
@@ -1153,7 +1153,7 @@ definitions:
       usage_limit:
         type: integer
       usage_reset_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod'
+        $ref: '#/definitions/types.EntitlementUsageResetPeriod'
     required:
     - feature_id
     - feature_type
@@ -1164,7 +1164,7 @@ definitions:
         maxLength: 255
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.IntegrationEntityType'
+        $ref: '#/definitions/types.IntegrationEntityType'
       metadata:
         additionalProperties: true
         type: object
@@ -1193,7 +1193,7 @@ definitions:
   dto.CreateFeatureRequest:
     properties:
       alert_settings:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        $ref: '#/definitions/types.AlertSettings'
       description:
         type: string
       lookup_key:
@@ -1207,7 +1207,7 @@ definitions:
       name:
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType'
+        $ref: '#/definitions/types.FeatureType'
       unit_plural:
         type: string
       unit_singular:
@@ -1238,7 +1238,7 @@ definitions:
       name:
         type: string
       provider:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SecretProvider'
+        $ref: '#/definitions/types.SecretProvider'
     required:
     - credentials
     - name
@@ -1251,7 +1251,7 @@ definitions:
         type: string
       commitment_info:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo'
+        - $ref: '#/definitions/types.CommitmentInfo'
         description: commitment_info contains details about any commitment applied
           to this line item
       display_name:
@@ -1346,7 +1346,7 @@ definitions:
         type: string
       billing_reason:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceBillingReason'
+        - $ref: '#/definitions/types.InvoiceBillingReason'
         description: billing_reason indicates why this invoice was created (subscription_cycle,
           manual, etc.)
       coupons:
@@ -1387,12 +1387,12 @@ definitions:
         type: string
       invoice_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus'
+        - $ref: '#/definitions/types.InvoiceStatus'
         description: invoice_status represents the current status of the invoice (draft,
           finalized, etc.)
       invoice_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType'
+        - $ref: '#/definitions/types.InvoiceType'
         description: invoice_type indicates the type of invoice (subscription, one_time,
           etc.)
       line_item_coupons:
@@ -1412,7 +1412,7 @@ definitions:
           extra information
       payment_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus'
+        - $ref: '#/definitions/types.PaymentStatus'
         description: payment_status represents the payment status of the invoice (unpaid,
           paid, etc.)
       period_end:
@@ -1475,7 +1475,7 @@ definitions:
         example: API Usage Meter
         type: string
       reset_usage:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage'
+        $ref: '#/definitions/types.ResetUsage'
     required:
     - aggregation
     - event_name
@@ -1493,17 +1493,17 @@ definitions:
       destination_id:
         type: string
       destination_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentDestinationType'
+        $ref: '#/definitions/types.PaymentDestinationType'
       idempotency_key:
         type: string
       metadata:
         $ref: '#/definitions/types.Metadata'
       payment_gateway:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentGatewayType'
+        $ref: '#/definitions/types.PaymentGatewayType'
       payment_method_id:
         type: string
       payment_method_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentMethodType'
+        $ref: '#/definitions/types.PaymentMethodType'
       process_payment:
         default: true
         type: boolean
@@ -1539,11 +1539,11 @@ definitions:
       amount:
         type: string
       billing_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        $ref: '#/definitions/types.BillingCadence'
       billing_model:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel'
+        $ref: '#/definitions/types.BillingModel'
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         default: 1
         type: integer
@@ -1558,7 +1558,7 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType'
+        $ref: '#/definitions/types.PriceEntityType'
       filter_values:
         additionalProperties:
           items:
@@ -1569,7 +1569,7 @@ definitions:
         description: GroupID is the id of the group to add the price to
         type: string
       invoice_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence'
+        $ref: '#/definitions/types.InvoiceCadence'
       lookup_key:
         type: string
       metadata:
@@ -1584,11 +1584,11 @@ definitions:
       price_unit_config:
         $ref: '#/definitions/dto.PriceUnitConfig'
       price_unit_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType'
+        $ref: '#/definitions/types.PriceUnitType'
       start_date:
         type: string
       tier_mode:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier'
+        $ref: '#/definitions/types.BillingTier'
       tiers:
         items:
           $ref: '#/definitions/dto.CreatePriceTier'
@@ -1598,7 +1598,7 @@ definitions:
       trial_period:
         type: integer
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceType'
+        $ref: '#/definitions/types.PriceType'
     required:
     - billing_cadence
     - billing_model
@@ -1685,7 +1685,7 @@ definitions:
       name:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       symbol:
         type: string
       tenant_id:
@@ -1702,16 +1702,16 @@ definitions:
       enabled:
         type: boolean
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType'
+        $ref: '#/definitions/types.ScheduledTaskEntityType'
       interval:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval'
+        - $ref: '#/definitions/types.ScheduledTaskInterval'
         description: 'Note: "custom" is excluded from API (internal testing only)'
         enum:
         - hourly
         - daily
       job_config:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.S3JobConfig'
+        $ref: '#/definitions/types.S3JobConfig'
     required:
     - connection_id
     - entity_type
@@ -1724,7 +1724,7 @@ definitions:
         description: Commitment fields
         type: number
       commitment_duration:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       commitment_overage_factor:
         type: number
       commitment_quantity:
@@ -1732,7 +1732,7 @@ definitions:
       commitment_true_up_enabled:
         type: boolean
       commitment_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType'
+        $ref: '#/definitions/types.CommitmentType'
       commitment_windowed:
         type: boolean
       display_name:
@@ -1769,10 +1769,10 @@ definitions:
           $ref: '#/definitions/dto.AddAddonToSubscriptionRequest'
         type: array
       billing_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        $ref: '#/definitions/types.BillingCadence'
       billing_cycle:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle'
+        - $ref: '#/definitions/types.BillingCycle'
         description: |-
           BillingCycle is the cycle of the billing anchor.
           This is used to determine the billing date for the subscription (i.e set the billing anchor)
@@ -1782,13 +1782,13 @@ definitions:
           For example, if the billing period is month and the start date is 2025-04-15 then in case of
           calendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         default: 1
         type: integer
       collection_method:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CollectionMethod'
+        - $ref: '#/definitions/types.CollectionMethod'
         description: |-
           collection_method determines how invoices are collected
           "default_incomplete" - subscription waits for payment confirmation before activation
@@ -1799,7 +1799,7 @@ definitions:
         type: string
       commitment_duration:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        - $ref: '#/definitions/types.BillingPeriod'
         description: CommitmentDuration is the time frame of the commitment (e.g.,
           ANNUAL commitment on MONTHLY billing)
       coupons:
@@ -1837,7 +1837,7 @@ definitions:
         type: string
       invoice_billing:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceBilling'
+        - $ref: '#/definitions/types.InvoiceBilling'
         description: |-
           invoice_billing determines which customer should receive invoices for a subscription
           "invoice_to_parent" - Invoices are sent to the parent customer
@@ -1888,11 +1888,11 @@ definitions:
         type: string
       payment_behavior:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentBehavior'
+        - $ref: '#/definitions/types.PaymentBehavior'
         description: Payment behavior configuration
       payment_terms:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms'
+        - $ref: '#/definitions/types.PaymentTerms'
         description: PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due
           date from period end
       phases:
@@ -1905,7 +1905,7 @@ definitions:
         type: string
       proration_behavior:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior'
+        - $ref: '#/definitions/types.ProrationBehavior'
         description: |-
           ProrationBehavior controls how proration is handled.
           If not set, the default value is none. Possible values are create_prorations and none.
@@ -1916,7 +1916,7 @@ definitions:
         type: string
       subscription_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus'
+        - $ref: '#/definitions/types.SubscriptionStatus'
         description: |-
           SubscriptionStatus determines the initial status of the subscription
           If set to "draft", the subscription will be created as a draft (skips invoice creation and payment processing)
@@ -1939,18 +1939,18 @@ definitions:
   dto.CreateTaskRequest:
     properties:
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntityType'
+        $ref: '#/definitions/types.EntityType'
       file_name:
         type: string
       file_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FileType'
+        $ref: '#/definitions/types.FileType'
       file_url:
         type: string
       metadata:
         additionalProperties: true
         type: object
       task_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaskType'
+        $ref: '#/definitions/types.TaskType'
     required:
     - entity_type
     - file_type
@@ -1966,7 +1966,7 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType'
+        $ref: '#/definitions/types.TaxRateEntityType'
       external_customer_id:
         type: string
       metadata:
@@ -2009,11 +2009,11 @@ definitions:
         type: string
       scope:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateScope'
+        - $ref: '#/definitions/types.TaxRateScope'
         description: scope defines where this tax rate applies
       tax_rate_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateType'
+        - $ref: '#/definitions/types.TaxRateType'
         description: tax_rate_type determines how the tax is calculated ("percentage"
           or "fixed")
     required:
@@ -2030,7 +2030,7 @@ definitions:
         type: array
       type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.UserType'
+        - $ref: '#/definitions/types.UserType'
         description: Must be "service_account"
     required:
     - roles
@@ -2040,13 +2040,13 @@ definitions:
     properties:
       alert_settings:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        - $ref: '#/definitions/types.AlertSettings'
         description: |-
           alert_settings is the alert settings for the wallet (optional)
           If not provided, tenant level alert settings will be used
       auto_topup:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup'
+        - $ref: '#/definitions/types.AutoTopup'
         description: auto top-up object
       conversion_rate:
         default: "1"
@@ -2100,16 +2100,16 @@ definitions:
           ex if topup_conversion_rate is 0.5, then 1 USD = 2 credits
         type: string
       wallet_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletType'
+        $ref: '#/definitions/types.WalletType'
     required:
     - currency
     type: object
   dto.CreditGrantApplicationResponse:
     properties:
       application_reason:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantApplicationReason'
+        $ref: '#/definitions/types.CreditGrantApplicationReason'
       application_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ApplicationStatus'
+        $ref: '#/definitions/types.ApplicationStatus'
       applied_at:
         type: string
       created_at:
@@ -2139,11 +2139,11 @@ definitions:
       scheduled_for:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
       subscription_status_at_application:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus'
+        $ref: '#/definitions/types.SubscriptionStatus'
       tenant_id:
         type: string
       updated_at:
@@ -2154,7 +2154,7 @@ definitions:
   dto.CreditGrantResponse:
     properties:
       cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantCadence'
+        $ref: '#/definitions/types.CreditGrantCadence'
       conversion_rate:
         description: |-
           amount in the currency =  number of credits * conversion_rate
@@ -2177,9 +2177,9 @@ definitions:
       expiration_duration:
         type: integer
       expiration_duration_unit:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit'
+        $ref: '#/definitions/types.CreditGrantExpiryDurationUnit'
       expiration_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType'
+        $ref: '#/definitions/types.CreditGrantExpiryType'
       id:
         type: string
       metadata:
@@ -2187,7 +2187,7 @@ definitions:
       name:
         type: string
       period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantPeriod'
+        $ref: '#/definitions/types.CreditGrantPeriod'
       period_count:
         type: integer
       plan_id:
@@ -2195,11 +2195,11 @@ definitions:
       priority:
         type: integer
       scope:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantScope'
+        $ref: '#/definitions/types.CreditGrantScope'
       start_date:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
       tenant_id:
@@ -2227,12 +2227,12 @@ definitions:
         type: string
       credit_note_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteStatus'
+        - $ref: '#/definitions/types.CreditNoteStatus'
         description: credit_note_status represents the current status of the credit
           note (e.g., draft, finalized, voided)
       credit_note_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteType'
+        - $ref: '#/definitions/types.CreditNoteType'
         description: credit_note_type indicates the type of credit note (refund, adjustment)
       currency:
         description: currency is the three-letter ISO currency code (e.g., USD, EUR)
@@ -2285,16 +2285,16 @@ definitions:
           extra information
       reason:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteReason'
+        - $ref: '#/definitions/types.CreditNoteReason'
         description: reason specifies the reason for creating this credit note (duplicate,
           fraudulent, order_change, product_unsatisfactory)
       refund_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus'
+        - $ref: '#/definitions/types.PaymentStatus'
         description: refund_status represents the status of any refund associated
           with this credit note
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription:
         allOf:
         - $ref: '#/definitions/dto.SubscriptionResponse'
@@ -2391,7 +2391,7 @@ definitions:
       error:
         $ref: '#/definitions/errors.ErrorResponse'
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus'
+        $ref: '#/definitions/types.DebugTrackerStatus'
     type: object
   dto.CustomerMultiCurrencyInvoiceSummary:
     properties:
@@ -2459,7 +2459,7 @@ definitions:
         description: ParentCustomerID is the parent customer identifier for the customer
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -2476,7 +2476,7 @@ definitions:
           $ref: '#/definitions/dto.FeatureUsageSummary'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
       period:
         $ref: '#/definitions/dto.BillingPeriodInfo'
     type: object
@@ -2485,7 +2485,7 @@ definitions:
       customer_lookup:
         $ref: '#/definitions/dto.CustomerLookupResult'
       failure_point:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FailurePoint'
+        $ref: '#/definitions/types.FailurePoint'
       meter_matching:
         $ref: '#/definitions/dto.MeterMatchingResult'
       price_lookup:
@@ -2532,7 +2532,7 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType'
+        $ref: '#/definitions/types.EntitlementEntityType'
       environment_id:
         type: string
       feature:
@@ -2540,7 +2540,7 @@ definitions:
       feature_id:
         type: string
       feature_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType'
+        $ref: '#/definitions/types.FeatureType'
       id:
         type: string
       is_enabled:
@@ -2559,7 +2559,7 @@ definitions:
       static_value:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -2569,7 +2569,7 @@ definitions:
       usage_limit:
         type: integer
       usage_reset_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod'
+        $ref: '#/definitions/types.EntitlementUsageResetPeriod'
     type: object
   dto.EntitlementSource:
     properties:
@@ -2592,7 +2592,7 @@ definitions:
       usage_limit:
         type: integer
       usage_reset_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
     type: object
   dto.EntitlementSourceEntityType:
     enum:
@@ -2613,7 +2613,7 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.IntegrationEntityType'
+        $ref: '#/definitions/types.IntegrationEntityType'
       environment_id:
         type: string
       id:
@@ -2623,7 +2623,7 @@ definitions:
       provider_type:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -2674,7 +2674,7 @@ definitions:
   dto.FeatureResponse:
     properties:
       alert_settings:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        $ref: '#/definitions/types.AlertSettings'
       created_at:
         type: string
       created_by:
@@ -2696,11 +2696,11 @@ definitions:
       name:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType'
+        $ref: '#/definitions/types.FeatureType'
       unit_plural:
         type: string
       unit_singular:
@@ -2826,7 +2826,7 @@ definitions:
           $ref: '#/definitions/dto.FeatureUsageInfo'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EventProcessingStatusType'
+        $ref: '#/definitions/types.EventProcessingStatusType'
     type: object
   dto.GetEventsRequest:
     properties:
@@ -2971,7 +2971,7 @@ definitions:
       start_time:
         type: string
       window_size:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize'
+        $ref: '#/definitions/types.WindowSize'
     required:
     - external_customer_id
     type: object
@@ -3014,7 +3014,7 @@ definitions:
         type: string
       bucket_size:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize'
+        - $ref: '#/definitions/types.WindowSize'
         description: Optional, only used for MAX aggregation with windowing
         example: HOUR
       customer_id:
@@ -3039,7 +3039,7 @@ definitions:
         example: "2024-11-09T00:00:00Z"
         type: string
       window_size:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize'
+        $ref: '#/definitions/types.WindowSize'
     required:
     - meter_id
     type: object
@@ -3093,7 +3093,7 @@ definitions:
   dto.GetUsageRequest:
     properties:
       aggregation_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType'
+        $ref: '#/definitions/types.AggregationType'
       billing_anchor:
         description: |-
           BillingAnchor enables custom monthly billing periods for usage aggregation.
@@ -3115,7 +3115,7 @@ definitions:
         type: string
       bucket_size:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize'
+        - $ref: '#/definitions/types.WindowSize'
         description: Optional, only used for MAX aggregation with windowing
         example: HOUR
       customer_id:
@@ -3152,7 +3152,7 @@ definitions:
         example: "2024-03-13T00:00:00Z"
         type: string
       window_size:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize'
+        $ref: '#/definitions/types.WindowSize'
     required:
     - aggregation_type
     - event_name
@@ -3166,7 +3166,7 @@ definitions:
           $ref: '#/definitions/dto.UsageResult'
         type: array
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType'
+        $ref: '#/definitions/types.AggregationType'
       value:
         type: number
     type: object
@@ -3296,7 +3296,7 @@ definitions:
       amount:
         type: string
       commitment_info:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo'
+        $ref: '#/definitions/types.CommitmentInfo'
       created_at:
         type: string
       created_by:
@@ -3354,7 +3354,7 @@ definitions:
       quantity:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
       tenant_id:
@@ -3483,12 +3483,12 @@ definitions:
         type: string
       invoice_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus'
+        - $ref: '#/definitions/types.InvoiceStatus'
         description: invoice_status represents the current status of the invoice -
           values include draft, open, paid, void, etc.
       invoice_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType'
+        - $ref: '#/definitions/types.InvoiceType'
         description: invoice_type indicates the type of invoice - whether this is
           a subscription invoice, one-time charge, or other billing type
       line_items:
@@ -3511,7 +3511,7 @@ definitions:
         type: string
       payment_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus'
+        - $ref: '#/definitions/types.PaymentStatus'
         description: payment_status indicates whether the invoice has been paid, is
           pending, or failed
       period_end:
@@ -3528,7 +3528,7 @@ definitions:
           These are actual refunds issued to the customer.
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription:
         allOf:
         - $ref: '#/definitions/dto.SubscriptionResponse'
@@ -3583,7 +3583,7 @@ definitions:
         type: number
       commitment_duration:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        - $ref: '#/definitions/types.BillingPeriod'
         description: CommitmentDuration is the time frame of the commitment (e.g.,
           ANNUAL commitment on MONTHLY billing)
       commitment_quantity:
@@ -3592,7 +3592,7 @@ definitions:
         type: number
       commitment_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType'
+        - $ref: '#/definitions/types.CommitmentType'
         description: CommitmentType specifies whether commitment is based on amount
           or quantity
       enable_true_up:
@@ -3621,7 +3621,7 @@ definitions:
           $ref: '#/definitions/dto.AddonResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListAlertLogsResponse:
     properties:
@@ -3630,7 +3630,7 @@ definitions:
           $ref: '#/definitions/dto.AlertLogResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListCostsheetResponse:
     properties:
@@ -3639,7 +3639,7 @@ definitions:
           $ref: '#/definitions/dto.CostsheetResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListCouponsResponse:
     properties:
@@ -3648,7 +3648,7 @@ definitions:
           $ref: '#/definitions/dto.CouponResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListCreditGrantApplicationsResponse:
     properties:
@@ -3657,7 +3657,7 @@ definitions:
           $ref: '#/definitions/dto.CreditGrantApplicationResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListCreditGrantsResponse:
     properties:
@@ -3666,7 +3666,7 @@ definitions:
           $ref: '#/definitions/dto.CreditGrantResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListCustomersResponse:
     description: Response object for listing customers with pagination
@@ -3676,7 +3676,7 @@ definitions:
           $ref: '#/definitions/dto.CustomerResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListEntitlementsResponse:
     properties:
@@ -3685,7 +3685,7 @@ definitions:
           $ref: '#/definitions/dto.EntitlementResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListFeaturesResponse:
     properties:
@@ -3694,7 +3694,7 @@ definitions:
           $ref: '#/definitions/dto.FeatureResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListGroupsResponse:
     properties:
@@ -3703,7 +3703,7 @@ definitions:
           $ref: '#/definitions/dto.GroupResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListInvoicesResponse:
     properties:
@@ -3712,7 +3712,7 @@ definitions:
           $ref: '#/definitions/dto.InvoiceResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListPaymentsResponse:
     properties:
@@ -3721,7 +3721,7 @@ definitions:
           $ref: '#/definitions/dto.PaymentResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListPlansResponse:
     properties:
@@ -3730,7 +3730,7 @@ definitions:
           $ref: '#/definitions/dto.PlanResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListPriceUnitsResponse:
     properties:
@@ -3739,7 +3739,7 @@ definitions:
           $ref: '#/definitions/dto.PriceUnitResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListPricesResponse:
     properties:
@@ -3748,7 +3748,7 @@ definitions:
           $ref: '#/definitions/dto.PriceResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListScheduledTasksResponse:
     properties:
@@ -3757,7 +3757,7 @@ definitions:
           $ref: '#/definitions/dto.ScheduledTaskResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListSecretsResponse:
     properties:
@@ -3766,7 +3766,7 @@ definitions:
           $ref: '#/definitions/dto.SecretResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListSubscriptionPausesResponse:
     description: Response object for listing subscription pauses with total count
@@ -3791,7 +3791,7 @@ definitions:
           $ref: '#/definitions/dto.SubscriptionResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListTasksResponse:
     properties:
@@ -3800,7 +3800,7 @@ definitions:
           $ref: '#/definitions/dto.TaskResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListTaxAssociationsResponse:
     properties:
@@ -3809,7 +3809,7 @@ definitions:
           $ref: '#/definitions/dto.TaxAssociationResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListUsersResponse:
     properties:
@@ -3818,7 +3818,7 @@ definitions:
           $ref: '#/definitions/dto.UserResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListWalletTransactionsResponse:
     properties:
@@ -3827,7 +3827,7 @@ definitions:
           $ref: '#/definitions/dto.WalletTransactionResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.ListWorkflowsResponse:
     properties:
@@ -3836,7 +3836,7 @@ definitions:
           $ref: '#/definitions/dto.WorkflowExecutionDTO'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   dto.MatchedMeter:
     properties:
@@ -3886,7 +3886,7 @@ definitions:
           $ref: '#/definitions/dto.MatchedMeter'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus'
+        $ref: '#/definitions/types.DebugTrackerStatus'
     type: object
   dto.MeterResponse:
     properties:
@@ -3909,7 +3909,7 @@ definitions:
         example: API Usage Meter
         type: string
       reset_usage:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage'
+        $ref: '#/definitions/types.ResetUsage'
       status:
         example: published
         type: string
@@ -3946,7 +3946,7 @@ definitions:
           (optional)
         type: string
       billing_model:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel'
+        $ref: '#/definitions/types.BillingModel'
       price_id:
         description: PriceID references the plan price to override
         type: string
@@ -3965,7 +3965,7 @@ definitions:
         type: string
       tier_mode:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier'
+        - $ref: '#/definitions/types.BillingTier'
         description: TierMode determines how to calculate the price for a given quantity
       tiers:
         description: Tiers determines the pricing tiers for this line item
@@ -4012,7 +4012,7 @@ definitions:
         type: string
       pause_mode:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode'
+        - $ref: '#/definitions/types.PauseMode'
         description: |-
           Mode for pausing the subscription
           @Description Determines when the pause takes effect. "immediate" pauses right away, "scheduled" pauses at a specified time
@@ -4073,7 +4073,7 @@ definitions:
       destination_id:
         type: string
       destination_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentDestinationType'
+        $ref: '#/definitions/types.PaymentDestinationType'
       error_message:
         type: string
       failed_at:
@@ -4097,9 +4097,9 @@ definitions:
       payment_method_id:
         type: string
       payment_method_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentMethodType'
+        $ref: '#/definitions/types.PaymentMethodType'
       payment_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus'
+        $ref: '#/definitions/types.PaymentStatus'
       payment_url:
         type: string
       refunded_at:
@@ -4151,7 +4151,7 @@ definitions:
           $ref: '#/definitions/dto.PriceResponse'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -4183,7 +4183,7 @@ definitions:
           $ref: '#/definitions/dto.MatchedPrice'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus'
+        $ref: '#/definitions/types.DebugTrackerStatus'
     type: object
   dto.PriceResponse:
     properties:
@@ -4195,11 +4195,11 @@ definitions:
           For USD: 12.50 means $12.50
         type: string
       billing_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        $ref: '#/definitions/types.BillingCadence'
       billing_model:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel'
+        $ref: '#/definitions/types.BillingModel'
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         default: 1
         description: BillingPeriodCount is the count of the billing period ex 1, 3,
@@ -4239,7 +4239,7 @@ definitions:
         type: string
       entity_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType'
+        - $ref: '#/definitions/types.PriceEntityType'
         description: EntityType holds the value of the "entity_type" field.
       environment_id:
         description: EnvironmentID is the environment identifier for the price
@@ -4253,7 +4253,7 @@ definitions:
         description: ID uuid identifier for the price
         type: string
       invoice_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence'
+        $ref: '#/definitions/types.InvoiceCadence'
       lookup_key:
         description: LookupKey used for looking up the price in the database
         type: string
@@ -4291,7 +4291,7 @@ definitions:
         type: array
       price_unit_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType'
+        - $ref: '#/definitions/types.PriceUnitType'
         description: PriceUnitType is the type of the price unit (FIAT, CUSTOM)
       pricing_unit:
         $ref: '#/definitions/dto.PriceUnitResponse'
@@ -4299,11 +4299,11 @@ definitions:
         description: StartDate is the start date of the price
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       tier_mode:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier'
+        $ref: '#/definitions/types.BillingTier'
       tiers:
         items:
           $ref: '#/definitions/price.PriceTier'
@@ -4316,7 +4316,7 @@ definitions:
           Note: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)
         type: integer
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceType'
+        $ref: '#/definitions/types.PriceType'
       updated_at:
         type: string
       updated_by:
@@ -4356,7 +4356,7 @@ definitions:
       name:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       symbol:
         type: string
       tenant_id:
@@ -4450,7 +4450,7 @@ definitions:
         type: object
       resume_mode:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode'
+        - $ref: '#/definitions/types.ResumeMode'
         description: |-
           Mode for resuming the subscription
           @Description Determines how the subscription should be resumed
@@ -4467,20 +4467,20 @@ definitions:
       enabled:
         type: boolean
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType'
+        $ref: '#/definitions/types.ScheduledTaskEntityType'
       environment_id:
         type: string
       id:
         type: string
       interval:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval'
+        - $ref: '#/definitions/types.ScheduledTaskInterval'
         description: 'Note: "custom" is excluded from API docs'
         enum:
         - hourly
         - daily
       job_config:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.S3JobConfig'
+        $ref: '#/definitions/types.S3JobConfig'
       status:
         type: string
       tenant_id:
@@ -4503,21 +4503,21 @@ definitions:
       name:
         type: string
       provider:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SecretProvider'
+        $ref: '#/definitions/types.SecretProvider'
       roles:
         description: RBAC roles
         items:
           type: string
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SecretType'
+        $ref: '#/definitions/types.SecretType'
       updated_at:
         type: string
       user_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.UserType'
+        - $ref: '#/definitions/types.UserType'
         description: '"user" or "service_account"'
     type: object
   dto.SourceUsageItem:
@@ -4545,7 +4545,7 @@ definitions:
     properties:
       change_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionChangeType'
+        - $ref: '#/definitions/types.SubscriptionChangeType'
         description: change_type indicates whether this was an upgrade, downgrade,
           or lateral change
       credit_grants:
@@ -4598,7 +4598,7 @@ definitions:
     properties:
       change_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionChangeType'
+        - $ref: '#/definitions/types.SubscriptionChangeType'
         description: change_type indicates whether this is an upgrade, downgrade,
           or lateral change
       current_plan:
@@ -4644,15 +4644,15 @@ definitions:
     properties:
       billing_cadence:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        - $ref: '#/definitions/types.BillingCadence'
         description: billing_cadence is the billing cadence for the new subscription
       billing_cycle:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle'
+        - $ref: '#/definitions/types.BillingCycle'
         description: billing_cycle is the billing cycle for the new subscription
       billing_period:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        - $ref: '#/definitions/types.BillingPeriod'
         description: billing_period is the billing period for the new subscription
       billing_period_count:
         default: 1
@@ -4661,7 +4661,7 @@ definitions:
         type: integer
       change_at:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleType'
+        - $ref: '#/definitions/types.ScheduleType'
         description: |-
           change_at determines when the change should take effect (optional)
           If not provided or null: change executes immediately
@@ -4675,7 +4675,7 @@ definitions:
         type: object
       proration_behavior:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior'
+        - $ref: '#/definitions/types.ProrationBehavior'
         description: |-
           proration_behavior controls how proration is handled for the change
           Options: create_prorations, none
@@ -4709,12 +4709,12 @@ definitions:
           $ref: '#/definitions/dto.MatchedSubscriptionLineItem'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus'
+        $ref: '#/definitions/types.DebugTrackerStatus'
     type: object
   dto.SubscriptionLineItemResponse:
     properties:
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         description: from price at create; default 1
         type: integer
@@ -4722,7 +4722,7 @@ definitions:
         description: Commitment fields
         type: string
       commitment_duration:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       commitment_overage_factor:
         type: string
       commitment_quantity:
@@ -4730,7 +4730,7 @@ definitions:
       commitment_true_up_enabled:
         type: boolean
       commitment_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType'
+        $ref: '#/definitions/types.CommitmentType'
       commitment_windowed:
         type: boolean
       created_at:
@@ -4748,13 +4748,13 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType'
+        $ref: '#/definitions/types.SubscriptionLineItemEntityType'
       environment_id:
         type: string
       id:
         type: string
       invoice_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence'
+        $ref: '#/definitions/types.InvoiceCadence'
       metadata:
         additionalProperties:
           type: string
@@ -4770,7 +4770,7 @@ definitions:
       price_id:
         type: string
       price_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceType'
+        $ref: '#/definitions/types.PriceType'
       price_unit:
         type: string
       price_unit_id:
@@ -4780,7 +4780,7 @@ definitions:
       start_date:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
       subscription_phase_id:
@@ -4821,22 +4821,22 @@ definitions:
         description: PauseEnd is when the pause will end (null for indefinite)
         type: string
       pause_mode:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode'
+        $ref: '#/definitions/types.PauseMode'
       pause_start:
         description: PauseStart is when the pause actually started
         type: string
       pause_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus'
+        $ref: '#/definitions/types.PauseStatus'
       reason:
         description: Reason is the reason for pausing
         type: string
       resume_mode:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode'
+        $ref: '#/definitions/types.ResumeMode'
       resumed_at:
         description: ResumedAt is when the pause was actually ended (if manually resumed)
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         description: SubscriptionID is the identifier for the subscription
         type: string
@@ -4905,7 +4905,7 @@ definitions:
         description: StartDate is when the phase starts
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         description: SubscriptionID is the identifier for the subscription
         type: string
@@ -4921,11 +4921,11 @@ definitions:
       amount:
         type: string
       billing_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        $ref: '#/definitions/types.BillingCadence'
       billing_model:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel'
+        $ref: '#/definitions/types.BillingModel'
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         type: integer
       description:
@@ -4941,7 +4941,7 @@ definitions:
           type: array
         type: object
       invoice_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence'
+        $ref: '#/definitions/types.InvoiceCadence'
       lookup_key:
         type: string
       metadata:
@@ -4955,11 +4955,11 @@ definitions:
       price_unit_config:
         $ref: '#/definitions/dto.PriceUnitConfig'
       price_unit_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType'
+        $ref: '#/definitions/types.PriceUnitType'
       start_date:
         type: string
       tier_mode:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier'
+        $ref: '#/definitions/types.BillingTier'
       tiers:
         items:
           $ref: '#/definitions/dto.CreatePriceTier'
@@ -4969,7 +4969,7 @@ definitions:
       trial_period:
         type: integer
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceType'
+        $ref: '#/definitions/types.PriceType'
     required:
     - billing_cadence
     - billing_model
@@ -4992,10 +4992,10 @@ definitions:
           and the month of year for year intervals. The timestamp is in UTC format.
         type: string
       billing_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        $ref: '#/definitions/types.BillingCadence'
       billing_cycle:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle'
+        - $ref: '#/definitions/types.BillingCycle'
         description: |-
           BillingCycle is the cycle of the billing anchor.
           This is used to determine the billing date for the subscription (i.e set the billing anchor)
@@ -5005,7 +5005,7 @@ definitions:
           For example, if the billing period is month and the start date is 2025-04-15 then in case of
           calendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         default: 1
         description: BillingPeriodCount is the total number units of the billing period.
@@ -5029,7 +5029,7 @@ definitions:
         type: string
       commitment_duration:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        - $ref: '#/definitions/types.BillingPeriod'
         description: CommitmentDuration is the time frame of the commitment (e.g.,
           ANNUAL commitment on a MONTHLY subscription)
       coupon_associations:
@@ -5109,7 +5109,7 @@ definitions:
           (e.g. child subscription under a parent)
         type: string
       pause_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus'
+        $ref: '#/definitions/types.PauseStatus'
       pauses:
         items:
           $ref: '#/definitions/subscription.SubscriptionPause'
@@ -5119,7 +5119,7 @@ definitions:
         type: string
       payment_terms:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms'
+        - $ref: '#/definitions/types.PaymentTerms'
         description: PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due
           date from period end
       phases:
@@ -5133,14 +5133,14 @@ definitions:
         description: PlanID is the identifier for the plan in our system
         type: string
       proration_behavior:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior'
+        $ref: '#/definitions/types.ProrationBehavior'
       start_date:
         description: StartDate is the start date of the subscription
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus'
+        $ref: '#/definitions/types.SubscriptionStatus'
       tenant_id:
         type: string
       trial_end:
@@ -5171,10 +5171,10 @@ definitions:
           and the month of year for year intervals. The timestamp is in UTC format.
         type: string
       billing_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        $ref: '#/definitions/types.BillingCadence'
       billing_cycle:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle'
+        - $ref: '#/definitions/types.BillingCycle'
         description: |-
           BillingCycle is the cycle of the billing anchor.
           This is used to determine the billing date for the subscription (i.e set the billing anchor)
@@ -5184,7 +5184,7 @@ definitions:
           For example, if the billing period is month and the start date is 2025-04-15 then in case of
           calendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         default: 1
         description: BillingPeriodCount is the total number units of the billing period.
@@ -5208,7 +5208,7 @@ definitions:
         type: string
       commitment_duration:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        - $ref: '#/definitions/types.BillingPeriod'
         description: CommitmentDuration is the time frame of the commitment (e.g.,
           ANNUAL commitment on a MONTHLY subscription)
       coupon_associations:
@@ -5290,7 +5290,7 @@ definitions:
           (e.g. child subscription under a parent)
         type: string
       pause_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus'
+        $ref: '#/definitions/types.PauseStatus'
       pauses:
         description: Pauses are included when subscription has pause status
         items:
@@ -5301,7 +5301,7 @@ definitions:
         type: string
       payment_terms:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms'
+        - $ref: '#/definitions/types.PaymentTerms'
         description: PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due
           date from period end
       phases:
@@ -5317,14 +5317,14 @@ definitions:
         description: PlanID is the identifier for the plan in our system
         type: string
       proration_behavior:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior'
+        $ref: '#/definitions/types.ProrationBehavior'
       start_date:
         description: StartDate is the start date of the subscription
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus'
+        $ref: '#/definitions/types.SubscriptionStatus'
       tenant_id:
         type: string
       trial_end:
@@ -5377,7 +5377,7 @@ definitions:
         type: object
       schedule_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType'
+        - $ref: '#/definitions/types.SubscriptionScheduleChangeType'
         description: schedule_type is the type of schedule (plan_change, addon_change,
           etc.)
       scheduled_at:
@@ -5385,7 +5385,7 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleStatus'
+        - $ref: '#/definitions/types.ScheduleStatus'
         description: status is the current status of the schedule
       subscription_id:
         description: subscription_id is the ID of the subscription
@@ -5419,7 +5419,7 @@ definitions:
         type: string
       status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus'
+        - $ref: '#/definitions/types.SubscriptionStatus'
         description: status of the subscription
     type: object
   dto.SubscriptionUsageByMetersResponse:
@@ -5464,7 +5464,7 @@ definitions:
       created_by:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntityType'
+        $ref: '#/definitions/types.EntityType'
       environment_id:
         type: string
       error_summary:
@@ -5476,7 +5476,7 @@ definitions:
       file_name:
         type: string
       file_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FileType'
+        $ref: '#/definitions/types.FileType'
       file_url:
         type: string
       id:
@@ -5491,13 +5491,13 @@ definitions:
       started_at:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       successful_records:
         type: integer
       task_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaskStatus'
+        $ref: '#/definitions/types.TaskStatus'
       task_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaskType'
+        $ref: '#/definitions/types.TaskType'
       tenant_id:
         type: string
       total_records:
@@ -5522,7 +5522,7 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType'
+        $ref: '#/definitions/types.TaxRateEntityType'
       environment_id:
         type: string
       id:
@@ -5534,7 +5534,7 @@ definitions:
           type: string
         type: object
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tax_amount:
         type: string
       tax_association_id:
@@ -5569,7 +5569,7 @@ definitions:
         type: string
       entity_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType'
+        - $ref: '#/definitions/types.TaxRateEntityType'
         description: Type of entity this tax rate applies to
       environment_id:
         description: EnvironmentID is the ID of the environment this tax rate config
@@ -5587,7 +5587,7 @@ definitions:
         description: Priority for tax resolution (lower number = higher priority)
         type: integer
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tax_rate:
         $ref: '#/definitions/dto.TaxRateResponse'
       tax_rate_id:
@@ -5655,13 +5655,13 @@ definitions:
       percentage_value:
         type: string
       scope:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateScope'
+        $ref: '#/definitions/types.TaxRateScope'
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tax_rate_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateStatus'
+        $ref: '#/definitions/types.TaxRateStatus'
       tax_rate_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateType'
+        $ref: '#/definitions/types.TaxRateType'
       tenant_id:
         type: string
       updated_at:
@@ -5743,7 +5743,7 @@ definitions:
           default is nil which means no priority at all
         type: integer
       transaction_reason:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason'
+        $ref: '#/definitions/types.TransactionReason'
     required:
     - transaction_reason
     type: object
@@ -5906,7 +5906,7 @@ definitions:
       usage_limit:
         type: integer
       usage_reset_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod'
+        $ref: '#/definitions/types.EntitlementUsageResetPeriod'
     type: object
   dto.UpdateEnvironmentRequest:
     properties:
@@ -5918,7 +5918,7 @@ definitions:
   dto.UpdateFeatureRequest:
     properties:
       alert_settings:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        $ref: '#/definitions/types.AlertSettings'
       description:
         type: string
       filters:
@@ -5973,7 +5973,7 @@ definitions:
         type: string
       payment_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus'
+        - $ref: '#/definitions/types.PaymentStatus'
         description: payment_status is the new payment status to set for the invoice
           (paid, unpaid, etc.)
     required:
@@ -5999,7 +5999,7 @@ definitions:
           (optional)
         type: string
       billing_model:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel'
+        $ref: '#/definitions/types.BillingModel'
       description:
         type: string
       display_name:
@@ -6030,7 +6030,7 @@ definitions:
         type: array
       tier_mode:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier'
+        - $ref: '#/definitions/types.BillingTier'
         description: TierMode determines how to calculate the price for a given quantity
       tiers:
         description: Tiers determines the pricing tiers for this line item
@@ -6063,12 +6063,12 @@ definitions:
         description: Amount is the new price amount that overrides the original price
         type: string
       billing_model:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel'
+        $ref: '#/definitions/types.BillingModel'
       commitment_amount:
         description: Commitment fields
         type: number
       commitment_duration:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       commitment_overage_factor:
         type: number
       commitment_quantity:
@@ -6076,7 +6076,7 @@ definitions:
       commitment_true_up_enabled:
         type: boolean
       commitment_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType'
+        $ref: '#/definitions/types.CommitmentType'
       commitment_windowed:
         type: boolean
       effective_from:
@@ -6090,7 +6090,7 @@ definitions:
         type: object
       tier_mode:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier'
+        - $ref: '#/definitions/types.BillingTier'
         description: TierMode determines how to calculate the price for a given quantity
       tiers:
         description: Tiers determines the pricing tiers for this line item
@@ -6114,12 +6114,12 @@ definitions:
           Omit to leave unchanged; send "" to clear.
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus'
+        $ref: '#/definitions/types.SubscriptionStatus'
     type: object
   dto.UpdateTaskStatusRequest:
     properties:
       task_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaskStatus'
+        $ref: '#/definitions/types.TaskStatus'
     required:
     - task_status
     type: object
@@ -6143,7 +6143,7 @@ definitions:
         type: string
       tax_rate_status:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateStatus'
+        - $ref: '#/definitions/types.TaxRateStatus'
         description: tax_rate_type determines how the tax is calculated ("percentage"
           or "fixed")
     type: object
@@ -6159,11 +6159,11 @@ definitions:
   dto.UpdateWalletRequest:
     properties:
       alert_settings:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        $ref: '#/definitions/types.AlertSettings'
       auto_topup:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup'
+        $ref: '#/definitions/types.AutoTopup'
       config:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig'
+        $ref: '#/definitions/types.WalletConfig'
       description:
         type: string
       metadata:
@@ -6180,9 +6180,9 @@ definitions:
         - $ref: '#/definitions/github_com_flexprice_flexprice_internal_domain_addon.Addon'
         description: Full addon object (only if expand includes "addon")
       aggregation_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType'
+        $ref: '#/definitions/types.AggregationType'
       commitment_info:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo'
+        $ref: '#/definitions/types.CommitmentInfo'
       currency:
         type: string
       event_count:
@@ -6255,7 +6255,7 @@ definitions:
         type: string
       window_size:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize'
+        - $ref: '#/definitions/types.WindowSize'
         description: Window size for bucketed meters (only set if meter is bucketed)
     type: object
   dto.UsageAnalyticPoint:
@@ -6321,22 +6321,22 @@ definitions:
       tenant:
         $ref: '#/definitions/dto.TenantResponse'
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.UserType'
+        $ref: '#/definitions/types.UserType'
     type: object
   dto.WalletBalanceResponse:
     properties:
       alert_settings:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        $ref: '#/definitions/types.AlertSettings'
       alert_state:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertState'
+        $ref: '#/definitions/types.AlertState'
       auto_topup:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup'
+        $ref: '#/definitions/types.AutoTopup'
       balance:
         type: string
       balance_updated_at:
         type: string
       config:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig'
+        $ref: '#/definitions/types.WalletConfig'
       conversion_rate:
         description: |-
           amount in the currency =  number of credits * conversion_rate
@@ -6351,7 +6351,7 @@ definitions:
       credit_balance:
         type: string
       credits_available_breakdown:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditBreakdown'
+        $ref: '#/definitions/types.CreditBreakdown'
       currency:
         type: string
       current_period_usage:
@@ -6373,7 +6373,7 @@ definitions:
       real_time_credit_balance:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       topup_conversion_rate:
@@ -6390,22 +6390,22 @@ definitions:
       updated_by:
         type: string
       wallet_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus'
+        $ref: '#/definitions/types.WalletStatus'
       wallet_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletType'
+        $ref: '#/definitions/types.WalletType'
     type: object
   dto.WalletResponse:
     properties:
       alert_settings:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        $ref: '#/definitions/types.AlertSettings'
       alert_state:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertState'
+        $ref: '#/definitions/types.AlertState'
       auto_topup:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup'
+        $ref: '#/definitions/types.AutoTopup'
       balance:
         type: string
       config:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig'
+        $ref: '#/definitions/types.WalletConfig'
       conversion_rate:
         description: |-
           amount in the currency =  number of credits * conversion_rate
@@ -6420,7 +6420,7 @@ definitions:
       credit_balance:
         type: string
       credits_available_breakdown:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CreditBreakdown'
+        $ref: '#/definitions/types.CreditBreakdown'
       currency:
         type: string
       customer_id:
@@ -6436,7 +6436,7 @@ definitions:
       name:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       topup_conversion_rate:
@@ -6451,9 +6451,9 @@ definitions:
       updated_by:
         type: string
       wallet_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus'
+        $ref: '#/definitions/types.WalletStatus'
       wallet_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletType'
+        $ref: '#/definitions/types.WalletType'
     type: object
   dto.WalletTransactionResponse:
     properties:
@@ -6500,9 +6500,9 @@ definitions:
       reference_id:
         type: string
       reference_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletTxReferenceType'
+        $ref: '#/definitions/types.WalletTxReferenceType'
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       topup_conversion_rate:
@@ -6510,11 +6510,11 @@ definitions:
           the currency
         type: string
       transaction_reason:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason'
+        $ref: '#/definitions/types.TransactionReason'
       transaction_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TransactionStatus'
+        $ref: '#/definitions/types.TransactionStatus'
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TransactionType'
+        $ref: '#/definitions/types.TransactionType'
       updated_at:
         type: string
       updated_by:
@@ -6587,11 +6587,11 @@ definitions:
       name:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AddonType'
+        $ref: '#/definitions/types.AddonType'
       updated_at:
         type: string
       updated_by:
@@ -6602,7 +6602,7 @@ definitions:
       amount_off:
         type: string
       cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence'
+        $ref: '#/definitions/types.CouponCadence'
       created_at:
         type: string
       created_by:
@@ -6633,13 +6633,13 @@ definitions:
         additionalProperties: true
         type: object
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       total_redemptions:
         type: integer
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponType'
+        $ref: '#/definitions/types.CouponType'
       updated_at:
         type: string
       updated_by:
@@ -6694,7 +6694,7 @@ definitions:
         description: ParentCustomerID is the parent customer identifier for the customer
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -6705,7 +6705,7 @@ definitions:
   github_com_flexprice_flexprice_internal_domain_feature.Feature:
     properties:
       alert_settings:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        $ref: '#/definitions/types.AlertSettings'
       created_at:
         type: string
       created_by:
@@ -6725,11 +6725,11 @@ definitions:
       name:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType'
+        $ref: '#/definitions/types.FeatureType'
       unit_plural:
         type: string
       unit_singular:
@@ -6760,7 +6760,7 @@ definitions:
       name:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -6768,7 +6768,7 @@ definitions:
       updated_by:
         type: string
     type: object
-  github_com_flexprice_flexprice_internal_types.AddonAssociationEntityType:
+  types.AddonAssociationEntityType:
     enum:
     - subscription
     - plan
@@ -6778,14 +6778,14 @@ definitions:
     - AddonAssociationEntityTypeSubscription
     - AddonAssociationEntityTypePlan
     - AddonAssociationEntityTypeAddon
-  github_com_flexprice_flexprice_internal_types.AddonFilter:
+  types.AddonFilter:
     properties:
       addon_ids:
         items:
           type: string
         type: array
       addon_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AddonType'
+        $ref: '#/definitions/types.AddonType'
       end_time:
         type: string
       expand:
@@ -6793,7 +6793,7 @@ definitions:
       filters:
         description: filters allows complex filtering based on multiple fields
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -6813,14 +6813,14 @@ definitions:
         type: string
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.AddonStatus:
+  types.AddonStatus:
     enum:
     - active
     - cancelled
@@ -6830,7 +6830,7 @@ definitions:
     - AddonStatusActive
     - AddonStatusCancelled
     - AddonStatusPaused
-  github_com_flexprice_flexprice_internal_types.AddonType:
+  types.AddonType:
     enum:
     - onetime
     - multiple_instance
@@ -6838,7 +6838,7 @@ definitions:
     x-enum-varnames:
     - AddonTypeOnetime
     - AddonTypeMultipleInstance
-  github_com_flexprice_flexprice_internal_types.AggregationType:
+  types.AggregationType:
     enum:
     - COUNT
     - SUM
@@ -6869,7 +6869,7 @@ definitions:
     - AggregationSumWithMultiplier
     - AggregationMax
     - AggregationWeightedSum
-  github_com_flexprice_flexprice_internal_types.AlertCondition:
+  types.AlertCondition:
     enum:
     - above
     - below
@@ -6877,7 +6877,7 @@ definitions:
     x-enum-varnames:
     - AlertConditionAbove
     - AlertConditionBelow
-  github_com_flexprice_flexprice_internal_types.AlertEntityType:
+  types.AlertEntityType:
     enum:
     - wallet
     - feature
@@ -6885,21 +6885,21 @@ definitions:
     x-enum-varnames:
     - AlertEntityTypeWallet
     - AlertEntityTypeFeature
-  github_com_flexprice_flexprice_internal_types.AlertInfo:
+  types.AlertInfo:
     properties:
       alert_settings:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings'
+        $ref: '#/definitions/types.AlertSettings'
       timestamp:
         type: string
       value_at_time:
         type: number
     type: object
-  github_com_flexprice_flexprice_internal_types.AlertLogFilter:
+  types.AlertLogFilter:
     properties:
       alert_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertState'
+        $ref: '#/definitions/types.AlertState'
       alert_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertType'
+        $ref: '#/definitions/types.AlertType'
       customer_id:
         type: string
       end_time:
@@ -6907,13 +6907,13 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertEntityType'
+        $ref: '#/definitions/types.AlertEntityType'
       expand:
         type: string
       filters:
         description: filters allows complex filtering based on multiple fields
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -6929,25 +6929,25 @@ definitions:
         type: string
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.AlertSettings:
+  types.AlertSettings:
     properties:
       alert_enabled:
         type: boolean
       critical:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold'
+        $ref: '#/definitions/types.AlertThreshold'
       info:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold'
+        $ref: '#/definitions/types.AlertThreshold'
       warning:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold'
+        $ref: '#/definitions/types.AlertThreshold'
     type: object
-  github_com_flexprice_flexprice_internal_types.AlertState:
+  types.AlertState:
     enum:
     - ok
     - info
@@ -6959,14 +6959,14 @@ definitions:
     - AlertStateInfo
     - AlertStateWarning
     - AlertStateInAlarm
-  github_com_flexprice_flexprice_internal_types.AlertThreshold:
+  types.AlertThreshold:
     properties:
       condition:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertCondition'
+        $ref: '#/definitions/types.AlertCondition'
       threshold:
         type: number
     type: object
-  github_com_flexprice_flexprice_internal_types.AlertType:
+  types.AlertType:
     enum:
     - low_ongoing_balance
     - low_credit_balance
@@ -6976,7 +6976,7 @@ definitions:
     - AlertTypeLowOngoingBalance
     - AlertTypeLowCreditBalance
     - AlertTypeFeatureWalletBalance
-  github_com_flexprice_flexprice_internal_types.ApplicationStatus:
+  types.ApplicationStatus:
     enum:
     - applied
     - failed
@@ -6990,7 +6990,7 @@ definitions:
     - ApplicationStatusPending
     - ApplicationStatusSkipped
     - ApplicationStatusCancelled
-  github_com_flexprice_flexprice_internal_types.AutoTopup:
+  types.AutoTopup:
     properties:
       amount:
         type: number
@@ -7001,7 +7001,7 @@ definitions:
       threshold:
         type: number
     type: object
-  github_com_flexprice_flexprice_internal_types.BillingCadence:
+  types.BillingCadence:
     enum:
     - RECURRING
     - ONETIME
@@ -7009,7 +7009,7 @@ definitions:
     x-enum-varnames:
     - BILLING_CADENCE_RECURRING
     - BILLING_CADENCE_ONETIME
-  github_com_flexprice_flexprice_internal_types.BillingCycle:
+  types.BillingCycle:
     enum:
     - anniversary
     - calendar
@@ -7017,7 +7017,7 @@ definitions:
     x-enum-varnames:
     - BillingCycleAnniversary
     - BillingCycleCalendar
-  github_com_flexprice_flexprice_internal_types.BillingModel:
+  types.BillingModel:
     enum:
     - FLAT_FEE
     - PACKAGE
@@ -7027,7 +7027,7 @@ definitions:
     - BILLING_MODEL_FLAT_FEE
     - BILLING_MODEL_PACKAGE
     - BILLING_MODEL_TIERED
-  github_com_flexprice_flexprice_internal_types.BillingPeriod:
+  types.BillingPeriod:
     enum:
     - MONTHLY
     - ANNUAL
@@ -7043,7 +7043,7 @@ definitions:
     - BILLING_PERIOD_DAILY
     - BILLING_PERIOD_QUARTER
     - BILLING_PERIOD_HALF_YEAR
-  github_com_flexprice_flexprice_internal_types.BillingTier:
+  types.BillingTier:
     enum:
     - VOLUME
     - SLAB
@@ -7051,7 +7051,7 @@ definitions:
     x-enum-varnames:
     - BILLING_TIER_VOLUME
     - BILLING_TIER_SLAB
-  github_com_flexprice_flexprice_internal_types.CancelImmediatelyInvoicePolicy:
+  types.CancelImmediatelyInvoicePolicy:
     enum:
     - generate_invoice
     - skip
@@ -7059,7 +7059,7 @@ definitions:
     x-enum-varnames:
     - CancelImmediatelyInvoicePolicyGenerateInvoice
     - CancelImmediatelyInvoicePolicySkip
-  github_com_flexprice_flexprice_internal_types.CancellationType:
+  types.CancellationType:
     enum:
     - immediate
     - end_of_period
@@ -7067,7 +7067,7 @@ definitions:
     x-enum-varnames:
     - CancellationTypeImmediate
     - CancellationTypeEndOfPeriod
-  github_com_flexprice_flexprice_internal_types.CollectionMethod:
+  types.CollectionMethod:
     enum:
     - charge_automatically
     - send_invoice
@@ -7075,7 +7075,7 @@ definitions:
     x-enum-varnames:
     - CollectionMethodChargeAutomatically
     - CollectionMethodSendInvoice
-  github_com_flexprice_flexprice_internal_types.CommitmentInfo:
+  types.CommitmentInfo:
     properties:
       amount:
         type: string
@@ -7088,7 +7088,7 @@ definitions:
           + computed_true_up_amount
         type: string
       duration:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       is_windowed:
         type: boolean
       overage_factor:
@@ -7099,9 +7099,9 @@ definitions:
       true_up_enabled:
         type: boolean
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType'
+        $ref: '#/definitions/types.CommitmentType'
     type: object
-  github_com_flexprice_flexprice_internal_types.CommitmentType:
+  types.CommitmentType:
     enum:
     - amount
     - quantity
@@ -7109,7 +7109,7 @@ definitions:
     x-enum-varnames:
     - COMMITMENT_TYPE_AMOUNT
     - COMMITMENT_TYPE_QUANTITY
-  github_com_flexprice_flexprice_internal_types.CouponCadence:
+  types.CouponCadence:
     enum:
     - once
     - repeated
@@ -7119,7 +7119,7 @@ definitions:
     - CouponCadenceOnce
     - CouponCadenceRepeated
     - CouponCadenceForever
-  github_com_flexprice_flexprice_internal_types.CouponFilter:
+  types.CouponFilter:
     properties:
       coupon_ids:
         items:
@@ -7129,7 +7129,7 @@ definitions:
         type: string
       filters:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -7145,12 +7145,12 @@ definitions:
         type: string
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.CouponType:
+  types.CouponType:
     enum:
     - fixed
     - percentage
@@ -7158,14 +7158,14 @@ definitions:
     x-enum-varnames:
     - CouponTypeFixed
     - CouponTypePercentage
-  github_com_flexprice_flexprice_internal_types.CreditBreakdown:
+  types.CreditBreakdown:
     properties:
       free:
         type: string
       purchased:
         type: string
     type: object
-  github_com_flexprice_flexprice_internal_types.CreditGrantApplicationReason:
+  types.CreditGrantApplicationReason:
     enum:
     - first_time_recurring_credit_grant
     - recurring_credit_grant
@@ -7175,7 +7175,7 @@ definitions:
     - ApplicationReasonFirstTimeRecurringCreditGrant
     - ApplicationReasonRecurringCreditGrant
     - ApplicationReasonOnetimeCreditGrant
-  github_com_flexprice_flexprice_internal_types.CreditGrantCadence:
+  types.CreditGrantCadence:
     enum:
     - ONETIME
     - RECURRING
@@ -7183,7 +7183,7 @@ definitions:
     x-enum-varnames:
     - CreditGrantCadenceOneTime
     - CreditGrantCadenceRecurring
-  github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit:
+  types.CreditGrantExpiryDurationUnit:
     enum:
     - DAY
     - WEEK
@@ -7195,7 +7195,7 @@ definitions:
     - CreditGrantExpiryDurationUnitWeeks
     - CreditGrantExpiryDurationUnitMonths
     - CreditGrantExpiryDurationUnitYears
-  github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType:
+  types.CreditGrantExpiryType:
     enum:
     - NEVER
     - DURATION
@@ -7205,7 +7205,7 @@ definitions:
     - CreditGrantExpiryTypeNever
     - CreditGrantExpiryTypeDuration
     - CreditGrantExpiryTypeBillingCycle
-  github_com_flexprice_flexprice_internal_types.CreditGrantPeriod:
+  types.CreditGrantPeriod:
     enum:
     - DAILY
     - WEEKLY
@@ -7221,7 +7221,7 @@ definitions:
     - CREDIT_GRANT_PERIOD_ANNUAL
     - CREDIT_GRANT_PERIOD_QUARTER
     - CREDIT_GRANT_PERIOD_HALF_YEARLY
-  github_com_flexprice_flexprice_internal_types.CreditGrantScope:
+  types.CreditGrantScope:
     enum:
     - PLAN
     - SUBSCRIPTION
@@ -7229,7 +7229,7 @@ definitions:
     x-enum-varnames:
     - CreditGrantScopePlan
     - CreditGrantScopeSubscription
-  github_com_flexprice_flexprice_internal_types.CreditNoteReason:
+  types.CreditNoteReason:
     enum:
     - DUPLICATE
     - FRAUDULENT
@@ -7247,7 +7247,7 @@ definitions:
     - CreditNoteReasonService
     - CreditNoteReasonBillingError
     - CreditNoteReasonSubscriptionCancellation
-  github_com_flexprice_flexprice_internal_types.CreditNoteStatus:
+  types.CreditNoteStatus:
     enum:
     - DRAFT
     - FINALIZED
@@ -7257,7 +7257,7 @@ definitions:
     - CreditNoteStatusDraft
     - CreditNoteStatusFinalized
     - CreditNoteStatusVoided
-  github_com_flexprice_flexprice_internal_types.CreditNoteType:
+  types.CreditNoteType:
     enum:
     - ADJUSTMENT
     - REFUND
@@ -7265,7 +7265,7 @@ definitions:
     x-enum-varnames:
     - CreditNoteTypeAdjustment
     - CreditNoteTypeRefund
-  github_com_flexprice_flexprice_internal_types.CustomerFilter:
+  types.CustomerFilter:
     properties:
       customer_ids:
         items:
@@ -7285,7 +7285,7 @@ definitions:
         type: array
       filters:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -7305,14 +7305,14 @@ definitions:
         type: array
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.DataType:
+  types.DataType:
     enum:
     - string
     - number
@@ -7324,7 +7324,7 @@ definitions:
     - DataTypeNumber
     - DataTypeDate
     - DataTypeArray
-  github_com_flexprice_flexprice_internal_types.DebugTrackerStatus:
+  types.DebugTrackerStatus:
     enum:
     - unprocessed
     - not_found
@@ -7336,7 +7336,7 @@ definitions:
     - DebugTrackerStatusNotFound
     - DebugTrackerStatusFound
     - DebugTrackerStatusError
-  github_com_flexprice_flexprice_internal_types.EntitlementEntityType:
+  types.EntitlementEntityType:
     enum:
     - PLAN
     - SUBSCRIPTION
@@ -7346,7 +7346,7 @@ definitions:
     - ENTITLEMENT_ENTITY_TYPE_PLAN
     - ENTITLEMENT_ENTITY_TYPE_SUBSCRIPTION
     - ENTITLEMENT_ENTITY_TYPE_ADDON
-  github_com_flexprice_flexprice_internal_types.EntitlementFilter:
+  types.EntitlementFilter:
     properties:
       end_time:
         type: string
@@ -7355,7 +7355,7 @@ definitions:
           type: string
         type: array
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType'
+        $ref: '#/definitions/types.EntitlementEntityType'
       expand:
         type: string
       feature_ids:
@@ -7363,11 +7363,11 @@ definitions:
           type: string
         type: array
       feature_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType'
+        $ref: '#/definitions/types.FeatureType'
       filters:
         description: Specific filters for entitlements
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       is_enabled:
         type: boolean
@@ -7389,14 +7389,14 @@ definitions:
         type: array
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod:
+  types.EntitlementUsageResetPeriod:
     enum:
     - MONTHLY
     - ANNUAL
@@ -7414,7 +7414,7 @@ definitions:
     - ENTITLEMENT_USAGE_RESET_PERIOD_QUARTER
     - ENTITLEMENT_USAGE_RESET_PERIOD_HALF_YEAR
     - ENTITLEMENT_USAGE_RESET_PERIOD_NEVER
-  github_com_flexprice_flexprice_internal_types.EntityType:
+  types.EntityType:
     enum:
     - EVENTS
     - PRICES
@@ -7426,7 +7426,7 @@ definitions:
     - EntityTypePrices
     - EntityTypeCustomers
     - EntityTypeFeatures
-  github_com_flexprice_flexprice_internal_types.EventProcessingStatusType:
+  types.EventProcessingStatusType:
     enum:
     - processed
     - processing
@@ -7436,14 +7436,14 @@ definitions:
     - EventProcessingStatusTypeProcessed
     - EventProcessingStatusTypeProcessing
     - EventProcessingStatusTypeFailed
-  github_com_flexprice_flexprice_internal_types.FailurePoint:
+  types.FailurePoint:
     properties:
       error:
         $ref: '#/definitions/errors.ErrorResponse'
       failure_point_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FailurePointType'
+        $ref: '#/definitions/types.FailurePointType'
     type: object
-  github_com_flexprice_flexprice_internal_types.FailurePointType:
+  types.FailurePointType:
     enum:
     - customer_lookup
     - meter_lookup
@@ -7455,7 +7455,7 @@ definitions:
     - FailurePointTypeMeterLookup
     - FailurePointTypePriceLookup
     - FailurePointTypeSubscriptionLineItemLookup
-  github_com_flexprice_flexprice_internal_types.FeatureFilter:
+  types.FeatureFilter:
     properties:
       end_time:
         type: string
@@ -7469,7 +7469,7 @@ definitions:
       filters:
         description: filters allows complex filtering based on multiple fields
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -7497,14 +7497,14 @@ definitions:
         type: string
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.FeatureType:
+  types.FeatureType:
     enum:
     - metered
     - boolean
@@ -7514,7 +7514,7 @@ definitions:
     - FeatureTypeMetered
     - FeatureTypeBoolean
     - FeatureTypeStatic
-  github_com_flexprice_flexprice_internal_types.FileType:
+  types.FileType:
     enum:
     - CSV
     - JSON
@@ -7522,18 +7522,18 @@ definitions:
     x-enum-varnames:
     - FileTypeCSV
     - FileTypeJSON
-  github_com_flexprice_flexprice_internal_types.FilterCondition:
+  types.FilterCondition:
     properties:
       data_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.DataType'
+        $ref: '#/definitions/types.DataType'
       field:
         type: string
       operator:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterOperatorType'
+        $ref: '#/definitions/types.FilterOperatorType'
       value:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Value'
+        $ref: '#/definitions/types.Value'
     type: object
-  github_com_flexprice_flexprice_internal_types.FilterOperatorType:
+  types.FilterOperatorType:
     enum:
     - eq
     - contains
@@ -7555,7 +7555,7 @@ definitions:
     - NOT_IN
     - BEFORE
     - AFTER
-  github_com_flexprice_flexprice_internal_types.GroupFilter:
+  types.GroupFilter:
     properties:
       end_time:
         type: string
@@ -7566,7 +7566,7 @@ definitions:
       filters:
         description: filters allows complex filtering based on multiple fields
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       group_ids:
         description: Group specific filters
@@ -7591,14 +7591,14 @@ definitions:
         type: string
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.IntegrationEntityType:
+  types.IntegrationEntityType:
     enum:
     - customer
     - plan
@@ -7622,7 +7622,7 @@ definitions:
     - IntegrationEntityTypeItem
     - IntegrationEntityTypeItemPrice
     - IntegrationEntityTypePrice
-  github_com_flexprice_flexprice_internal_types.InvoiceBilling:
+  types.InvoiceBilling:
     enum:
     - invoice_to_parent
     - invoice_to_self
@@ -7630,7 +7630,7 @@ definitions:
     x-enum-varnames:
     - InvoiceBillingInvoiceToParent
     - InvoiceBillingInvoiceToSelf
-  github_com_flexprice_flexprice_internal_types.InvoiceBillingReason:
+  types.InvoiceBillingReason:
     enum:
     - SUBSCRIPTION_CREATE
     - SUBSCRIPTION_CYCLE
@@ -7644,7 +7644,7 @@ definitions:
     - InvoiceBillingReasonSubscriptionUpdate
     - InvoiceBillingReasonProration
     - InvoiceBillingReasonManual
-  github_com_flexprice_flexprice_internal_types.InvoiceCadence:
+  types.InvoiceCadence:
     enum:
     - ARREAR
     - ADVANCE
@@ -7652,7 +7652,7 @@ definitions:
     x-enum-varnames:
     - InvoiceCadenceArrear
     - InvoiceCadenceAdvance
-  github_com_flexprice_flexprice_internal_types.InvoiceFilter:
+  types.InvoiceFilter:
     properties:
       amount_due_gt:
         description: |-
@@ -7680,7 +7680,7 @@ definitions:
         type: string
       filters:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       invoice_ids:
         description: |-
@@ -7694,11 +7694,11 @@ definitions:
           invoice_status filters by the current state of invoices in their lifecycle
           Multiple statuses can be specified to include invoices in any of the listed states
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus'
+          $ref: '#/definitions/types.InvoiceStatus'
         type: array
       invoice_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType'
+        - $ref: '#/definitions/types.InvoiceType'
         description: |-
           invoice_type filters by the nature of the invoice (SUBSCRIPTION, ONE_OFF, or CREDIT)
           Use this to separate recurring charges from one-time fees or credit adjustments
@@ -7719,7 +7719,7 @@ definitions:
           payment_status filters by the payment state of invoices
           Multiple statuses can be specified to include invoices with any of the listed payment states
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus'
+          $ref: '#/definitions/types.PaymentStatus'
         type: array
       period_end_gte:
         description: period_end_gte filters invoices with period_end >= value
@@ -7738,19 +7738,19 @@ definitions:
         type: boolean
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         description: |-
           subscription_id filters invoices generated for a specific subscription
           Only returns invoices that were created as part of the specified subscription's billing
         type: string
     type: object
-  github_com_flexprice_flexprice_internal_types.InvoiceStatus:
+  types.InvoiceStatus:
     enum:
     - DRAFT
     - FINALIZED
@@ -7760,7 +7760,7 @@ definitions:
     - InvoiceStatusDraft
     - InvoiceStatusFinalized
     - InvoiceStatusVoided
-  github_com_flexprice_flexprice_internal_types.InvoiceType:
+  types.InvoiceType:
     enum:
     - SUBSCRIPTION
     - ONE_OFF
@@ -7770,7 +7770,7 @@ definitions:
     - InvoiceTypeSubscription
     - InvoiceTypeOneOff
     - InvoiceTypeCredit
-  github_com_flexprice_flexprice_internal_types.PaginationResponse:
+  types.PaginationResponse:
     properties:
       limit:
         type: integer
@@ -7779,7 +7779,7 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_flexprice_flexprice_internal_types.PauseMode:
+  types.PauseMode:
     enum:
     - immediate
     - scheduled
@@ -7789,7 +7789,7 @@ definitions:
     - PauseModeImmediate
     - PauseModeScheduled
     - PauseModePeriodEnd
-  github_com_flexprice_flexprice_internal_types.PauseStatus:
+  types.PauseStatus:
     enum:
     - none
     - active
@@ -7803,7 +7803,7 @@ definitions:
     - PauseStatusScheduled
     - PauseStatusCompleted
     - PauseStatusCancelled
-  github_com_flexprice_flexprice_internal_types.PaymentBehavior:
+  types.PaymentBehavior:
     enum:
     - allow_incomplete
     - default_incomplete
@@ -7815,13 +7815,13 @@ definitions:
     - PaymentBehaviorDefaultIncomplete
     - PaymentBehaviorErrorIfIncomplete
     - PaymentBehaviorDefaultActive
-  github_com_flexprice_flexprice_internal_types.PaymentDestinationType:
+  types.PaymentDestinationType:
     enum:
     - INVOICE
     type: string
     x-enum-varnames:
     - PaymentDestinationTypeInvoice
-  github_com_flexprice_flexprice_internal_types.PaymentGatewayType:
+  types.PaymentGatewayType:
     enum:
     - stripe
     - razorpay
@@ -7833,7 +7833,7 @@ definitions:
     - PaymentGatewayTypeRazorpay
     - PaymentGatewayTypeNomod
     - PaymentGatewayTypeMoyasar
-  github_com_flexprice_flexprice_internal_types.PaymentMethodType:
+  types.PaymentMethodType:
     enum:
     - CARD
     - ACH
@@ -7847,7 +7847,7 @@ definitions:
     - PaymentMethodTypeOffline
     - PaymentMethodTypeCredits
     - PaymentMethodTypePaymentLink
-  github_com_flexprice_flexprice_internal_types.PaymentStatus:
+  types.PaymentStatus:
     enum:
     - INITIATED
     - PENDING
@@ -7867,7 +7867,7 @@ definitions:
     - PaymentStatusFailed
     - PaymentStatusRefunded
     - PaymentStatusPartiallyRefunded
-  github_com_flexprice_flexprice_internal_types.PaymentTerms:
+  types.PaymentTerms:
     enum:
     - 15 NET
     - 30 NET
@@ -7883,7 +7883,7 @@ definitions:
     - PaymentTerms60Net
     - PaymentTerms75Net
     - PaymentTerms90Net
-  github_com_flexprice_flexprice_internal_types.PlanFilter:
+  types.PlanFilter:
     properties:
       end_time:
         type: string
@@ -7892,7 +7892,7 @@ definitions:
       filters:
         description: filters allows complex filtering based on multiple fields
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -7914,14 +7914,14 @@ definitions:
         type: array
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.PriceEntityType:
+  types.PriceEntityType:
     enum:
     - PLAN
     - SUBSCRIPTION
@@ -7935,7 +7935,7 @@ definitions:
     - PRICE_ENTITY_TYPE_ADDON
     - PRICE_ENTITY_TYPE_PRICE
     - PRICE_ENTITY_TYPE_COSTSHEET
-  github_com_flexprice_flexprice_internal_types.PriceFilter:
+  types.PriceFilter:
     properties:
       allow_expired_prices:
         default: false
@@ -7947,13 +7947,13 @@ definitions:
           type: string
         type: array
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType'
+        $ref: '#/definitions/types.PriceEntityType'
       expand:
         type: string
       filters:
         description: DSL filters
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -7989,11 +7989,11 @@ definitions:
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
     type: object
-  github_com_flexprice_flexprice_internal_types.PriceType:
+  types.PriceType:
     enum:
     - USAGE
     - FIXED
@@ -8001,7 +8001,7 @@ definitions:
     x-enum-varnames:
     - PRICE_TYPE_USAGE
     - PRICE_TYPE_FIXED
-  github_com_flexprice_flexprice_internal_types.PriceUnitFilter:
+  types.PriceUnitFilter:
     properties:
       end_time:
         type: string
@@ -8010,7 +8010,7 @@ definitions:
       filters:
         description: filters allows complex filtering based on multiple fields
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -8030,14 +8030,14 @@ definitions:
         type: array
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.PriceUnitType:
+  types.PriceUnitType:
     enum:
     - FIAT
     - CUSTOM
@@ -8045,7 +8045,7 @@ definitions:
     x-enum-varnames:
     - PRICE_UNIT_TYPE_FIAT
     - PRICE_UNIT_TYPE_CUSTOM
-  github_com_flexprice_flexprice_internal_types.ProrationBehavior:
+  types.ProrationBehavior:
     enum:
     - create_prorations
     - none
@@ -8059,7 +8059,7 @@ definitions:
     x-enum-varnames:
     - ProrationBehaviorCreateProrations
     - ProrationBehaviorNone
-  github_com_flexprice_flexprice_internal_types.QueryFilter:
+  types.QueryFilter:
     properties:
       expand:
         type: string
@@ -8078,9 +8078,9 @@ definitions:
       sort:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
     type: object
-  github_com_flexprice_flexprice_internal_types.ResetUsage:
+  types.ResetUsage:
     enum:
     - BILLING_PERIOD
     - NEVER
@@ -8088,7 +8088,7 @@ definitions:
     x-enum-varnames:
     - ResetUsageBillingPeriod
     - ResetUsageNever
-  github_com_flexprice_flexprice_internal_types.ResumeMode:
+  types.ResumeMode:
     enum:
     - immediate
     - scheduled
@@ -8098,7 +8098,7 @@ definitions:
     - ResumeModeImmediate
     - ResumeModeScheduled
     - ResumeModeAuto
-  github_com_flexprice_flexprice_internal_types.RoundType:
+  types.RoundType:
     enum:
     - up
     - down
@@ -8106,7 +8106,7 @@ definitions:
     x-enum-varnames:
     - ROUND_UP
     - ROUND_DOWN
-  github_com_flexprice_flexprice_internal_types.S3CompressionType:
+  types.S3CompressionType:
     enum:
     - none
     - gzip
@@ -8114,7 +8114,7 @@ definitions:
     x-enum-varnames:
     - S3CompressionTypeNone
     - S3CompressionTypeGzip
-  github_com_flexprice_flexprice_internal_types.S3EncryptionType:
+  types.S3EncryptionType:
     enum:
     - AES256
     - aws:kms
@@ -8124,18 +8124,18 @@ definitions:
     - S3EncryptionTypeAES256
     - S3EncryptionTypeAwsKms
     - S3EncryptionTypeAwsKmsDsse
-  github_com_flexprice_flexprice_internal_types.S3JobConfig:
+  types.S3JobConfig:
     properties:
       bucket:
         description: S3 bucket name
         type: string
       compression:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.S3CompressionType'
+        - $ref: '#/definitions/types.S3CompressionType'
         description: 'Compression type: "gzip", "none" (default: "none")'
       encryption:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.S3EncryptionType'
+        - $ref: '#/definitions/types.S3EncryptionType'
         description: 'Encryption type: "AES256", "aws:kms", "aws:kms:dsse" (default:
           "AES256")'
       endpoint_url:
@@ -8152,7 +8152,7 @@ definitions:
           for MinIO)
         type: boolean
     type: object
-  github_com_flexprice_flexprice_internal_types.ScheduleStatus:
+  types.ScheduleStatus:
     enum:
     - pending
     - executing
@@ -8166,7 +8166,7 @@ definitions:
     - ScheduleStatusExecuted
     - ScheduleStatusCancelled
     - ScheduleStatusFailed
-  github_com_flexprice_flexprice_internal_types.ScheduleType:
+  types.ScheduleType:
     enum:
     - immediate
     - end_of_period
@@ -8174,7 +8174,7 @@ definitions:
     x-enum-varnames:
     - ScheduleTypeImmediate
     - ScheduleTypePeriodEnd
-  github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType:
+  types.ScheduledTaskEntityType:
     enum:
     - events
     - invoice
@@ -8186,7 +8186,7 @@ definitions:
     - ScheduledTaskEntityTypeInvoice
     - ScheduledTaskEntityTypeCreditTopups
     - ScheduledTaskEntityTypeCreditUsage
-  github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval:
+  types.ScheduledTaskInterval:
     enum:
     - 15MIN
     - custom
@@ -8205,7 +8205,7 @@ definitions:
     - ScheduledTaskIntervalCustom
     - ScheduledTaskIntervalHourly
     - ScheduledTaskIntervalDaily
-  github_com_flexprice_flexprice_internal_types.SecretProvider:
+  types.SecretProvider:
     enum:
     - flexprice
     - stripe
@@ -8227,7 +8227,7 @@ definitions:
     - SecretProviderQuickBooks
     - SecretProviderNomod
     - SecretProviderMoyasar
-  github_com_flexprice_flexprice_internal_types.SecretType:
+  types.SecretType:
     enum:
     - private_key
     - publishable_key
@@ -8237,14 +8237,14 @@ definitions:
     - SecretTypePrivateKey
     - SecretTypePublishableKey
     - SecretTypeIntegration
-  github_com_flexprice_flexprice_internal_types.SortCondition:
+  types.SortCondition:
     properties:
       direction:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortDirection'
+        $ref: '#/definitions/types.SortDirection'
       field:
         type: string
     type: object
-  github_com_flexprice_flexprice_internal_types.SortDirection:
+  types.SortDirection:
     enum:
     - asc
     - desc
@@ -8252,7 +8252,7 @@ definitions:
     x-enum-varnames:
     - SortDirectionAsc
     - SortDirectionDesc
-  github_com_flexprice_flexprice_internal_types.Status:
+  types.Status:
     enum:
     - published
     - deleted
@@ -8262,7 +8262,7 @@ definitions:
     - StatusPublished
     - StatusDeleted
     - StatusArchived
-  github_com_flexprice_flexprice_internal_types.SubscriptionChangeType:
+  types.SubscriptionChangeType:
     enum:
     - upgrade
     - downgrade
@@ -8272,7 +8272,7 @@ definitions:
     - SubscriptionChangeTypeUpgrade
     - SubscriptionChangeTypeDowngrade
     - SubscriptionChangeTypeLateral
-  github_com_flexprice_flexprice_internal_types.SubscriptionFilter:
+  types.SubscriptionFilter:
     properties:
       active_at:
         description: ActiveAt filters subscriptions that are active at the given time
@@ -8280,12 +8280,12 @@ definitions:
       billing_cadence:
         description: BillingCadence filters by billing cadence
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+          $ref: '#/definitions/types.BillingCadence'
         type: array
       billing_period:
         description: BillingPeriod filters by billing period
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+          $ref: '#/definitions/types.BillingPeriod'
         type: array
       customer_id:
         description: CustomerID filters by customer ID
@@ -8299,7 +8299,7 @@ definitions:
         type: string
       filters:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       invoicing_customer_ids:
         description: InvoicingCustomerIDs filters by invoicing customer ID
@@ -8328,12 +8328,12 @@ definitions:
         type: string
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_ids:
         items:
           type: string
@@ -8341,13 +8341,13 @@ definitions:
       subscription_status:
         description: SubscriptionStatus filters by subscription status
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus'
+          $ref: '#/definitions/types.SubscriptionStatus'
         type: array
       with_line_items:
         description: WithLineItems includes line items in the response
         type: boolean
     type: object
-  github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType:
+  types.SubscriptionLineItemEntityType:
     enum:
     - plan
     - addon
@@ -8357,7 +8357,7 @@ definitions:
     - SubscriptionLineItemEntityTypePlan
     - SubscriptionLineItemEntityTypeAddon
     - SubscriptionLineItemEntityTypeSubscription
-  github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType:
+  types.SubscriptionScheduleChangeType:
     enum:
     - plan_change
     - cancellation
@@ -8365,7 +8365,7 @@ definitions:
     x-enum-varnames:
     - SubscriptionScheduleChangeTypePlanChange
     - SubscriptionScheduleChangeTypeCancellation
-  github_com_flexprice_flexprice_internal_types.SubscriptionStatus:
+  types.SubscriptionStatus:
     enum:
     - active
     - paused
@@ -8381,7 +8381,7 @@ definitions:
     - SubscriptionStatusIncomplete
     - SubscriptionStatusTrialing
     - SubscriptionStatusDraft
-  github_com_flexprice_flexprice_internal_types.TaskStatus:
+  types.TaskStatus:
     enum:
     - PENDING
     - PROCESSING
@@ -8393,7 +8393,7 @@ definitions:
     - TaskStatusProcessing
     - TaskStatusCompleted
     - TaskStatusFailed
-  github_com_flexprice_flexprice_internal_types.TaskType:
+  types.TaskType:
     enum:
     - IMPORT
     - EXPORT
@@ -8401,7 +8401,7 @@ definitions:
     x-enum-varnames:
     - TaskTypeImport
     - TaskTypeExport
-  github_com_flexprice_flexprice_internal_types.TaxRateEntityType:
+  types.TaxRateEntityType:
     enum:
     - customer
     - subscription
@@ -8413,7 +8413,7 @@ definitions:
     - TaxRateEntityTypeSubscription
     - TaxRateEntityTypeInvoice
     - TaxRateEntityTypeTenant
-  github_com_flexprice_flexprice_internal_types.TaxRateScope:
+  types.TaxRateScope:
     enum:
     - INTERNAL
     - EXTERNAL
@@ -8423,7 +8423,7 @@ definitions:
     - TaxRateScopeInternal
     - TaxRateScopeExternal
     - TaxRateScopeOneTime
-  github_com_flexprice_flexprice_internal_types.TaxRateStatus:
+  types.TaxRateStatus:
     enum:
     - ACTIVE
     - INACTIVE
@@ -8431,7 +8431,7 @@ definitions:
     x-enum-varnames:
     - TaxRateStatusActive
     - TaxRateStatusInactive
-  github_com_flexprice_flexprice_internal_types.TaxRateType:
+  types.TaxRateType:
     enum:
     - percentage
     - fixed
@@ -8439,14 +8439,14 @@ definitions:
     x-enum-varnames:
     - TaxRateTypePercentage
     - TaxRateTypeFixed
-  github_com_flexprice_flexprice_internal_types.TimeRangeFilter:
+  types.TimeRangeFilter:
     properties:
       end_time:
         type: string
       start_time:
         type: string
     type: object
-  github_com_flexprice_flexprice_internal_types.TransactionReason:
+  types.TransactionReason:
     enum:
     - INVOICE_PAYMENT
     - FREE_CREDIT_GRANT
@@ -8470,7 +8470,7 @@ definitions:
     - TransactionReasonWalletTermination
     - TransactionReasonManualBalanceDebit
     - TransactionReasonCreditAdjustment
-  github_com_flexprice_flexprice_internal_types.TransactionStatus:
+  types.TransactionStatus:
     enum:
     - pending
     - completed
@@ -8480,7 +8480,7 @@ definitions:
     - TransactionStatusPending
     - TransactionStatusCompleted
     - TransactionStatusFailed
-  github_com_flexprice_flexprice_internal_types.TransactionType:
+  types.TransactionType:
     enum:
     - credit
     - debit
@@ -8488,7 +8488,7 @@ definitions:
     x-enum-varnames:
     - TransactionTypeCredit
     - TransactionTypeDebit
-  github_com_flexprice_flexprice_internal_types.UserFilter:
+  types.UserFilter:
     properties:
       end_time:
         type: string
@@ -8497,7 +8497,7 @@ definitions:
       filters:
         description: filters allows complex filtering based on multiple fields
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -8517,15 +8517,15 @@ definitions:
         type: array
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.UserType'
+        - $ref: '#/definitions/types.UserType'
         enum:
         - user
         - service_account
@@ -8535,7 +8535,7 @@ definitions:
           type: string
         type: array
     type: object
-  github_com_flexprice_flexprice_internal_types.UserType:
+  types.UserType:
     enum:
     - user
     - service_account
@@ -8543,7 +8543,7 @@ definitions:
     x-enum-varnames:
     - UserTypeUser
     - UserTypeServiceAccount
-  github_com_flexprice_flexprice_internal_types.Value:
+  types.Value:
     properties:
       array:
         items:
@@ -8558,17 +8558,17 @@ definitions:
       string:
         type: string
     type: object
-  github_com_flexprice_flexprice_internal_types.WalletConfig:
+  types.WalletConfig:
     properties:
       allowed_price_types:
         description: |-
           AllowedPriceTypes is a list of price types that are allowed for the wallet
           nil means all price types are allowed
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfigPriceType'
+          $ref: '#/definitions/types.WalletConfigPriceType'
         type: array
     type: object
-  github_com_flexprice_flexprice_internal_types.WalletConfigPriceType:
+  types.WalletConfigPriceType:
     enum:
     - ALL
     - USAGE
@@ -8578,7 +8578,7 @@ definitions:
     - WalletConfigPriceTypeAll
     - WalletConfigPriceTypeUsage
     - WalletConfigPriceTypeFixed
-  github_com_flexprice_flexprice_internal_types.WalletFilter:
+  types.WalletFilter:
     properties:
       alert_enabled:
         type: boolean
@@ -8599,13 +8599,13 @@ definitions:
       sort:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus'
+        $ref: '#/definitions/types.WalletStatus'
       wallet_ids:
         items:
           type: string
         type: array
     type: object
-  github_com_flexprice_flexprice_internal_types.WalletStatus:
+  types.WalletStatus:
     enum:
     - active
     - frozen
@@ -8615,7 +8615,7 @@ definitions:
     - WalletStatusActive
     - WalletStatusFrozen
     - WalletStatusClosed
-  github_com_flexprice_flexprice_internal_types.WalletTransactionFilter:
+  types.WalletTransactionFilter:
     properties:
       created_by:
         type: string
@@ -8632,7 +8632,7 @@ definitions:
       filters:
         description: filters allows complex filtering based on multiple fields
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       id:
         type: string
@@ -8656,20 +8656,20 @@ definitions:
         type: string
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       transaction_reason:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason'
+        $ref: '#/definitions/types.TransactionReason'
       transaction_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TransactionStatus'
+        $ref: '#/definitions/types.TransactionStatus'
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.TransactionType'
+        $ref: '#/definitions/types.TransactionType'
     type: object
-  github_com_flexprice_flexprice_internal_types.WalletTxReferenceType:
+  types.WalletTxReferenceType:
     enum:
     - PAYMENT
     - EXTERNAL
@@ -8681,7 +8681,7 @@ definitions:
     - WalletTxReferenceTypeExternal
     - WalletTxReferenceTypeRequest
     - WalletTxReferenceTypeInvoice
-  github_com_flexprice_flexprice_internal_types.WalletType:
+  types.WalletType:
     enum:
     - PRE_PAID
     - POST_PAID
@@ -8689,9 +8689,8 @@ definitions:
     x-enum-varnames:
     - WalletTypePrePaid
     - WalletTypePostPaid
-  github_com_flexprice_flexprice_internal_types.WindowSize:
+  types.WindowSize:
     enum:
-    - MONTH
     - MINUTE
     - 15MIN
     - 30MIN
@@ -8702,9 +8701,9 @@ definitions:
     - DAY
     - WEEK
     - MONTH
+    - MONTH
     type: string
     x-enum-varnames:
-    - DefaultWindowSize
     - WindowSizeMinute
     - WindowSize15Min
     - WindowSize30Min
@@ -8715,7 +8714,8 @@ definitions:
     - WindowSizeDay
     - WindowSizeWeek
     - WindowSizeMonth
-  github_com_flexprice_flexprice_internal_types.WorkflowExecutionFilter:
+    - DefaultWindowSize
+  types.WorkflowExecutionFilter:
     properties:
       end_time:
         type: string
@@ -8731,7 +8731,7 @@ definitions:
         description: filters allows complex filtering based on multiple fields (same
           as FeatureFilter)
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition'
+          $ref: '#/definitions/types.FilterCondition'
         type: array
       limit:
         maximum: 1000
@@ -8747,12 +8747,12 @@ definitions:
         type: string
       sort:
         items:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition'
+          $ref: '#/definitions/types.SortCondition'
         type: array
       start_time:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       task_queue:
         type: string
       workflow_id:
@@ -8769,7 +8769,7 @@ definitions:
       amount:
         type: string
       commitment_info:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo'
+        $ref: '#/definitions/types.CommitmentInfo'
       created_at:
         type: string
       created_by:
@@ -8827,7 +8827,7 @@ definitions:
       quantity:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
       tenant_id:
@@ -8841,7 +8841,7 @@ definitions:
     properties:
       bucket_size:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize'
+        - $ref: '#/definitions/types.WindowSize'
         description: |-
           BucketSize is used only for MAX aggregation when windowed aggregation is needed
           It defines the size of time windows to calculate max values within
@@ -8870,7 +8870,7 @@ definitions:
           to scale up by a factor of 1000. If not provided, it will be null.
         type: string
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType'
+        $ref: '#/definitions/types.AggregationType'
     type: object
   meter.Filter:
     properties:
@@ -8923,13 +8923,13 @@ definitions:
         type: string
       reset_usage:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage'
+        - $ref: '#/definitions/types.ResetUsage'
         description: |-
           ResetUsage defines whether the usage should be reset periodically or not
           For ex meters tracking total storage used do not get reset but meters tracking
           total API requests do.
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       updated_at:
@@ -8963,7 +8963,7 @@ definitions:
         type: integer
       round:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.RoundType'
+        - $ref: '#/definitions/types.RoundType'
         description: up or down
     type: object
   price.Price:
@@ -8974,11 +8974,11 @@ definitions:
           For USD: 12.50 means $12.50
         type: string
       billing_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence'
+        $ref: '#/definitions/types.BillingCadence'
       billing_model:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel'
+        $ref: '#/definitions/types.BillingModel'
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         default: 1
         description: BillingPeriodCount is the count of the billing period ex 1, 3,
@@ -9018,7 +9018,7 @@ definitions:
         type: string
       entity_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType'
+        - $ref: '#/definitions/types.PriceEntityType'
         description: EntityType holds the value of the "entity_type" field.
       environment_id:
         description: EnvironmentID is the environment identifier for the price
@@ -9030,7 +9030,7 @@ definitions:
         description: ID uuid identifier for the price
         type: string
       invoice_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence'
+        $ref: '#/definitions/types.InvoiceCadence'
       lookup_key:
         description: LookupKey used for looking up the price in the database
         type: string
@@ -9064,17 +9064,17 @@ definitions:
         type: array
       price_unit_type:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType'
+        - $ref: '#/definitions/types.PriceUnitType'
         description: PriceUnitType is the type of the price unit (FIAT, CUSTOM)
       start_date:
         description: StartDate is the start date of the price
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       tenant_id:
         type: string
       tier_mode:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier'
+        $ref: '#/definitions/types.BillingTier'
       tiers:
         items:
           $ref: '#/definitions/price.PriceTier'
@@ -9087,7 +9087,7 @@ definitions:
           Note: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)
         type: integer
       type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceType'
+        $ref: '#/definitions/types.PriceType'
       updated_at:
         type: string
       updated_by:
@@ -9118,13 +9118,13 @@ definitions:
         type: integer
       round:
         allOf:
-        - $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.RoundType'
+        - $ref: '#/definitions/types.RoundType'
         description: up or down
     type: object
   subscription.SubscriptionLineItem:
     properties:
       billing_period:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
         description: from price at create; default 1
         type: integer
@@ -9132,7 +9132,7 @@ definitions:
         description: Commitment fields
         type: string
       commitment_duration:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod'
+        $ref: '#/definitions/types.BillingPeriod'
       commitment_overage_factor:
         type: string
       commitment_quantity:
@@ -9140,7 +9140,7 @@ definitions:
       commitment_true_up_enabled:
         type: boolean
       commitment_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType'
+        $ref: '#/definitions/types.CommitmentType'
       commitment_windowed:
         type: boolean
       created_at:
@@ -9158,13 +9158,13 @@ definitions:
       entity_id:
         type: string
       entity_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType'
+        $ref: '#/definitions/types.SubscriptionLineItemEntityType'
       environment_id:
         type: string
       id:
         type: string
       invoice_cadence:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence'
+        $ref: '#/definitions/types.InvoiceCadence'
       metadata:
         additionalProperties:
           type: string
@@ -9180,7 +9180,7 @@ definitions:
       price_id:
         type: string
       price_type:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceType'
+        $ref: '#/definitions/types.PriceType'
       price_unit:
         type: string
       price_unit_id:
@@ -9190,7 +9190,7 @@ definitions:
       start_date:
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         type: string
       subscription_phase_id:
@@ -9230,22 +9230,22 @@ definitions:
         description: PauseEnd is when the pause will end (null for indefinite)
         type: string
       pause_mode:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode'
+        $ref: '#/definitions/types.PauseMode'
       pause_start:
         description: PauseStart is when the pause actually started
         type: string
       pause_status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus'
+        $ref: '#/definitions/types.PauseStatus'
       reason:
         description: Reason is the reason for pausing
         type: string
       resume_mode:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode'
+        $ref: '#/definitions/types.ResumeMode'
       resumed_at:
         description: ResumedAt is when the pause was actually ended (if manually resumed)
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         description: SubscriptionID is the identifier for the subscription
         type: string
@@ -9280,7 +9280,7 @@ definitions:
         description: StartDate is when the phase starts
         type: string
       status:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.Status'
+        $ref: '#/definitions/types.Status'
       subscription_id:
         description: SubscriptionID is the identifier for the subscription
         type: string
@@ -9298,7 +9298,7 @@ definitions:
           $ref: '#/definitions/dto.WalletResponse'
         type: array
       pagination:
-        $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse'
+        $ref: '#/definitions/types.PaginationResponse'
     type: object
   types.Metadata:
     additionalProperties:
@@ -9525,7 +9525,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AddonFilter'
+          $ref: '#/definitions/types.AddonFilter'
       produces:
       - application/json
       responses:
@@ -9560,7 +9560,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.AlertLogFilter'
+          $ref: '#/definitions/types.AlertLogFilter'
       produces:
       - application/json
       responses:
@@ -10062,7 +10062,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CouponFilter'
+          $ref: '#/definitions/types.CouponFilter'
       produces:
       - application/json
       responses:
@@ -10717,7 +10717,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.CustomerFilter'
+          $ref: '#/definitions/types.CustomerFilter'
       produces:
       - application/json
       responses:
@@ -11027,7 +11027,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementFilter'
+          $ref: '#/definitions/types.EntitlementFilter'
       produces:
       - application/json
       responses:
@@ -11598,7 +11598,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.FeatureFilter'
+          $ref: '#/definitions/types.FeatureFilter'
       produces:
       - application/json
       responses:
@@ -11737,7 +11737,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.GroupFilter'
+          $ref: '#/definitions/types.GroupFilter'
       produces:
       - application/json
       responses:
@@ -12189,7 +12189,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceFilter'
+          $ref: '#/definitions/types.InvoiceFilter'
       produces:
       - application/json
       responses:
@@ -12806,7 +12806,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PlanFilter'
+          $ref: '#/definitions/types.PlanFilter'
       produces:
       - application/json
       responses:
@@ -13050,7 +13050,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceFilter'
+          $ref: '#/definitions/types.PriceFilter'
       produces:
       - application/json
       responses:
@@ -13313,7 +13313,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitFilter'
+          $ref: '#/definitions/types.PriceUnitFilter'
       produces:
       - application/json
       responses:
@@ -14363,7 +14363,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionFilter'
+          $ref: '#/definitions/types.SubscriptionFilter'
       produces:
       - application/json
       responses:
@@ -15565,7 +15565,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.UserFilter'
+          $ref: '#/definitions/types.UserFilter'
       produces:
       - application/json
       responses:
@@ -16082,7 +16082,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletFilter'
+          $ref: '#/definitions/types.WalletFilter'
       produces:
       - application/json
       responses:
@@ -16117,7 +16117,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WalletTransactionFilter'
+          $ref: '#/definitions/types.WalletTransactionFilter'
       produces:
       - application/json
       responses:
@@ -16432,7 +16432,7 @@ paths:
         name: filter
         required: true
         schema:
-          $ref: '#/definitions/github_com_flexprice_flexprice_internal_types.WorkflowExecutionFilter'
+          $ref: '#/definitions/types.WorkflowExecutionFilter'
       produces:
       - application/json
       responses:
