@@ -21,12 +21,12 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/feature"
 	"github.com/flexprice/flexprice/internal/domain/meter"
-	"github.com/flexprice/flexprice/internal/expression"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/domain/price"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	"github.com/flexprice/flexprice/internal/domain/wallet"
 	ierr "github.com/flexprice/flexprice/internal/errors"
+	"github.com/flexprice/flexprice/internal/expression"
 	"github.com/flexprice/flexprice/internal/pubsub"
 	"github.com/flexprice/flexprice/internal/pubsub/kafka"
 	pubsubRouter "github.com/flexprice/flexprice/internal/pubsub/router"
@@ -2431,10 +2431,8 @@ func (s *featureUsageTrackingService) calculateCosts(ctx context.Context, data *
 				// that was active when the usage was recorded (important for cancelled/new subscriptions)
 				if price, hasPricing := data.Prices[item.PriceID]; hasPricing {
 					// Calculate cost based on meter type
-					if meter.IsBucketedMaxMeter() {
-						s.calculateBucketedCost(ctx, priceService, item, price, data)
-					} else if meter.IsBucketedSumMeter() {
-						s.calculateSumWithBucketCost(ctx, priceService, item, price, meter, data)
+					if meter.HasBucketSize() {
+						s.calculateBucketedCost(ctx, priceService, item, price, meter, data)
 					} else {
 						s.calculateRegularCost(ctx, priceService, item, meter, price, data)
 					}
@@ -2459,39 +2457,23 @@ type bucketedCostParams struct {
 }
 
 // calculateBucketedCost calculates cost for bucketed max meters
-func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context, priceService PriceService, item *events.DetailedUsageAnalytic, price *price.Price, data *AnalyticsData) {
-	var bucketSize types.WindowSize
-	if m := data.Meters[item.MeterID]; m != nil {
-		bucketSize = m.Aggregation.BucketSize
-	}
-	params := &bucketedCostParams{ctx, priceService, item, price, data, types.AggregationMax, bucketSize}
-	s.calculateBucketedCostUnified(params)
-}
-
-// calculateSumWithBucketCost calculates cost for sum with bucket meters
-func (s *featureUsageTrackingService) calculateSumWithBucketCost(ctx context.Context, priceService PriceService, item *events.DetailedUsageAnalytic, price *price.Price, meter *meter.Meter, data *AnalyticsData) {
-	params := &bucketedCostParams{ctx, priceService, item, price, data, types.AggregationSum, meter.Aggregation.BucketSize}
-	s.calculateBucketedCostUnified(params)
-}
-
-// calculateBucketedCostUnified is the unified implementation for both MAX and SUM bucketed meters.
-// The only difference between them is the aggregation type used to extract usage values.
-func (s *featureUsageTrackingService) calculateBucketedCostUnified(p *bucketedCostParams) {
-	lineItem := p.data.SubscriptionLineItems[p.item.SubLineItemID]
+func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context, priceService PriceService, item *events.DetailedUsageAnalytic, price *price.Price, meter *meter.Meter, data *AnalyticsData) {
+	params := &bucketedCostParams{ctx, priceService, item, price, data, types.AggregationMax, meter.Aggregation.BucketSize}
+	lineItem := data.SubscriptionLineItems[item.SubLineItemID]
 	hasCommitment := lineItem != nil && lineItem.HasCommitment()
 	isWindowed := hasCommitment && lineItem.CommitmentWindowed
 	hasTrueUp := isWindowed && lineItem.CommitmentTrueUpEnabled
 
 	var cost decimal.Decimal
 
-	if len(p.item.Points) > 0 {
-		cost = s.processPointsWithBuckets(p, lineItem, hasCommitment, isWindowed, hasTrueUp)
+	if len(item.Points) > 0 {
+		cost = s.processPointsWithBuckets(params, lineItem, hasCommitment, isWindowed, hasTrueUp)
 	} else {
-		cost = s.processSingleBucket(p, lineItem, hasCommitment, isWindowed, hasTrueUp)
+		cost = s.processSingleBucket(params, lineItem, hasCommitment, isWindowed, hasTrueUp)
 	}
 
-	p.item.TotalCost = cost
-	p.item.Currency = p.price.Currency
+	item.TotalCost = cost
+	item.Currency = price.Currency
 }
 
 // processPointsWithBuckets handles the case where we have time-series points to process.
