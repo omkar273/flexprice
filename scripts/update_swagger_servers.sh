@@ -20,9 +20,8 @@ python3 << 'PYEOF'
 import json
 import os
 
-script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in dir() else os.getcwd()
-repo_root = os.path.dirname(os.path.dirname(script_dir)) if os.path.basename(script_dir) == 'scripts' else os.getcwd()
-path = os.path.join(repo_root, "docs", "swagger", "swagger-3-0.json")
+# Script is run from repo root (see cd above)
+path = os.path.join(os.getcwd(), "docs", "swagger", "swagger-3-0.json")
 
 with open(path) as f:
     spec = json.load(f)
