@@ -1306,6 +1306,7 @@ func (s *BillingServiceSuite) TestSubscriptionLineItemPeriodScenarios() {
 	mar1 := time.Date(2026, time.March, 1, 0, 0, 0, 0, time.UTC)
 	apr1 := time.Date(2026, time.April, 1, 0, 0, 0, 0, time.UTC)
 	may1 := time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC)
+	jul1 := time.Date(2026, time.July, 1, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
 		name            string
@@ -1338,11 +1339,12 @@ func (s *BillingServiceSuite) TestSubscriptionLineItemPeriodScenarios() {
 					{"p_mo_arr", feb1, mar1},
 					{"p_mo_adv", mar1, apr1},
 				},
-				// Period 3: Mar 1 - Apr 1. Current arrear: monthly (Mar1-Apr1). Next advance: monthly (Apr1-May1), quarterly (Apr1-Jul1 clipped to window → Apr1-May1).
+				// Period 3: Mar 1 - Apr 1. Current arrear: monthly (Mar1-Apr1), quarterly (Jan1-Apr1, end Apr1 in (Mar1,Apr1]). Next advance: monthly (Apr1-May1), quarterly (Apr1-Jul1, natural period end).
 				{
 					{"p_mo_arr", mar1, apr1},
+					{"p_q_arr", jan1, apr1},
 					{"p_mo_adv", apr1, may1},
-					{"p_q_adv", apr1, may1},
+					{"p_q_adv", apr1, jul1},
 				},
 			},
 		},
@@ -1406,11 +1408,11 @@ func (s *BillingServiceSuite) TestSubscriptionLineItemPeriodScenarios() {
 					{"p_w_arr", time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC), time.Date(2026, 1, 22, 0, 0, 0, 0, time.UTC)},
 					{"p_w_adv", time.Date(2026, 1, 22, 0, 0, 0, 0, time.UTC), time.Date(2026, 1, 29, 0, 0, 0, 0, time.UTC)},
 				},
-				// Period 4: Jan 22 - Jan 29. Current arrear: (Jan22-Jan29). Next advance: weekly (Jan29-Feb5), monthly (Feb1-Mar1 clipped to Feb5).
+				// Period 4: Jan 22 - Jan 29. Current arrear: (Jan22-Jan29). Next advance: weekly (Jan29-Feb5), monthly (Feb1-Mar1, natural period end).
 				{
 					{"p_w_arr", time.Date(2026, 1, 22, 0, 0, 0, 0, time.UTC), time.Date(2026, 1, 29, 0, 0, 0, 0, time.UTC)},
 					{"p_w_adv", time.Date(2026, 1, 29, 0, 0, 0, 0, time.UTC), time.Date(2026, 2, 5, 0, 0, 0, 0, time.UTC)},
-					{"p_m_adv", feb1, time.Date(2026, 2, 5, 0, 0, 0, 0, time.UTC)},
+					{"p_m_adv", feb1, mar1},
 				},
 			},
 		},
@@ -1440,10 +1442,10 @@ func (s *BillingServiceSuite) TestSubscriptionLineItemPeriodScenarios() {
 				p := periods[0]
 				reqStart, err := s.service.PrepareSubscriptionInvoiceRequest(ctx, sub, p.Start, p.End, types.ReferencePointPeriodStart)
 				s.NoError(err)
-				// Period start = only advance for current period: monthly (Jan1-Feb1), quarterly (Jan1-Apr1 clipped to window → Jan1-Feb1)
+				// Period start = only advance for current period: monthly (Jan1-Feb1), quarterly (Jan1-Apr1, natural period end)
 				s.assertInvoiceRequestFixedLines(reqStart, []expectedLineForPeriodTests{
 					{"p_mo_adv", jan1, feb1},
-					{"p_q_adv", jan1, feb1},
+					{"p_q_adv", jan1, apr1},
 				})
 			}
 		})
