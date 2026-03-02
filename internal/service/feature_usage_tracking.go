@@ -2431,7 +2431,7 @@ func (s *featureUsageTrackingService) calculateCosts(ctx context.Context, data *
 				// that was active when the usage was recorded (important for cancelled/new subscriptions)
 				if price, hasPricing := data.Prices[item.PriceID]; hasPricing {
 					// Calculate cost based on meter type
-					if meter.HasBucketSize() {
+					if meter.IsBucketedMaxMeter() || meter.IsBucketedSumMeter() {
 						s.calculateBucketedCost(ctx, priceService, item, price, meter, data)
 					} else {
 						s.calculateRegularCost(ctx, priceService, item, meter, price, data)
@@ -2458,7 +2458,7 @@ type bucketedCostParams struct {
 
 // calculateBucketedCost calculates cost for bucketed max meters
 func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context, priceService PriceService, item *events.DetailedUsageAnalytic, price *price.Price, meter *meter.Meter, data *AnalyticsData) {
-	params := &bucketedCostParams{ctx, priceService, item, price, data, types.AggregationMax, meter.Aggregation.BucketSize}
+	params := &bucketedCostParams{ctx, priceService, item, price, data, meter.Aggregation.Type, meter.Aggregation.BucketSize}
 	lineItem := data.SubscriptionLineItems[item.SubLineItemID]
 	hasCommitment := lineItem != nil && lineItem.HasCommitment()
 	isWindowed := hasCommitment && lineItem.CommitmentWindowed
