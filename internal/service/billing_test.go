@@ -841,39 +841,41 @@ func (s *BillingServiceSuite) TestCalculateFixedCharges_MixedCadence() {
 	s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, sub, []*subscription.SubscriptionLineItem{liMonthly, liQuarterly}))
 	sub.LineItems = []*subscription.SubscriptionLineItem{liMonthly, liQuarterly}
 
-	// Included: invoice period Apr 1 - May 1. Quarter from Jan 1 ends Apr 1; Apr 1 is in [Apr 1, May 1) -> include quarterly with period Jan 1 - Apr 1
+	// Arrear rule: period end in (periodStart, periodEnd] (start exclusive, end inclusive).
+	// Excluded: invoice period Apr 1 - May 1. Quarter from Jan 1 ends Apr 1; Apr 1 is not in (Apr 1, May 1] -> no quarterly line
 	lineItems, total, err := s.service.CalculateFixedCharges(ctx, sub, apr1, may1)
 	s.NoError(err)
-	s.Require().Len(lineItems, 2, "expected 2 fixed line items (monthly + quarterly)")
+	s.Require().Len(lineItems, 1, "expected 1 fixed line item (monthly only; quarterly arrear excluded when period end equals invoice start)")
+	s.Equal(priceMonthly.ID, lo.FromPtr(lineItems[0].PriceID))
+	s.True(total.GreaterThanOrEqual(decimal.NewFromInt(0)) && total.LessThanOrEqual(decimal.NewFromInt(10)), "total should be 0–10 (monthly only, may be prorated)")
+
+	// Included: invoice period Mar 1 - Apr 1. Quarter end Apr 1 is in (Mar 1, Apr 1] -> include quarterly with period Jan 1 - Apr 1
+	lineItems2, total2, err2 := s.service.CalculateFixedCharges(ctx, sub, mar1, apr1)
+	s.NoError(err2)
+	s.Require().Len(lineItems2, 2, "expected 2 fixed line items (monthly + quarterly)")
 	var monthlyLine, quarterlyLine *dto.CreateInvoiceLineItemRequest
-	for i := range lineItems {
-		if lo.FromPtr(lineItems[i].PriceID) == priceMonthly.ID {
-			monthlyLine = &lineItems[i]
-		} else if lo.FromPtr(lineItems[i].PriceID) == priceQuarterly.ID {
-			quarterlyLine = &lineItems[i]
+	for i := range lineItems2 {
+		if lo.FromPtr(lineItems2[i].PriceID) == priceMonthly.ID {
+			monthlyLine = &lineItems2[i]
+		} else if lo.FromPtr(lineItems2[i].PriceID) == priceQuarterly.ID {
+			quarterlyLine = &lineItems2[i]
 		}
 	}
 	s.Require().NotNil(monthlyLine, "monthly line should be present")
 	s.Require().NotNil(quarterlyLine, "quarterly line should be present")
-	s.True((*monthlyLine.PeriodStart).Equal(apr1) && (*monthlyLine.PeriodEnd).Equal(may1), "monthly line should have period Apr 1 - May 1")
+	s.True((*monthlyLine.PeriodStart).Equal(mar1) && (*monthlyLine.PeriodEnd).Equal(apr1), "monthly line should have period Mar 1 - Apr 1")
 	s.True((*quarterlyLine.PeriodStart).Equal(jan1) && (*quarterlyLine.PeriodEnd).Equal(apr1), "quarterly line should have period Jan 1 - Apr 1")
 	s.True(quarterlyLine.Amount.Equal(decimal.NewFromInt(300)), "quarterly line should be full amount 300")
-	// Monthly line may be prorated by existing logic; total = monthly (possibly prorated) + 300
-	s.True(total.GreaterThanOrEqual(decimal.NewFromInt(300)), "total should be at least 300 (quarterly)")
-	s.True(total.LessThanOrEqual(decimal.NewFromInt(310)), "total should be at most 310 (full monthly + quarterly)")
-
-	// Excluded: invoice period Mar 1 - Apr 1. Quarter end Apr 1 is not in [Mar 1, Apr 1) (end exclusive) -> no quarterly line
-	lineItems2, total2, err2 := s.service.CalculateFixedCharges(ctx, sub, mar1, apr1)
-	s.NoError(err2)
-	s.Require().Len(lineItems2, 1, "expected 1 fixed line item (monthly only)")
-	s.Equal(priceMonthly.ID, lo.FromPtr(lineItems2[0].PriceID))
-	s.True(total2.Equal(decimal.NewFromInt(10)), "total = 10 (monthly only)")
+	s.True(total2.GreaterThanOrEqual(decimal.NewFromInt(300)), "total should be at least 300 (quarterly)")
+	s.True(total2.LessThanOrEqual(decimal.NewFromInt(310)), "total should be at most 310 (full monthly + quarterly)")
 }
 
 // scenario1DailyExpectedTotals is the expected fixed charge total for each of 12 daily invoices
-// advance at period start, arrear at period end; ProrationBehavior=None in test). Invoice i uses period [Jan i, Jan i+1).
-// Invoice 1: advance 1500 + arrear 200 (daily arrear period end Jan 2 included by current logic) = 1700.
-var scenario1DailyExpectedTotals = []int{1700, 300, 300, 300, 300, 300, 300, 800, 300, 300, 300, 300}
+// (advance [start, end), arrear (start, end]; ProrationBehavior=None). Invoice i uses period [Jan i, Jan i+1).
+// Invoice 1: advance 1500 + arrear 200 (daily arrear end Jan 2 in (Jan 1, Jan 2]) = 1700.
+// Invoice 7: advance 100 (daily) + arrear 200 (daily) + 300 (weekly arrear end Jan 8 in (Jan 7, Jan 8]) = 600.
+// Invoice 8: advance 300 (daily+weekly) + arrear 200 (daily only; weekly end Jan 8 excluded from (Jan 8, Jan 9]) = 500.
+var scenario1DailyExpectedTotals = []int{1700, 300, 300, 300, 300, 300, 600, 500, 300, 300, 300, 300}
 
 // scenario2MonthlyExpectedTotals is the expected fixed charge total for each of 12 monthly invoices (advance only; proration_behavior=none).
 var scenario2MonthlyExpectedTotals = []int{1200, 300, 300, 700, 300, 300, 700, 300, 300, 700, 300, 300}
