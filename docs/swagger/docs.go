@@ -146,7 +146,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.AddonFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonFilter"
                         }
                     }
                 ],
@@ -400,7 +400,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.AlertLogFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertLogFilter"
                         }
                     }
                 ],
@@ -959,7 +959,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.CouponFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponFilter"
                         }
                     }
                 ],
@@ -1861,7 +1861,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.CustomerFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CustomerFilter"
                         }
                     }
                 ],
@@ -2477,7 +2477,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.EntitlementFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementFilter"
                         }
                     }
                 ],
@@ -3376,7 +3376,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.FeatureFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureFilter"
                         }
                     }
                 ],
@@ -3599,7 +3599,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.GroupFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.GroupFilter"
                         }
                     }
                 ],
@@ -3862,7 +3862,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.InvoiceFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceFilter"
                         }
                     }
                 ],
@@ -4913,7 +4913,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.PlanFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PlanFilter"
                         }
                     }
                 ],
@@ -5527,7 +5527,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.PriceFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceFilter"
                         }
                     }
                 ],
@@ -5767,7 +5767,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.PriceUnitFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitFilter"
                         }
                     }
                 ],
@@ -6844,7 +6844,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.SubscriptionFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionFilter"
                         }
                     }
                 ],
@@ -9482,7 +9482,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.UserFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserFilter"
                         }
                     }
                 ],
@@ -9742,7 +9742,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.WalletFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletFilter"
                         }
                     }
                 ],
@@ -9794,7 +9794,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.WalletTransactionFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletTransactionFilter"
                         }
                     }
                 ],
@@ -10748,7 +10748,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.WorkflowExecutionFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WorkflowExecutionFilter"
                         }
                     }
                 ],
@@ -10794,7 +10794,7 @@ const docTemplate = `{
                     "description": "Filters contains custom filtering conditions",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "lookupKey": {
@@ -10809,7 +10809,7 @@ const docTemplate = `{
                     "description": "QueryFilter contains pagination and basic query parameters",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.QueryFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.QueryFilter"
                         }
                     ]
                 },
@@ -10817,14 +10817,14 @@ const docTemplate = `{
                     "description": "Sort specifies result ordering preferences",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "status": {
                     "description": "Status filters by costsheet status",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.Status"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                         }
                     ]
                 },
@@ -10836,7 +10836,7 @@ const docTemplate = `{
                     "description": "TimeRangeFilter allows filtering by time periods",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TimeRangeFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TimeRangeFilter"
                         }
                     ]
                 }
@@ -10871,7 +10871,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "discount_type": {
-                    "$ref": "#/definitions/types.CouponType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                 },
                 "discounted_amount": {
                     "type": "string"
@@ -10901,7 +10901,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -10952,7 +10952,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "Mandatory",
@@ -11011,7 +11011,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Metadata"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -11100,7 +11100,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "addon_status": {
-                    "$ref": "#/definitions/types.AddonStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonStatus"
                 },
                 "cancellation_reason": {
                     "type": "string"
@@ -11121,7 +11121,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.AddonAssociationEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonAssociationEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -11137,7 +11137,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription": {
                     "$ref": "#/definitions/dto.SubscriptionResponse"
@@ -11195,13 +11195,13 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -11259,7 +11259,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod"
                 }
             }
         },
@@ -11284,13 +11284,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alert_info": {
-                    "$ref": "#/definitions/types.AlertInfo"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertInfo"
                 },
                 "alert_status": {
-                    "$ref": "#/definitions/types.AlertState"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertState"
                 },
                 "alert_type": {
-                    "$ref": "#/definitions/types.AlertType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertType"
                 },
                 "created_at": {
                     "type": "string"
@@ -11313,7 +11313,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.AlertEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -11358,7 +11358,7 @@ const docTemplate = `{
                     "description": "billing_cadence is the billing cadence",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCadence"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                         }
                     ]
                 },
@@ -11366,7 +11366,7 @@ const docTemplate = `{
                     "description": "billing_period is the billing period",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -11428,7 +11428,7 @@ const docTemplate = `{
                     "description": "schedule_type is the type of schedule to cancel (required if schedule_id is not provided)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionScheduleChangeType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType"
                         }
                     ]
                 },
@@ -11450,7 +11450,7 @@ const docTemplate = `{
                     "description": "status is the new status (should be \"cancelled\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduleStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleStatus"
                         }
                     ]
                 }
@@ -11466,7 +11466,7 @@ const docTemplate = `{
                     "description": "CancelImmediatelyInvoicePolicy controls whether to generate a final invoice on immediate cancellation. Defaults to skip.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CancelImmediatelyInvoicePolicy"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CancelImmediatelyInvoicePolicy"
                         }
                     ]
                 },
@@ -11474,7 +11474,7 @@ const docTemplate = `{
                     "description": "CancellationType determines when the cancellation takes effect",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CancellationType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CancellationType"
                         }
                     ]
                 },
@@ -11482,7 +11482,7 @@ const docTemplate = `{
                     "description": "ProrationBehavior controls how proration is handled.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ProrationBehavior"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                         }
                     ]
                 },
@@ -11496,7 +11496,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "cancellation_type": {
-                    "$ref": "#/definitions/types.CancellationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CancellationType"
                 },
                 "effective_date": {
                     "type": "string"
@@ -11526,7 +11526,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 },
                 "subscription_id": {
                     "description": "Basic cancellation info",
@@ -11685,7 +11685,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -11727,7 +11727,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "discount_type": {
-                    "$ref": "#/definitions/types.CouponType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                 },
                 "discounted_amount": {
                     "type": "string"
@@ -11757,7 +11757,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -11808,7 +11808,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "Mandatory",
@@ -11840,7 +11840,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "cadence": {
-                    "$ref": "#/definitions/types.CouponCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence"
                 },
                 "created_at": {
                     "type": "string"
@@ -11886,7 +11886,7 @@ const docTemplate = `{
                     "additionalProperties": true
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -11895,7 +11895,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.CouponType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -11922,7 +11922,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.SecretType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SecretType"
                 }
             }
         },
@@ -11959,7 +11959,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 }
             }
         },
@@ -12005,13 +12005,13 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -12129,7 +12129,7 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CouponCadence"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence"
                         }
                     ]
                 },
@@ -12171,7 +12171,7 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CouponType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                         }
                     ]
                 }
@@ -12187,7 +12187,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "cadence": {
-                    "$ref": "#/definitions/types.CreditGrantCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantCadence"
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
@@ -12203,10 +12203,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expiration_duration_unit": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryDurationUnit"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit"
                 },
                 "expiration_type": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType"
                 },
                 "metadata": {
                     "$ref": "#/definitions/types.Metadata"
@@ -12215,7 +12215,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "period": {
-                    "$ref": "#/definitions/types.CreditGrantPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantPeriod"
                 },
                 "period_count": {
                     "type": "integer"
@@ -12227,7 +12227,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "scope": {
-                    "$ref": "#/definitions/types.CreditGrantScope"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantScope"
                 },
                 "start_date": {
                     "type": "string"
@@ -12317,7 +12317,7 @@ const docTemplate = `{
                     "description": "reason specifies the reason for creating this credit note (duplicate, fraudulent, order_change, product_unsatisfactory)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CreditNoteReason"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteReason"
                         }
                     ]
                 }
@@ -12420,13 +12420,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntitlementEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType"
                 },
                 "feature_id": {
                     "type": "string"
                 },
                 "feature_type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "is_enabled": {
                     "type": "boolean"
@@ -12450,7 +12450,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod"
                 }
             }
         },
@@ -12468,7 +12468,7 @@ const docTemplate = `{
                     "maxLength": 255
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.IntegrationEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.IntegrationEntityType"
                 },
                 "metadata": {
                     "type": "object",
@@ -12507,7 +12507,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "description": {
                     "type": "string"
@@ -12528,7 +12528,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "unit_plural": {
                     "type": "string"
@@ -12575,7 +12575,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "provider": {
-                    "$ref": "#/definitions/types.SecretProvider"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SecretProvider"
                 }
             }
         },
@@ -12594,7 +12594,7 @@ const docTemplate = `{
                     "description": "commitment_info contains details about any commitment applied to this line item",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CommitmentInfo"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo"
                         }
                     ]
                 },
@@ -12702,7 +12702,7 @@ const docTemplate = `{
                     "description": "billing_reason indicates why this invoice was created (subscription_cycle, manual, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceBillingReason"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceBillingReason"
                         }
                     ]
                 },
@@ -12752,7 +12752,7 @@ const docTemplate = `{
                     "description": "invoice_status represents the current status of the invoice (draft, finalized, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus"
                         }
                     ]
                 },
@@ -12760,7 +12760,7 @@ const docTemplate = `{
                     "description": "invoice_type indicates the type of invoice (subscription, one_time, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType"
                         }
                     ]
                 },
@@ -12790,7 +12790,7 @@ const docTemplate = `{
                     "description": "payment_status represents the payment status of the invoice (unpaid, paid, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                         }
                     ]
                 },
@@ -12868,7 +12868,7 @@ const docTemplate = `{
                     "example": "API Usage Meter"
                 },
                 "reset_usage": {
-                    "$ref": "#/definitions/types.ResetUsage"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage"
                 }
             }
         },
@@ -12895,7 +12895,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "destination_type": {
-                    "$ref": "#/definitions/types.PaymentDestinationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentDestinationType"
                 },
                 "idempotency_key": {
                     "type": "string"
@@ -12904,13 +12904,13 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Metadata"
                 },
                 "payment_gateway": {
-                    "$ref": "#/definitions/types.PaymentGatewayType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentGatewayType"
                 },
                 "payment_method_id": {
                     "type": "string"
                 },
                 "payment_method_type": {
-                    "$ref": "#/definitions/types.PaymentMethodType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentMethodType"
                 },
                 "process_payment": {
                     "type": "boolean",
@@ -12966,13 +12966,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "type": "integer",
@@ -12994,7 +12994,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.PriceEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType"
                 },
                 "filter_values": {
                     "type": "object",
@@ -13010,7 +13010,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "lookup_key": {
                     "type": "string"
@@ -13032,13 +13032,13 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.PriceUnitConfig"
                 },
                 "price_unit_type": {
-                    "$ref": "#/definitions/types.PriceUnitType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType"
                 },
                 "start_date": {
                     "type": "string"
                 },
                 "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                 },
                 "tiers": {
                     "type": "array",
@@ -13053,7 +13053,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 }
             }
         },
@@ -13140,7 +13140,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "symbol": {
                     "type": "string"
@@ -13172,7 +13172,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.ScheduledTaskEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType"
                 },
                 "interval": {
                     "description": "Note: \"custom\" is excluded from API (internal testing only)",
@@ -13182,12 +13182,12 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduledTaskInterval"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval"
                         }
                     ]
                 },
                 "job_config": {
-                    "$ref": "#/definitions/types.S3JobConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.S3JobConfig"
                 }
             }
         },
@@ -13199,7 +13199,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "commitment_duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "commitment_overage_factor": {
                     "type": "number"
@@ -13211,7 +13211,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "commitment_type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 },
                 "commitment_windowed": {
                     "type": "boolean"
@@ -13268,18 +13268,18 @@ const docTemplate = `{
                     }
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_cycle": {
                     "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCycle"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle"
                         }
                     ]
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "type": "integer",
@@ -13289,7 +13289,7 @@ const docTemplate = `{
                     "description": "collection_method determines how invoices are collected\n\"default_incomplete\" - subscription waits for payment confirmation before activation\n\"send_invoice\" - subscription activates immediately, invoice is sent for payment",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CollectionMethod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CollectionMethod"
                         }
                     ]
                 },
@@ -13301,7 +13301,7 @@ const docTemplate = `{
                     "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on MONTHLY billing)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -13347,7 +13347,7 @@ const docTemplate = `{
                     "description": "invoice_billing determines which customer should receive invoices for a subscription\n\"invoice_to_parent\" - Invoices are sent to the parent customer\n\"invoice_to_self\" - Invoices are sent to the subscription's customer",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceBilling"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceBilling"
                         }
                     ]
                 },
@@ -13409,7 +13409,7 @@ const docTemplate = `{
                     "description": "Payment behavior configuration",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentBehavior"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentBehavior"
                         }
                     ]
                 },
@@ -13417,7 +13417,7 @@ const docTemplate = `{
                     "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentTerms"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms"
                         }
                     ]
                 },
@@ -13435,7 +13435,7 @@ const docTemplate = `{
                     "description": "ProrationBehavior controls how proration is handled.\nIf not set, the default value is none. Possible values are create_prorations and none.\ncreate_prorations means the proration will be calculated and applied.\nnone means the proration will not be calculated.\nThis is IGNORED when the billing cycle is anniversary.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ProrationBehavior"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                         }
                     ]
                 },
@@ -13446,7 +13446,7 @@ const docTemplate = `{
                     "description": "SubscriptionStatus determines the initial status of the subscription\nIf set to \"draft\", the subscription will be created as a draft (skips invoice creation and payment processing)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                         }
                     ]
                 },
@@ -13475,13 +13475,13 @@ const docTemplate = `{
             ],
             "properties": {
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntityType"
                 },
                 "file_name": {
                     "type": "string"
                 },
                 "file_type": {
-                    "$ref": "#/definitions/types.FileType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FileType"
                 },
                 "file_url": {
                     "type": "string"
@@ -13491,7 +13491,7 @@ const docTemplate = `{
                     "additionalProperties": true
                 },
                 "task_type": {
-                    "$ref": "#/definitions/types.TaskType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaskType"
                 }
             }
         },
@@ -13511,7 +13511,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.TaxRateEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType"
                 },
                 "external_customer_id": {
                     "type": "string"
@@ -13568,7 +13568,7 @@ const docTemplate = `{
                     "description": "scope defines where this tax rate applies",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TaxRateScope"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateScope"
                         }
                     ]
                 },
@@ -13576,7 +13576,7 @@ const docTemplate = `{
                     "description": "tax_rate_type determines how the tax is calculated (\"percentage\" or \"fixed\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TaxRateType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateType"
                         }
                     ]
                 }
@@ -13601,7 +13601,7 @@ const docTemplate = `{
                     "description": "Must be \"service_account\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.UserType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
                         }
                     ]
                 }
@@ -13617,7 +13617,7 @@ const docTemplate = `{
                     "description": "alert_settings is the alert settings for the wallet (optional)\nIf not provided, tenant level alert settings will be used",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.AlertSettings"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                         }
                     ]
                 },
@@ -13625,7 +13625,7 @@ const docTemplate = `{
                     "description": "auto top-up object",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.AutoTopup"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup"
                         }
                     ]
                 },
@@ -13672,7 +13672,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_type": {
-                    "$ref": "#/definitions/types.WalletType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletType"
                 }
             }
         },
@@ -13680,10 +13680,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "application_reason": {
-                    "$ref": "#/definitions/types.CreditGrantApplicationReason"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantApplicationReason"
                 },
                 "application_status": {
-                    "$ref": "#/definitions/types.ApplicationStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ApplicationStatus"
                 },
                 "applied_at": {
                     "type": "string"
@@ -13728,13 +13728,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
                 },
                 "subscription_status_at_application": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -13751,7 +13751,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "cadence": {
-                    "$ref": "#/definitions/types.CreditGrantCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantCadence"
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
@@ -13779,10 +13779,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expiration_duration_unit": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryDurationUnit"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit"
                 },
                 "expiration_type": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType"
                 },
                 "id": {
                     "type": "string"
@@ -13794,7 +13794,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "period": {
-                    "$ref": "#/definitions/types.CreditGrantPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantPeriod"
                 },
                 "period_count": {
                     "type": "integer"
@@ -13806,13 +13806,13 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "scope": {
-                    "$ref": "#/definitions/types.CreditGrantScope"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantScope"
                 },
                 "start_date": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -13849,7 +13849,7 @@ const docTemplate = `{
                     "description": "credit_note_status represents the current status of the credit note (e.g., draft, finalized, voided)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CreditNoteStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteStatus"
                         }
                     ]
                 },
@@ -13857,7 +13857,7 @@ const docTemplate = `{
                     "description": "credit_note_type indicates the type of credit note (refund, adjustment)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CreditNoteType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteType"
                         }
                     ]
                 },
@@ -13928,7 +13928,7 @@ const docTemplate = `{
                     "description": "reason specifies the reason for creating this credit note (duplicate, fraudulent, order_change, product_unsatisfactory)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CreditNoteReason"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteReason"
                         }
                     ]
                 },
@@ -13936,12 +13936,12 @@ const docTemplate = `{
                     "description": "refund_status represents the status of any refund associated with this credit note",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                         }
                     ]
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription": {
                     "description": "subscription contains the associated subscription information if applicable",
@@ -14066,7 +14066,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/errors.ErrorResponse"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus"
                 }
             }
         },
@@ -14159,7 +14159,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -14185,7 +14185,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 },
                 "period": {
                     "$ref": "#/definitions/dto.BillingPeriodInfo"
@@ -14199,7 +14199,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.CustomerLookupResult"
                 },
                 "failure_point": {
-                    "$ref": "#/definitions/types.FailurePoint"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FailurePoint"
                 },
                 "meter_matching": {
                     "$ref": "#/definitions/dto.MeterMatchingResult"
@@ -14270,7 +14270,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntitlementEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -14282,7 +14282,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "feature_type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "id": {
                     "type": "string"
@@ -14310,7 +14310,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -14325,7 +14325,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod"
                 }
             }
         },
@@ -14360,7 +14360,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 }
             }
         },
@@ -14390,7 +14390,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.IntegrationEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.IntegrationEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -14405,7 +14405,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -14483,7 +14483,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "created_at": {
                     "type": "string"
@@ -14516,13 +14516,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "unit_plural": {
                     "type": "string"
@@ -14707,7 +14707,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.EventProcessingStatusType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EventProcessingStatusType"
                 }
             }
         },
@@ -14904,7 +14904,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "window_size": {
-                    "$ref": "#/definitions/types.WindowSize"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                 }
             }
         },
@@ -14946,7 +14946,7 @@ const docTemplate = `{
                     "description": "Optional, only used for MAX aggregation with windowing",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.WindowSize"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                         }
                     ],
                     "example": "HOUR"
@@ -14981,7 +14981,7 @@ const docTemplate = `{
                     "example": "2024-11-09T00:00:00Z"
                 },
                 "window_size": {
-                    "$ref": "#/definitions/types.WindowSize"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                 }
             }
         },
@@ -15061,7 +15061,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "aggregation_type": {
-                    "$ref": "#/definitions/types.AggregationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType"
                 },
                 "billing_anchor": {
                     "description": "BillingAnchor enables custom monthly billing periods for usage aggregation.\n\nWhen to use:\n- WindowSize = \"MONTH\" AND you need custom monthly periods (not calendar months)\n- Subscription billing that doesn't align with calendar months\n- Example: Customer signed up on 15th, so billing periods are 15th to 15th\n\nWhen NOT to use:\n- WindowSize != \"MONTH\" (ignored for DAY, HOUR, WEEK, etc.)\n- Standard calendar-based billing (1st to 1st of each month)\n\nExample values:\n- \"2024-03-05T14:30:45.123456789Z\" (5th of each month at 2:30:45 PM)\n- \"2024-01-15T00:00:00Z\" (15th of each month at midnight)\n- \"2024-02-29T12:00:00Z\" (29th of each month at noon - handles leap years)",
@@ -15072,7 +15072,7 @@ const docTemplate = `{
                     "description": "Optional, only used for MAX aggregation with windowing",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.WindowSize"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                         }
                     ],
                     "example": "HOUR"
@@ -15119,7 +15119,7 @@ const docTemplate = `{
                     "example": "2024-03-13T00:00:00Z"
                 },
                 "window_size": {
-                    "$ref": "#/definitions/types.WindowSize"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                 }
             }
         },
@@ -15136,7 +15136,7 @@ const docTemplate = `{
                     }
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AggregationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType"
                 },
                 "value": {
                     "type": "number"
@@ -15322,7 +15322,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "commitment_info": {
-                    "$ref": "#/definitions/types.CommitmentInfo"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo"
                 },
                 "created_at": {
                     "type": "string"
@@ -15403,7 +15403,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -15561,7 +15561,7 @@ const docTemplate = `{
                     "description": "invoice_status represents the current status of the invoice - values include draft, open, paid, void, etc.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus"
                         }
                     ]
                 },
@@ -15569,7 +15569,7 @@ const docTemplate = `{
                     "description": "invoice_type indicates the type of invoice - whether this is a subscription invoice, one-time charge, or other billing type",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType"
                         }
                     ]
                 },
@@ -15600,7 +15600,7 @@ const docTemplate = `{
                     "description": "payment_status indicates whether the invoice has been paid, is pending, or failed",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                         }
                     ]
                 },
@@ -15617,7 +15617,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription": {
                     "description": "subscription contains the associated subscription information if requested",
@@ -15688,7 +15688,7 @@ const docTemplate = `{
                     "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on MONTHLY billing)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -15700,7 +15700,7 @@ const docTemplate = `{
                     "description": "CommitmentType specifies whether commitment is based on amount or quantity",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CommitmentType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                         }
                     ]
                 },
@@ -15739,7 +15739,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15753,7 +15753,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15767,7 +15767,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15781,7 +15781,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15795,7 +15795,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15809,7 +15809,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15824,7 +15824,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15838,7 +15838,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15852,7 +15852,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15866,7 +15866,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15880,7 +15880,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15894,7 +15894,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15908,7 +15908,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15922,7 +15922,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15936,7 +15936,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15950,7 +15950,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15964,7 +15964,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -15995,7 +15995,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -16009,7 +16009,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -16023,7 +16023,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -16037,7 +16037,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -16051,7 +16051,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -16065,7 +16065,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -16142,7 +16142,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus"
                 }
             }
         },
@@ -16175,7 +16175,7 @@ const docTemplate = `{
                     "example": "API Usage Meter"
                 },
                 "reset_usage": {
-                    "$ref": "#/definitions/types.ResetUsage"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage"
                 },
                 "status": {
                     "type": "string",
@@ -16226,7 +16226,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "price_id": {
                     "description": "PriceID references the plan price to override",
@@ -16251,7 +16251,7 @@ const docTemplate = `{
                     "description": "TierMode determines how to calculate the price for a given quantity",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingTier"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                         }
                     ]
                 },
@@ -16302,7 +16302,7 @@ const docTemplate = `{
                     "description": "Mode for pausing the subscription\n@Description Determines when the pause takes effect. \"immediate\" pauses right away, \"scheduled\" pauses at a specified time\n@Enum immediate,scheduled",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PauseMode"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode"
                         }
                     ]
                 },
@@ -16377,7 +16377,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "destination_type": {
-                    "$ref": "#/definitions/types.PaymentDestinationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentDestinationType"
                 },
                 "error_message": {
                     "type": "string"
@@ -16413,10 +16413,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_method_type": {
-                    "$ref": "#/definitions/types.PaymentMethodType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentMethodType"
                 },
                 "payment_status": {
-                    "$ref": "#/definitions/types.PaymentStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                 },
                 "payment_url": {
                     "type": "string"
@@ -16494,7 +16494,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -16541,7 +16541,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus"
                 }
             }
         },
@@ -16556,13 +16556,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "BillingPeriodCount is the count of the billing period ex 1, 3, 6, 12",
@@ -16611,7 +16611,7 @@ const docTemplate = `{
                     "description": "EntityType holds the value of the \"entity_type\" field.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PriceEntityType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType"
                         }
                     ]
                 },
@@ -16631,7 +16631,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "lookup_key": {
                     "description": "LookupKey used for looking up the price in the database",
@@ -16682,7 +16682,7 @@ const docTemplate = `{
                     "description": "PriceUnitType is the type of the price unit (FIAT, CUSTOM)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PriceUnitType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType"
                         }
                     ]
                 },
@@ -16694,13 +16694,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                 },
                 "tiers": {
                     "type": "array",
@@ -16716,7 +16716,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -16777,7 +16777,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "symbol": {
                     "type": "string"
@@ -16907,7 +16907,7 @@ const docTemplate = `{
                     "description": "Mode for resuming the subscription\n@Description Determines how the subscription should be resumed\n@Enum immediate,scheduled",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ResumeMode"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode"
                         }
                     ]
                 }
@@ -16926,7 +16926,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.ScheduledTaskEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -16942,12 +16942,12 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduledTaskInterval"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval"
                         }
                     ]
                 },
                 "job_config": {
-                    "$ref": "#/definitions/types.S3JobConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.S3JobConfig"
                 },
                 "status": {
                     "type": "string"
@@ -16982,7 +16982,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "provider": {
-                    "$ref": "#/definitions/types.SecretProvider"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SecretProvider"
                 },
                 "roles": {
                     "description": "RBAC roles",
@@ -16992,10 +16992,10 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.SecretType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SecretType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -17004,7 +17004,7 @@ const docTemplate = `{
                     "description": "\"user\" or \"service_account\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.UserType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
                         }
                     ]
                 }
@@ -17043,7 +17043,7 @@ const docTemplate = `{
                     "description": "change_type indicates whether this was an upgrade, downgrade, or lateral change",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionChangeType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionChangeType"
                         }
                     ]
                 },
@@ -17119,7 +17119,7 @@ const docTemplate = `{
                     "description": "change_type indicates whether this is an upgrade, downgrade, or lateral change",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionChangeType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionChangeType"
                         }
                     ]
                 },
@@ -17202,7 +17202,7 @@ const docTemplate = `{
                     "description": "billing_cadence is the billing cadence for the new subscription",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCadence"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                         }
                     ]
                 },
@@ -17210,7 +17210,7 @@ const docTemplate = `{
                     "description": "billing_cycle is the billing cycle for the new subscription",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCycle"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle"
                         }
                     ]
                 },
@@ -17218,7 +17218,7 @@ const docTemplate = `{
                     "description": "billing_period is the billing period for the new subscription",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -17231,7 +17231,7 @@ const docTemplate = `{
                     "description": "change_at determines when the change should take effect (optional)\nIf not provided or null: change executes immediately\nIf \"immediate\": change executes immediately (explicit)\nIf \"period_end\": change is scheduled for the end of the current billing period",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduleType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleType"
                         }
                     ]
                 },
@@ -17246,7 +17246,7 @@ const docTemplate = `{
                     "description": "proration_behavior controls how proration is handled for the change\nOptions: create_prorations, none",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ProrationBehavior"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                         }
                     ]
                 },
@@ -17286,7 +17286,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus"
                 }
             }
         },
@@ -17294,7 +17294,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "from price at create; default 1",
@@ -17305,7 +17305,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "commitment_duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "commitment_overage_factor": {
                     "type": "string"
@@ -17317,7 +17317,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "commitment_type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 },
                 "commitment_windowed": {
                     "type": "boolean"
@@ -17344,7 +17344,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.SubscriptionLineItemEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -17353,7 +17353,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "metadata": {
                     "type": "object",
@@ -17377,7 +17377,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "price_type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 },
                 "price_unit": {
                     "type": "string"
@@ -17392,7 +17392,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -17448,28 +17448,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pause_mode": {
-                    "$ref": "#/definitions/types.PauseMode"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode"
                 },
                 "pause_start": {
                     "description": "PauseStart is when the pause actually started",
                     "type": "string"
                 },
                 "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus"
                 },
                 "reason": {
                     "description": "Reason is the reason for pausing",
                     "type": "string"
                 },
                 "resume_mode": {
-                    "$ref": "#/definitions/types.ResumeMode"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode"
                 },
                 "resumed_at": {
                     "description": "ResumedAt is when the pause was actually ended (if manually resumed)",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "SubscriptionID is the identifier for the subscription",
@@ -17564,7 +17564,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "SubscriptionID is the identifier for the subscription",
@@ -17596,13 +17596,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "type": "integer"
@@ -17626,7 +17626,7 @@ const docTemplate = `{
                     }
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "lookup_key": {
                     "type": "string"
@@ -17647,13 +17647,13 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.PriceUnitConfig"
                 },
                 "price_unit_type": {
-                    "$ref": "#/definitions/types.PriceUnitType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType"
                 },
                 "start_date": {
                     "type": "string"
                 },
                 "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                 },
                 "tiers": {
                     "type": "array",
@@ -17668,7 +17668,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 }
             }
         },
@@ -17684,18 +17684,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_cycle": {
                     "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCycle"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle"
                         }
                     ]
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "BillingPeriodCount is the total number units of the billing period.",
@@ -17726,7 +17726,7 @@ const docTemplate = `{
                     "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on a MONTHLY subscription)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -17825,7 +17825,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus"
                 },
                 "pauses": {
                     "type": "array",
@@ -17841,7 +17841,7 @@ const docTemplate = `{
                     "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentTerms"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms"
                         }
                     ]
                 },
@@ -17860,17 +17860,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "proration_behavior": {
-                    "$ref": "#/definitions/types.ProrationBehavior"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                 },
                 "start_date": {
                     "description": "StartDate is the start date of the subscription",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_status": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -17907,18 +17907,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_cycle": {
                     "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCycle"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle"
                         }
                     ]
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "BillingPeriodCount is the total number units of the billing period.",
@@ -17949,7 +17949,7 @@ const docTemplate = `{
                     "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on a MONTHLY subscription)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -18046,7 +18046,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus"
                 },
                 "pauses": {
                     "description": "Pauses are included when subscription has pause status",
@@ -18063,7 +18063,7 @@ const docTemplate = `{
                     "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentTerms"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms"
                         }
                     ]
                 },
@@ -18087,17 +18087,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "proration_behavior": {
-                    "$ref": "#/definitions/types.ProrationBehavior"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                 },
                 "start_date": {
                     "description": "StartDate is the start date of the subscription",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_status": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -18171,7 +18171,7 @@ const docTemplate = `{
                     "description": "schedule_type is the type of schedule (plan_change, addon_change, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionScheduleChangeType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType"
                         }
                     ]
                 },
@@ -18183,7 +18183,7 @@ const docTemplate = `{
                     "description": "status is the current status of the schedule",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduleStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleStatus"
                         }
                     ]
                 },
@@ -18232,7 +18232,7 @@ const docTemplate = `{
                     "description": "status of the subscription",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                         }
                     ]
                 }
@@ -18272,6 +18272,10 @@ const docTemplate = `{
                 },
                 "quantity": {
                     "type": "number"
+                },
+                "subscription_line_item_id": {
+                    "description": "For feature_usage: direct match by sub_line_item_id",
+                    "type": "string"
                 }
             }
         },
@@ -18296,7 +18300,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -18314,7 +18318,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "file_type": {
-                    "$ref": "#/definitions/types.FileType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FileType"
                 },
                 "file_url": {
                     "type": "string"
@@ -18336,16 +18340,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "successful_records": {
                     "type": "integer"
                 },
                 "task_status": {
-                    "$ref": "#/definitions/types.TaskStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaskStatus"
                 },
                 "task_type": {
-                    "$ref": "#/definitions/types.TaskType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaskType"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -18383,7 +18387,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.TaxRateEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -18401,7 +18405,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tax_amount": {
                     "type": "string"
@@ -18454,7 +18458,7 @@ const docTemplate = `{
                     "description": "Type of entity this tax rate applies to",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TaxRateEntityType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType"
                         }
                     ]
                 },
@@ -18478,7 +18482,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tax_rate": {
                     "$ref": "#/definitions/dto.TaxRateResponse"
@@ -18580,16 +18584,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "scope": {
-                    "$ref": "#/definitions/types.TaxRateScope"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateScope"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tax_rate_status": {
-                    "$ref": "#/definitions/types.TaxRateStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateStatus"
                 },
                 "tax_rate_type": {
-                    "$ref": "#/definitions/types.TaxRateType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateType"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -18698,7 +18702,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "transaction_reason": {
-                    "$ref": "#/definitions/types.TransactionReason"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason"
                 }
             }
         },
@@ -18916,7 +18920,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod"
                 }
             }
         },
@@ -18935,7 +18939,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "description": {
                     "type": "string"
@@ -19023,7 +19027,7 @@ const docTemplate = `{
                     "description": "payment_status is the new payment status to set for the invoice (paid, unpaid, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                         }
                     ]
                 }
@@ -19057,7 +19061,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "description": {
                     "type": "string"
@@ -19097,7 +19101,7 @@ const docTemplate = `{
                     "description": "TierMode determines how to calculate the price for a given quantity",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingTier"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                         }
                     ]
                 },
@@ -19148,14 +19152,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "commitment_amount": {
                     "description": "Commitment fields",
                     "type": "number"
                 },
                 "commitment_duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "commitment_overage_factor": {
                     "type": "number"
@@ -19167,7 +19171,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "commitment_type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 },
                 "commitment_windowed": {
                     "type": "boolean"
@@ -19187,7 +19191,7 @@ const docTemplate = `{
                     "description": "TierMode determines how to calculate the price for a given quantity",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingTier"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                         }
                     ]
                 },
@@ -19222,7 +19226,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 }
             }
         },
@@ -19233,7 +19237,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "task_status": {
-                    "$ref": "#/definitions/types.TaskStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaskStatus"
                 }
             }
         },
@@ -19263,7 +19267,7 @@ const docTemplate = `{
                     "description": "tax_rate_type determines how the tax is calculated (\"percentage\" or \"fixed\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TaxRateStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateStatus"
                         }
                     ]
                 }
@@ -19287,13 +19291,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "auto_topup": {
-                    "$ref": "#/definitions/types.AutoTopup"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup"
                 },
                 "config": {
-                    "$ref": "#/definitions/types.WalletConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig"
                 },
                 "description": {
                     "type": "string"
@@ -19321,10 +19325,10 @@ const docTemplate = `{
                     ]
                 },
                 "aggregation_type": {
-                    "$ref": "#/definitions/types.AggregationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType"
                 },
                 "commitment_info": {
-                    "$ref": "#/definitions/types.CommitmentInfo"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo"
                 },
                 "currency": {
                     "type": "string"
@@ -19440,7 +19444,7 @@ const docTemplate = `{
                     "description": "Window size for bucketed meters (only set if meter is bucketed)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.WindowSize"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                         }
                     ]
                 }
@@ -19533,7 +19537,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.TenantResponse"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.UserType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
                 }
             }
         },
@@ -19541,13 +19545,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "alert_state": {
-                    "$ref": "#/definitions/types.AlertState"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertState"
                 },
                 "auto_topup": {
-                    "$ref": "#/definitions/types.AutoTopup"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup"
                 },
                 "balance": {
                     "type": "string"
@@ -19556,7 +19560,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "config": {
-                    "$ref": "#/definitions/types.WalletConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig"
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
@@ -19572,7 +19576,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "credits_available_breakdown": {
-                    "$ref": "#/definitions/types.CreditBreakdown"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditBreakdown"
                 },
                 "currency": {
                     "type": "string"
@@ -19605,7 +19609,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -19624,10 +19628,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_status": {
-                    "$ref": "#/definitions/types.WalletStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus"
                 },
                 "wallet_type": {
-                    "$ref": "#/definitions/types.WalletType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletType"
                 }
             }
         },
@@ -19635,19 +19639,19 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "alert_state": {
-                    "$ref": "#/definitions/types.AlertState"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertState"
                 },
                 "auto_topup": {
-                    "$ref": "#/definitions/types.AutoTopup"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup"
                 },
                 "balance": {
                     "type": "string"
                 },
                 "config": {
-                    "$ref": "#/definitions/types.WalletConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig"
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
@@ -19663,7 +19667,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "credits_available_breakdown": {
-                    "$ref": "#/definitions/types.CreditBreakdown"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditBreakdown"
                 },
                 "currency": {
                     "type": "string"
@@ -19687,7 +19691,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -19703,10 +19707,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_status": {
-                    "$ref": "#/definitions/types.WalletStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus"
                 },
                 "wallet_type": {
-                    "$ref": "#/definitions/types.WalletType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletType"
                 }
             }
         },
@@ -19775,10 +19779,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "reference_type": {
-                    "$ref": "#/definitions/types.WalletTxReferenceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletTxReferenceType"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -19788,13 +19792,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "transaction_reason": {
-                    "$ref": "#/definitions/types.TransactionReason"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason"
                 },
                 "transaction_status": {
-                    "$ref": "#/definitions/types.TransactionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionStatus"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.TransactionType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -19904,13 +19908,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -19927,7 +19931,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "cadence": {
-                    "$ref": "#/definitions/types.CouponCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence"
                 },
                 "created_at": {
                     "type": "string"
@@ -19973,7 +19977,7 @@ const docTemplate = `{
                     "additionalProperties": true
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -19982,7 +19986,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.CouponType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -20057,7 +20061,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20074,7 +20078,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "created_at": {
                     "type": "string"
@@ -20104,13 +20108,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "unit_plural": {
                     "type": "string"
@@ -20157,7 +20161,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20169,6 +20173,2387 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "github_com_flexprice_flexprice_internal_types.AddonAssociationEntityType": {
+            "type": "string",
+            "enum": [
+                "subscription",
+                "plan",
+                "addon"
+            ],
+            "x-enum-varnames": [
+                "AddonAssociationEntityTypeSubscription",
+                "AddonAssociationEntityTypePlan",
+                "AddonAssociationEntityTypeAddon"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.AddonFilter": {
+            "type": "object",
+            "properties": {
+                "addon_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "addon_type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "lookup_keys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.AddonStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "cancelled",
+                "paused"
+            ],
+            "x-enum-varnames": [
+                "AddonStatusActive",
+                "AddonStatusCancelled",
+                "AddonStatusPaused"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.AddonType": {
+            "type": "string",
+            "enum": [
+                "onetime",
+                "multiple_instance"
+            ],
+            "x-enum-varnames": [
+                "AddonTypeOnetime",
+                "AddonTypeMultipleInstance"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.AggregationType": {
+            "type": "string",
+            "enum": [
+                "COUNT",
+                "SUM",
+                "AVG",
+                "COUNT_UNIQUE",
+                "LATEST",
+                "SUM_WITH_MULTIPLIER",
+                "MAX",
+                "WEIGHTED_SUM"
+            ],
+            "x-enum-comments": {
+                "AggregationSumWithMultiplier": "Sum with a multiplier - [sum(value) * multiplier]"
+            },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "Sum with a multiplier - [sum(value) * multiplier]",
+                "",
+                ""
+            ],
+            "x-enum-varnames": [
+                "AggregationCount",
+                "AggregationSum",
+                "AggregationAvg",
+                "AggregationCountUnique",
+                "AggregationLatest",
+                "AggregationSumWithMultiplier",
+                "AggregationMax",
+                "AggregationWeightedSum"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.AlertCondition": {
+            "type": "string",
+            "enum": [
+                "above",
+                "below"
+            ],
+            "x-enum-varnames": [
+                "AlertConditionAbove",
+                "AlertConditionBelow"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.AlertEntityType": {
+            "type": "string",
+            "enum": [
+                "wallet",
+                "feature"
+            ],
+            "x-enum-varnames": [
+                "AlertEntityTypeWallet",
+                "AlertEntityTypeFeature"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.AlertInfo": {
+            "type": "object",
+            "properties": {
+                "alert_settings": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "value_at_time": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.AlertLogFilter": {
+            "type": "object",
+            "properties": {
+                "alert_status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertState"
+                },
+                "alert_type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertType"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "entity_id": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertEntityType"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.AlertSettings": {
+            "type": "object",
+            "properties": {
+                "alert_enabled": {
+                    "type": "boolean"
+                },
+                "critical": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold"
+                },
+                "info": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold"
+                },
+                "warning": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.AlertState": {
+            "type": "string",
+            "enum": [
+                "ok",
+                "info",
+                "warning",
+                "in_alarm"
+            ],
+            "x-enum-varnames": [
+                "AlertStateOk",
+                "AlertStateInfo",
+                "AlertStateWarning",
+                "AlertStateInAlarm"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.AlertThreshold": {
+            "type": "object",
+            "properties": {
+                "condition": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertCondition"
+                },
+                "threshold": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.AlertType": {
+            "type": "string",
+            "enum": [
+                "low_ongoing_balance",
+                "low_credit_balance",
+                "feature_wallet_balance"
+            ],
+            "x-enum-varnames": [
+                "AlertTypeLowOngoingBalance",
+                "AlertTypeLowCreditBalance",
+                "AlertTypeFeatureWalletBalance"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.ApplicationStatus": {
+            "type": "string",
+            "enum": [
+                "applied",
+                "failed",
+                "pending",
+                "skipped",
+                "cancelled"
+            ],
+            "x-enum-varnames": [
+                "ApplicationStatusApplied",
+                "ApplicationStatusFailed",
+                "ApplicationStatusPending",
+                "ApplicationStatusSkipped",
+                "ApplicationStatusCancelled"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.AutoTopup": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "invoicing": {
+                    "type": "boolean"
+                },
+                "threshold": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.BillingCadence": {
+            "type": "string",
+            "enum": [
+                "RECURRING",
+                "ONETIME"
+            ],
+            "x-enum-varnames": [
+                "BILLING_CADENCE_RECURRING",
+                "BILLING_CADENCE_ONETIME"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.BillingCycle": {
+            "type": "string",
+            "enum": [
+                "anniversary",
+                "calendar"
+            ],
+            "x-enum-varnames": [
+                "BillingCycleAnniversary",
+                "BillingCycleCalendar"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.BillingModel": {
+            "type": "string",
+            "enum": [
+                "FLAT_FEE",
+                "PACKAGE",
+                "TIERED"
+            ],
+            "x-enum-varnames": [
+                "BILLING_MODEL_FLAT_FEE",
+                "BILLING_MODEL_PACKAGE",
+                "BILLING_MODEL_TIERED"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.BillingPeriod": {
+            "type": "string",
+            "enum": [
+                "MONTHLY",
+                "ANNUAL",
+                "WEEKLY",
+                "DAILY",
+                "QUARTERLY",
+                "HALF_YEARLY"
+            ],
+            "x-enum-varnames": [
+                "BILLING_PERIOD_MONTHLY",
+                "BILLING_PERIOD_ANNUAL",
+                "BILLING_PERIOD_WEEKLY",
+                "BILLING_PERIOD_DAILY",
+                "BILLING_PERIOD_QUARTER",
+                "BILLING_PERIOD_HALF_YEAR"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.BillingTier": {
+            "type": "string",
+            "enum": [
+                "VOLUME",
+                "SLAB"
+            ],
+            "x-enum-varnames": [
+                "BILLING_TIER_VOLUME",
+                "BILLING_TIER_SLAB"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CancelImmediatelyInvoicePolicy": {
+            "type": "string",
+            "enum": [
+                "generate_invoice",
+                "skip"
+            ],
+            "x-enum-varnames": [
+                "CancelImmediatelyInvoicePolicyGenerateInvoice",
+                "CancelImmediatelyInvoicePolicySkip"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CancellationType": {
+            "type": "string",
+            "enum": [
+                "immediate",
+                "end_of_period"
+            ],
+            "x-enum-varnames": [
+                "CancellationTypeImmediate",
+                "CancellationTypeEndOfPeriod"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CollectionMethod": {
+            "type": "string",
+            "enum": [
+                "charge_automatically",
+                "send_invoice"
+            ],
+            "x-enum-varnames": [
+                "CollectionMethodChargeAutomatically",
+                "CollectionMethodSendInvoice"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CommitmentInfo": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "computed_commitment_utilized_amount": {
+                    "type": "string"
+                },
+                "computed_overage_amount": {
+                    "type": "string"
+                },
+                "computed_true_up_amount": {
+                    "description": "total_cost = computed_commitment_utilized_amount + computed_overage_amount + computed_true_up_amount",
+                    "type": "string"
+                },
+                "duration": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
+                },
+                "is_windowed": {
+                    "type": "boolean"
+                },
+                "overage_factor": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "description": "Only used for quantity-based commitments",
+                    "type": "string"
+                },
+                "true_up_enabled": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.CommitmentType": {
+            "type": "string",
+            "enum": [
+                "amount",
+                "quantity"
+            ],
+            "x-enum-varnames": [
+                "COMMITMENT_TYPE_AMOUNT",
+                "COMMITMENT_TYPE_QUANTITY"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CouponCadence": {
+            "type": "string",
+            "enum": [
+                "once",
+                "repeated",
+                "forever"
+            ],
+            "x-enum-varnames": [
+                "CouponCadenceOnce",
+                "CouponCadenceRepeated",
+                "CouponCadenceForever"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CouponFilter": {
+            "type": "object",
+            "properties": {
+                "coupon_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.CouponType": {
+            "type": "string",
+            "enum": [
+                "fixed",
+                "percentage"
+            ],
+            "x-enum-varnames": [
+                "CouponTypeFixed",
+                "CouponTypePercentage"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditBreakdown": {
+            "type": "object",
+            "properties": {
+                "free": {
+                    "type": "string"
+                },
+                "purchased": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditGrantApplicationReason": {
+            "type": "string",
+            "enum": [
+                "first_time_recurring_credit_grant",
+                "recurring_credit_grant",
+                "onetime_credit_grant"
+            ],
+            "x-enum-varnames": [
+                "ApplicationReasonFirstTimeRecurringCreditGrant",
+                "ApplicationReasonRecurringCreditGrant",
+                "ApplicationReasonOnetimeCreditGrant"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditGrantCadence": {
+            "type": "string",
+            "enum": [
+                "ONETIME",
+                "RECURRING"
+            ],
+            "x-enum-varnames": [
+                "CreditGrantCadenceOneTime",
+                "CreditGrantCadenceRecurring"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit": {
+            "type": "string",
+            "enum": [
+                "DAY",
+                "WEEK",
+                "MONTH",
+                "YEAR"
+            ],
+            "x-enum-varnames": [
+                "CreditGrantExpiryDurationUnitDays",
+                "CreditGrantExpiryDurationUnitWeeks",
+                "CreditGrantExpiryDurationUnitMonths",
+                "CreditGrantExpiryDurationUnitYears"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType": {
+            "type": "string",
+            "enum": [
+                "NEVER",
+                "DURATION",
+                "BILLING_CYCLE"
+            ],
+            "x-enum-varnames": [
+                "CreditGrantExpiryTypeNever",
+                "CreditGrantExpiryTypeDuration",
+                "CreditGrantExpiryTypeBillingCycle"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditGrantPeriod": {
+            "type": "string",
+            "enum": [
+                "DAILY",
+                "WEEKLY",
+                "MONTHLY",
+                "ANNUAL",
+                "QUARTERLY",
+                "HALF_YEARLY"
+            ],
+            "x-enum-varnames": [
+                "CREDIT_GRANT_PERIOD_DAILY",
+                "CREDIT_GRANT_PERIOD_WEEKLY",
+                "CREDIT_GRANT_PERIOD_MONTHLY",
+                "CREDIT_GRANT_PERIOD_ANNUAL",
+                "CREDIT_GRANT_PERIOD_QUARTER",
+                "CREDIT_GRANT_PERIOD_HALF_YEARLY"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditGrantScope": {
+            "type": "string",
+            "enum": [
+                "PLAN",
+                "SUBSCRIPTION"
+            ],
+            "x-enum-varnames": [
+                "CreditGrantScopePlan",
+                "CreditGrantScopeSubscription"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditNoteReason": {
+            "type": "string",
+            "enum": [
+                "DUPLICATE",
+                "FRAUDULENT",
+                "ORDER_CHANGE",
+                "UNSATISFACTORY",
+                "SERVICE_ISSUE",
+                "BILLING_ERROR",
+                "SUBSCRIPTION_CANCELLATION"
+            ],
+            "x-enum-varnames": [
+                "CreditNoteReasonDuplicate",
+                "CreditNoteReasonFraudulent",
+                "CreditNoteReasonOrderChange",
+                "CreditNoteReasonUnsatisfactory",
+                "CreditNoteReasonService",
+                "CreditNoteReasonBillingError",
+                "CreditNoteReasonSubscriptionCancellation"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditNoteStatus": {
+            "type": "string",
+            "enum": [
+                "DRAFT",
+                "FINALIZED",
+                "VOIDED"
+            ],
+            "x-enum-varnames": [
+                "CreditNoteStatusDraft",
+                "CreditNoteStatusFinalized",
+                "CreditNoteStatusVoided"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CreditNoteType": {
+            "type": "string",
+            "enum": [
+                "ADJUSTMENT",
+                "REFUND"
+            ],
+            "x-enum-varnames": [
+                "CreditNoteTypeAdjustment",
+                "CreditNoteTypeRefund"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.CustomerFilter": {
+            "type": "object",
+            "properties": {
+                "customer_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "external_id": {
+                    "type": "string"
+                },
+                "external_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "filters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "parent_customer_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.DataType": {
+            "type": "string",
+            "enum": [
+                "string",
+                "number",
+                "date",
+                "array"
+            ],
+            "x-enum-varnames": [
+                "DataTypeString",
+                "DataTypeNumber",
+                "DataTypeDate",
+                "DataTypeArray"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.DebugTrackerStatus": {
+            "type": "string",
+            "enum": [
+                "unprocessed",
+                "not_found",
+                "found",
+                "error"
+            ],
+            "x-enum-varnames": [
+                "DebugTrackerStatusUnprocessed",
+                "DebugTrackerStatusNotFound",
+                "DebugTrackerStatusFound",
+                "DebugTrackerStatusError"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.EntitlementEntityType": {
+            "type": "string",
+            "enum": [
+                "PLAN",
+                "SUBSCRIPTION",
+                "ADDON"
+            ],
+            "x-enum-varnames": [
+                "ENTITLEMENT_ENTITY_TYPE_PLAN",
+                "ENTITLEMENT_ENTITY_TYPE_SUBSCRIPTION",
+                "ENTITLEMENT_ENTITY_TYPE_ADDON"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.EntitlementFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "entity_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "entity_type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "feature_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "feature_type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
+                },
+                "filters": {
+                    "description": "Specific filters for entitlements",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "plan_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod": {
+            "type": "string",
+            "enum": [
+                "MONTHLY",
+                "ANNUAL",
+                "WEEKLY",
+                "DAILY",
+                "QUARTERLY",
+                "HALF_YEARLY",
+                "NEVER"
+            ],
+            "x-enum-varnames": [
+                "ENTITLEMENT_USAGE_RESET_PERIOD_MONTHLY",
+                "ENTITLEMENT_USAGE_RESET_PERIOD_ANNUAL",
+                "ENTITLEMENT_USAGE_RESET_PERIOD_WEEKLY",
+                "ENTITLEMENT_USAGE_RESET_PERIOD_DAILY",
+                "ENTITLEMENT_USAGE_RESET_PERIOD_QUARTER",
+                "ENTITLEMENT_USAGE_RESET_PERIOD_HALF_YEAR",
+                "ENTITLEMENT_USAGE_RESET_PERIOD_NEVER"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.EntityType": {
+            "type": "string",
+            "enum": [
+                "EVENTS",
+                "PRICES",
+                "CUSTOMERS",
+                "FEATURES"
+            ],
+            "x-enum-varnames": [
+                "EntityTypeEvents",
+                "EntityTypePrices",
+                "EntityTypeCustomers",
+                "EntityTypeFeatures"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.EventProcessingStatusType": {
+            "type": "string",
+            "enum": [
+                "processed",
+                "processing",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "EventProcessingStatusTypeProcessed",
+                "EventProcessingStatusTypeProcessing",
+                "EventProcessingStatusTypeFailed"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.FailurePoint": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "failure_point_type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FailurePointType"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.FailurePointType": {
+            "type": "string",
+            "enum": [
+                "customer_lookup",
+                "meter_lookup",
+                "price_lookup",
+                "subscription_line_item_lookup"
+            ],
+            "x-enum-varnames": [
+                "FailurePointTypeCustomerLookup",
+                "FailurePointTypeMeterLookup",
+                "FailurePointTypePriceLookup",
+                "FailurePointTypeSubscriptionLineItemLookup"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.FeatureFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "feature_ids": {
+                    "description": "Feature specific filters",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "lookup_keys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "meter_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name_contains": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.FeatureType": {
+            "type": "string",
+            "enum": [
+                "metered",
+                "boolean",
+                "static"
+            ],
+            "x-enum-varnames": [
+                "FeatureTypeMetered",
+                "FeatureTypeBoolean",
+                "FeatureTypeStatic"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.FileType": {
+            "type": "string",
+            "enum": [
+                "CSV",
+                "JSON"
+            ],
+            "x-enum-varnames": [
+                "FileTypeCSV",
+                "FileTypeJSON"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.FilterCondition": {
+            "type": "object",
+            "properties": {
+                "data_type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DataType"
+                },
+                "field": {
+                    "type": "string"
+                },
+                "operator": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterOperatorType"
+                },
+                "value": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Value"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.FilterOperatorType": {
+            "type": "string",
+            "enum": [
+                "eq",
+                "contains",
+                "not_contains",
+                "gt",
+                "lt",
+                "in",
+                "not_in",
+                "before",
+                "after"
+            ],
+            "x-enum-varnames": [
+                "EQUAL",
+                "CONTAINS",
+                "NOT_CONTAINS",
+                "GREATER_THAN",
+                "LESS_THAN",
+                "IN",
+                "NOT_IN",
+                "BEFORE",
+                "AFTER"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.GroupFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "group_ids": {
+                    "description": "Group specific filters",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.IntegrationEntityType": {
+            "type": "string",
+            "enum": [
+                "customer",
+                "plan",
+                "invoice",
+                "subscription",
+                "payment",
+                "credit_note",
+                "addon",
+                "item",
+                "item_price",
+                "price"
+            ],
+            "x-enum-varnames": [
+                "IntegrationEntityTypeCustomer",
+                "IntegrationEntityTypePlan",
+                "IntegrationEntityTypeInvoice",
+                "IntegrationEntityTypeSubscription",
+                "IntegrationEntityTypePayment",
+                "IntegrationEntityTypeCreditNote",
+                "IntegrationEntityTypeAddon",
+                "IntegrationEntityTypeItem",
+                "IntegrationEntityTypeItemPrice",
+                "IntegrationEntityTypePrice"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.InvoiceBilling": {
+            "type": "string",
+            "enum": [
+                "invoice_to_parent",
+                "invoice_to_self"
+            ],
+            "x-enum-varnames": [
+                "InvoiceBillingInvoiceToParent",
+                "InvoiceBillingInvoiceToSelf"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.InvoiceBillingReason": {
+            "type": "string",
+            "enum": [
+                "SUBSCRIPTION_CREATE",
+                "SUBSCRIPTION_CYCLE",
+                "SUBSCRIPTION_UPDATE",
+                "PRORATION",
+                "MANUAL"
+            ],
+            "x-enum-varnames": [
+                "InvoiceBillingReasonSubscriptionCreate",
+                "InvoiceBillingReasonSubscriptionCycle",
+                "InvoiceBillingReasonSubscriptionUpdate",
+                "InvoiceBillingReasonProration",
+                "InvoiceBillingReasonManual"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.InvoiceCadence": {
+            "type": "string",
+            "enum": [
+                "ARREAR",
+                "ADVANCE"
+            ],
+            "x-enum-varnames": [
+                "InvoiceCadenceArrear",
+                "InvoiceCadenceAdvance"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.InvoiceFilter": {
+            "type": "object",
+            "properties": {
+                "amount_due_gt": {
+                    "description": "amount_due_gt filters invoices with a total amount due greater than the specified value\nUseful for finding invoices above a certain threshold or identifying high-value invoices",
+                    "type": "number"
+                },
+                "amount_remaining_gt": {
+                    "description": "amount_remaining_gt filters invoices with an outstanding balance greater than the specified value\nUseful for finding invoices that still have significant unpaid amounts",
+                    "type": "number"
+                },
+                "customer_id": {
+                    "description": "customer_id filters invoices for a specific customer using FlexPrice's internal customer ID\nThis is the ID returned by FlexPrice when creating or retrieving customers",
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "external_customer_id": {
+                    "description": "external_customer_id filters invoices for a customer using your system's customer identifier\nThis is the ID you provided when creating the customer in FlexPrice",
+                    "type": "string"
+                },
+                "filters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "invoice_ids": {
+                    "description": "invoice_ids restricts results to invoices with the specified IDs\nUse this to retrieve specific invoices when you know their exact identifiers",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "invoice_status": {
+                    "description": "invoice_status filters by the current state of invoices in their lifecycle\nMultiple statuses can be specified to include invoices in any of the listed states",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus"
+                    }
+                },
+                "invoice_type": {
+                    "description": "invoice_type filters by the nature of the invoice (SUBSCRIPTION, ONE_OFF, or CREDIT)\nUse this to separate recurring charges from one-time fees or credit adjustments",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType"
+                        }
+                    ]
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "payment_status": {
+                    "description": "payment_status filters by the payment state of invoices\nMultiple statuses can be specified to include invoices with any of the listed payment states",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
+                    }
+                },
+                "period_end_gte": {
+                    "description": "period_end_gte filters invoices with period_end \u003e= value",
+                    "type": "string"
+                },
+                "period_end_lte": {
+                    "description": "period_end_lte filters invoices with period_end \u003c= value",
+                    "type": "string"
+                },
+                "period_start_gte": {
+                    "description": "period_start_gte filters invoices with period_start \u003e= value",
+                    "type": "string"
+                },
+                "period_start_lte": {
+                    "description": "period_start_lte filters invoices with period_start \u003c= value",
+                    "type": "string"
+                },
+                "skip_line_items": {
+                    "description": "SkipLineItems if true, will not include line items in the response",
+                    "type": "boolean"
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                },
+                "subscription_id": {
+                    "description": "subscription_id filters invoices generated for a specific subscription\nOnly returns invoices that were created as part of the specified subscription's billing",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.InvoiceStatus": {
+            "type": "string",
+            "enum": [
+                "DRAFT",
+                "FINALIZED",
+                "VOIDED"
+            ],
+            "x-enum-varnames": [
+                "InvoiceStatusDraft",
+                "InvoiceStatusFinalized",
+                "InvoiceStatusVoided"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.InvoiceType": {
+            "type": "string",
+            "enum": [
+                "SUBSCRIPTION",
+                "ONE_OFF",
+                "CREDIT"
+            ],
+            "x-enum-varnames": [
+                "InvoiceTypeSubscription",
+                "InvoiceTypeOneOff",
+                "InvoiceTypeCredit"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PaginationResponse": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.PauseMode": {
+            "type": "string",
+            "enum": [
+                "immediate",
+                "scheduled",
+                "period_end"
+            ],
+            "x-enum-varnames": [
+                "PauseModeImmediate",
+                "PauseModeScheduled",
+                "PauseModePeriodEnd"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PauseStatus": {
+            "type": "string",
+            "enum": [
+                "none",
+                "active",
+                "scheduled",
+                "completed",
+                "cancelled"
+            ],
+            "x-enum-varnames": [
+                "PauseStatusNone",
+                "PauseStatusActive",
+                "PauseStatusScheduled",
+                "PauseStatusCompleted",
+                "PauseStatusCancelled"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PaymentBehavior": {
+            "type": "string",
+            "enum": [
+                "allow_incomplete",
+                "default_incomplete",
+                "error_if_incomplete",
+                "default_active"
+            ],
+            "x-enum-varnames": [
+                "PaymentBehaviorAllowIncomplete",
+                "PaymentBehaviorDefaultIncomplete",
+                "PaymentBehaviorErrorIfIncomplete",
+                "PaymentBehaviorDefaultActive"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PaymentDestinationType": {
+            "type": "string",
+            "enum": [
+                "INVOICE"
+            ],
+            "x-enum-varnames": [
+                "PaymentDestinationTypeInvoice"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PaymentGatewayType": {
+            "type": "string",
+            "enum": [
+                "stripe",
+                "razorpay",
+                "nomod",
+                "moyasar"
+            ],
+            "x-enum-varnames": [
+                "PaymentGatewayTypeStripe",
+                "PaymentGatewayTypeRazorpay",
+                "PaymentGatewayTypeNomod",
+                "PaymentGatewayTypeMoyasar"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PaymentMethodType": {
+            "type": "string",
+            "enum": [
+                "CARD",
+                "ACH",
+                "OFFLINE",
+                "CREDITS",
+                "PAYMENT_LINK"
+            ],
+            "x-enum-varnames": [
+                "PaymentMethodTypeCard",
+                "PaymentMethodTypeACH",
+                "PaymentMethodTypeOffline",
+                "PaymentMethodTypeCredits",
+                "PaymentMethodTypePaymentLink"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PaymentStatus": {
+            "type": "string",
+            "enum": [
+                "INITIATED",
+                "PENDING",
+                "PROCESSING",
+                "SUCCEEDED",
+                "OVERPAID",
+                "FAILED",
+                "REFUNDED",
+                "PARTIALLY_REFUNDED"
+            ],
+            "x-enum-varnames": [
+                "PaymentStatusInitiated",
+                "PaymentStatusPending",
+                "PaymentStatusProcessing",
+                "PaymentStatusSucceeded",
+                "PaymentStatusOverpaid",
+                "PaymentStatusFailed",
+                "PaymentStatusRefunded",
+                "PaymentStatusPartiallyRefunded"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PaymentTerms": {
+            "type": "string",
+            "enum": [
+                "15 NET",
+                "30 NET",
+                "45 NET",
+                "60 NET",
+                "75 NET",
+                "90 NET"
+            ],
+            "x-enum-varnames": [
+                "PaymentTerms15Net",
+                "PaymentTerms30Net",
+                "PaymentTerms45Net",
+                "PaymentTerms60Net",
+                "PaymentTerms75Net",
+                "PaymentTerms90Net"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PlanFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "plan_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.PriceEntityType": {
+            "type": "string",
+            "enum": [
+                "PLAN",
+                "SUBSCRIPTION",
+                "ADDON",
+                "PRICE",
+                "COSTSHEET"
+            ],
+            "x-enum-varnames": [
+                "PRICE_ENTITY_TYPE_PLAN",
+                "PRICE_ENTITY_TYPE_SUBSCRIPTION",
+                "PRICE_ENTITY_TYPE_ADDON",
+                "PRICE_ENTITY_TYPE_PRICE",
+                "PRICE_ENTITY_TYPE_COSTSHEET"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PriceFilter": {
+            "type": "object",
+            "properties": {
+                "allow_expired_prices": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "entity_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "entity_type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "DSL filters",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "meter_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "parent_price_id": {
+                    "type": "string"
+                },
+                "plan_ids": {
+                    "description": "Price override filtering fields",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "price_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort": {
+                    "type": "string"
+                },
+                "start_date_lt": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                },
+                "subscription_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.PriceType": {
+            "type": "string",
+            "enum": [
+                "USAGE",
+                "FIXED"
+            ],
+            "x-enum-varnames": [
+                "PRICE_TYPE_USAGE",
+                "PRICE_TYPE_FIXED"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.PriceUnitFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "price_unit_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.PriceUnitType": {
+            "type": "string",
+            "enum": [
+                "FIAT",
+                "CUSTOM"
+            ],
+            "x-enum-varnames": [
+                "PRICE_UNIT_TYPE_FIAT",
+                "PRICE_UNIT_TYPE_CUSTOM"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.ProrationBehavior": {
+            "type": "string",
+            "enum": [
+                "create_prorations",
+                "none"
+            ],
+            "x-enum-comments": {
+                "ProrationBehaviorCreateProrations": "Default: Create credits/charges on invoice",
+                "ProrationBehaviorNone": "Calculate but don't apply (e.g., for previews)"
+            },
+            "x-enum-descriptions": [
+                "Default: Create credits/charges on invoice",
+                "Calculate but don't apply (e.g., for previews)"
+            ],
+            "x-enum-varnames": [
+                "ProrationBehaviorCreateProrations",
+                "ProrationBehaviorNone"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.QueryFilter": {
+            "type": "object",
+            "properties": {
+                "expand": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.ResetUsage": {
+            "type": "string",
+            "enum": [
+                "BILLING_PERIOD",
+                "NEVER"
+            ],
+            "x-enum-varnames": [
+                "ResetUsageBillingPeriod",
+                "ResetUsageNever"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.ResumeMode": {
+            "type": "string",
+            "enum": [
+                "immediate",
+                "scheduled",
+                "auto"
+            ],
+            "x-enum-varnames": [
+                "ResumeModeImmediate",
+                "ResumeModeScheduled",
+                "ResumeModeAuto"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.RoundType": {
+            "type": "string",
+            "enum": [
+                "up",
+                "down"
+            ],
+            "x-enum-varnames": [
+                "ROUND_UP",
+                "ROUND_DOWN"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.S3CompressionType": {
+            "type": "string",
+            "enum": [
+                "none",
+                "gzip"
+            ],
+            "x-enum-varnames": [
+                "S3CompressionTypeNone",
+                "S3CompressionTypeGzip"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.S3EncryptionType": {
+            "type": "string",
+            "enum": [
+                "AES256",
+                "aws:kms",
+                "aws:kms:dsse"
+            ],
+            "x-enum-varnames": [
+                "S3EncryptionTypeAES256",
+                "S3EncryptionTypeAwsKms",
+                "S3EncryptionTypeAwsKmsDsse"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.S3JobConfig": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "description": "S3 bucket name",
+                    "type": "string"
+                },
+                "compression": {
+                    "description": "Compression type: \"gzip\", \"none\" (default: \"none\")",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.S3CompressionType"
+                        }
+                    ]
+                },
+                "encryption": {
+                    "description": "Encryption type: \"AES256\", \"aws:kms\", \"aws:kms:dsse\" (default: \"AES256\")",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.S3EncryptionType"
+                        }
+                    ]
+                },
+                "endpoint_url": {
+                    "description": "Custom S3 endpoint URL (e.g., \"http://minio:9000\" for MinIO)",
+                    "type": "string"
+                },
+                "key_prefix": {
+                    "description": "Optional prefix for S3 keys (e.g., \"flexprice-exports/\")",
+                    "type": "string"
+                },
+                "region": {
+                    "description": "AWS region (e.g., \"us-west-2\")",
+                    "type": "string"
+                },
+                "use_path_style": {
+                    "description": "Use path-style addressing instead of virtual-hosted-style (required for MinIO)",
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.ScheduleStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "executing",
+                "executed",
+                "cancelled",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "ScheduleStatusPending",
+                "ScheduleStatusExecuting",
+                "ScheduleStatusExecuted",
+                "ScheduleStatusCancelled",
+                "ScheduleStatusFailed"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.ScheduleType": {
+            "type": "string",
+            "enum": [
+                "immediate",
+                "end_of_period"
+            ],
+            "x-enum-varnames": [
+                "ScheduleTypeImmediate",
+                "ScheduleTypePeriodEnd"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType": {
+            "type": "string",
+            "enum": [
+                "events",
+                "invoice",
+                "credit_topups",
+                "credit_usage"
+            ],
+            "x-enum-varnames": [
+                "ScheduledTaskEntityTypeEvents",
+                "ScheduledTaskEntityTypeInvoice",
+                "ScheduledTaskEntityTypeCreditTopups",
+                "ScheduledTaskEntityTypeCreditUsage"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval": {
+            "type": "string",
+            "enum": [
+                "15MIN",
+                "custom",
+                "hourly",
+                "daily"
+            ],
+            "x-enum-comments": {
+                "ScheduledTaskIntervalCustom": "10 minutes for testing"
+            },
+            "x-enum-descriptions": [
+                "",
+                "10 minutes for testing",
+                "",
+                ""
+            ],
+            "x-enum-varnames": [
+                "ScheduledTaskIntervalEvery15Minutes",
+                "ScheduledTaskIntervalCustom",
+                "ScheduledTaskIntervalHourly",
+                "ScheduledTaskIntervalDaily"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.SecretProvider": {
+            "type": "string",
+            "enum": [
+                "flexprice",
+                "stripe",
+                "s3",
+                "hubspot",
+                "razorpay",
+                "chargebee",
+                "quickbooks",
+                "nomod",
+                "moyasar"
+            ],
+            "x-enum-varnames": [
+                "SecretProviderFlexPrice",
+                "SecretProviderStripe",
+                "SecretProviderS3",
+                "SecretProviderHubSpot",
+                "SecretProviderRazorpay",
+                "SecretProviderChargebee",
+                "SecretProviderQuickBooks",
+                "SecretProviderNomod",
+                "SecretProviderMoyasar"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.SecretType": {
+            "type": "string",
+            "enum": [
+                "private_key",
+                "publishable_key",
+                "integration"
+            ],
+            "x-enum-varnames": [
+                "SecretTypePrivateKey",
+                "SecretTypePublishableKey",
+                "SecretTypeIntegration"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.SortCondition": {
+            "type": "object",
+            "properties": {
+                "direction": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortDirection"
+                },
+                "field": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.SortDirection": {
+            "type": "string",
+            "enum": [
+                "asc",
+                "desc"
+            ],
+            "x-enum-varnames": [
+                "SortDirectionAsc",
+                "SortDirectionDesc"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.Status": {
+            "type": "string",
+            "enum": [
+                "published",
+                "deleted",
+                "archived"
+            ],
+            "x-enum-varnames": [
+                "StatusPublished",
+                "StatusDeleted",
+                "StatusArchived"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.SubscriptionChangeType": {
+            "type": "string",
+            "enum": [
+                "upgrade",
+                "downgrade",
+                "lateral"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionChangeTypeUpgrade",
+                "SubscriptionChangeTypeDowngrade",
+                "SubscriptionChangeTypeLateral"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.SubscriptionFilter": {
+            "type": "object",
+            "properties": {
+                "active_at": {
+                    "description": "ActiveAt filters subscriptions that are active at the given time",
+                    "type": "string"
+                },
+                "billing_cadence": {
+                    "description": "BillingCadence filters by billing cadence",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
+                    }
+                },
+                "billing_period": {
+                    "description": "BillingPeriod filters by billing period",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
+                    }
+                },
+                "customer_id": {
+                    "description": "CustomerID filters by customer ID",
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "external_customer_id": {
+                    "description": "ExternalCustomerID filters by external customer ID",
+                    "type": "string"
+                },
+                "filters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "invoicing_customer_ids": {
+                    "description": "InvoicingCustomerIDs filters by invoicing customer ID",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "parent_subscription_ids": {
+                    "description": "ParentSubscriptionIDs filters by parent subscription IDs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "plan_id": {
+                    "description": "PlanID filters by plan ID",
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                },
+                "subscription_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subscription_status": {
+                    "description": "SubscriptionStatus filters by subscription status",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
+                    }
+                },
+                "with_line_items": {
+                    "description": "WithLineItems includes line items in the response",
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType": {
+            "type": "string",
+            "enum": [
+                "plan",
+                "addon",
+                "subscription"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionLineItemEntityTypePlan",
+                "SubscriptionLineItemEntityTypeAddon",
+                "SubscriptionLineItemEntityTypeSubscription"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType": {
+            "type": "string",
+            "enum": [
+                "plan_change",
+                "cancellation"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionScheduleChangeTypePlanChange",
+                "SubscriptionScheduleChangeTypeCancellation"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.SubscriptionStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "paused",
+                "cancelled",
+                "incomplete",
+                "trialing",
+                "draft"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionStatusActive",
+                "SubscriptionStatusPaused",
+                "SubscriptionStatusCancelled",
+                "SubscriptionStatusIncomplete",
+                "SubscriptionStatusTrialing",
+                "SubscriptionStatusDraft"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TaskStatus": {
+            "type": "string",
+            "enum": [
+                "PENDING",
+                "PROCESSING",
+                "COMPLETED",
+                "FAILED"
+            ],
+            "x-enum-varnames": [
+                "TaskStatusPending",
+                "TaskStatusProcessing",
+                "TaskStatusCompleted",
+                "TaskStatusFailed"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TaskType": {
+            "type": "string",
+            "enum": [
+                "IMPORT",
+                "EXPORT"
+            ],
+            "x-enum-varnames": [
+                "TaskTypeImport",
+                "TaskTypeExport"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TaxRateEntityType": {
+            "type": "string",
+            "enum": [
+                "customer",
+                "subscription",
+                "invoice",
+                "tenant"
+            ],
+            "x-enum-varnames": [
+                "TaxRateEntityTypeCustomer",
+                "TaxRateEntityTypeSubscription",
+                "TaxRateEntityTypeInvoice",
+                "TaxRateEntityTypeTenant"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TaxRateScope": {
+            "type": "string",
+            "enum": [
+                "INTERNAL",
+                "EXTERNAL",
+                "ONETIME"
+            ],
+            "x-enum-varnames": [
+                "TaxRateScopeInternal",
+                "TaxRateScopeExternal",
+                "TaxRateScopeOneTime"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TaxRateStatus": {
+            "type": "string",
+            "enum": [
+                "ACTIVE",
+                "INACTIVE"
+            ],
+            "x-enum-varnames": [
+                "TaxRateStatusActive",
+                "TaxRateStatusInactive"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TaxRateType": {
+            "type": "string",
+            "enum": [
+                "percentage",
+                "fixed"
+            ],
+            "x-enum-varnames": [
+                "TaxRateTypePercentage",
+                "TaxRateTypeFixed"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TimeRangeFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.TransactionReason": {
+            "type": "string",
+            "enum": [
+                "INVOICE_PAYMENT",
+                "FREE_CREDIT_GRANT",
+                "SUBSCRIPTION_CREDIT_GRANT",
+                "PURCHASED_CREDIT_INVOICED",
+                "PURCHASED_CREDIT_DIRECT",
+                "CREDIT_NOTE",
+                "CREDIT_EXPIRED",
+                "WALLET_TERMINATION",
+                "MANUAL_BALANCE_DEBIT",
+                "CREDIT_ADJUSTMENT"
+            ],
+            "x-enum-varnames": [
+                "TransactionReasonInvoicePayment",
+                "TransactionReasonFreeCredit",
+                "TransactionReasonSubscriptionCredit",
+                "TransactionReasonPurchasedCreditInvoiced",
+                "TransactionReasonPurchasedCreditDirect",
+                "TransactionReasonCreditNote",
+                "TransactionReasonCreditExpired",
+                "TransactionReasonWalletTermination",
+                "TransactionReasonManualBalanceDebit",
+                "TransactionReasonCreditAdjustment"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TransactionStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "completed",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "TransactionStatusPending",
+                "TransactionStatusCompleted",
+                "TransactionStatusFailed"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.TransactionType": {
+            "type": "string",
+            "enum": [
+                "credit",
+                "debit"
+            ],
+            "x-enum-varnames": [
+                "TransactionTypeCredit",
+                "TransactionTypeDebit"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.UserFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                },
+                "type": {
+                    "enum": [
+                        "user",
+                        "service_account"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
+                        }
+                    ]
+                },
+                "user_ids": {
+                    "description": "Specific filters for users",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.UserType": {
+            "type": "string",
+            "enum": [
+                "user",
+                "service_account"
+            ],
+            "x-enum-varnames": [
+                "UserTypeUser",
+                "UserTypeServiceAccount"
+            ]
         },
         "github_com_flexprice_flexprice_internal_types.Value": {
             "type": "object",
@@ -20193,6 +22578,285 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_flexprice_flexprice_internal_types.WalletConfig": {
+            "type": "object",
+            "properties": {
+                "allowed_price_types": {
+                    "description": "AllowedPriceTypes is a list of price types that are allowed for the wallet\nnil means all price types are allowed",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfigPriceType"
+                    }
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.WalletConfigPriceType": {
+            "type": "string",
+            "enum": [
+                "ALL",
+                "USAGE",
+                "FIXED"
+            ],
+            "x-enum-varnames": [
+                "WalletConfigPriceTypeAll",
+                "WalletConfigPriceTypeUsage",
+                "WalletConfigPriceTypeFixed"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.WalletFilter": {
+            "type": "object",
+            "properties": {
+                "alert_enabled": {
+                    "type": "boolean"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus"
+                },
+                "wallet_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.WalletStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "frozen",
+                "closed"
+            ],
+            "x-enum-varnames": [
+                "WalletStatusActive",
+                "WalletStatusFrozen",
+                "WalletStatusClosed"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.WalletTransactionFilter": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string"
+                },
+                "credits_available_gt": {
+                    "type": "number"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "expiry_date_after": {
+                    "type": "string"
+                },
+                "expiry_date_before": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "reference_id": {
+                    "type": "string"
+                },
+                "reference_type": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                },
+                "transaction_reason": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason"
+                },
+                "transaction_status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionStatus"
+                },
+                "type": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionType"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_types.WalletTxReferenceType": {
+            "type": "string",
+            "enum": [
+                "PAYMENT",
+                "EXTERNAL",
+                "REQUEST",
+                "INVOICE"
+            ],
+            "x-enum-varnames": [
+                "WalletTxReferenceTypePayment",
+                "WalletTxReferenceTypeExternal",
+                "WalletTxReferenceTypeRequest",
+                "WalletTxReferenceTypeInvoice"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.WalletType": {
+            "type": "string",
+            "enum": [
+                "PRE_PAID",
+                "POST_PAID"
+            ],
+            "x-enum-varnames": [
+                "WalletTypePrePaid",
+                "WalletTypePostPaid"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.WindowSize": {
+            "type": "string",
+            "enum": [
+                "MONTH",
+                "MINUTE",
+                "15MIN",
+                "30MIN",
+                "HOUR",
+                "3HOUR",
+                "6HOUR",
+                "12HOUR",
+                "DAY",
+                "WEEK",
+                "MONTH"
+            ],
+            "x-enum-varnames": [
+                "DefaultWindowSize",
+                "WindowSizeMinute",
+                "WindowSize15Min",
+                "WindowSize30Min",
+                "WindowSizeHour",
+                "WindowSize3Hour",
+                "WindowSize6Hour",
+                "WindowSize12Hour",
+                "WindowSizeDay",
+                "WindowSizeWeek",
+                "WindowSizeMonth"
+            ]
+        },
+        "github_com_flexprice_flexprice_internal_types.WorkflowExecutionFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "entity": {
+                    "description": "e.g. plan, invoice, subscription",
+                    "type": "string"
+                },
+                "entity_id": {
+                    "description": "e.g. plan_01ABC123",
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields (same as FeatureFilter)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
+                },
+                "task_queue": {
+                    "type": "string"
+                },
+                "workflow_id": {
+                    "description": "Workflow-specific filters",
+                    "type": "string"
+                },
+                "workflow_status": {
+                    "description": "e.g. Running, Completed, Failed",
+                    "type": "string"
+                },
+                "workflow_type": {
+                    "type": "string"
+                }
+            }
+        },
         "invoice.InvoiceLineItem": {
             "type": "object",
             "properties": {
@@ -20200,7 +22864,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "commitment_info": {
-                    "$ref": "#/definitions/types.CommitmentInfo"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo"
                 },
                 "created_at": {
                     "type": "string"
@@ -20281,7 +22945,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -20304,12 +22968,16 @@ const docTemplate = `{
                     "description": "BucketSize is used only for MAX aggregation when windowed aggregation is needed\nIt defines the size of time windows to calculate max values within",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.WindowSize"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                         }
                     ]
                 },
+                "expression": {
+                    "description": "Expression is an optional CEL expression to compute per-event quantity from event.properties.\nWhen set, it replaces Field-based extraction. Property names are used directly (e.g., token * duration * pixel).",
+                    "type": "string"
+                },
                 "field": {
-                    "description": "Field is the key in $event.properties on which the aggregation is to be applied\nFor ex if the aggregation type is sum for API usage, the field could be \"duration_ms\"",
+                    "description": "Field is the key in $event.properties on which the aggregation is to be applied\nFor ex if the aggregation type is sum for API usage, the field could be \"duration_ms\"\nIgnored when Expression is set.",
                     "type": "string"
                 },
                 "group_by": {
@@ -20321,7 +22989,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AggregationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType"
                 }
             }
         },
@@ -20385,12 +23053,12 @@ const docTemplate = `{
                     "description": "ResetUsage defines whether the usage should be reset periodically or not\nFor ex meters tracking total storage used do not get reset but meters tracking\ntotal API requests do.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ResetUsage"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage"
                         }
                     ]
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20443,7 +23111,7 @@ const docTemplate = `{
                     "description": "up or down",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.RoundType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.RoundType"
                         }
                     ]
                 }
@@ -20457,13 +23125,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "BillingPeriodCount is the count of the billing period ex 1, 3, 6, 12",
@@ -20512,7 +23180,7 @@ const docTemplate = `{
                     "description": "EntityType holds the value of the \"entity_type\" field.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PriceEntityType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType"
                         }
                     ]
                 },
@@ -20529,7 +23197,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "lookup_key": {
                     "description": "LookupKey used for looking up the price in the database",
@@ -20574,7 +23242,7 @@ const docTemplate = `{
                     "description": "PriceUnitType is the type of the price unit (FIAT, CUSTOM)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PriceUnitType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType"
                         }
                     ]
                 },
@@ -20583,13 +23251,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                 },
                 "tiers": {
                     "type": "array",
@@ -20605,7 +23273,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -20643,7 +23311,7 @@ const docTemplate = `{
                     "description": "up or down",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.RoundType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.RoundType"
                         }
                     ]
                 }
@@ -20653,7 +23321,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "from price at create; default 1",
@@ -20664,7 +23332,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "commitment_duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "commitment_overage_factor": {
                     "type": "string"
@@ -20676,7 +23344,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "commitment_type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 },
                 "commitment_windowed": {
                     "type": "boolean"
@@ -20703,7 +23371,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.SubscriptionLineItemEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -20712,7 +23380,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "metadata": {
                     "type": "object",
@@ -20736,7 +23404,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "price_type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 },
                 "price_unit": {
                     "type": "string"
@@ -20751,7 +23419,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -20806,28 +23474,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pause_mode": {
-                    "$ref": "#/definitions/types.PauseMode"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode"
                 },
                 "pause_start": {
                     "description": "PauseStart is when the pause actually started",
                     "type": "string"
                 },
                 "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus"
                 },
                 "reason": {
                     "description": "Reason is the reason for pausing",
                     "type": "string"
                 },
                 "resume_mode": {
-                    "$ref": "#/definitions/types.ResumeMode"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode"
                 },
                 "resumed_at": {
                     "description": "ResumedAt is when the pause was actually ended (if manually resumed)",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "SubscriptionID is the identifier for the subscription",
@@ -20878,7 +23546,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "SubscriptionID is the identifier for the subscription",
@@ -20895,1345 +23563,6 @@ const docTemplate = `{
                 }
             }
         },
-        "types.AddonAssociationEntityType": {
-            "type": "string",
-            "enum": [
-                "subscription",
-                "plan",
-                "addon"
-            ],
-            "x-enum-varnames": [
-                "AddonAssociationEntityTypeSubscription",
-                "AddonAssociationEntityTypePlan",
-                "AddonAssociationEntityTypeAddon"
-            ]
-        },
-        "types.AddonFilter": {
-            "type": "object",
-            "properties": {
-                "addon_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "addon_type": {
-                    "$ref": "#/definitions/types.AddonType"
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "lookup_keys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.AddonStatus": {
-            "type": "string",
-            "enum": [
-                "active",
-                "cancelled",
-                "paused"
-            ],
-            "x-enum-varnames": [
-                "AddonStatusActive",
-                "AddonStatusCancelled",
-                "AddonStatusPaused"
-            ]
-        },
-        "types.AddonType": {
-            "type": "string",
-            "enum": [
-                "onetime",
-                "multiple_instance"
-            ],
-            "x-enum-varnames": [
-                "AddonTypeOnetime",
-                "AddonTypeMultipleInstance"
-            ]
-        },
-        "types.AggregationType": {
-            "type": "string",
-            "enum": [
-                "COUNT",
-                "SUM",
-                "AVG",
-                "COUNT_UNIQUE",
-                "LATEST",
-                "SUM_WITH_MULTIPLIER",
-                "MAX",
-                "WEIGHTED_SUM"
-            ],
-            "x-enum-comments": {
-                "AggregationSumWithMultiplier": "Sum with a multiplier - [sum(value) * multiplier]"
-            },
-            "x-enum-descriptions": [
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Sum with a multiplier - [sum(value) * multiplier]",
-                "",
-                ""
-            ],
-            "x-enum-varnames": [
-                "AggregationCount",
-                "AggregationSum",
-                "AggregationAvg",
-                "AggregationCountUnique",
-                "AggregationLatest",
-                "AggregationSumWithMultiplier",
-                "AggregationMax",
-                "AggregationWeightedSum"
-            ]
-        },
-        "types.AlertCondition": {
-            "type": "string",
-            "enum": [
-                "above",
-                "below"
-            ],
-            "x-enum-varnames": [
-                "AlertConditionAbove",
-                "AlertConditionBelow"
-            ]
-        },
-        "types.AlertEntityType": {
-            "type": "string",
-            "enum": [
-                "wallet",
-                "feature"
-            ],
-            "x-enum-varnames": [
-                "AlertEntityTypeWallet",
-                "AlertEntityTypeFeature"
-            ]
-        },
-        "types.AlertInfo": {
-            "type": "object",
-            "properties": {
-                "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "value_at_time": {
-                    "type": "number"
-                }
-            }
-        },
-        "types.AlertLogFilter": {
-            "type": "object",
-            "properties": {
-                "alert_status": {
-                    "$ref": "#/definitions/types.AlertState"
-                },
-                "alert_type": {
-                    "$ref": "#/definitions/types.AlertType"
-                },
-                "customer_id": {
-                    "type": "string"
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "entity_id": {
-                    "type": "string"
-                },
-                "entity_type": {
-                    "$ref": "#/definitions/types.AlertEntityType"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.AlertSettings": {
-            "type": "object",
-            "properties": {
-                "alert_enabled": {
-                    "type": "boolean"
-                },
-                "critical": {
-                    "$ref": "#/definitions/types.AlertThreshold"
-                },
-                "info": {
-                    "$ref": "#/definitions/types.AlertThreshold"
-                },
-                "warning": {
-                    "$ref": "#/definitions/types.AlertThreshold"
-                }
-            }
-        },
-        "types.AlertState": {
-            "type": "string",
-            "enum": [
-                "ok",
-                "info",
-                "warning",
-                "in_alarm"
-            ],
-            "x-enum-varnames": [
-                "AlertStateOk",
-                "AlertStateInfo",
-                "AlertStateWarning",
-                "AlertStateInAlarm"
-            ]
-        },
-        "types.AlertThreshold": {
-            "type": "object",
-            "properties": {
-                "condition": {
-                    "$ref": "#/definitions/types.AlertCondition"
-                },
-                "threshold": {
-                    "type": "number"
-                }
-            }
-        },
-        "types.AlertType": {
-            "type": "string",
-            "enum": [
-                "low_ongoing_balance",
-                "low_credit_balance",
-                "feature_wallet_balance"
-            ],
-            "x-enum-varnames": [
-                "AlertTypeLowOngoingBalance",
-                "AlertTypeLowCreditBalance",
-                "AlertTypeFeatureWalletBalance"
-            ]
-        },
-        "types.ApplicationStatus": {
-            "type": "string",
-            "enum": [
-                "applied",
-                "failed",
-                "pending",
-                "skipped",
-                "cancelled"
-            ],
-            "x-enum-varnames": [
-                "ApplicationStatusApplied",
-                "ApplicationStatusFailed",
-                "ApplicationStatusPending",
-                "ApplicationStatusSkipped",
-                "ApplicationStatusCancelled"
-            ]
-        },
-        "types.AutoTopup": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "invoicing": {
-                    "type": "boolean"
-                },
-                "threshold": {
-                    "type": "number"
-                }
-            }
-        },
-        "types.BillingCadence": {
-            "type": "string",
-            "enum": [
-                "RECURRING",
-                "ONETIME"
-            ],
-            "x-enum-varnames": [
-                "BILLING_CADENCE_RECURRING",
-                "BILLING_CADENCE_ONETIME"
-            ]
-        },
-        "types.BillingCycle": {
-            "type": "string",
-            "enum": [
-                "anniversary",
-                "calendar"
-            ],
-            "x-enum-varnames": [
-                "BillingCycleAnniversary",
-                "BillingCycleCalendar"
-            ]
-        },
-        "types.BillingModel": {
-            "type": "string",
-            "enum": [
-                "FLAT_FEE",
-                "PACKAGE",
-                "TIERED"
-            ],
-            "x-enum-varnames": [
-                "BILLING_MODEL_FLAT_FEE",
-                "BILLING_MODEL_PACKAGE",
-                "BILLING_MODEL_TIERED"
-            ]
-        },
-        "types.BillingPeriod": {
-            "type": "string",
-            "enum": [
-                "MONTHLY",
-                "ANNUAL",
-                "WEEKLY",
-                "DAILY",
-                "QUARTERLY",
-                "HALF_YEARLY"
-            ],
-            "x-enum-varnames": [
-                "BILLING_PERIOD_MONTHLY",
-                "BILLING_PERIOD_ANNUAL",
-                "BILLING_PERIOD_WEEKLY",
-                "BILLING_PERIOD_DAILY",
-                "BILLING_PERIOD_QUARTER",
-                "BILLING_PERIOD_HALF_YEAR"
-            ]
-        },
-        "types.BillingTier": {
-            "type": "string",
-            "enum": [
-                "VOLUME",
-                "SLAB"
-            ],
-            "x-enum-varnames": [
-                "BILLING_TIER_VOLUME",
-                "BILLING_TIER_SLAB"
-            ]
-        },
-        "types.CancelImmediatelyInvoicePolicy": {
-            "type": "string",
-            "enum": [
-                "generate_invoice",
-                "skip"
-            ],
-            "x-enum-varnames": [
-                "CancelImmediatelyInvoicePolicyGenerateInvoice",
-                "CancelImmediatelyInvoicePolicySkip"
-            ]
-        },
-        "types.CancellationType": {
-            "type": "string",
-            "enum": [
-                "immediate",
-                "end_of_period"
-            ],
-            "x-enum-varnames": [
-                "CancellationTypeImmediate",
-                "CancellationTypeEndOfPeriod"
-            ]
-        },
-        "types.CollectionMethod": {
-            "type": "string",
-            "enum": [
-                "charge_automatically",
-                "send_invoice"
-            ],
-            "x-enum-varnames": [
-                "CollectionMethodChargeAutomatically",
-                "CollectionMethodSendInvoice"
-            ]
-        },
-        "types.CommitmentInfo": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "string"
-                },
-                "computed_commitment_utilized_amount": {
-                    "type": "string"
-                },
-                "computed_overage_amount": {
-                    "type": "string"
-                },
-                "computed_true_up_amount": {
-                    "description": "total_cost = computed_commitment_utilized_amount + computed_overage_amount + computed_true_up_amount",
-                    "type": "string"
-                },
-                "duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
-                },
-                "is_windowed": {
-                    "type": "boolean"
-                },
-                "overage_factor": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "description": "Only used for quantity-based commitments",
-                    "type": "string"
-                },
-                "true_up_enabled": {
-                    "type": "boolean"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.CommitmentType"
-                }
-            }
-        },
-        "types.CommitmentType": {
-            "type": "string",
-            "enum": [
-                "amount",
-                "quantity"
-            ],
-            "x-enum-varnames": [
-                "COMMITMENT_TYPE_AMOUNT",
-                "COMMITMENT_TYPE_QUANTITY"
-            ]
-        },
-        "types.CouponCadence": {
-            "type": "string",
-            "enum": [
-                "once",
-                "repeated",
-                "forever"
-            ],
-            "x-enum-varnames": [
-                "CouponCadenceOnce",
-                "CouponCadenceRepeated",
-                "CouponCadenceForever"
-            ]
-        },
-        "types.CouponFilter": {
-            "type": "object",
-            "properties": {
-                "coupon_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.CouponType": {
-            "type": "string",
-            "enum": [
-                "fixed",
-                "percentage"
-            ],
-            "x-enum-varnames": [
-                "CouponTypeFixed",
-                "CouponTypePercentage"
-            ]
-        },
-        "types.CreditBreakdown": {
-            "type": "object",
-            "properties": {
-                "free": {
-                    "type": "string"
-                },
-                "purchased": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.CreditGrantApplicationReason": {
-            "type": "string",
-            "enum": [
-                "first_time_recurring_credit_grant",
-                "recurring_credit_grant",
-                "onetime_credit_grant"
-            ],
-            "x-enum-varnames": [
-                "ApplicationReasonFirstTimeRecurringCreditGrant",
-                "ApplicationReasonRecurringCreditGrant",
-                "ApplicationReasonOnetimeCreditGrant"
-            ]
-        },
-        "types.CreditGrantCadence": {
-            "type": "string",
-            "enum": [
-                "ONETIME",
-                "RECURRING"
-            ],
-            "x-enum-varnames": [
-                "CreditGrantCadenceOneTime",
-                "CreditGrantCadenceRecurring"
-            ]
-        },
-        "types.CreditGrantExpiryDurationUnit": {
-            "type": "string",
-            "enum": [
-                "DAY",
-                "WEEK",
-                "MONTH",
-                "YEAR"
-            ],
-            "x-enum-varnames": [
-                "CreditGrantExpiryDurationUnitDays",
-                "CreditGrantExpiryDurationUnitWeeks",
-                "CreditGrantExpiryDurationUnitMonths",
-                "CreditGrantExpiryDurationUnitYears"
-            ]
-        },
-        "types.CreditGrantExpiryType": {
-            "type": "string",
-            "enum": [
-                "NEVER",
-                "DURATION",
-                "BILLING_CYCLE"
-            ],
-            "x-enum-varnames": [
-                "CreditGrantExpiryTypeNever",
-                "CreditGrantExpiryTypeDuration",
-                "CreditGrantExpiryTypeBillingCycle"
-            ]
-        },
-        "types.CreditGrantPeriod": {
-            "type": "string",
-            "enum": [
-                "DAILY",
-                "WEEKLY",
-                "MONTHLY",
-                "ANNUAL",
-                "QUARTERLY",
-                "HALF_YEARLY"
-            ],
-            "x-enum-varnames": [
-                "CREDIT_GRANT_PERIOD_DAILY",
-                "CREDIT_GRANT_PERIOD_WEEKLY",
-                "CREDIT_GRANT_PERIOD_MONTHLY",
-                "CREDIT_GRANT_PERIOD_ANNUAL",
-                "CREDIT_GRANT_PERIOD_QUARTER",
-                "CREDIT_GRANT_PERIOD_HALF_YEARLY"
-            ]
-        },
-        "types.CreditGrantScope": {
-            "type": "string",
-            "enum": [
-                "PLAN",
-                "SUBSCRIPTION"
-            ],
-            "x-enum-varnames": [
-                "CreditGrantScopePlan",
-                "CreditGrantScopeSubscription"
-            ]
-        },
-        "types.CreditNoteReason": {
-            "type": "string",
-            "enum": [
-                "DUPLICATE",
-                "FRAUDULENT",
-                "ORDER_CHANGE",
-                "UNSATISFACTORY",
-                "SERVICE_ISSUE",
-                "BILLING_ERROR",
-                "SUBSCRIPTION_CANCELLATION"
-            ],
-            "x-enum-varnames": [
-                "CreditNoteReasonDuplicate",
-                "CreditNoteReasonFraudulent",
-                "CreditNoteReasonOrderChange",
-                "CreditNoteReasonUnsatisfactory",
-                "CreditNoteReasonService",
-                "CreditNoteReasonBillingError",
-                "CreditNoteReasonSubscriptionCancellation"
-            ]
-        },
-        "types.CreditNoteStatus": {
-            "type": "string",
-            "enum": [
-                "DRAFT",
-                "FINALIZED",
-                "VOIDED"
-            ],
-            "x-enum-varnames": [
-                "CreditNoteStatusDraft",
-                "CreditNoteStatusFinalized",
-                "CreditNoteStatusVoided"
-            ]
-        },
-        "types.CreditNoteType": {
-            "type": "string",
-            "enum": [
-                "ADJUSTMENT",
-                "REFUND"
-            ],
-            "x-enum-varnames": [
-                "CreditNoteTypeAdjustment",
-                "CreditNoteTypeRefund"
-            ]
-        },
-        "types.CustomerFilter": {
-            "type": "object",
-            "properties": {
-                "customer_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "email": {
-                    "type": "string"
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "external_id": {
-                    "type": "string"
-                },
-                "external_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "filters": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "parent_customer_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.DataType": {
-            "type": "string",
-            "enum": [
-                "string",
-                "number",
-                "date",
-                "array"
-            ],
-            "x-enum-varnames": [
-                "DataTypeString",
-                "DataTypeNumber",
-                "DataTypeDate",
-                "DataTypeArray"
-            ]
-        },
-        "types.DebugTrackerStatus": {
-            "type": "string",
-            "enum": [
-                "unprocessed",
-                "not_found",
-                "found",
-                "error"
-            ],
-            "x-enum-varnames": [
-                "DebugTrackerStatusUnprocessed",
-                "DebugTrackerStatusNotFound",
-                "DebugTrackerStatusFound",
-                "DebugTrackerStatusError"
-            ]
-        },
-        "types.EntitlementEntityType": {
-            "type": "string",
-            "enum": [
-                "PLAN",
-                "SUBSCRIPTION",
-                "ADDON"
-            ],
-            "x-enum-varnames": [
-                "ENTITLEMENT_ENTITY_TYPE_PLAN",
-                "ENTITLEMENT_ENTITY_TYPE_SUBSCRIPTION",
-                "ENTITLEMENT_ENTITY_TYPE_ADDON"
-            ]
-        },
-        "types.EntitlementFilter": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "entity_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "entity_type": {
-                    "$ref": "#/definitions/types.EntitlementEntityType"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "feature_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "feature_type": {
-                    "$ref": "#/definitions/types.FeatureType"
-                },
-                "filters": {
-                    "description": "Specific filters for entitlements",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "is_enabled": {
-                    "type": "boolean"
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "plan_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.EntitlementUsageResetPeriod": {
-            "type": "string",
-            "enum": [
-                "MONTHLY",
-                "ANNUAL",
-                "WEEKLY",
-                "DAILY",
-                "QUARTERLY",
-                "HALF_YEARLY",
-                "NEVER"
-            ],
-            "x-enum-varnames": [
-                "ENTITLEMENT_USAGE_RESET_PERIOD_MONTHLY",
-                "ENTITLEMENT_USAGE_RESET_PERIOD_ANNUAL",
-                "ENTITLEMENT_USAGE_RESET_PERIOD_WEEKLY",
-                "ENTITLEMENT_USAGE_RESET_PERIOD_DAILY",
-                "ENTITLEMENT_USAGE_RESET_PERIOD_QUARTER",
-                "ENTITLEMENT_USAGE_RESET_PERIOD_HALF_YEAR",
-                "ENTITLEMENT_USAGE_RESET_PERIOD_NEVER"
-            ]
-        },
-        "types.EntityType": {
-            "type": "string",
-            "enum": [
-                "EVENTS",
-                "PRICES",
-                "CUSTOMERS",
-                "FEATURES"
-            ],
-            "x-enum-varnames": [
-                "EntityTypeEvents",
-                "EntityTypePrices",
-                "EntityTypeCustomers",
-                "EntityTypeFeatures"
-            ]
-        },
-        "types.EventProcessingStatusType": {
-            "type": "string",
-            "enum": [
-                "processed",
-                "processing",
-                "failed"
-            ],
-            "x-enum-varnames": [
-                "EventProcessingStatusTypeProcessed",
-                "EventProcessingStatusTypeProcessing",
-                "EventProcessingStatusTypeFailed"
-            ]
-        },
-        "types.FailurePoint": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "$ref": "#/definitions/errors.ErrorResponse"
-                },
-                "failure_point_type": {
-                    "$ref": "#/definitions/types.FailurePointType"
-                }
-            }
-        },
-        "types.FailurePointType": {
-            "type": "string",
-            "enum": [
-                "customer_lookup",
-                "meter_lookup",
-                "price_lookup",
-                "subscription_line_item_lookup"
-            ],
-            "x-enum-varnames": [
-                "FailurePointTypeCustomerLookup",
-                "FailurePointTypeMeterLookup",
-                "FailurePointTypePriceLookup",
-                "FailurePointTypeSubscriptionLineItemLookup"
-            ]
-        },
-        "types.FeatureFilter": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "feature_ids": {
-                    "description": "Feature specific filters",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "lookup_key": {
-                    "type": "string"
-                },
-                "lookup_keys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "meter_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "name_contains": {
-                    "type": "string"
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.FeatureType": {
-            "type": "string",
-            "enum": [
-                "metered",
-                "boolean",
-                "static"
-            ],
-            "x-enum-varnames": [
-                "FeatureTypeMetered",
-                "FeatureTypeBoolean",
-                "FeatureTypeStatic"
-            ]
-        },
-        "types.FileType": {
-            "type": "string",
-            "enum": [
-                "CSV",
-                "JSON"
-            ],
-            "x-enum-varnames": [
-                "FileTypeCSV",
-                "FileTypeJSON"
-            ]
-        },
-        "types.FilterCondition": {
-            "type": "object",
-            "properties": {
-                "data_type": {
-                    "$ref": "#/definitions/types.DataType"
-                },
-                "field": {
-                    "type": "string"
-                },
-                "operator": {
-                    "$ref": "#/definitions/types.FilterOperatorType"
-                },
-                "value": {
-                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Value"
-                }
-            }
-        },
-        "types.FilterOperatorType": {
-            "type": "string",
-            "enum": [
-                "eq",
-                "contains",
-                "not_contains",
-                "gt",
-                "lt",
-                "in",
-                "not_in",
-                "before",
-                "after"
-            ],
-            "x-enum-varnames": [
-                "EQUAL",
-                "CONTAINS",
-                "NOT_CONTAINS",
-                "GREATER_THAN",
-                "LESS_THAN",
-                "IN",
-                "NOT_IN",
-                "BEFORE",
-                "AFTER"
-            ]
-        },
-        "types.GroupFilter": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "entity_type": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "group_ids": {
-                    "description": "Group specific filters",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "lookup_key": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.IntegrationEntityType": {
-            "type": "string",
-            "enum": [
-                "customer",
-                "plan",
-                "invoice",
-                "subscription",
-                "payment",
-                "credit_note",
-                "addon",
-                "item",
-                "item_price",
-                "price"
-            ],
-            "x-enum-varnames": [
-                "IntegrationEntityTypeCustomer",
-                "IntegrationEntityTypePlan",
-                "IntegrationEntityTypeInvoice",
-                "IntegrationEntityTypeSubscription",
-                "IntegrationEntityTypePayment",
-                "IntegrationEntityTypeCreditNote",
-                "IntegrationEntityTypeAddon",
-                "IntegrationEntityTypeItem",
-                "IntegrationEntityTypeItemPrice",
-                "IntegrationEntityTypePrice"
-            ]
-        },
-        "types.InvoiceBilling": {
-            "type": "string",
-            "enum": [
-                "invoice_to_parent",
-                "invoice_to_self"
-            ],
-            "x-enum-varnames": [
-                "InvoiceBillingInvoiceToParent",
-                "InvoiceBillingInvoiceToSelf"
-            ]
-        },
-        "types.InvoiceBillingReason": {
-            "type": "string",
-            "enum": [
-                "SUBSCRIPTION_CREATE",
-                "SUBSCRIPTION_CYCLE",
-                "SUBSCRIPTION_UPDATE",
-                "PRORATION",
-                "MANUAL"
-            ],
-            "x-enum-varnames": [
-                "InvoiceBillingReasonSubscriptionCreate",
-                "InvoiceBillingReasonSubscriptionCycle",
-                "InvoiceBillingReasonSubscriptionUpdate",
-                "InvoiceBillingReasonProration",
-                "InvoiceBillingReasonManual"
-            ]
-        },
-        "types.InvoiceCadence": {
-            "type": "string",
-            "enum": [
-                "ARREAR",
-                "ADVANCE"
-            ],
-            "x-enum-varnames": [
-                "InvoiceCadenceArrear",
-                "InvoiceCadenceAdvance"
-            ]
-        },
-        "types.InvoiceFilter": {
-            "type": "object",
-            "properties": {
-                "amount_due_gt": {
-                    "description": "amount_due_gt filters invoices with a total amount due greater than the specified value\nUseful for finding invoices above a certain threshold or identifying high-value invoices",
-                    "type": "number"
-                },
-                "amount_remaining_gt": {
-                    "description": "amount_remaining_gt filters invoices with an outstanding balance greater than the specified value\nUseful for finding invoices that still have significant unpaid amounts",
-                    "type": "number"
-                },
-                "customer_id": {
-                    "description": "customer_id filters invoices for a specific customer using FlexPrice's internal customer ID\nThis is the ID returned by FlexPrice when creating or retrieving customers",
-                    "type": "string"
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "external_customer_id": {
-                    "description": "external_customer_id filters invoices for a customer using your system's customer identifier\nThis is the ID you provided when creating the customer in FlexPrice",
-                    "type": "string"
-                },
-                "filters": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "invoice_ids": {
-                    "description": "invoice_ids restricts results to invoices with the specified IDs\nUse this to retrieve specific invoices when you know their exact identifiers",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "invoice_status": {
-                    "description": "invoice_status filters by the current state of invoices in their lifecycle\nMultiple statuses can be specified to include invoices in any of the listed states",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.InvoiceStatus"
-                    }
-                },
-                "invoice_type": {
-                    "description": "invoice_type filters by the nature of the invoice (SUBSCRIPTION, ONE_OFF, or CREDIT)\nUse this to separate recurring charges from one-time fees or credit adjustments",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.InvoiceType"
-                        }
-                    ]
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "payment_status": {
-                    "description": "payment_status filters by the payment state of invoices\nMultiple statuses can be specified to include invoices with any of the listed payment states",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.PaymentStatus"
-                    }
-                },
-                "period_end_gte": {
-                    "description": "period_end_gte filters invoices with period_end \u003e= value",
-                    "type": "string"
-                },
-                "period_end_lte": {
-                    "description": "period_end_lte filters invoices with period_end \u003c= value",
-                    "type": "string"
-                },
-                "period_start_gte": {
-                    "description": "period_start_gte filters invoices with period_start \u003e= value",
-                    "type": "string"
-                },
-                "period_start_lte": {
-                    "description": "period_start_lte filters invoices with period_start \u003c= value",
-                    "type": "string"
-                },
-                "skip_line_items": {
-                    "description": "SkipLineItems if true, will not include line items in the response",
-                    "type": "boolean"
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "subscription_id": {
-                    "description": "subscription_id filters invoices generated for a specific subscription\nOnly returns invoices that were created as part of the specified subscription's billing",
-                    "type": "string"
-                }
-            }
-        },
-        "types.InvoiceStatus": {
-            "type": "string",
-            "enum": [
-                "DRAFT",
-                "FINALIZED",
-                "VOIDED"
-            ],
-            "x-enum-varnames": [
-                "InvoiceStatusDraft",
-                "InvoiceStatusFinalized",
-                "InvoiceStatusVoided"
-            ]
-        },
-        "types.InvoiceType": {
-            "type": "string",
-            "enum": [
-                "SUBSCRIPTION",
-                "ONE_OFF",
-                "CREDIT"
-            ],
-            "x-enum-varnames": [
-                "InvoiceTypeSubscription",
-                "InvoiceTypeOneOff",
-                "InvoiceTypeCredit"
-            ]
-        },
         "types.ListResponse-dto_WalletResponse": {
             "type": "object",
             "properties": {
@@ -22244,7 +23573,7 @@ const docTemplate = `{
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -22252,1327 +23581,6 @@ const docTemplate = `{
             "type": "object",
             "additionalProperties": {
                 "type": "string"
-            }
-        },
-        "types.PaginationResponse": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "types.PauseMode": {
-            "type": "string",
-            "enum": [
-                "immediate",
-                "scheduled",
-                "period_end"
-            ],
-            "x-enum-varnames": [
-                "PauseModeImmediate",
-                "PauseModeScheduled",
-                "PauseModePeriodEnd"
-            ]
-        },
-        "types.PauseStatus": {
-            "type": "string",
-            "enum": [
-                "none",
-                "active",
-                "scheduled",
-                "completed",
-                "cancelled"
-            ],
-            "x-enum-varnames": [
-                "PauseStatusNone",
-                "PauseStatusActive",
-                "PauseStatusScheduled",
-                "PauseStatusCompleted",
-                "PauseStatusCancelled"
-            ]
-        },
-        "types.PaymentBehavior": {
-            "type": "string",
-            "enum": [
-                "allow_incomplete",
-                "default_incomplete",
-                "error_if_incomplete",
-                "default_active"
-            ],
-            "x-enum-varnames": [
-                "PaymentBehaviorAllowIncomplete",
-                "PaymentBehaviorDefaultIncomplete",
-                "PaymentBehaviorErrorIfIncomplete",
-                "PaymentBehaviorDefaultActive"
-            ]
-        },
-        "types.PaymentDestinationType": {
-            "type": "string",
-            "enum": [
-                "INVOICE"
-            ],
-            "x-enum-varnames": [
-                "PaymentDestinationTypeInvoice"
-            ]
-        },
-        "types.PaymentGatewayType": {
-            "type": "string",
-            "enum": [
-                "stripe",
-                "razorpay",
-                "nomod",
-                "moyasar"
-            ],
-            "x-enum-varnames": [
-                "PaymentGatewayTypeStripe",
-                "PaymentGatewayTypeRazorpay",
-                "PaymentGatewayTypeNomod",
-                "PaymentGatewayTypeMoyasar"
-            ]
-        },
-        "types.PaymentMethodType": {
-            "type": "string",
-            "enum": [
-                "CARD",
-                "ACH",
-                "OFFLINE",
-                "CREDITS",
-                "PAYMENT_LINK"
-            ],
-            "x-enum-varnames": [
-                "PaymentMethodTypeCard",
-                "PaymentMethodTypeACH",
-                "PaymentMethodTypeOffline",
-                "PaymentMethodTypeCredits",
-                "PaymentMethodTypePaymentLink"
-            ]
-        },
-        "types.PaymentStatus": {
-            "type": "string",
-            "enum": [
-                "INITIATED",
-                "PENDING",
-                "PROCESSING",
-                "SUCCEEDED",
-                "OVERPAID",
-                "FAILED",
-                "REFUNDED",
-                "PARTIALLY_REFUNDED"
-            ],
-            "x-enum-varnames": [
-                "PaymentStatusInitiated",
-                "PaymentStatusPending",
-                "PaymentStatusProcessing",
-                "PaymentStatusSucceeded",
-                "PaymentStatusOverpaid",
-                "PaymentStatusFailed",
-                "PaymentStatusRefunded",
-                "PaymentStatusPartiallyRefunded"
-            ]
-        },
-        "types.PaymentTerms": {
-            "type": "string",
-            "enum": [
-                "15 NET",
-                "30 NET",
-                "45 NET",
-                "60 NET",
-                "75 NET",
-                "90 NET"
-            ],
-            "x-enum-varnames": [
-                "PaymentTerms15Net",
-                "PaymentTerms30Net",
-                "PaymentTerms45Net",
-                "PaymentTerms60Net",
-                "PaymentTerms75Net",
-                "PaymentTerms90Net"
-            ]
-        },
-        "types.PlanFilter": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "lookup_key": {
-                    "type": "string"
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "plan_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.PriceEntityType": {
-            "type": "string",
-            "enum": [
-                "PLAN",
-                "SUBSCRIPTION",
-                "ADDON",
-                "PRICE",
-                "COSTSHEET"
-            ],
-            "x-enum-varnames": [
-                "PRICE_ENTITY_TYPE_PLAN",
-                "PRICE_ENTITY_TYPE_SUBSCRIPTION",
-                "PRICE_ENTITY_TYPE_ADDON",
-                "PRICE_ENTITY_TYPE_PRICE",
-                "PRICE_ENTITY_TYPE_COSTSHEET"
-            ]
-        },
-        "types.PriceFilter": {
-            "type": "object",
-            "properties": {
-                "allow_expired_prices": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "entity_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "entity_type": {
-                    "$ref": "#/definitions/types.PriceEntityType"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "DSL filters",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "meter_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "parent_price_id": {
-                    "type": "string"
-                },
-                "plan_ids": {
-                    "description": "Price override filtering fields",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "price_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort": {
-                    "type": "string"
-                },
-                "start_date_lt": {
-                    "type": "string"
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "subscription_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.PriceType": {
-            "type": "string",
-            "enum": [
-                "USAGE",
-                "FIXED"
-            ],
-            "x-enum-varnames": [
-                "PRICE_TYPE_USAGE",
-                "PRICE_TYPE_FIXED"
-            ]
-        },
-        "types.PriceUnitFilter": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "price_unit_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.PriceUnitType": {
-            "type": "string",
-            "enum": [
-                "FIAT",
-                "CUSTOM"
-            ],
-            "x-enum-varnames": [
-                "PRICE_UNIT_TYPE_FIAT",
-                "PRICE_UNIT_TYPE_CUSTOM"
-            ]
-        },
-        "types.ProrationBehavior": {
-            "type": "string",
-            "enum": [
-                "create_prorations",
-                "none"
-            ],
-            "x-enum-comments": {
-                "ProrationBehaviorCreateProrations": "Default: Create credits/charges on invoice",
-                "ProrationBehaviorNone": "Calculate but don't apply (e.g., for previews)"
-            },
-            "x-enum-descriptions": [
-                "Default: Create credits/charges on invoice",
-                "Calculate but don't apply (e.g., for previews)"
-            ],
-            "x-enum-varnames": [
-                "ProrationBehaviorCreateProrations",
-                "ProrationBehaviorNone"
-            ]
-        },
-        "types.QueryFilter": {
-            "type": "object",
-            "properties": {
-                "expand": {
-                    "type": "string"
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                }
-            }
-        },
-        "types.ResetUsage": {
-            "type": "string",
-            "enum": [
-                "BILLING_PERIOD",
-                "NEVER"
-            ],
-            "x-enum-varnames": [
-                "ResetUsageBillingPeriod",
-                "ResetUsageNever"
-            ]
-        },
-        "types.ResumeMode": {
-            "type": "string",
-            "enum": [
-                "immediate",
-                "scheduled",
-                "auto"
-            ],
-            "x-enum-varnames": [
-                "ResumeModeImmediate",
-                "ResumeModeScheduled",
-                "ResumeModeAuto"
-            ]
-        },
-        "types.RoundType": {
-            "type": "string",
-            "enum": [
-                "up",
-                "down"
-            ],
-            "x-enum-varnames": [
-                "ROUND_UP",
-                "ROUND_DOWN"
-            ]
-        },
-        "types.S3CompressionType": {
-            "type": "string",
-            "enum": [
-                "none",
-                "gzip"
-            ],
-            "x-enum-varnames": [
-                "S3CompressionTypeNone",
-                "S3CompressionTypeGzip"
-            ]
-        },
-        "types.S3EncryptionType": {
-            "type": "string",
-            "enum": [
-                "AES256",
-                "aws:kms",
-                "aws:kms:dsse"
-            ],
-            "x-enum-varnames": [
-                "S3EncryptionTypeAES256",
-                "S3EncryptionTypeAwsKms",
-                "S3EncryptionTypeAwsKmsDsse"
-            ]
-        },
-        "types.S3JobConfig": {
-            "type": "object",
-            "properties": {
-                "bucket": {
-                    "description": "S3 bucket name",
-                    "type": "string"
-                },
-                "compression": {
-                    "description": "Compression type: \"gzip\", \"none\" (default: \"none\")",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.S3CompressionType"
-                        }
-                    ]
-                },
-                "encryption": {
-                    "description": "Encryption type: \"AES256\", \"aws:kms\", \"aws:kms:dsse\" (default: \"AES256\")",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.S3EncryptionType"
-                        }
-                    ]
-                },
-                "endpoint_url": {
-                    "description": "Custom S3 endpoint URL (e.g., \"http://minio:9000\" for MinIO)",
-                    "type": "string"
-                },
-                "key_prefix": {
-                    "description": "Optional prefix for S3 keys (e.g., \"flexprice-exports/\")",
-                    "type": "string"
-                },
-                "region": {
-                    "description": "AWS region (e.g., \"us-west-2\")",
-                    "type": "string"
-                },
-                "use_path_style": {
-                    "description": "Use path-style addressing instead of virtual-hosted-style (required for MinIO)",
-                    "type": "boolean"
-                }
-            }
-        },
-        "types.ScheduleStatus": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "executing",
-                "executed",
-                "cancelled",
-                "failed"
-            ],
-            "x-enum-varnames": [
-                "ScheduleStatusPending",
-                "ScheduleStatusExecuting",
-                "ScheduleStatusExecuted",
-                "ScheduleStatusCancelled",
-                "ScheduleStatusFailed"
-            ]
-        },
-        "types.ScheduleType": {
-            "type": "string",
-            "enum": [
-                "immediate",
-                "end_of_period"
-            ],
-            "x-enum-varnames": [
-                "ScheduleTypeImmediate",
-                "ScheduleTypePeriodEnd"
-            ]
-        },
-        "types.ScheduledTaskEntityType": {
-            "type": "string",
-            "enum": [
-                "events",
-                "invoice",
-                "credit_topups",
-                "credit_usage"
-            ],
-            "x-enum-varnames": [
-                "ScheduledTaskEntityTypeEvents",
-                "ScheduledTaskEntityTypeInvoice",
-                "ScheduledTaskEntityTypeCreditTopups",
-                "ScheduledTaskEntityTypeCreditUsage"
-            ]
-        },
-        "types.ScheduledTaskInterval": {
-            "type": "string",
-            "enum": [
-                "15MIN",
-                "custom",
-                "hourly",
-                "daily"
-            ],
-            "x-enum-comments": {
-                "ScheduledTaskIntervalCustom": "10 minutes for testing"
-            },
-            "x-enum-descriptions": [
-                "",
-                "10 minutes for testing",
-                "",
-                ""
-            ],
-            "x-enum-varnames": [
-                "ScheduledTaskIntervalEvery15Minutes",
-                "ScheduledTaskIntervalCustom",
-                "ScheduledTaskIntervalHourly",
-                "ScheduledTaskIntervalDaily"
-            ]
-        },
-        "types.SecretProvider": {
-            "type": "string",
-            "enum": [
-                "flexprice",
-                "stripe",
-                "s3",
-                "hubspot",
-                "razorpay",
-                "chargebee",
-                "quickbooks",
-                "nomod",
-                "moyasar"
-            ],
-            "x-enum-varnames": [
-                "SecretProviderFlexPrice",
-                "SecretProviderStripe",
-                "SecretProviderS3",
-                "SecretProviderHubSpot",
-                "SecretProviderRazorpay",
-                "SecretProviderChargebee",
-                "SecretProviderQuickBooks",
-                "SecretProviderNomod",
-                "SecretProviderMoyasar"
-            ]
-        },
-        "types.SecretType": {
-            "type": "string",
-            "enum": [
-                "private_key",
-                "publishable_key",
-                "integration"
-            ],
-            "x-enum-varnames": [
-                "SecretTypePrivateKey",
-                "SecretTypePublishableKey",
-                "SecretTypeIntegration"
-            ]
-        },
-        "types.SortCondition": {
-            "type": "object",
-            "properties": {
-                "direction": {
-                    "$ref": "#/definitions/types.SortDirection"
-                },
-                "field": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.SortDirection": {
-            "type": "string",
-            "enum": [
-                "asc",
-                "desc"
-            ],
-            "x-enum-varnames": [
-                "SortDirectionAsc",
-                "SortDirectionDesc"
-            ]
-        },
-        "types.Status": {
-            "type": "string",
-            "enum": [
-                "published",
-                "deleted",
-                "archived"
-            ],
-            "x-enum-varnames": [
-                "StatusPublished",
-                "StatusDeleted",
-                "StatusArchived"
-            ]
-        },
-        "types.SubscriptionChangeType": {
-            "type": "string",
-            "enum": [
-                "upgrade",
-                "downgrade",
-                "lateral"
-            ],
-            "x-enum-varnames": [
-                "SubscriptionChangeTypeUpgrade",
-                "SubscriptionChangeTypeDowngrade",
-                "SubscriptionChangeTypeLateral"
-            ]
-        },
-        "types.SubscriptionFilter": {
-            "type": "object",
-            "properties": {
-                "active_at": {
-                    "description": "ActiveAt filters subscriptions that are active at the given time",
-                    "type": "string"
-                },
-                "billing_cadence": {
-                    "description": "BillingCadence filters by billing cadence",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.BillingCadence"
-                    }
-                },
-                "billing_period": {
-                    "description": "BillingPeriod filters by billing period",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.BillingPeriod"
-                    }
-                },
-                "customer_id": {
-                    "description": "CustomerID filters by customer ID",
-                    "type": "string"
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "external_customer_id": {
-                    "description": "ExternalCustomerID filters by external customer ID",
-                    "type": "string"
-                },
-                "filters": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "invoicing_customer_ids": {
-                    "description": "InvoicingCustomerIDs filters by invoicing customer ID",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "parent_subscription_ids": {
-                    "description": "ParentSubscriptionIDs filters by parent subscription IDs",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "plan_id": {
-                    "description": "PlanID filters by plan ID",
-                    "type": "string"
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "subscription_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "subscription_status": {
-                    "description": "SubscriptionStatus filters by subscription status",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SubscriptionStatus"
-                    }
-                },
-                "with_line_items": {
-                    "description": "WithLineItems includes line items in the response",
-                    "type": "boolean"
-                }
-            }
-        },
-        "types.SubscriptionLineItemEntityType": {
-            "type": "string",
-            "enum": [
-                "plan",
-                "addon",
-                "subscription"
-            ],
-            "x-enum-varnames": [
-                "SubscriptionLineItemEntityTypePlan",
-                "SubscriptionLineItemEntityTypeAddon",
-                "SubscriptionLineItemEntityTypeSubscription"
-            ]
-        },
-        "types.SubscriptionScheduleChangeType": {
-            "type": "string",
-            "enum": [
-                "plan_change",
-                "cancellation"
-            ],
-            "x-enum-varnames": [
-                "SubscriptionScheduleChangeTypePlanChange",
-                "SubscriptionScheduleChangeTypeCancellation"
-            ]
-        },
-        "types.SubscriptionStatus": {
-            "type": "string",
-            "enum": [
-                "active",
-                "paused",
-                "cancelled",
-                "incomplete",
-                "trialing",
-                "draft"
-            ],
-            "x-enum-varnames": [
-                "SubscriptionStatusActive",
-                "SubscriptionStatusPaused",
-                "SubscriptionStatusCancelled",
-                "SubscriptionStatusIncomplete",
-                "SubscriptionStatusTrialing",
-                "SubscriptionStatusDraft"
-            ]
-        },
-        "types.TaskStatus": {
-            "type": "string",
-            "enum": [
-                "PENDING",
-                "PROCESSING",
-                "COMPLETED",
-                "FAILED"
-            ],
-            "x-enum-varnames": [
-                "TaskStatusPending",
-                "TaskStatusProcessing",
-                "TaskStatusCompleted",
-                "TaskStatusFailed"
-            ]
-        },
-        "types.TaskType": {
-            "type": "string",
-            "enum": [
-                "IMPORT",
-                "EXPORT"
-            ],
-            "x-enum-varnames": [
-                "TaskTypeImport",
-                "TaskTypeExport"
-            ]
-        },
-        "types.TaxRateEntityType": {
-            "type": "string",
-            "enum": [
-                "customer",
-                "subscription",
-                "invoice",
-                "tenant"
-            ],
-            "x-enum-varnames": [
-                "TaxRateEntityTypeCustomer",
-                "TaxRateEntityTypeSubscription",
-                "TaxRateEntityTypeInvoice",
-                "TaxRateEntityTypeTenant"
-            ]
-        },
-        "types.TaxRateScope": {
-            "type": "string",
-            "enum": [
-                "INTERNAL",
-                "EXTERNAL",
-                "ONETIME"
-            ],
-            "x-enum-varnames": [
-                "TaxRateScopeInternal",
-                "TaxRateScopeExternal",
-                "TaxRateScopeOneTime"
-            ]
-        },
-        "types.TaxRateStatus": {
-            "type": "string",
-            "enum": [
-                "ACTIVE",
-                "INACTIVE"
-            ],
-            "x-enum-varnames": [
-                "TaxRateStatusActive",
-                "TaxRateStatusInactive"
-            ]
-        },
-        "types.TaxRateType": {
-            "type": "string",
-            "enum": [
-                "percentage",
-                "fixed"
-            ],
-            "x-enum-varnames": [
-                "TaxRateTypePercentage",
-                "TaxRateTypeFixed"
-            ]
-        },
-        "types.TimeRangeFilter": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "start_time": {
-                    "type": "string"
-                }
-            }
-        },
-        "types.TransactionReason": {
-            "type": "string",
-            "enum": [
-                "INVOICE_PAYMENT",
-                "FREE_CREDIT_GRANT",
-                "SUBSCRIPTION_CREDIT_GRANT",
-                "PURCHASED_CREDIT_INVOICED",
-                "PURCHASED_CREDIT_DIRECT",
-                "CREDIT_NOTE",
-                "CREDIT_EXPIRED",
-                "WALLET_TERMINATION",
-                "MANUAL_BALANCE_DEBIT",
-                "CREDIT_ADJUSTMENT"
-            ],
-            "x-enum-varnames": [
-                "TransactionReasonInvoicePayment",
-                "TransactionReasonFreeCredit",
-                "TransactionReasonSubscriptionCredit",
-                "TransactionReasonPurchasedCreditInvoiced",
-                "TransactionReasonPurchasedCreditDirect",
-                "TransactionReasonCreditNote",
-                "TransactionReasonCreditExpired",
-                "TransactionReasonWalletTermination",
-                "TransactionReasonManualBalanceDebit",
-                "TransactionReasonCreditAdjustment"
-            ]
-        },
-        "types.TransactionStatus": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "completed",
-                "failed"
-            ],
-            "x-enum-varnames": [
-                "TransactionStatusPending",
-                "TransactionStatusCompleted",
-                "TransactionStatusFailed"
-            ]
-        },
-        "types.TransactionType": {
-            "type": "string",
-            "enum": [
-                "credit",
-                "debit"
-            ],
-            "x-enum-varnames": [
-                "TransactionTypeCredit",
-                "TransactionTypeDebit"
-            ]
-        },
-        "types.UserFilter": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "type": {
-                    "enum": [
-                        "user",
-                        "service_account"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.UserType"
-                        }
-                    ]
-                },
-                "user_ids": {
-                    "description": "Specific filters for users",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "types.UserType": {
-            "type": "string",
-            "enum": [
-                "user",
-                "service_account"
-            ],
-            "x-enum-varnames": [
-                "UserTypeUser",
-                "UserTypeServiceAccount"
-            ]
-        },
-        "types.WalletConfig": {
-            "type": "object",
-            "properties": {
-                "allowed_price_types": {
-                    "description": "AllowedPriceTypes is a list of price types that are allowed for the wallet\nnil means all price types are allowed",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.WalletConfigPriceType"
-                    }
-                }
-            }
-        },
-        "types.WalletConfigPriceType": {
-            "type": "string",
-            "enum": [
-                "ALL",
-                "USAGE",
-                "FIXED"
-            ],
-            "x-enum-varnames": [
-                "WalletConfigPriceTypeAll",
-                "WalletConfigPriceTypeUsage",
-                "WalletConfigPriceTypeFixed"
-            ]
-        },
-        "types.WalletFilter": {
-            "type": "object",
-            "properties": {
-                "alert_enabled": {
-                    "type": "boolean"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.WalletStatus"
-                },
-                "wallet_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "types.WalletStatus": {
-            "type": "string",
-            "enum": [
-                "active",
-                "frozen",
-                "closed"
-            ],
-            "x-enum-varnames": [
-                "WalletStatusActive",
-                "WalletStatusFrozen",
-                "WalletStatusClosed"
-            ]
-        },
-        "types.WalletTransactionFilter": {
-            "type": "object",
-            "properties": {
-                "created_by": {
-                    "type": "string"
-                },
-                "credits_available_gt": {
-                    "type": "number"
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "expiry_date_after": {
-                    "type": "string"
-                },
-                "expiry_date_before": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "id": {
-                    "type": "string"
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "reference_id": {
-                    "type": "string"
-                },
-                "reference_type": {
-                    "type": "string"
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "transaction_reason": {
-                    "$ref": "#/definitions/types.TransactionReason"
-                },
-                "transaction_status": {
-                    "$ref": "#/definitions/types.TransactionStatus"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.TransactionType"
-                }
-            }
-        },
-        "types.WalletTxReferenceType": {
-            "type": "string",
-            "enum": [
-                "PAYMENT",
-                "EXTERNAL",
-                "REQUEST",
-                "INVOICE"
-            ],
-            "x-enum-varnames": [
-                "WalletTxReferenceTypePayment",
-                "WalletTxReferenceTypeExternal",
-                "WalletTxReferenceTypeRequest",
-                "WalletTxReferenceTypeInvoice"
-            ]
-        },
-        "types.WalletType": {
-            "type": "string",
-            "enum": [
-                "PRE_PAID",
-                "POST_PAID"
-            ],
-            "x-enum-varnames": [
-                "WalletTypePrePaid",
-                "WalletTypePostPaid"
-            ]
-        },
-        "types.WindowSize": {
-            "type": "string",
-            "enum": [
-                "MONTH",
-                "MINUTE",
-                "15MIN",
-                "30MIN",
-                "HOUR",
-                "3HOUR",
-                "6HOUR",
-                "12HOUR",
-                "DAY",
-                "WEEK",
-                "MONTH"
-            ],
-            "x-enum-varnames": [
-                "DefaultWindowSize",
-                "WindowSizeMinute",
-                "WindowSize15Min",
-                "WindowSize30Min",
-                "WindowSizeHour",
-                "WindowSize3Hour",
-                "WindowSize6Hour",
-                "WindowSize12Hour",
-                "WindowSizeDay",
-                "WindowSizeWeek",
-                "WindowSizeMonth"
-            ]
-        },
-        "types.WorkflowExecutionFilter": {
-            "type": "object",
-            "properties": {
-                "end_time": {
-                    "type": "string"
-                },
-                "entity": {
-                    "description": "e.g. plan, invoice, subscription",
-                    "type": "string"
-                },
-                "entity_id": {
-                    "description": "e.g. plan_01ABC123",
-                    "type": "string"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "filters allows complex filtering based on multiple fields (same as FeatureFilter)",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "task_queue": {
-                    "type": "string"
-                },
-                "workflow_id": {
-                    "description": "Workflow-specific filters",
-                    "type": "string"
-                },
-                "workflow_status": {
-                    "description": "e.g. Running, Completed, Failed",
-                    "type": "string"
-                },
-                "workflow_type": {
-                    "type": "string"
-                }
             }
         }
     },
@@ -23593,7 +23601,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/v1",
 	Schemes:          []string{"http", "https"},
 	Title:            "Flexprice API",
-	Description:      "Flexprice API provides billing, metering, and subscription management for SaaS and usage-based products. Use it to manage customers, plans, invoices, payments, usage events, and entitlements. Authenticate with an API key in the x-api-key header.",
+	Description:      "Flexprice API Service",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
