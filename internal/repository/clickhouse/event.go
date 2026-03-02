@@ -279,6 +279,37 @@ func (r *EventRepository) GetUsage(ctx context.Context, params *events.UsagePara
 				value = decimal.NewFromUint64(countValue)
 			case types.AggregationMax, types.AggregationSum:
 				if params.BucketSize != "" {
+					hasGroupBy := params.AggregationType == types.AggregationMax && params.GroupByProperty != "" && validateGroupByProperty(params.GroupByProperty) == nil
+					if hasGroupBy {
+						var totalFloat, valueFloat float64
+						var groupKey string
+						if err := rows.Scan(&totalFloat, &windowSize, &valueFloat, &groupKey); err != nil {
+							SetSpanError(span, err)
+							return nil, ierr.WithError(err).
+								WithHint("Failed to scan float result (with group_key)").
+								WithReportableDetails(map[string]interface{}{
+									"window_size": windowSize,
+									"value":       valueFloat,
+									"total":       totalFloat,
+								}).
+								Mark(ierr.ErrDatabase)
+						}
+						total = safeDecimalFromFloat(totalFloat)
+						value = safeDecimalFromFloat(valueFloat)
+						if total.LessThan(decimal.Zero) {
+							total = decimal.Zero
+						}
+						if value.LessThan(decimal.Zero) {
+							value = decimal.Zero
+						}
+						result.Value = total
+						result.Results = append(result.Results, events.UsageResult{
+							WindowSize: windowSize,
+							Value:      value,
+							GroupKey:   groupKey,
+						})
+						continue
+					}
 					var totalFloat, valueFloat float64
 					if err := rows.Scan(&totalFloat, &windowSize, &valueFloat); err != nil {
 						SetSpanError(span, err)

@@ -137,6 +137,7 @@ func (s *InMemoryFeatureUsageStore) GetFeatureUsageForExport(ctx context.Context
 	return result, nil
 }
 
+// GetUsageForMaxMetersWithBuckets returns empty results; real impl returns per-bucket (and per-group when GroupByProperty set) usage.
 func (s *InMemoryFeatureUsageStore) GetUsageForMaxMetersWithBuckets(ctx context.Context, params *events.FeatureUsageParams) (*events.AggregationResult, error) {
 	return &events.AggregationResult{
 		Results: make([]events.UsageResult, 0),

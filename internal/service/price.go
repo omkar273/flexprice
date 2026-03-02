@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
+	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/price"
 	"github.com/flexprice/flexprice/internal/domain/priceunit"
 	ierr "github.com/flexprice/flexprice/internal/errors"
@@ -30,6 +31,9 @@ type PriceService interface {
 
 	// CalculateBucketedCost calculates cost for bucketed max values where each value represents max in its time bucket
 	CalculateBucketedCost(ctx context.Context, price *price.Price, bucketedValues []decimal.Decimal) decimal.Decimal
+
+	// CalculateBucketedCostWithGroups calculates cost for bucketed values with group-by; each group's value is priced independently (e.g. for tiered pricing per KRN).
+	CalculateBucketedCostWithGroups(ctx context.Context, price *price.Price, results []events.UsageResult) decimal.Decimal
 
 	// CalculateCostWithBreakup calculates the cost for a given price and quantity
 	// and returns detailed information about the calculation
@@ -1031,6 +1035,20 @@ func (s *priceService) CalculateCost(ctx context.Context, price *price.Price, qu
 // CalculateBucketedCost calculates cost for bucketed max values where each value represents max in its time bucket
 func (s *priceService) CalculateBucketedCost(ctx context.Context, price *price.Price, bucketedValues []decimal.Decimal) decimal.Decimal {
 	return s.calculateBucketedMaxCost(ctx, price, bucketedValues)
+}
+
+// CalculateBucketedCostWithGroups calculates cost for bucketed values with group-by support.
+// Each result (per group per bucket) is priced independently so tiered pricing is applied per group, not on aggregated usage.
+func (s *priceService) CalculateBucketedCostWithGroups(ctx context.Context, price *price.Price, results []events.UsageResult) decimal.Decimal {
+	totalCost := decimal.Zero
+	for _, r := range results {
+		if price.BillingModel == types.BILLING_MODEL_TIERED {
+			totalCost = totalCost.Add(s.calculateTieredCost(ctx, price, r.Value))
+		} else {
+			totalCost = totalCost.Add(s.calculateSingletonCost(ctx, price, r.Value))
+		}
+	}
+	return totalCost.Round(types.GetCurrencyPrecision(price.Currency))
 }
 
 // calculateTieredCost calculates cost for tiered pricing
