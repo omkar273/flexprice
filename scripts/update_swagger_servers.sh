@@ -16,11 +16,14 @@ if [ ! -f "$SWAGGER_3_FILE" ]; then
     exit 1
 fi
 
-python3 - "$SWAGGER_3_FILE" << 'EOF'
+python3 << 'PYEOF'
 import json
-import sys
+import os
 
-path = sys.argv[1]
+script_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in dir() else os.getcwd()
+repo_root = os.path.dirname(os.path.dirname(script_dir)) if os.path.basename(script_dir) == 'scripts' else os.getcwd()
+path = os.path.join(repo_root, "docs", "swagger", "swagger-3-0.json")
+
 with open(path) as f:
     spec = json.load(f)
 
@@ -33,4 +36,4 @@ with open(path, "w") as f:
     json.dump(spec, f, indent=2)
 
 print("Updated servers block in", path)
-EOF
+PYEOF
