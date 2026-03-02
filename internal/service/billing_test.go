@@ -1734,6 +1734,10 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 	jan31_2024 := time.Date(2024, 1, 31, 0, 0, 0, 0, utc)
 	jan1_2026 := time.Date(2026, 1, 1, 0, 0, 0, 0, utc)
 	jan31_2026 := time.Date(2026, 1, 31, 0, 0, 0, 0, utc)
+	apr1_2024 := time.Date(2024, 4, 1, 0, 0, 0, 0, utc)
+	apr1_2026 := time.Date(2026, 4, 1, 0, 0, 0, 0, utc)
+	jul1_2025 := time.Date(2025, 7, 1, 0, 0, 0, 0, utc)
+	may15_2025 := time.Date(2025, 5, 15, 0, 0, 0, 0, utc)
 	feb15_2025 := time.Date(2025, 2, 15, 0, 0, 0, 0, utc)
 
 	tests := []struct {
@@ -1755,7 +1759,7 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 			invoiceCadence: types.InvoiceCadenceAdvance,
 			wantOK:         true,
 			wantStart:      jan1_2025,
-			wantEnd:        jan31_2025,
+			wantEnd:        apr1_2025, // natural quarter end, not clipped to window
 		},
 		{
 			name:           "advance_quarterly_feb_window_no_match",
@@ -1773,7 +1777,7 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 			invoiceCadence: types.InvoiceCadenceAdvance,
 			wantOK:         true,
 			wantStart:      apr1_2025,
-			wantEnd:        apr30_2025,
+			wantEnd:        jul1_2025, // natural quarter end (Apr 1 - Jul 1)
 		},
 		{
 			name:           "arrear_quarterly_mar_window_match",
@@ -1786,14 +1790,12 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 			wantEnd:        apr1_2025,
 		},
 		{
-			name:           "arrear_quarterly_jan_window_period_end_equals_window_end_included",
+			name:           "arrear_quarterly_jan_window_no_match_quarter_ends_april",
 			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceArrear),
 			periodStart:    jan1_2025,
 			periodEnd:      jan31_2025,
 			invoiceCadence: types.InvoiceCadenceArrear,
-			wantOK:         true,
-			wantStart:      jan1_2025,
-			wantEnd:        jan31_2025,
+			wantOK:         false, // quarter ends Apr 1, not in Jan window
 		},
 		{
 			name:           "advance_past_window_2024_jan_match",
@@ -1803,7 +1805,7 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 			invoiceCadence: types.InvoiceCadenceAdvance,
 			wantOK:         true,
 			wantStart:      jan1_2024,
-			wantEnd:        jan31_2024,
+			wantEnd:        apr1_2024, // natural quarter end
 		},
 		{
 			name:           "advance_future_window_2026_jan_match",
@@ -1813,7 +1815,7 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 			invoiceCadence: types.InvoiceCadenceAdvance,
 			wantOK:         true,
 			wantStart:      jan1_2026,
-			wantEnd:        jan31_2026,
+			wantEnd:        apr1_2026, // natural quarter end
 		},
 		{
 			name:           "advance_end_date_before_period_end_clips",
@@ -1852,7 +1854,7 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 			invoiceCadence: types.InvoiceCadenceAdvance,
 			wantOK:         true,
 			wantStart:      feb15_2025,
-			wantEnd:        mar31_2025,
+			wantEnd:        may15_2025, // natural quarter end (Feb 15 - May 15)
 		},
 		{
 			name:           "edge_arrear_period_end_equals_window_end_included",
