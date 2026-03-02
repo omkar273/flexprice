@@ -244,9 +244,6 @@ func (s *billingService) CalculateFixedCharges(
 // Window bounds are symmetric: advance uses inclusive start / exclusive end, arrear the reverse.
 // - Advance: include when period start is in [periodStart, periodEnd) — start inclusive, end exclusive.
 // - Arrear: include when period end is in (periodStart, periodEnd] — start exclusive, end inclusive.
-//
-// We pass a boundary at least periodEnd+1y so that future invoice windows (e.g. Jun 2–Jul 2 when
-// "now" is Mar 2) still get periods generated; nil would use time.Now() and only yield past periods.
 func FindMatchingLineItemPeriodForInvoice(in FindMatchingLineItemPeriodInput) (FindMatchingLineItemPeriodResult, error) {
 	item := in.Item
 	periodStart := in.PeriodStart
