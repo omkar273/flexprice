@@ -1395,6 +1395,215 @@ func (s *BillingServiceSuite) TestFilterLineItemsToBeInvoiced() {
 	}
 }
 
+// newLineItemForFindMatching builds a minimal subscription line item for FindMatchingLineItemPeriodForInvoice tests.
+func newLineItemForFindMatching(startDate, endDate time.Time, period types.BillingPeriod, periodCount int, cadence types.InvoiceCadence) *subscription.SubscriptionLineItem {
+	return &subscription.SubscriptionLineItem{
+		StartDate:          startDate,
+		EndDate:            endDate,
+		BillingPeriod:      period,
+		BillingPeriodCount: periodCount,
+		InvoiceCadence:     cadence,
+		PriceType:          types.PRICE_TYPE_FIXED,
+		Quantity:           decimal.NewFromInt(1),
+		Currency:           "usd",
+	}
+}
+
+func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
+	utc := time.UTC
+	// Quarterly from Jan 1 2025: first period Jan 1 - Apr 1, second Apr 1 - Jul 1 (from types.NextBillingDate +3 months).
+	jan1_2025 := time.Date(2025, 1, 1, 0, 0, 0, 0, utc)
+	apr1_2025 := time.Date(2025, 4, 1, 0, 0, 0, 0, utc)
+	jan31_2025 := time.Date(2025, 1, 31, 0, 0, 0, 0, utc)
+	feb1_2025 := time.Date(2025, 2, 1, 0, 0, 0, 0, utc)
+	feb28_2025 := time.Date(2025, 2, 28, 0, 0, 0, 0, utc)
+	mar1_2025 := time.Date(2025, 3, 1, 0, 0, 0, 0, utc)
+	mar31_2025 := time.Date(2025, 3, 31, 0, 0, 0, 0, utc)
+	apr30_2025 := time.Date(2025, 4, 30, 0, 0, 0, 0, utc)
+	jan1_2024 := time.Date(2024, 1, 1, 0, 0, 0, 0, utc)
+	jan31_2024 := time.Date(2024, 1, 31, 0, 0, 0, 0, utc)
+	jan1_2026 := time.Date(2026, 1, 1, 0, 0, 0, 0, utc)
+	jan31_2026 := time.Date(2026, 1, 31, 0, 0, 0, 0, utc)
+	feb15_2025 := time.Date(2025, 2, 15, 0, 0, 0, 0, utc)
+
+	tests := []struct {
+		name           string
+		item           *subscription.SubscriptionLineItem
+		periodStart    time.Time
+		periodEnd      time.Time
+		invoiceCadence types.InvoiceCadence
+		wantOK         bool
+		wantStart      time.Time
+		wantEnd        time.Time
+		wantErr        bool
+	}{
+		{
+			name:           "advance_quarterly_jan_window_match",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    jan1_2025,
+			periodEnd:      jan31_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      jan1_2025,
+			wantEnd:        jan31_2025,
+		},
+		{
+			name:           "advance_quarterly_feb_window_no_match",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    feb1_2025,
+			periodEnd:      feb28_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         false,
+		},
+		{
+			name:           "advance_quarterly_apr_window_match",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    apr1_2025,
+			periodEnd:      apr30_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      apr1_2025,
+			wantEnd:        apr30_2025,
+		},
+		{
+			name:           "arrear_quarterly_mar_window_match",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceArrear),
+			periodStart:    mar1_2025,
+			periodEnd:      apr30_2025,
+			invoiceCadence: types.InvoiceCadenceArrear,
+			wantOK:         true,
+			wantStart:      jan1_2025,
+			wantEnd:        apr1_2025,
+		},
+		{
+			name:           "arrear_quarterly_jan_window_no_match",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceArrear),
+			periodStart:    jan1_2025,
+			periodEnd:      jan31_2025,
+			invoiceCadence: types.InvoiceCadenceArrear,
+			wantOK:         false,
+		},
+		{
+			name:           "advance_past_window_2024_jan_match",
+			item:           newLineItemForFindMatching(jan1_2024, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    jan1_2024,
+			periodEnd:      jan31_2024,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      jan1_2024,
+			wantEnd:        jan31_2024,
+		},
+		{
+			name:           "advance_future_window_2026_jan_match",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    jan1_2026,
+			periodEnd:      jan31_2026,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      jan1_2026,
+			wantEnd:        jan31_2026,
+		},
+		{
+			name:           "advance_billing_period_count_zero_treated_as_one",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 0, types.InvoiceCadenceAdvance),
+			periodStart:    jan1_2025,
+			periodEnd:      jan31_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      jan1_2025,
+			wantEnd:        jan31_2025,
+		},
+		{
+			name:           "advance_end_date_before_period_end_clips",
+			item:           newLineItemForFindMatching(jan1_2025, feb15_2025, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    jan1_2025,
+			periodEnd:      mar31_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      jan1_2025,
+			wantEnd:        feb15_2025,
+		},
+		{
+			name:           "arrear_end_date_before_period_end",
+			item:           newLineItemForFindMatching(jan1_2025, mar31_2025, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceArrear),
+			periodStart:    mar1_2025,
+			periodEnd:      apr1_2025,
+			invoiceCadence: types.InvoiceCadenceArrear,
+			wantOK:         true,
+			wantStart:      jan1_2025,
+			wantEnd:        mar31_2025,
+		},
+		// Edge cases
+		{
+			name:           "edge_line_item_start_after_window_no_match",
+			item:           newLineItemForFindMatching(feb1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    jan1_2025,
+			periodEnd:      jan31_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         false,
+		},
+		{
+			name:           "edge_billing_period_count_negative_treated_as_one",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, -1, types.InvoiceCadenceAdvance),
+			periodStart:    jan1_2025,
+			periodEnd:      jan31_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      jan1_2025,
+			wantEnd:        jan31_2025,
+		},
+		{
+			name:           "edge_mid_period_start_advance_match",
+			item:           newLineItemForFindMatching(feb15_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    feb15_2025,
+			periodEnd:      mar31_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      feb15_2025,
+			wantEnd:        mar31_2025,
+		},
+		{
+			name:           "edge_arrear_period_end_equals_window_end_exclusive_no_match",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceArrear),
+			periodStart:    mar1_2025,
+			periodEnd:      apr1_2025,
+			invoiceCadence: types.InvoiceCadenceArrear,
+			wantOK:         false,
+		},
+		{
+			name:           "edge_advance_monthly_line_quarter_window_returns_first_period",
+			item:           newLineItemForFindMatching(jan1_2025, time.Time{}, types.BILLING_PERIOD_MONTHLY, 1, types.InvoiceCadenceAdvance),
+			periodStart:    jan1_2025,
+			periodEnd:      mar31_2025,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      jan1_2025,
+			wantEnd:        feb1_2025,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			res, err := FindMatchingLineItemPeriodForInvoice(FindMatchingLineItemPeriodInput{
+				Item:           tt.item,
+				PeriodStart:    tt.periodStart,
+				PeriodEnd:      tt.periodEnd,
+				InvoiceCadence: tt.invoiceCadence,
+			})
+			if tt.wantErr {
+				s.Error(err)
+				return
+			}
+			s.NoError(err)
+			s.Equal(tt.wantOK, res.Ok, "Ok mismatch")
+			if tt.wantOK {
+				s.True(res.LineItemPeriodStart.Equal(tt.wantStart), "LineItemPeriodStart: got %v want %v", res.LineItemPeriodStart, tt.wantStart)
+				s.True(res.LineItemPeriodEnd.Equal(tt.wantEnd), "LineItemPeriodEnd: got %v want %v", res.LineItemPeriodEnd, tt.wantEnd)
+			}
+		})
+	}
+}
+
 func (s *BillingServiceSuite) TestClassifyLineItems() {
 	// Get subscription with line items
 	sub, _, err := s.GetStores().SubscriptionRepo.GetWithLineItems(s.GetContext(), s.testData.subscription.ID)
@@ -1433,9 +1642,10 @@ func (s *BillingServiceSuite) TestClassifyLineItems() {
 		var fixedArrearItem *subscription.SubscriptionLineItem
 
 		for _, item := range classification.CurrentPeriodArrear {
-			if item.PriceType == types.PRICE_TYPE_USAGE {
+			switch item.PriceType {
+			case types.PRICE_TYPE_USAGE:
 				usageArrearItem = item
-			} else if item.PriceType == types.PRICE_TYPE_FIXED {
+			case types.PRICE_TYPE_FIXED:
 				fixedArrearItem = item
 			}
 		}
