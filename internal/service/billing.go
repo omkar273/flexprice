@@ -281,21 +281,25 @@ func (s *billingService) CalculateFixedCharges(
 // Window bounds are symmetric: advance uses inclusive start / exclusive end, arrear the reverse.
 // - Advance: include when period start is in [periodStart, periodEnd) — start inclusive, end exclusive.
 // - Arrear: include when period end is in (periodStart, periodEnd] — start exclusive, end inclusive.
+//
+// We pass a boundary at least periodEnd+1y so that future invoice windows (e.g. Jun 2–Jul 2 when
+// "now" is Mar 2) still get periods generated; nil would use time.Now() and only yield past periods.
 func FindMatchingLineItemPeriodForInvoice(in FindMatchingLineItemPeriodInput) (FindMatchingLineItemPeriodResult, error) {
 	item := in.Item
 	periodStart := in.PeriodStart
 	periodEnd := in.PeriodEnd
 	invoiceCadence := in.InvoiceCadence
 
-	var endDate *time.Time
-	if !item.EndDate.IsZero() {
-		endDate = &item.EndDate
+	// TODO: here future date to be set based on line item billing period i.e. billing period x 12
+	endDate := periodEnd.AddDate(1, 0, 0)
+	if !item.EndDate.IsZero() && item.EndDate.Before(endDate) {
+		endDate = item.EndDate
 	}
 	periodCount := item.BillingPeriodCount
 	if periodCount <= 0 {
 		periodCount = 1
 	}
-	periods, err := types.CalculateBillingPeriods(item.StartDate, endDate, item.StartDate, periodCount, item.BillingPeriod)
+	periods, err := types.CalculateBillingPeriods(item.StartDate, &endDate, item.StartDate, periodCount, item.BillingPeriod)
 	if err != nil {
 		return FindMatchingLineItemPeriodResult{}, err
 	}
@@ -1837,6 +1841,20 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 
 	// Classify line items
 	classification := s.ClassifyLineItems(sub, periodStart, periodEnd, nextPeriodStart, nextPeriodEnd)
+	s.Logger.Infow("line item classification result",
+		"subscription_id", sub.ID,
+		"reference_point", referencePoint,
+		"period_start", periodStart,
+		"period_end", periodEnd,
+		"next_period_start", nextPeriodStart,
+		"next_period_end", nextPeriodEnd,
+		"current_period_advance_count", len(classification.CurrentPeriodAdvance),
+		"current_period_arrear_count", len(classification.CurrentPeriodArrear),
+		"next_period_advance_count", len(classification.NextPeriodAdvance),
+		"current_period_advance_display_names", lineItemDisplayNames(classification.CurrentPeriodAdvance),
+		"current_period_arrear_display_names", lineItemDisplayNames(classification.CurrentPeriodArrear),
+		"next_period_advance_display_names", lineItemDisplayNames(classification.NextPeriodAdvance),
+	)
 
 	var calculationResult *BillingCalculationResult
 	var metadata types.Metadata = make(types.Metadata)
@@ -2074,6 +2092,17 @@ func (s *billingService) checkIfChargeInvoiced(
 	return false
 }
 
+// lineItemDisplayNames returns display names for classification debug logs.
+func lineItemDisplayNames(items []*subscription.SubscriptionLineItem) []string {
+	names := make([]string, 0, len(items))
+	for _, item := range items {
+		if item != nil {
+			names = append(names, item.DisplayName)
+		}
+	}
+	return names
+}
+
 // ClassifyLineItems classifies line items based on cadence and type
 func (s *billingService) ClassifyLineItems(
 	sub *subscription.Subscription,
@@ -2136,10 +2165,25 @@ func (s *billingService) ClassifyLineItems(
 				})
 				hasPeriodInNextWindow = errNext == nil && resNext.Ok
 			}
+			s.Logger.Infow("classify line item (longer period)",
+				"subscription_id", sub.ID,
+				"line_item_display_name", item.DisplayName,
+				"price_id", item.PriceID,
+				"billing_period", item.BillingPeriod,
+				"invoice_cadence", item.InvoiceCadence,
+				"current_period_start", currentPeriodStart,
+				"current_period_end", currentPeriodEnd,
+				"next_period_start", nextPeriodStart,
+				"next_period_end", nextPeriodEnd,
+				"has_period_in_current_window", hasPeriodInCurrentWindow,
+				"has_period_in_next_window", hasPeriodInNextWindow,
+			)
 			// No match for current: skip current; advance items that match next go to NextPeriodAdvance only.
 			if !hasPeriodInCurrentWindow {
 				if item.InvoiceCadence == types.InvoiceCadenceAdvance && hasPeriodInNextWindow {
 					result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+					s.Logger.Infow("classify line item: added to NextPeriodAdvance only",
+						"subscription_id", sub.ID, "display_name", item.DisplayName, "price_id", item.PriceID)
 				}
 				continue
 			}
@@ -2148,9 +2192,16 @@ func (s *billingService) ClassifyLineItems(
 				result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
 				if hasPeriodInNextWindow {
 					result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+					s.Logger.Infow("classify line item: added to CurrentPeriodAdvance and NextPeriodAdvance",
+						"subscription_id", sub.ID, "display_name", item.DisplayName, "price_id", item.PriceID)
+				} else {
+					s.Logger.Infow("classify line item: added to CurrentPeriodAdvance",
+						"subscription_id", sub.ID, "display_name", item.DisplayName, "price_id", item.PriceID)
 				}
 			} else {
 				result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
+				s.Logger.Infow("classify line item: added to CurrentPeriodArrear",
+					"subscription_id", sub.ID, "display_name", item.DisplayName, "price_id", item.PriceID)
 			}
 			continue
 		}
