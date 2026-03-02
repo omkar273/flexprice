@@ -242,22 +242,22 @@ func (s *billingService) CalculateFixedCharges(
 // Used when the line item has a longer cadence than the subscription (e.g. quarterly on monthly).
 // Anchor and initial period start are the line item's StartDate.
 // - Advance: include when period start is in [periodStart, periodEnd) (charge at start of period).
-// - Arrear: include when period end is in [periodStart, periodEnd) (charge at end of period).
+// - Arrear: include when period end is in [periodStart, periodEnd] (charge at end of period).
 func FindMatchingLineItemPeriodForInvoice(in FindMatchingLineItemPeriodInput) (FindMatchingLineItemPeriodResult, error) {
 	item := in.Item
 	periodStart := in.PeriodStart
 	periodEnd := in.PeriodEnd
 	invoiceCadence := in.InvoiceCadence
 
-	endDate := periodEnd
-	if !item.EndDate.IsZero() && item.EndDate.Before(periodEnd) {
-		endDate = item.EndDate
+	var endDate *time.Time
+	if !item.EndDate.IsZero() {
+		endDate = &item.EndDate
 	}
 	periodCount := item.BillingPeriodCount
 	if periodCount <= 0 {
 		periodCount = 1
 	}
-	periods, err := types.CalculateBillingPeriods(item.StartDate, &endDate, item.StartDate, periodCount, item.BillingPeriod)
+	periods, err := types.CalculateBillingPeriods(item.StartDate, endDate, item.StartDate, periodCount, item.BillingPeriod)
 	if err != nil {
 		return FindMatchingLineItemPeriodResult{}, err
 	}
