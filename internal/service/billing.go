@@ -276,25 +276,52 @@ func (s *billingService) CalculateFixedCharges(
 	return fixedCostLineItems, fixedCost, nil
 }
 
+// endDateBoundaryForMatching returns periodEnd + one billing period length so that
+// CalculateBillingPeriods generates enough periods to cover the invoice window without
+// generating an excessive number (e.g. 365 for daily with a 1-year buffer).
+func endDateBoundaryForMatching(periodEnd time.Time, billingPeriod types.BillingPeriod, periodCount int) time.Time {
+	if periodCount <= 0 {
+		periodCount = 1
+	}
+	switch billingPeriod {
+	case types.BILLING_PERIOD_DAILY:
+		return periodEnd.AddDate(0, 0, periodCount)
+	case types.BILLING_PERIOD_WEEKLY:
+		return periodEnd.AddDate(0, 0, 7*periodCount)
+	case types.BILLING_PERIOD_MONTHLY:
+		return periodEnd.AddDate(0, periodCount, 0)
+	case types.BILLING_PERIOD_QUARTER:
+		return periodEnd.AddDate(0, 3*periodCount, 0)
+	case types.BILLING_PERIOD_HALF_YEAR:
+		return periodEnd.AddDate(0, 6*periodCount, 0)
+	case types.BILLING_PERIOD_ANNUAL:
+		return periodEnd.AddDate(periodCount, 0, 0)
+	default:
+		return periodEnd.AddDate(1, 0, 0) // fallback: 1 year
+	}
+}
+
 // Used when the line item has a longer cadence than the subscription (e.g. quarterly on monthly).
 // Anchor and initial period start are the line item's StartDate.
 // Window bounds are symmetric: advance uses inclusive start / exclusive end, arrear the reverse.
 // - Advance: include when period start is in [periodStart, periodEnd) — start inclusive, end exclusive.
 // - Arrear: include when period end is in (periodStart, periodEnd] — start exclusive, end inclusive.
+//
+// Boundary for generating periods is periodEnd + one line-item period (billing-period aware)
+// so future windows are covered without excess (e.g. daily → +1 day, quarterly → +3 months).
 func FindMatchingLineItemPeriodForInvoice(in FindMatchingLineItemPeriodInput) (FindMatchingLineItemPeriodResult, error) {
 	item := in.Item
 	periodStart := in.PeriodStart
 	periodEnd := in.PeriodEnd
 	invoiceCadence := in.InvoiceCadence
 
-	// TODO: here future date to be set based on line item billing period i.e. billing period x 12
-	endDate := periodEnd.AddDate(1, 0, 0)
-	if !item.EndDate.IsZero() && item.EndDate.Before(endDate) {
-		endDate = item.EndDate
-	}
 	periodCount := item.BillingPeriodCount
 	if periodCount <= 0 {
 		periodCount = 1
+	}
+	endDate := endDateBoundaryForMatching(periodEnd, item.BillingPeriod, periodCount)
+	if !item.EndDate.IsZero() && item.EndDate.Before(endDate) {
+		endDate = item.EndDate
 	}
 	periods, err := types.CalculateBillingPeriods(item.StartDate, &endDate, item.StartDate, periodCount, item.BillingPeriod)
 	if err != nil {
