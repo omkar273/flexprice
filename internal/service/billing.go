@@ -305,8 +305,8 @@ func FindMatchingLineItemPeriodForInvoice(in FindMatchingLineItemPeriodInput) (F
 				return FindMatchingLineItemPeriodResult{LineItemPeriodStart: p.Start, LineItemPeriodEnd: p.End, Ok: true}, nil
 			}
 		} else {
-			// Arrear (default): period end in [periodStart, periodEnd)
-			if !p.End.Before(periodStart) && p.End.Before(periodEnd) {
+			// Arrear (default): period end in [periodStart, periodEnd] (inclusive so items ending at periodEnd are included)
+			if !p.End.Before(periodStart) && !p.End.After(periodEnd) {
 				return FindMatchingLineItemPeriodResult{LineItemPeriodStart: p.Start, LineItemPeriodEnd: p.End, Ok: true}, nil
 			}
 		}
