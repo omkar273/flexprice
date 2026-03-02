@@ -54,6 +54,7 @@ import (
 // @contact.name API Support
 // @license.name AGPL-3.0
 // @license.url https://www.gnu.org/licenses/agpl-3.0.html
+// @description Flexprice API Service
 // @BasePath /v1
 // @schemes http https
 // @securityDefinitions.apikey ApiKeyAuth
