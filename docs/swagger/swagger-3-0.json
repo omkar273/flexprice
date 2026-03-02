@@ -14,7 +14,12 @@
   },
   "servers": [
     {
-      "url": "/v1"
+      "url": "https://us.api.flexprice.io/v1",
+      "description": "US Region"
+    },
+    {
+      "url": "https://api.cloud.flexprice.io/v1",
+      "description": "India Region"
     }
   ],
   "paths": {

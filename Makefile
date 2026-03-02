@@ -34,6 +34,7 @@ swagger-3-0: install-swag
 		-d @docs/swagger/swagger.json > docs/swagger/swagger-3-0.json
 	@echo "Conversion complete. Output saved to docs/swagger/swagger-3-0.json"
 	@node scripts/add-speakeasy-type-name-overrides.mjs
+	@./scripts/update_swagger_servers.sh
 
 .PHONY: swagger-fix-refs
 swagger-fix-refs:
