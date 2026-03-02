@@ -241,8 +241,9 @@ func (s *billingService) CalculateFixedCharges(
 
 // Used when the line item has a longer cadence than the subscription (e.g. quarterly on monthly).
 // Anchor and initial period start are the line item's StartDate.
-// - Advance: include when period start is in [periodStart, periodEnd) (charge at start of period).
-// - Arrear: include when period end is in [periodStart, periodEnd] (charge at end of period).
+// Window bounds are symmetric: advance uses inclusive start / exclusive end, arrear the reverse.
+// - Advance: include when period start is in [periodStart, periodEnd) — start inclusive, end exclusive.
+// - Arrear: include when period end is in (periodStart, periodEnd] — start exclusive, end inclusive.
 func FindMatchingLineItemPeriodForInvoice(in FindMatchingLineItemPeriodInput) (FindMatchingLineItemPeriodResult, error) {
 	item := in.Item
 	periodStart := in.PeriodStart
@@ -263,13 +264,19 @@ func FindMatchingLineItemPeriodForInvoice(in FindMatchingLineItemPeriodInput) (F
 	}
 	for _, p := range periods {
 		if invoiceCadence == types.InvoiceCadenceAdvance {
-			// Advance: period start in [periodStart, periodEnd)
-			if !p.Start.Before(periodStart) && p.Start.Before(periodEnd) {
+			// Advance: period start in [periodStart, periodEnd); second precision for boundaries
+			startSec := p.Start.Truncate(time.Second)
+			winStartSec := periodStart.Truncate(time.Second)
+			winEndSec := periodEnd.Truncate(time.Second)
+			if !startSec.Before(winStartSec) && startSec.Before(winEndSec) {
 				return FindMatchingLineItemPeriodResult{LineItemPeriodStart: p.Start, LineItemPeriodEnd: p.End, Ok: true}, nil
 			}
 		} else {
-			// Arrear (default): period end in [periodStart, periodEnd] (inclusive so items ending at periodEnd are included)
-			if !p.End.Before(periodStart) && !p.End.After(periodEnd) {
+			// Arrear: period end in (periodStart, periodEnd]; start exclusive, end inclusive; second precision
+			endSec := p.End.Truncate(time.Second)
+			winStartSec := periodStart.Truncate(time.Second)
+			winEndSec := periodEnd.Truncate(time.Second)
+			if endSec.After(winStartSec) && !endSec.After(winEndSec) {
 				return FindMatchingLineItemPeriodResult{LineItemPeriodStart: p.Start, LineItemPeriodEnd: p.End, Ok: true}, nil
 			}
 		}

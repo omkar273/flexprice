@@ -1739,6 +1739,14 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 	may15_2025 := time.Date(2025, 5, 15, 0, 0, 0, 0, utc)
 	feb15_2025 := time.Date(2025, 2, 15, 0, 0, 0, 0, utc)
 
+	// Subsecond timestamps for "next period" / boundary truncation tests (Q Advanced on May 2 - Jun 2 preview)
+	mar2_143010_418 := time.Date(2025, 3, 2, 14, 30, 10, 418000000, utc)
+	jun2_143010_000 := time.Date(2025, 6, 2, 14, 30, 10, 0, utc)
+	jul2_143010_000 := time.Date(2025, 7, 2, 14, 30, 10, 0, utc)
+	sep2_143010_000 := time.Date(2025, 9, 2, 14, 30, 10, 0, utc)
+	jan1_143010_418 := time.Date(2025, 1, 1, 14, 30, 10, 418000000, utc)
+	apr1_143010_000 := time.Date(2025, 4, 1, 14, 30, 10, 0, utc)
+
 	tests := []struct {
 		name           string
 		item           *subscription.SubscriptionLineItem
@@ -1884,6 +1892,37 @@ func (s *BillingServiceSuite) TestFindMatchingLineItemPeriodForInvoice() {
 			wantOK:         true,
 			wantStart:      jan1_2025,
 			wantEnd:        feb1_2025,
+		},
+		// Second-level truncation: Q Advanced "next period" (window Jun 2 14:30:10.000 - Jul 2 14:30:10.0), line item start has .418ms; match uses truncation
+		{
+			name:           "advance_quarterly_next_period_window_subsecond_boundary_matches_with_truncation",
+			item:           newLineItemForFindMatching(mar2_143010_418, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceAdvance),
+			periodStart:    jun2_143010_000,
+			periodEnd:      jul2_143010_000,
+			invoiceCadence: types.InvoiceCadenceAdvance,
+			wantOK:         true,
+			wantStart:      jun2_143010_000, // NextBillingDate returns second precision
+			wantEnd:        sep2_143010_000,
+		},
+		// Second-level truncation: arrear quarter end Apr 1 14:30:10.418, window end Apr 1 14:30:10.000 — should match
+		{
+			name:           "arrear_quarterly_period_end_subsecond_boundary_matches_with_truncation",
+			item:           newLineItemForFindMatching(jan1_143010_418, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceArrear),
+			periodStart:    mar1_2025,
+			periodEnd:      apr1_143010_000,
+			invoiceCadence: types.InvoiceCadenceArrear,
+			wantOK:         true,
+			wantStart:      jan1_143010_418, // period start preserves anchor; end from NextBillingDate is sec precision
+			wantEnd:        apr1_143010_000,
+		},
+		// Arrear excluded when period end equals invoice period start (quarter ends Jun 2, invoice is Jun 2–Jul 2)
+		{
+			name:           "arrear_quarterly_period_end_equals_invoice_start_excluded",
+			item:           newLineItemForFindMatching(mar2_143010_418, time.Time{}, types.BILLING_PERIOD_QUARTER, 1, types.InvoiceCadenceArrear),
+			periodStart:    jun2_143010_000,
+			periodEnd:      jul2_143010_000,
+			invoiceCadence: types.InvoiceCadenceArrear,
+			wantOK:         false,
 		},
 	}
 
