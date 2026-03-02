@@ -2046,25 +2046,68 @@ func (s *billingService) ClassifyLineItems(
 		HasUsageCharges:      false,
 	}
 
+	/*
+		Classify each line item into advance/arrear buckets for the current (and next) invoice period.
+
+		Fixed charges:
+		- Equal period (line item = sub, e.g. both monthly): include by cadence; no period-matching.
+		- Longer period (line item > sub, e.g. quarterly on monthly): use findMatchingLineItemPeriodForInvoice
+		  to see if a line-item period falls in the invoice window. Advance = period start in window;
+		  arrear = period end in window. No match for current → skip current; advance items can still match next → NextPeriodAdvance.
+	*/
 	for _, item := range sub.LineItems {
-		// Current period advance charges (fixed only)
-		// TODO: add support for usage charges with advance cadence later
-		if item.InvoiceCadence == types.InvoiceCadenceAdvance &&
-			item.PriceType == types.PRICE_TYPE_FIXED {
-			result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
-
-			// Also add to next period advance for preview purposes
-			result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
-		}
-
-		// Current period arrear charges (fixed and usage)
-		if item.InvoiceCadence == types.InvoiceCadenceArrear {
-			result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
-		}
-
-		// Check if there are any usage charges
+		// Usage: always set flag; arrear usage goes to CurrentPeriodArrear (no period-matching for usage here).
 		if item.PriceType == types.PRICE_TYPE_USAGE {
 			result.HasUsageCharges = true
+			if item.InvoiceCadence == types.InvoiceCadenceArrear {
+				result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
+			}
+			continue
+		}
+
+		if item.PriceType != types.PRICE_TYPE_FIXED {
+			continue
+		}
+
+		/*
+			Fixed, longer billing period than subscription (e.g. quarterly line on monthly sub).
+			Check once whether the line item has a period in the current window, and for advance items once for the next window.
+			Match current → add to CurrentPeriodAdvance or CurrentPeriodArrear by cadence; if advance and matches next → also add to NextPeriodAdvance.
+			No match for current → skip for current; no match for next → add only to NextPeriodAdvance.
+		*/
+		if types.BillingPeriodGreaterThan(item.BillingPeriod, sub.BillingPeriod) {
+			_, _, hasPeriodInCurrentWindow := s.findMatchingLineItemPeriodForInvoice(item, currentPeriodStart, currentPeriodEnd, item.InvoiceCadence)
+			var hasPeriodInNextWindow bool
+			// Advance only: see if a line-item period falls in the next invoice window (used for NextPeriodAdvance).
+			if item.InvoiceCadence == types.InvoiceCadenceAdvance {
+				_, _, hasPeriodInNextWindow = s.findMatchingLineItemPeriodForInvoice(item, nextPeriodStart, nextPeriodEnd, types.InvoiceCadenceAdvance)
+			}
+			// No match for current: skip current; advance items that match next go to NextPeriodAdvance only.
+			if !hasPeriodInCurrentWindow {
+				if item.InvoiceCadence == types.InvoiceCadenceAdvance && hasPeriodInNextWindow {
+					result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+				}
+				continue
+			}
+			// Match for current: add to current by cadence; advance items that match next also go to NextPeriodAdvance.
+			if item.InvoiceCadence == types.InvoiceCadenceAdvance {
+				result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
+				if hasPeriodInNextWindow {
+					result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+				}
+			} else {
+				result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
+			}
+			continue
+		}
+
+		// Fixed, equal billing period: existing behavior (advance → both slices; arrear → CurrentPeriodArrear).
+		if item.InvoiceCadence == types.InvoiceCadenceAdvance {
+			result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
+			result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+		}
+		if item.InvoiceCadence == types.InvoiceCadenceArrear {
+			result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
 		}
 	}
 
