@@ -1,0 +1,386 @@
+#!/usr/bin/env bash
+#
+# Finds raw events that are missing from feature_usage (cursor-based pagination)
+# and triggers the reprocess API for each batch of event IDs.
+#
+# Prerequisites: clickhouse (client), curl, jq
+#
+# Usage:
+#   source .env.backfill && ./reprocess_missing_feature_usage.sh
+#
+set -euo pipefail
+
+###############################################################################
+# Parameters
+###############################################################################
+TENANT_ID="${TENANT_ID:?TENANT_ID is required}"
+ENVIRONMENT_ID="${ENVIRONMENT_ID:?ENVIRONMENT_ID is required}"
+START_DATE="${START_DATE:?START_DATE is required (ISO-8601, e.g. 2026-02-01T00:00:00Z)}"
+END_DATE="${END_DATE:?END_DATE is required (ISO-8601, e.g. 2026-02-06T00:00:00Z)}"
+
+EXTERNAL_CUSTOMER_ID="${EXTERNAL_CUSTOMER_ID:-}"
+
+API_KEY="${API_KEY:-flexprice-api-key}"
+API_URL="${API_URL:-https://us.api.flexprice.io/v1/events/raw/reprocess/all}"
+BATCH_SIZE="${BATCH_SIZE:-20000}"
+API_CHUNK_SIZE="${API_CHUNK_SIZE:-5000}"
+API_PARALLEL="${API_PARALLEL:-10}"
+DRY_RUN="${DRY_RUN:-false}"
+SLEEP_BETWEEN_BATCHES="${SLEEP_BETWEEN_BATCHES:-1}"
+
+# ClickHouse connection (matches .env.backfill)
+CH_HOST="${CH_HOST:-127.0.0.1}"
+CH_PORT="${CH_PORT:-9000}"
+CH_USER="${CH_USER:-default}"
+CH_PASSWORD="${CH_PASSWORD:-}"
+CH_DB="${CH_DB:-flexprice}"
+
+###############################################################################
+# Helpers
+###############################################################################
+log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
+
+ch() {
+  clickhouse client \
+    --host "$CH_HOST" --port "$CH_PORT" \
+    --user "$CH_USER" --password "$CH_PASSWORD" \
+    --database "$CH_DB" \
+    --format TSV \
+    "$@"
+}
+
+ch_query() {
+  local query="$1"
+  ch --query "$query"
+}
+
+# Sends one API chunk. Writes "ok" or "fail" to $RESULT_DIR/<chunk_num>.
+# Runs in background for parallelism.
+send_chunk() {
+  local chunk_num="$1" total_chunks="$2" chunk_count="$3" payload="$4"
+
+  local api_tmp
+  api_tmp=$(mktemp)
+  local api_http
+  api_http=$(curl -sS -o "$api_tmp" -w '%{http_code}' \
+    --request POST \
+    --url "$API_URL" \
+    --header 'Content-Type: application/json' \
+    --header "x-api-key: ${API_KEY}" \
+    --max-time 120 \
+    --data "$payload" 2>/dev/null) || api_http="000"
+  local api_body
+  api_body=$(cat "$api_tmp" 2>/dev/null || true)
+  rm -f "$api_tmp"
+
+  if [[ "$api_http" -ge 200 && "$api_http" -lt 300 ]]; then
+    local wf_id
+    wf_id=$(printf '%s' "$api_body" | jq -r '.workflow_id // empty' 2>/dev/null || true)
+    log "  chunk ${chunk_num}/${total_chunks} (${chunk_count} IDs) -> OK (${api_http})  wf=${wf_id:-n/a}"
+    echo "ok" > "${RESULT_DIR}/${chunk_num}"
+  else
+    log "  chunk ${chunk_num}/${total_chunks} (${chunk_count} IDs) -> FAIL (${api_http})"
+    echo "fail" > "${RESULT_DIR}/${chunk_num}"
+  fi
+}
+
+for cmd in clickhouse curl jq; do
+  if ! command -v "$cmd" &>/dev/null; then
+    log "ERROR: '$cmd' is required but not installed."
+    exit 1
+  fi
+done
+
+# Convert ISO-8601 timestamp to ClickHouse DateTime string
+to_ch_ts() { printf '%s' "$1" | sed 's/T/ /;s/Z$//'; }
+
+ch_start=$(to_ch_ts "$START_DATE")
+ch_end=$(to_ch_ts "$END_DATE")
+
+# Temp dir for tracking parallel API results
+RESULT_DIR=$(mktemp -d)
+trap 'rm -rf "$RESULT_DIR"' EXIT
+
+###############################################################################
+# Banner
+###############################################################################
+log "================================================================"
+log " Reprocess Missing Feature-Usage Events"
+log "================================================================"
+log " Tenant:       ${TENANT_ID}"
+log " Environment:  ${ENVIRONMENT_ID}"
+[[ -n "$EXTERNAL_CUSTOMER_ID" ]] && \
+log " Customer:     ${EXTERNAL_CUSTOMER_ID}"
+log " Time range:   ${START_DATE}  ->  ${END_DATE}"
+log " CH batch:     ${BATCH_SIZE}"
+log " API chunk:    ${API_CHUNK_SIZE}  (x${API_PARALLEL} parallel)"
+log " Dry run:      ${DRY_RUN}"
+log " API URL:      ${API_URL}"
+log " ClickHouse:   ${CH_HOST}:${CH_PORT}/${CH_DB}"
+log "================================================================"
+
+###############################################################################
+# Step 1: Build filters
+###############################################################################
+extra_where=""
+extra_where_fu=""
+
+if [[ -n "$EXTERNAL_CUSTOMER_ID" ]]; then
+  log "Customer filter: ${EXTERNAL_CUSTOMER_ID} (skipping missing-customer pre-fetch)"
+  extra_where+=" AND external_customer_id = '${EXTERNAL_CUSTOMER_ID}'"
+  extra_where_fu+=" AND external_customer_id = '${EXTERNAL_CUSTOMER_ID}'"
+else
+  log "Pre-fetching missing customers ..."
+  missing_customers_raw=$(ch_query "
+  SELECT external_customer_id
+  FROM (
+    SELECT external_customer_id
+    FROM ${CH_DB}.raw_events
+    PREWHERE tenant_id  = '${TENANT_ID}'
+      AND environment_id = '${ENVIRONMENT_ID}'
+      AND timestamp >= toDateTime64('${ch_start}', 3)
+      AND timestamp <  toDateTime64('${ch_end}', 3)
+    WHERE field4 = 'false'
+    GROUP BY external_customer_id
+  ) r
+  ANTI JOIN (
+    SELECT external_customer_id
+    FROM ${CH_DB}.feature_usage
+    WHERE tenant_id  = '${TENANT_ID}'
+      AND environment_id = '${ENVIRONMENT_ID}'
+    GROUP BY external_customer_id
+  ) f USING (external_customer_id)
+  ")
+
+  missing_customer_list=""
+  missing_customer_count=0
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    missing_customer_count=$((missing_customer_count + 1))
+    [[ -n "$missing_customer_list" ]] && missing_customer_list+=","
+    missing_customer_list+="'${line}'"
+  done <<< "$missing_customers_raw"
+  log "  -> ${missing_customer_count} customers excluded (no feature_usage)"
+
+  [[ -n "$missing_customer_list" ]] && \
+    extra_where+=" AND external_customer_id NOT IN (${missing_customer_list})"
+fi
+
+# Load event names to skip from JSON file (if present)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKIP_FILE="${EVENTS_TO_SKIP_FILE:-${SCRIPT_DIR}/events_to_skip.json}"
+if [[ -f "$SKIP_FILE" ]]; then
+  skip_count=$(jq '.events_to_skip | length' "$SKIP_FILE")
+  if (( skip_count > 0 )); then
+    skip_event_list=$(jq -r '.events_to_skip[]' "$SKIP_FILE" \
+      | awk '{printf "%s'\''%s'\''", (NR>1 ? "," : ""), $0}')
+    extra_where+=" AND event_name NOT IN (${skip_event_list})"
+  fi
+  log "  -> ${skip_count} event names excluded (events_to_skip.json)"
+fi
+
+###############################################################################
+# Step 2: Count total events
+###############################################################################
+log "Counting total events to reprocess ..."
+total_count=$(ch_query "
+SELECT count()
+FROM (
+  SELECT id
+  FROM ${CH_DB}.raw_events
+  PREWHERE tenant_id  = '${TENANT_ID}'
+    AND environment_id = '${ENVIRONMENT_ID}'
+    AND timestamp >= toDateTime64('${ch_start}', 3)
+    AND timestamp <  toDateTime64('${ch_end}', 3)
+  WHERE field4 = 'false'
+    ${extra_where}
+) r
+ANTI JOIN (
+  SELECT id
+  FROM ${CH_DB}.feature_usage
+  PREWHERE tenant_id  = '${TENANT_ID}'
+    AND environment_id = '${ENVIRONMENT_ID}'
+    AND timestamp >= toDateTime64('${ch_start}', 3)
+    AND timestamp <  toDateTime64('${ch_end}', 3)
+  WHERE 1=1
+    ${extra_where_fu}
+  GROUP BY id
+) f USING (id)
+")
+total_count=$(printf '%s' "$total_count" | tr -d '[:space:]')
+log "  -> ${total_count} events to reprocess"
+
+if [[ "$total_count" == "0" ]]; then
+  log "Nothing to do. Exiting."
+  exit 0
+fi
+
+###############################################################################
+# Step 3: Cursor-based pagination + parallel API calls
+###############################################################################
+cursor_ts="${ch_start}"
+cursor_id=""
+batch_num=0
+total_processed=0
+total_api_ok=0
+total_api_fail=0
+start_epoch=$(date +%s)
+
+while true; do
+  batch_num=$((batch_num + 1))
+
+  if [[ -z "$cursor_id" ]]; then
+    cursor_cond="(timestamp > toDateTime64('${cursor_ts}', 3)
+                  OR (timestamp = toDateTime64('${cursor_ts}', 3) AND id > ''))"
+  else
+    cursor_cond="(timestamp > toDateTime64('${cursor_ts}', 3)
+                  OR (timestamp = toDateTime64('${cursor_ts}', 3) AND id > '${cursor_id}'))"
+  fi
+
+  log "--- Batch ${batch_num}  (${total_processed}/${total_count}) ---"
+
+  batch_result=$(ch_query "
+SELECT
+  toString(r.timestamp) AS ts,
+  r.id,
+  r.external_customer_id,
+  r.event_name
+FROM (
+  SELECT timestamp, id, external_customer_id, event_name
+  FROM ${CH_DB}.raw_events
+  PREWHERE tenant_id  = '${TENANT_ID}'
+    AND environment_id = '${ENVIRONMENT_ID}'
+    AND timestamp >= toDateTime64('${ch_start}', 3)
+    AND timestamp <  toDateTime64('${ch_end}', 3)
+  WHERE field4 = 'false'
+    ${extra_where}
+    AND ${cursor_cond}
+) r
+ANTI JOIN (
+  SELECT id
+  FROM ${CH_DB}.feature_usage
+  PREWHERE tenant_id  = '${TENANT_ID}'
+    AND environment_id = '${ENVIRONMENT_ID}'
+    AND timestamp >= toDateTime64('${ch_start}', 3)
+    AND timestamp <  toDateTime64('${ch_end}', 3)
+  WHERE 1=1
+    ${extra_where_fu}
+  GROUP BY id
+) f USING (id)
+ORDER BY r.timestamp, r.id
+LIMIT ${BATCH_SIZE}
+")
+
+  if [[ -z "$batch_result" ]]; then
+    log "No more events. Pagination complete."
+    break
+  fi
+
+  batch_count=$(printf '%s\n' "$batch_result" | wc -l | tr -d '[:space:]')
+  log "Fetched ${batch_count} events"
+
+  # Extract all event IDs into an array
+  all_ids=()
+  while IFS= read -r _id; do
+    [[ -n "$_id" ]] && all_ids+=("$_id")
+  done < <(printf '%s\n' "$batch_result" | awk -F'\t' '{print $2}')
+
+  # Update cursor from the last row
+  last_line=$(printf '%s\n' "$batch_result" | tail -1)
+  cursor_ts=$(printf '%s' "$last_line" | awk -F'\t' '{print $1}')
+  cursor_id=$(printf '%s' "$last_line" | awk -F'\t' '{print $2}')
+
+  # Clear result dir for this batch
+  rm -f "${RESULT_DIR}"/*
+
+  total_ids=${#all_ids[@]}
+  total_chunks=$(( (total_ids + API_CHUNK_SIZE - 1) / API_CHUNK_SIZE ))
+  chunk_num=0
+  in_flight=0
+
+  log "Sending ${total_chunks} API chunks (${API_PARALLEL} parallel) ..."
+
+  for (( i=0; i < total_ids; i += API_CHUNK_SIZE )); do
+    chunk_num=$((chunk_num + 1))
+    chunk_arr=("${all_ids[@]:i:API_CHUNK_SIZE}")
+    chunk_count=${#chunk_arr[@]}
+
+    chunk_json=$(printf '%s\n' "${chunk_arr[@]}" \
+      | jq -R -s 'split("\n") | map(select(length > 0))')
+
+    payload=$(jq -n \
+      --arg start_date  "$START_DATE" \
+      --arg end_date    "$END_DATE" \
+      --argjson batch_size "$API_CHUNK_SIZE" \
+      --argjson event_ids  "$chunk_json" \
+      '{
+        start_date: $start_date,
+        end_date:   $end_date,
+        batch_size: $batch_size,
+        event_ids:  $event_ids
+      }')
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+      log "  [DRY RUN] chunk ${chunk_num}/${total_chunks}: ${chunk_count} IDs"
+    else
+      send_chunk "$chunk_num" "$total_chunks" "$chunk_count" "$payload" &
+      in_flight=$((in_flight + 1))
+
+      if (( in_flight >= API_PARALLEL )); then
+        wait
+        in_flight=0
+      fi
+    fi
+  done
+
+  # Wait for any remaining in-flight requests
+  if (( in_flight > 0 )); then
+    wait
+  fi
+
+  # Tally results from this batch
+  batch_ok=$( (grep -rl 'ok' "${RESULT_DIR}" 2>/dev/null || true) | wc -l | tr -d '[:space:]')
+  batch_fail=$( (grep -rl 'fail' "${RESULT_DIR}" 2>/dev/null || true) | wc -l | tr -d '[:space:]')
+  total_api_ok=$((total_api_ok + batch_ok))
+  total_api_fail=$((total_api_fail + batch_fail))
+
+  total_processed=$((total_processed + batch_count))
+
+  # Calculate speed
+  now_epoch=$(date +%s)
+  elapsed=$((now_epoch - start_epoch))
+  if (( elapsed > 0 )); then
+    rate=$((total_processed * 60 / elapsed))
+    remaining=$(( (total_count - total_processed) * elapsed / total_processed ))
+    remaining_min=$((remaining / 60))
+    log "Speed: ~${rate} events/min | ETA: ~${remaining_min}m | API: ${batch_ok} ok, ${batch_fail} fail"
+  fi
+
+  if [[ "$batch_count" -lt "$BATCH_SIZE" ]]; then
+    log "Last batch. Pagination complete."
+    break
+  fi
+
+  if [[ "$SLEEP_BETWEEN_BATCHES" -gt 0 ]]; then
+    sleep "$SLEEP_BETWEEN_BATCHES"
+  fi
+done
+
+###############################################################################
+# Summary
+###############################################################################
+end_epoch=$(date +%s)
+total_elapsed=$(( end_epoch - start_epoch ))
+total_min=$(( total_elapsed / 60 ))
+total_sec=$(( total_elapsed % 60 ))
+
+log "================================================================"
+log " Done!"
+log "   Total events:    ${total_processed}"
+log "   Batches:         ${batch_num}"
+log "   Time:            ${total_min}m ${total_sec}s"
+if [[ "$DRY_RUN" != "true" ]]; then
+  log "   API successes:   ${total_api_ok}"
+  log "   API failures:    ${total_api_fail}"
+fi
+log "================================================================"
