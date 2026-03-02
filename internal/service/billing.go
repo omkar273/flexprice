@@ -1580,12 +1580,6 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 	periodEnd time.Time,
 	referencePoint types.InvoiceReferencePoint,
 ) (*dto.CreateInvoiceRequest, error) {
-	s.Logger.Infow("preparing subscription invoice request",
-		"subscription_id", sub.ID,
-		"period_start", periodStart,
-		"period_end", periodEnd,
-		"reference_point", referencePoint)
-
 	// Validate that the billing period respects subscription end date
 	if err := s.validatePeriodAgainstSubscriptionEndDate(sub, periodStart, periodEnd); err != nil {
 		return nil, err
@@ -1615,20 +1609,6 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 
 	// Classify line items
 	classification := s.ClassifyLineItems(sub, periodStart, periodEnd, nextPeriodStart, nextPeriodEnd)
-	s.Logger.Infow("line item classification result",
-		"subscription_id", sub.ID,
-		"reference_point", referencePoint,
-		"period_start", periodStart,
-		"period_end", periodEnd,
-		"next_period_start", nextPeriodStart,
-		"next_period_end", nextPeriodEnd,
-		"current_period_advance_count", len(classification.CurrentPeriodAdvance),
-		"current_period_arrear_count", len(classification.CurrentPeriodArrear),
-		"next_period_advance_count", len(classification.NextPeriodAdvance),
-		"current_period_advance_display_names", lineItemDisplayNames(classification.CurrentPeriodAdvance),
-		"current_period_arrear_display_names", lineItemDisplayNames(classification.CurrentPeriodArrear),
-		"next_period_advance_display_names", lineItemDisplayNames(classification.NextPeriodAdvance),
-	)
 
 	var calculationResult *BillingCalculationResult
 	var metadata types.Metadata = make(types.Metadata)
@@ -1826,16 +1806,6 @@ func (s *billingService) validatePeriodAgainstSubscriptionEndDate(
 			Mark(ierr.ErrValidation)
 	}
 
-	// If period end is after subscription end date, that's acceptable for final billing
-	// but we should log it for transparency
-	if periodEnd.After(*sub.EndDate) {
-		s.Logger.Infow("billing period extends beyond subscription end date - will be handled appropriately",
-			"subscription_id", sub.ID,
-			"period_start", periodStart,
-			"period_end", periodEnd,
-			"subscription_end_date", *sub.EndDate)
-	}
-
 	return nil
 }
 func (s *billingService) checkIfChargeInvoiced(
@@ -1864,17 +1834,6 @@ func (s *billingService) checkIfChargeInvoiced(
 		return true
 	}
 	return false
-}
-
-// lineItemDisplayNames returns display names for classification debug logs.
-func lineItemDisplayNames(items []*subscription.SubscriptionLineItem) []string {
-	names := make([]string, 0, len(items))
-	for _, item := range items {
-		if item != nil {
-			names = append(names, item.DisplayName)
-		}
-	}
-	return names
 }
 
 // ClassifyLineItems classifies line items based on cadence and type
@@ -1939,25 +1898,10 @@ func (s *billingService) ClassifyLineItems(
 				})
 				hasPeriodInNextWindow = errNext == nil && resNext.Ok
 			}
-			s.Logger.Infow("classify line item (longer period)",
-				"subscription_id", sub.ID,
-				"line_item_display_name", item.DisplayName,
-				"price_id", item.PriceID,
-				"billing_period", item.BillingPeriod,
-				"invoice_cadence", item.InvoiceCadence,
-				"current_period_start", currentPeriodStart,
-				"current_period_end", currentPeriodEnd,
-				"next_period_start", nextPeriodStart,
-				"next_period_end", nextPeriodEnd,
-				"has_period_in_current_window", hasPeriodInCurrentWindow,
-				"has_period_in_next_window", hasPeriodInNextWindow,
-			)
 			// No match for current: skip current; advance items that match next go to NextPeriodAdvance only.
 			if !hasPeriodInCurrentWindow {
 				if item.InvoiceCadence == types.InvoiceCadenceAdvance && hasPeriodInNextWindow {
 					result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
-					s.Logger.Infow("classify line item: added to NextPeriodAdvance only",
-						"subscription_id", sub.ID, "display_name", item.DisplayName, "price_id", item.PriceID)
 				}
 				continue
 			}
@@ -1966,16 +1910,9 @@ func (s *billingService) ClassifyLineItems(
 				result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
 				if hasPeriodInNextWindow {
 					result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
-					s.Logger.Infow("classify line item: added to CurrentPeriodAdvance and NextPeriodAdvance",
-						"subscription_id", sub.ID, "display_name", item.DisplayName, "price_id", item.PriceID)
-				} else {
-					s.Logger.Infow("classify line item: added to CurrentPeriodAdvance",
-						"subscription_id", sub.ID, "display_name", item.DisplayName, "price_id", item.PriceID)
 				}
 			} else {
 				result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
-				s.Logger.Infow("classify line item: added to CurrentPeriodArrear",
-					"subscription_id", sub.ID, "display_name", item.DisplayName, "price_id", item.PriceID)
 			}
 			continue
 		}
