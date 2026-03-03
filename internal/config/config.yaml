@@ -25,7 +25,6 @@ kafka:
   consumer_group: "flexprice-consumer-local"
   topic: "events"
   topic_lazy: "events_lazy"
-  topic_dlq: "events_dlq"
   tls: false
   use_sasl: false
   sasl_mechanism: ""
