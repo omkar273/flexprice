@@ -23,6 +23,7 @@ swagger-2-0: install-swag
 		--parseVendor \
 		--outputTypes go,json,yaml
 	@make swagger-fix-refs
+	@node scripts/fix_swagger_internal_types.mjs
 
 .PHONY: swagger-3-0
 swagger-3-0: install-swag
@@ -33,7 +34,8 @@ swagger-3-0: install-swag
 		-H 'Content-Type: application/json' \
 		-d @docs/swagger/swagger.json > docs/swagger/swagger-3-0.json
 	@echo "Conversion complete. Output saved to docs/swagger/swagger-3-0.json"
-	@node scripts/add-speakeasy-type-name-overrides.mjs
+	@node scripts/fix_swagger_internal_types.mjs
+	@./scripts/update_swagger_servers.sh
 
 .PHONY: swagger-fix-refs
 swagger-fix-refs:
