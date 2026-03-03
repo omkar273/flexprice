@@ -143,12 +143,6 @@ func (c *commitmentCalculator) normalizeCommitmentToAmount(
 		// This handles all pricing models: flat_fee, tiered, package
 		commitmentAmount := c.priceService.CalculateCost(ctx, priceObj, commitmentQuantity)
 
-		c.logger.Debugw("normalized quantity commitment to amount",
-			"line_item_id", lineItem.ID,
-			"commitment_quantity", commitmentQuantity,
-			"commitment_amount", commitmentAmount,
-			"price_id", priceObj.ID)
-
 		return commitmentAmount, nil
 	}
 
@@ -288,7 +282,6 @@ func (c *commitmentCalculator) applyWindowCommitmentToLineItem(
 				trueUp := commitmentAmountPerWindow.Sub(windowCost)
 				totalTrueUp = totalTrueUp.Add(trueUp)
 				windowsWithTrueUp++
-
 			} else {
 				// Charge only actual usage for this window
 				windowCharge = windowCost
@@ -303,14 +296,6 @@ func (c *commitmentCalculator) applyWindowCommitmentToLineItem(
 	info.ComputedCommitmentUtilizedAmount = totalCommitmentUtilized
 	info.ComputedOverageAmount = totalOverage
 	info.ComputedTrueUpAmount = totalTrueUp
-
-	c.logger.Infow("window commitment applied to line item",
-		"line_item_id", lineItem.ID,
-		"num_windows", len(bucketedValues),
-		"commitment_per_window", commitmentAmountPerWindow,
-		"total_charge", totalCharge,
-		"windows_with_overage", windowsWithOverage,
-		"windows_with_true_up", windowsWithTrueUp)
 
 	return totalCharge, info, nil
 }
