@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 #
-# Finds raw events that are missing from feature_usage (cursor-based pagination)
-# and triggers the reprocess API for each batch of event IDs.
+# Finds raw events that are missing from the 'events' table and triggers the
+# reprocess API for each batch of event IDs.
+#
+# Memory-safe: compares raw_events against 'events' (not feature_usage).
+# The 'events' table has ORDER BY (tenant_id, environment_id, timestamp, id)
+# so id lookups are efficient. Single ANTI JOIN query dumps all missing IDs
+# to a file, then batches API calls from the file — no repeated joins.
 #
 # Prerequisites: clickhouse (client), curl, jq
 #
@@ -28,6 +33,9 @@ API_PARALLEL="${API_PARALLEL:-10}"
 DRY_RUN="${DRY_RUN:-false}"
 SLEEP_BETWEEN_BATCHES="${SLEEP_BETWEEN_BATCHES:-1}"
 
+# ClickHouse memory safety — applied per query
+CH_MAX_MEMORY="${CH_MAX_MEMORY:-8000000000}"  # 8 GB per query
+
 # ClickHouse connection (matches .env.backfill)
 CH_HOST="${CH_HOST:-127.0.0.1}"
 CH_PORT="${CH_PORT:-9000}"
@@ -49,13 +57,18 @@ ch() {
     "$@"
 }
 
-ch_query() {
+# Memory-capped ClickHouse query
+ch_safe_query() {
   local query="$1"
-  ch --query "$query"
+  ch --query "
+    SET max_memory_usage = ${CH_MAX_MEMORY};
+    SET max_bytes_before_external_sort = $((CH_MAX_MEMORY / 2));
+    SET max_bytes_before_external_group_by = $((CH_MAX_MEMORY / 2));
+    ${query}
+  "
 }
 
 # Sends one API chunk. Writes "ok" or "fail" to $RESULT_DIR/<chunk_num>.
-# Runs in background for parallelism.
 send_chunk() {
   local chunk_num="$1" total_chunks="$2" chunk_count="$3" payload="$4"
 
@@ -97,15 +110,46 @@ to_ch_ts() { printf '%s' "$1" | sed 's/T/ /;s/Z$//'; }
 ch_start=$(to_ch_ts "$START_DATE")
 ch_end=$(to_ch_ts "$END_DATE")
 
-# Temp dir for tracking parallel API results
+# Temp files
 RESULT_DIR=$(mktemp -d)
-trap 'rm -rf "$RESULT_DIR"' EXIT
+MISSING_IDS_FILE=$(mktemp)
+trap 'rm -rf "$RESULT_DIR" "$MISSING_IDS_FILE"' EXIT
+
+###############################################################################
+# Build customer filters
+###############################################################################
+# raw_events ORDER BY: (tenant_id, environment_id, external_customer_id, timestamp, id)
+#   → external_customer_id at position 3, efficient in PREWHERE
+raw_customer_prewhere=""
+# events ORDER BY: (tenant_id, environment_id, timestamp, id)
+#   → no external_customer_id in sort key, but has bloom filter index
+events_customer_where=""
+
+if [[ -n "$EXTERNAL_CUSTOMER_ID" ]]; then
+  log "Customer filter: ${EXTERNAL_CUSTOMER_ID}"
+  raw_customer_prewhere="AND external_customer_id = '${EXTERNAL_CUSTOMER_ID}'"
+  events_customer_where="AND external_customer_id = '${EXTERNAL_CUSTOMER_ID}'"
+fi
+
+# Load event names to skip
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKIP_FILE="${EVENTS_TO_SKIP_FILE:-${SCRIPT_DIR}/events_to_skip.json}"
+extra_event_filter=""
+if [[ -f "$SKIP_FILE" ]]; then
+  skip_count=$(jq '.events_to_skip | length' "$SKIP_FILE")
+  if (( skip_count > 0 )); then
+    skip_event_list=$(jq -r '.events_to_skip[]' "$SKIP_FILE" \
+      | awk '{printf "%s'\''%s'\''", (NR>1 ? "," : ""), $0}')
+    extra_event_filter="AND event_name NOT IN (${skip_event_list})"
+  fi
+  log "  -> ${skip_count} event names excluded (events_to_skip.json)"
+fi
 
 ###############################################################################
 # Banner
 ###############################################################################
 log "================================================================"
-log " Reprocess Missing Feature-Usage Events"
+log " Reprocess Missing Events (raw_events ANTI JOIN events)"
 log "================================================================"
 log " Tenant:       ${TENANT_ID}"
 log " Environment:  ${ENVIRONMENT_ID}"
@@ -117,98 +161,62 @@ log " API chunk:    ${API_CHUNK_SIZE}  (x${API_PARALLEL} parallel)"
 log " Dry run:      ${DRY_RUN}"
 log " API URL:      ${API_URL}"
 log " ClickHouse:   ${CH_HOST}:${CH_PORT}/${CH_DB}"
+log " CH max mem:   ${CH_MAX_MEMORY} bytes per query"
+log " Compare tbl:  events (ORDER BY tenant, env, timestamp, id)"
 log "================================================================"
 
 ###############################################################################
-# Step 1: Build filters
+# Step 1: Dump ALL missing IDs in one query
+#
+# Compares raw_events against 'events' table (NOT feature_usage).
+# The 'events' table:
+#   - ORDER BY (tenant_id, environment_id, timestamp, id) → id at pos 4
+#   - Lighter schema (fewer columns) → smaller hash table
+#   - 1:1 mapping with raw events (no fan-out like feature_usage)
+#
+# Single query, result streamed to file. No repeated joins.
 ###############################################################################
-extra_where=""
-extra_where_fu=""
+log ""
+log "Finding all missing event IDs (raw_events ANTI JOIN events) ..."
 
-if [[ -n "$EXTERNAL_CUSTOMER_ID" ]]; then
-  log "Customer filter: ${EXTERNAL_CUSTOMER_ID} (skipping missing-customer pre-fetch)"
-  extra_where+=" AND external_customer_id = '${EXTERNAL_CUSTOMER_ID}'"
-  extra_where_fu+=" AND external_customer_id = '${EXTERNAL_CUSTOMER_ID}'"
-else
-  log "Pre-fetching missing customers ..."
-  missing_customers_raw=$(ch_query "
-  SELECT external_customer_id
-  FROM (
-    SELECT external_customer_id
-    FROM ${CH_DB}.raw_events
-    PREWHERE tenant_id  = '${TENANT_ID}'
-      AND environment_id = '${ENVIRONMENT_ID}'
-      AND timestamp >= toDateTime64('${ch_start}', 3)
-      AND timestamp <  toDateTime64('${ch_end}', 3)
-    WHERE field4 = 'false'
-    GROUP BY external_customer_id
-  ) r
-  ANTI JOIN (
-    SELECT external_customer_id
-    FROM ${CH_DB}.feature_usage
-    WHERE tenant_id  = '${TENANT_ID}'
-      AND environment_id = '${ENVIRONMENT_ID}'
-    GROUP BY external_customer_id
-  ) f USING (external_customer_id)
-  ")
-
-  missing_customer_list=""
-  missing_customer_count=0
-  while IFS= read -r line; do
-    [[ -z "$line" ]] && continue
-    missing_customer_count=$((missing_customer_count + 1))
-    [[ -n "$missing_customer_list" ]] && missing_customer_list+=","
-    missing_customer_list+="'${line}'"
-  done <<< "$missing_customers_raw"
-  log "  -> ${missing_customer_count} customers excluded (no feature_usage)"
-
-  [[ -n "$missing_customer_list" ]] && \
-    extra_where+=" AND external_customer_id NOT IN (${missing_customer_list})"
-fi
-
-# Load event names to skip from JSON file (if present)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKIP_FILE="${EVENTS_TO_SKIP_FILE:-${SCRIPT_DIR}/events_to_skip.json}"
-if [[ -f "$SKIP_FILE" ]]; then
-  skip_count=$(jq '.events_to_skip | length' "$SKIP_FILE")
-  if (( skip_count > 0 )); then
-    skip_event_list=$(jq -r '.events_to_skip[]' "$SKIP_FILE" \
-      | awk '{printf "%s'\''%s'\''", (NR>1 ? "," : ""), $0}')
-    extra_where+=" AND event_name NOT IN (${skip_event_list})"
-  fi
-  log "  -> ${skip_count} event names excluded (events_to_skip.json)"
-fi
-
-###############################################################################
-# Step 2: Count total events
-###############################################################################
-log "Counting total events to reprocess ..."
-total_count=$(ch_query "
-SELECT count()
+QUERY="
+SELECT r.id
 FROM (
   SELECT id
   FROM ${CH_DB}.raw_events
   PREWHERE tenant_id  = '${TENANT_ID}'
     AND environment_id = '${ENVIRONMENT_ID}'
+    ${raw_customer_prewhere}
     AND timestamp >= toDateTime64('${ch_start}', 3)
     AND timestamp <  toDateTime64('${ch_end}', 3)
   WHERE field4 = 'false'
-    ${extra_where}
+    AND field1 != 'custom-llm'
+    ${extra_event_filter}
 ) r
 ANTI JOIN (
   SELECT id
-  FROM ${CH_DB}.feature_usage
+  FROM ${CH_DB}.events
   PREWHERE tenant_id  = '${TENANT_ID}'
     AND environment_id = '${ENVIRONMENT_ID}'
     AND timestamp >= toDateTime64('${ch_start}', 3)
     AND timestamp <  toDateTime64('${ch_end}', 3)
   WHERE 1=1
-    ${extra_where_fu}
+    ${events_customer_where}
   GROUP BY id
-) f USING (id)
-")
-total_count=$(printf '%s' "$total_count" | tr -d '[:space:]')
-log "  -> ${total_count} events to reprocess"
+) e USING (id)
+"
+
+log "  Left:  raw_events  PREWHERE tenant+env+customer+ts  WHERE field4='false'"
+log "  Right: events      PREWHERE tenant+env+ts            WHERE customer  GROUP BY id"
+log ""
+
+q_start=$(date +%s)
+ch_safe_query "$QUERY" > "$MISSING_IDS_FILE"
+q_end=$(date +%s)
+query_elapsed=$((q_end - q_start))
+
+total_count=$(wc -l < "$MISSING_IDS_FILE" | tr -d '[:space:]')
+log "  -> ${total_count} missing event IDs found in ${query_elapsed}s"
 
 if [[ "$total_count" == "0" ]]; then
   log "Nothing to do. Exiting."
@@ -216,10 +224,13 @@ if [[ "$total_count" == "0" ]]; then
 fi
 
 ###############################################################################
-# Step 3: Cursor-based pagination + parallel API calls
+# Step 2: Stream the file in batches for API calls
+#
+# No more ClickHouse queries — just read IDs from the file.
 ###############################################################################
-cursor_ts="${ch_start}"
-cursor_id=""
+log ""
+log "Sending ${total_count} event IDs to API in batches of ${BATCH_SIZE} ..."
+
 batch_num=0
 total_processed=0
 total_api_ok=0
@@ -229,66 +240,24 @@ start_epoch=$(date +%s)
 while true; do
   batch_num=$((batch_num + 1))
 
-  if [[ -z "$cursor_id" ]]; then
-    cursor_cond="(timestamp > toDateTime64('${cursor_ts}', 3)
-                  OR (timestamp = toDateTime64('${cursor_ts}', 3) AND id > ''))"
-  else
-    cursor_cond="(timestamp > toDateTime64('${cursor_ts}', 3)
-                  OR (timestamp = toDateTime64('${cursor_ts}', 3) AND id > '${cursor_id}'))"
-  fi
+  # Read next BATCH_SIZE lines from the file (sed avoids SIGPIPE from tail|head)
+  offset=$((total_processed))
+  batch_ids=$(sed -n "$((offset + 1)),$((offset + BATCH_SIZE))p" "$MISSING_IDS_FILE")
 
-  log "--- Batch ${batch_num}  (${total_processed}/${total_count}) ---"
-
-  batch_result=$(ch_query "
-SELECT
-  toString(r.timestamp) AS ts,
-  r.id,
-  r.external_customer_id,
-  r.event_name
-FROM (
-  SELECT timestamp, id, external_customer_id, event_name
-  FROM ${CH_DB}.raw_events
-  PREWHERE tenant_id  = '${TENANT_ID}'
-    AND environment_id = '${ENVIRONMENT_ID}'
-    AND timestamp >= toDateTime64('${ch_start}', 3)
-    AND timestamp <  toDateTime64('${ch_end}', 3)
-  WHERE field4 = 'false'
-    ${extra_where}
-    AND ${cursor_cond}
-) r
-ANTI JOIN (
-  SELECT id
-  FROM ${CH_DB}.feature_usage
-  PREWHERE tenant_id  = '${TENANT_ID}'
-    AND environment_id = '${ENVIRONMENT_ID}'
-    AND timestamp >= toDateTime64('${ch_start}', 3)
-    AND timestamp <  toDateTime64('${ch_end}', 3)
-  WHERE 1=1
-    ${extra_where_fu}
-  GROUP BY id
-) f USING (id)
-ORDER BY r.timestamp, r.id
-LIMIT ${BATCH_SIZE}
-")
-
-  if [[ -z "$batch_result" ]]; then
-    log "No more events. Pagination complete."
+  if [[ -z "$batch_ids" ]]; then
+    log "All IDs processed. Done."
     break
   fi
 
-  batch_count=$(printf '%s\n' "$batch_result" | wc -l | tr -d '[:space:]')
-  log "Fetched ${batch_count} events"
+  batch_count=$(printf '%s\n' "$batch_ids" | wc -l)
+  batch_count=$(echo "$batch_count" | tr -d '[:space:]')
+  log "--- Batch ${batch_num}  (${total_processed}/${total_count}) — ${batch_count} IDs ---"
 
-  # Extract all event IDs into an array
+  # Load IDs into array
   all_ids=()
   while IFS= read -r _id; do
     [[ -n "$_id" ]] && all_ids+=("$_id")
-  done < <(printf '%s\n' "$batch_result" | awk -F'\t' '{print $2}')
-
-  # Update cursor from the last row
-  last_line=$(printf '%s\n' "$batch_result" | tail -1)
-  cursor_ts=$(printf '%s' "$last_line" | awk -F'\t' '{print $1}')
-  cursor_id=$(printf '%s' "$last_line" | awk -F'\t' '{print $2}')
+  done <<< "$batch_ids"
 
   # Clear result dir for this batch
   rm -f "${RESULT_DIR}"/*
@@ -308,16 +277,24 @@ LIMIT ${BATCH_SIZE}
     chunk_json=$(printf '%s\n' "${chunk_arr[@]}" \
       | jq -R -s 'split("\n") | map(select(length > 0))')
 
+    # Build external_customer_ids array if EXTERNAL_CUSTOMER_ID is set
+    cust_ids_json="null"
+    if [[ -n "${EXTERNAL_CUSTOMER_ID:-}" ]]; then
+      cust_ids_json=$(jq -n --arg cid "$EXTERNAL_CUSTOMER_ID" '[$cid]')
+    fi
+
     payload=$(jq -n \
       --arg start_date  "$START_DATE" \
       --arg end_date    "$END_DATE" \
       --argjson batch_size "$API_CHUNK_SIZE" \
       --argjson event_ids  "$chunk_json" \
+      --argjson external_customer_ids "$cust_ids_json" \
       '{
-        start_date: $start_date,
-        end_date:   $end_date,
-        batch_size: $batch_size,
-        event_ids:  $event_ids
+        start_date:            $start_date,
+        end_date:              $end_date,
+        batch_size:            $batch_size,
+        event_ids:             $event_ids,
+        external_customer_ids: $external_customer_ids
       }')
 
     if [[ "$DRY_RUN" == "true" ]]; then
@@ -357,7 +334,7 @@ LIMIT ${BATCH_SIZE}
   fi
 
   if [[ "$batch_count" -lt "$BATCH_SIZE" ]]; then
-    log "Last batch. Pagination complete."
+    log "Last batch. Done."
     break
   fi
 
