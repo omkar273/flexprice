@@ -21,12 +21,12 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/feature"
 	"github.com/flexprice/flexprice/internal/domain/meter"
-	"github.com/flexprice/flexprice/internal/expression"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/domain/price"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	"github.com/flexprice/flexprice/internal/domain/wallet"
 	ierr "github.com/flexprice/flexprice/internal/errors"
+	"github.com/flexprice/flexprice/internal/expression"
 	"github.com/flexprice/flexprice/internal/pubsub"
 	"github.com/flexprice/flexprice/internal/pubsub/kafka"
 	pubsubRouter "github.com/flexprice/flexprice/internal/pubsub/router"
@@ -3432,6 +3432,14 @@ func (s *featureUsageTrackingService) ToGetUsageAnalyticsResponseDTO(ctx context
 			Properties:      analytic.Properties,
 			CommitmentInfo:  analytic.CommitmentInfo,
 			Points:          make([]dto.UsageAnalyticPoint, 0, len(analytic.Points)),
+		}
+
+		// If feature has reporting unit, convert total usage and include reporting unit fields; otherwise total_reporting_usage stays ""
+		if f, ok := data.Features[analytic.FeatureID]; ok && f.ReportingUnit != nil {
+			if reportingUsage, err := f.ToReportingValue(totalUsage); err == nil {
+				item.TotalReportingUsage = reportingUsage.String()
+				item.ReportingUnit = f.ReportingUnit
+			}
 		}
 
 		// Only include Sources array when 'sources' is in expand param
