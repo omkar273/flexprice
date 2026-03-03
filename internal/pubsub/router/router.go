@@ -5,12 +5,10 @@ import (
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
-	watermillKafka "github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	"github.com/flexprice/flexprice/internal/config"
-	"github.com/flexprice/flexprice/internal/kafka"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/sentry"
 )
@@ -33,49 +31,28 @@ func NewRouter(cfg *config.Configuration, logger *logger.Logger, sentry *sentry.
 		return nil, err
 	}
 
-	// Create publisher for PoisonQueue middleware
-	var poisonQueuePublisher message.Publisher
-	var dlqTopicName string
-
-	if cfg.Kafka.TopicDLQ != "" {
-		// Use real Kafka DLQ when configured
-		var err error
-		poisonQueuePublisher, err = createDLQPublisher(cfg, logger)
-		if err != nil {
-			return nil, err
-		}
-		dlqTopicName = cfg.Kafka.TopicDLQ
-		logger.Infow("DLQ enabled with Kafka", "dlq_topic", cfg.Kafka.TopicDLQ)
-	} else {
-		// Use in-memory DLQ (original behavior) when not configured
-		poisonQueuePublisher = getTempDLQ()
-		dlqTopicName = "poison_queue"
-		logger.Infow("DLQ using in-memory queue (no topic_dlq configured)")
-	}
-
-	// PoisonQueue middleware (always present, just with different publisher)
-	poisonQueue, err := middleware.PoisonQueue(poisonQueuePublisher, dlqTopicName)
+	poisonQueue, err := middleware.PoisonQueue(getTempDLQ(), "webhooks_dlq")
 	if err != nil {
 		return nil, err
 	}
 
 	// Add middleware in correct order
 	router.AddMiddleware(
-		poisonQueue,          // FIRST: catch permanently failed messages
-		middleware.Recoverer, // SECOND: recover from panics
-		middleware.CorrelationID,
+		poisonQueue,
+		middleware.Recoverer,     // Recover from panics
+		middleware.CorrelationID, // Add correlation IDs
 		middleware.Retry{
-			MaxRetries:          3, // Hardcoded as requested
-			InitialInterval:     1 * time.Second,
-			MaxInterval:         10 * time.Second,
-			Multiplier:          2.0,
-			MaxElapsedTime:      2 * time.Minute,
+			MaxRetries:          cfg.Webhook.MaxRetries,
+			InitialInterval:     cfg.Webhook.InitialInterval,
+			MaxInterval:         cfg.Webhook.MaxInterval,
+			Multiplier:          cfg.Webhook.Multiplier,
+			MaxElapsedTime:      cfg.Webhook.MaxElapsedTime,
 			RandomizationFactor: 0.5,
 			Logger:              watermill.NewStdLogger(true, false),
 			OnRetryHook: func(retryNum int, delay time.Duration) {
 				logger.Infow("retrying message",
 					"retry_number", retryNum,
-					"max_retries", 3,
+					"max_retries", cfg.Webhook.MaxRetries,
 					"delay", delay,
 				)
 			},
@@ -88,30 +65,6 @@ func NewRouter(cfg *config.Configuration, logger *logger.Logger, sentry *sentry.
 		sentry: sentry,
 		config: &cfg.Webhook,
 	}, nil
-}
-
-func createDLQPublisher(cfg *config.Configuration, logger *logger.Logger) (message.Publisher, error) {
-	// Use the existing Kafka infrastructure
-	saramaConfig := kafka.GetSaramaConfig(cfg)
-	if saramaConfig != nil {
-		saramaConfig.Producer.Return.Successes = true
-		saramaConfig.Producer.Return.Errors = true
-	}
-
-	publisher, err := watermillKafka.NewPublisher(
-		watermillKafka.PublisherConfig{
-			Brokers:               cfg.Kafka.Brokers,
-			Marshaler:             watermillKafka.DefaultMarshaler{},
-			OverwriteSaramaConfig: saramaConfig,
-		},
-		watermill.NewStdLogger(false, false),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Infow("DLQ publisher initialized", "brokers", cfg.Kafka.Brokers, "dlq_topic", cfg.Kafka.TopicDLQ)
-	return publisher, nil
 }
 
 // AddNoPublishHandler adds a handler that doesn't publish messages
@@ -159,7 +112,7 @@ func (r *Router) Close() error {
 	return r.router.Close()
 }
 
-// getTempDLQ returns a temporary in-memory DLQ (original behavior when topic_dlq not configured)
+// getTempDLQ returns a temporary DLQ for testing and not actually used
 func getTempDLQ() *gochannel.GoChannel {
 	return gochannel.NewGoChannel(
 		gochannel.Config{
