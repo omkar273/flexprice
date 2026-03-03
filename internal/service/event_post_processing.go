@@ -1325,10 +1325,10 @@ func (s *eventPostProcessingService) ToGetUsageAnalyticsResponseDTO(ctx context.
 			Points:          make([]dto.UsageAnalyticPoint, 0, len(analytic.Points)),
 		}
 
-		// If feature has reporting unit, convert total usage and include reporting unit fields; otherwise total_reporting_usage stays ""
+		// If feature has reporting unit, convert total usage and include reporting unit fields; otherwise total_usage_display stays ""
 		if f, ok := featureMap[analytic.FeatureID]; ok && f.ReportingUnit != nil {
 			if reportingUsage, err := f.ToReportingValue(analytic.TotalUsage); err == nil {
-				item.TotalReportingUsage = reportingUsage.String()
+				item.TotalUsageDisplay = reportingUsage.String()
 				item.ReportingUnit = f.ReportingUnit
 			}
 		}
