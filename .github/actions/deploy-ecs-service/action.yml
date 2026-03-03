@@ -40,7 +40,7 @@ runs:
         set -euo pipefail
 
         echo ""
-        echo "==> Deploying ECS service (details redacted)"
+        echo "==> Deploying ECS service (cluster, region, service_name only; no credentials or image URIs logged)"
 
         TASK_ARN=$(aws ecs describe-services \
           --cluster "$CLUSTER" \
@@ -50,7 +50,7 @@ runs:
           --output text)
 
         if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
-          echo "  ERROR: service not found in cluster for this region" >&2
+          echo "  ERROR: service not found (cluster/region/service abstract)" >&2
           exit 1
         fi
 
@@ -66,24 +66,21 @@ runs:
           exit 0
         fi
 
-        NEW_TASK_DEF=$(echo "$TASK_DEF" | python3 -c "
-        import json, sys
-
+        # Pass image and ecr_repo_prefix via env so they never appear in script/logs
+        NEW_TASK_DEF=$(echo "$TASK_DEF" | ECR_REPO_PREFIX="$ECR_REPO_PREFIX" IMAGE="$IMAGE" python3 -c "
+        import json, sys, os
+        ecr_prefix = os.environ['ECR_REPO_PREFIX']
+        new_image = os.environ['IMAGE']
         td = json.load(sys.stdin)
-        ecr_prefix = '$ECR_REPO_PREFIX'
-        new_image   = '$IMAGE'
-
         for c in td.get('containerDefinitions', []):
             if c.get('image', '').startswith(ecr_prefix):
                 c['image'] = new_image
-
         for f in [
             'taskDefinitionArn', 'revision', 'status',
             'requiresAttributes', 'compatibilities',
             'registeredAt', 'registeredBy',
         ]:
             td.pop(f, None)
-
         print(json.dumps(td))
         ")
 

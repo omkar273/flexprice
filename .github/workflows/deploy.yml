@@ -55,6 +55,15 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Prepare image tag
+        id: image-tag
+        env:
+          ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          echo "tag=${ECR_REGISTRY}/${ECR_REPOSITORY}:${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
       - name: Build & push image
         uses: docker/build-push-action@v4
         with:
@@ -62,12 +71,15 @@ jobs:
           file: Dockerfile.ecs
           platforms: linux/arm64
           push: true
-          tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          tags: ${{ steps.image-tag.outputs.tag }}
 
       - name: Set image output
         id: set-image
-        run: echo "image=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+        env:
+          ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: echo "image=${ECR_REGISTRY}/${ECR_REPOSITORY}:${GITHUB_SHA}" >> $GITHUB_OUTPUT
 
   # ──────────────────────────────────────────────────────────────────────────
   # Job 2: Resolve deployment targets from branch or manual input
