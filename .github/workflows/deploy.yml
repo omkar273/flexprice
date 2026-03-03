@@ -14,7 +14,7 @@ on:
       dry_run:
         description: "Dry run — validate config & print plan, skip register/deploy"
         type: boolean
-        default: true
+        default: false
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -118,7 +118,9 @@ jobs:
           # Determine environment
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             ENV="${{ github.event.inputs.environment }}"
+            # Default dry_run to false when not explicitly set
             DRY_RUN="${{ github.event.inputs.dry_run }}"
+            if [ -z "$DRY_RUN" ]; then DRY_RUN="false"; fi
           elif [ "${{ github.ref_name }}" = "main" ]; then
             ENV="production"
             DRY_RUN="false"
@@ -129,10 +131,15 @@ jobs:
 
           echo "Environment and dry_run configured (values redacted for public logs)"
 
+          # Use delimiter format so JSON (newlines, spaces) is written correctly to GITHUB_OUTPUT
           if [ "$ENV" = "production" ]; then
-            printf "targets=%s\n" "$PROD_TARGETS" >> $GITHUB_OUTPUT
+            echo "targets<<TARGETS_EOF" >> $GITHUB_OUTPUT
+            echo "$PROD_TARGETS" >> $GITHUB_OUTPUT
+            echo "TARGETS_EOF" >> $GITHUB_OUTPUT
           else
-            printf "targets=%s\n" "$STAGING_TARGETS" >> $GITHUB_OUTPUT
+            echo "targets<<TARGETS_EOF" >> $GITHUB_OUTPUT
+            echo "$STAGING_TARGETS" >> $GITHUB_OUTPUT
+            echo "TARGETS_EOF" >> $GITHUB_OUTPUT
           fi
 
           echo "dry_run=$DRY_RUN" >> $GITHUB_OUTPUT
