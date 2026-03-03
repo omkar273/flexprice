@@ -89,6 +89,44 @@ func NewBillingService(params ServiceParams) BillingService {
 	}
 }
 
+// bucketedMeterCost holds the result of calculating cost for a bucketed meter
+type bucketedMeterCost struct {
+	Amount   decimal.Decimal
+	Quantity decimal.Decimal
+}
+
+// calculateBucketedMeterCost calculates cost for a bucketed meter using usage results.
+// For meters with group_by and tiered pricing, each group's usage is priced independently.
+func calculateBucketedMeterCost(
+	ctx context.Context,
+	priceService PriceService,
+	priceObj *price.Price,
+	usageResult *events.AggregationResult,
+	hasGroupBy bool,
+) bucketedMeterCost {
+	usePerGroupPricing := hasGroupBy && priceObj.BillingModel == types.BILLING_MODEL_TIERED
+	if usePerGroupPricing {
+		return bucketedMeterCost{
+			Amount:   priceService.CalculateCostFromUsageResults(ctx, priceObj, usageResult.Results),
+			Quantity: usageResult.Value,
+		}
+	}
+	bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
+	for i, r := range usageResult.Results {
+		bucketedValues[i] = r.Value
+	}
+	totalQuantity := usageResult.Value
+	if totalQuantity.IsZero() {
+		for _, v := range bucketedValues {
+			totalQuantity = totalQuantity.Add(v)
+		}
+	}
+	return bucketedMeterCost{
+		Amount:   priceService.CalculateBucketedCost(ctx, priceObj, bucketedValues),
+		Quantity: totalQuantity,
+	}
+}
+
 // FixedLineItemInclusion is the result of Algorithm A/B for a fixed line item.
 type FixedLineItemInclusion string
 
@@ -504,8 +542,8 @@ func (s *billingService) CalculateUsageCharges(
 								Mark(ierr.ErrNotFound)
 						}
 
-						// For bucketed max, get usage from events table (same source as GetUsageBySubscription)
-						if meter.IsBucketedMaxMeter() {
+						// For bucketed meters (max or sum), calculate cost using bucket values
+						if meter.IsBucketedMaxMeter() || meter.IsBucketedSumMeter() {
 							usageRequest := &dto.GetUsageByMeterRequest{
 								MeterID:            item.MeterID,
 								PriceID:            item.PriceID,
@@ -515,64 +553,15 @@ func (s *billingService) CalculateUsageCharges(
 								WindowSize:         meter.Aggregation.BucketSize,
 								BillingAnchor:      &sub.BillingAnchor,
 							}
-
 							usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
 							if err != nil {
 								return nil, decimal.Zero, err
 							}
 
-							var adjustedAmount decimal.Decimal
-							if meter.Aggregation.GroupBy != "" && matchingCharge.Price.BillingModel == types.BILLING_MODEL_TIERED {
-								// Per-group tiered pricing: events table returns per-group rows when GroupBy is set
-								adjustedAmount = priceService.CalculateBucketedCostWithGroups(ctx, matchingCharge.Price, usageResult.Results)
-							} else {
-								bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-								for i, result := range usageResult.Results {
-									bucketedValues[i] = result.Value
-								}
-								adjustedAmount = priceService.CalculateBucketedCost(ctx, matchingCharge.Price, bucketedValues)
-							}
-							matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(adjustedAmount, matchingCharge.Price.Currency)
-
-							totalBucketQuantity := usageResult.Value
-							matchingCharge.Quantity = totalBucketQuantity.InexactFloat64()
-							quantityForCalculation = totalBucketQuantity
-						} else if meter.IsBucketedSumMeter() {
-							// For sum with bucket, we need to process each bucket's sum value
-							// Get usage with bucketed values
-							usageRequest := &dto.GetUsageByMeterRequest{
-								MeterID:            item.MeterID,
-								PriceID:            item.PriceID,
-								ExternalCustomerID: customer.ExternalID,
-								StartTime:          item.GetPeriodStart(periodStart),
-								EndTime:            item.GetPeriodEnd(periodEnd),
-								WindowSize:         meter.Aggregation.BucketSize, // Use the meter's bucket size
-								BillingAnchor:      &sub.BillingAnchor,
-							}
-
-							// Get usage data with buckets
-							usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
-							if err != nil {
-								return nil, decimal.Zero, err
-							}
-
-							// Extract bucket values (each bucket contains the sum for that window)
-							bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-							for i, result := range usageResult.Results {
-								bucketedValues[i] = result.Value
-							}
-
-							// Calculate cost using bucketed values (each bucket is priced independently)
-							adjustedAmount := priceService.CalculateBucketedCost(ctx, matchingCharge.Price, bucketedValues)
-							matchingCharge.Amount = adjustedAmount.InexactFloat64()
-
-							// Update quantity to reflect the sum of all bucket sums
-							totalBucketQuantity := decimal.Zero
-							for _, bucketValue := range bucketedValues {
-								totalBucketQuantity = totalBucketQuantity.Add(bucketValue)
-							}
-							matchingCharge.Quantity = totalBucketQuantity.InexactFloat64()
-							quantityForCalculation = totalBucketQuantity
+							cost := calculateBucketedMeterCost(ctx, priceService, matchingCharge.Price, usageResult, meter.Aggregation.GroupBy != "")
+							matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(cost.Amount, matchingCharge.Price.Currency)
+							matchingCharge.Quantity = cost.Quantity.InexactFloat64()
+							quantityForCalculation = cost.Quantity
 						} else {
 							// For regular pricing, use standard cost calculation
 							adjustedAmount := priceService.CalculateCost(ctx, matchingCharge.Price, quantityForCalculation)
@@ -969,87 +958,36 @@ func (s *billingService) CalculateFeatureUsageCharges(
 			quantityForCalculation := decimal.NewFromFloat(matchingCharge.Quantity)
 			matchingEntitlement, entitlementOk := entitlementsByMeterID[item.MeterID]
 
-			// Handle bucketed max meters first - this should always be checked regardless of entitlements
-			// But skip overage charges as they already have the correct amount with overage factor applied
-			if meter.IsBucketedMaxMeter() && matchingCharge.Price != nil {
-				// Get usage with bucketed values
+			// Handle bucketed meters (max or sum) - uses optimized feature_usage table
+			if (meter.IsBucketedMaxMeter() || meter.IsBucketedSumMeter()) && matchingCharge.Price != nil {
+				aggType := types.AggregationMax
+				groupBy := meter.Aggregation.GroupBy
+				if meter.IsBucketedSumMeter() {
+					aggType = types.AggregationSum
+					groupBy = "" // sum meters don't use per-group pricing
+				}
 				usageRequest := &events.FeatureUsageParams{
 					PriceID: item.PriceID,
 					MeterID: item.MeterID,
 					UsageParams: &events.UsageParams{
 						ExternalCustomerID: customer.ExternalID,
-						AggregationType:    types.AggregationMax,
+						AggregationType:    aggType,
 						StartTime:          item.GetPeriodStart(periodStart),
 						EndTime:            item.GetPeriodEnd(periodEnd),
-						WindowSize:         meter.Aggregation.BucketSize, // Set monthly window size for custom billing periods
+						WindowSize:         meter.Aggregation.BucketSize,
 						BillingAnchor:      &sub.BillingAnchor,
-						GroupByProperty:    meter.Aggregation.GroupBy,
+						GroupByProperty:    groupBy,
 					},
 				}
-
-				// Get usage data with buckets
 				usageResult, err := s.FeatureUsageRepo.GetUsageForMaxMetersWithBuckets(ctx, usageRequest)
 				if err != nil {
 					return nil, decimal.Zero, err
 				}
 
-				var adjustedAmount decimal.Decimal
-				if meter.Aggregation.GroupBy != "" && matchingCharge.Price.BillingModel == types.BILLING_MODEL_TIERED {
-					// Per-group tiered pricing: apply tiers to each group's value independently
-					adjustedAmount = priceService.CalculateBucketedCostWithGroups(ctx, matchingCharge.Price, usageResult.Results)
-				} else {
-					// Aggregated pricing (flat fee, package, or no group_by)
-					bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-					for i, result := range usageResult.Results {
-						bucketedValues[i] = result.Value
-					}
-					adjustedAmount = priceService.CalculateBucketedCost(ctx, matchingCharge.Price, bucketedValues)
-				}
-				matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(adjustedAmount, matchingCharge.Price.Currency)
-
-				// Update quantity to reflect the sum of all bucket maxes (or sum of group values when group_by)
-				totalBucketQuantity := usageResult.Value
-				matchingCharge.Quantity = totalBucketQuantity.InexactFloat64()
-				quantityForCalculation = totalBucketQuantity
-			} else if meter.IsBucketedSumMeter() && matchingCharge.Price != nil {
-				// Handle sum with bucket meters - uses optimized feature_usage table
-				// Get usage with bucketed values
-				usageRequest := &events.FeatureUsageParams{
-					PriceID: item.PriceID,
-					MeterID: item.MeterID,
-					UsageParams: &events.UsageParams{
-						ExternalCustomerID: customer.ExternalID,
-						AggregationType:    types.AggregationSum,
-						StartTime:          item.GetPeriodStart(periodStart),
-						EndTime:            item.GetPeriodEnd(periodEnd),
-						WindowSize:         meter.Aggregation.BucketSize, // Use the meter's bucket size
-						BillingAnchor:      &sub.BillingAnchor,
-					},
-				}
-
-				// Get usage data with buckets from feature_usage table (optimized, pre-aggregated)
-				usageResult, err := s.FeatureUsageRepo.GetUsageForMaxMetersWithBuckets(ctx, usageRequest)
-				if err != nil {
-					return nil, decimal.Zero, err
-				}
-
-				// Extract bucket values (each bucket contains the sum for that window)
-				bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-				for i, result := range usageResult.Results {
-					bucketedValues[i] = result.Value
-				}
-
-				// Calculate cost using bucketed values (each bucket is priced independently)
-				adjustedAmount := priceService.CalculateBucketedCost(ctx, matchingCharge.Price, bucketedValues)
-				matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(adjustedAmount, matchingCharge.Price.Currency)
-
-				// Update quantity to reflect the sum of all bucket sums
-				totalBucketQuantity := decimal.Zero
-				for _, bucketValue := range bucketedValues {
-					totalBucketQuantity = totalBucketQuantity.Add(bucketValue)
-				}
-				matchingCharge.Quantity = totalBucketQuantity.InexactFloat64()
-				quantityForCalculation = totalBucketQuantity
+				cost := calculateBucketedMeterCost(ctx, priceService, matchingCharge.Price, usageResult, groupBy != "")
+				matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(cost.Amount, matchingCharge.Price.Currency)
+				matchingCharge.Quantity = cost.Quantity.InexactFloat64()
+				quantityForCalculation = cost.Quantity
 			}
 
 			// Only apply entitlement adjustments if:

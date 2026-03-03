@@ -890,7 +890,7 @@ func (s *PriceServiceSuite) TestCalculateBucketedCost_ComplexScenario() {
 		expected.String(), result.String(), bucketedValues)
 }
 
-func (s *PriceServiceSuite) TestCalculateBucketedCostWithGroups_TieredSlab() {
+func (s *PriceServiceSuite) TestCalculateCostFromUsageResults_TieredSlab() {
 	// Slab tiered pricing: 0-10 units ₹1/unit, 10-∞ ₹2/unit. Per-group (e.g. per KRN) slab applied individually.
 	upTo10 := uint64(10)
 	price := &price.Price{
@@ -913,14 +913,14 @@ func (s *PriceServiceSuite) TestCalculateBucketedCostWithGroups_TieredSlab() {
 		{WindowSize: bucketStart, Value: decimal.NewFromInt(12), GroupKey: "krn2"},
 	}
 
-	result := s.priceService.CalculateBucketedCostWithGroups(s.ctx, price, results)
+	result := s.priceService.CalculateCostFromUsageResults(s.ctx, price, results)
 	expected := decimal.NewFromInt(17)
 	s.True(expected.Equal(result),
 		"Expected cost %s but got %s for per-group slab (krn1=3, krn2=12)",
 		expected.String(), result.String())
 }
 
-func (s *PriceServiceSuite) TestCalculateBucketedCostWithGroups_TieredVolume() {
+func (s *PriceServiceSuite) TestCalculateCostFromUsageResults_TieredVolume() {
 	// Volume tiered: 0-10 $0.10/unit, 11-20 $0.05/unit. Per-group volume tier applied individually.
 	upTo10 := uint64(10)
 	upTo20 := uint64(20)
@@ -944,7 +944,7 @@ func (s *PriceServiceSuite) TestCalculateBucketedCostWithGroups_TieredVolume() {
 		{WindowSize: bucketStart, Value: decimal.NewFromInt(15), GroupKey: "B"},
 	}
 
-	result := s.priceService.CalculateBucketedCostWithGroups(s.ctx, price, results)
+	result := s.priceService.CalculateCostFromUsageResults(s.ctx, price, results)
 	expected := decimal.NewFromFloat(1.25)
 	s.True(expected.Equal(result),
 		"Expected cost %s but got %s for per-group volume (A=5, B=15)",
