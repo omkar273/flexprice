@@ -23547,29 +23547,32 @@ func (m *EnvironmentMutation) ResetEdge(name string) error {
 // FeatureMutation represents an operation that mutates the Feature nodes in the graph.
 type FeatureMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *string
-	tenant_id      *string
-	status         *string
-	created_at     *time.Time
-	updated_at     *time.Time
-	created_by     *string
-	updated_by     *string
-	environment_id *string
-	lookup_key     *string
-	name           *string
-	description    *string
-	_type          *string
-	meter_id       *string
-	metadata       *map[string]string
-	unit_singular  *string
-	unit_plural    *string
-	alert_settings *types.AlertSettings
-	clearedFields  map[string]struct{}
-	done           bool
-	oldValue       func(context.Context) (*Feature, error)
-	predicates     []predicate.Feature
+	op                             Op
+	typ                            string
+	id                             *string
+	tenant_id                      *string
+	status                         *string
+	created_at                     *time.Time
+	updated_at                     *time.Time
+	created_by                     *string
+	updated_by                     *string
+	environment_id                 *string
+	lookup_key                     *string
+	name                           *string
+	description                    *string
+	_type                          *string
+	meter_id                       *string
+	metadata                       *map[string]string
+	unit_singular                  *string
+	unit_plural                    *string
+	reporting_unit_singular        *string
+	reporting_unit_plural          *string
+	reporting_unit_conversion_rate *decimal.Decimal
+	alert_settings                 *types.AlertSettings
+	clearedFields                  map[string]struct{}
+	done                           bool
+	oldValue                       func(context.Context) (*Feature, error)
+	predicates                     []predicate.Feature
 }
 
 var _ ent.Mutation = (*FeatureMutation)(nil)
@@ -24320,6 +24323,153 @@ func (m *FeatureMutation) ResetUnitPlural() {
 	delete(m.clearedFields, feature.FieldUnitPlural)
 }
 
+// SetReportingUnitSingular sets the "reporting_unit_singular" field.
+func (m *FeatureMutation) SetReportingUnitSingular(s string) {
+	m.reporting_unit_singular = &s
+}
+
+// ReportingUnitSingular returns the value of the "reporting_unit_singular" field in the mutation.
+func (m *FeatureMutation) ReportingUnitSingular() (r string, exists bool) {
+	v := m.reporting_unit_singular
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReportingUnitSingular returns the old "reporting_unit_singular" field's value of the Feature entity.
+// If the Feature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeatureMutation) OldReportingUnitSingular(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReportingUnitSingular is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReportingUnitSingular requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReportingUnitSingular: %w", err)
+	}
+	return oldValue.ReportingUnitSingular, nil
+}
+
+// ClearReportingUnitSingular clears the value of the "reporting_unit_singular" field.
+func (m *FeatureMutation) ClearReportingUnitSingular() {
+	m.reporting_unit_singular = nil
+	m.clearedFields[feature.FieldReportingUnitSingular] = struct{}{}
+}
+
+// ReportingUnitSingularCleared returns if the "reporting_unit_singular" field was cleared in this mutation.
+func (m *FeatureMutation) ReportingUnitSingularCleared() bool {
+	_, ok := m.clearedFields[feature.FieldReportingUnitSingular]
+	return ok
+}
+
+// ResetReportingUnitSingular resets all changes to the "reporting_unit_singular" field.
+func (m *FeatureMutation) ResetReportingUnitSingular() {
+	m.reporting_unit_singular = nil
+	delete(m.clearedFields, feature.FieldReportingUnitSingular)
+}
+
+// SetReportingUnitPlural sets the "reporting_unit_plural" field.
+func (m *FeatureMutation) SetReportingUnitPlural(s string) {
+	m.reporting_unit_plural = &s
+}
+
+// ReportingUnitPlural returns the value of the "reporting_unit_plural" field in the mutation.
+func (m *FeatureMutation) ReportingUnitPlural() (r string, exists bool) {
+	v := m.reporting_unit_plural
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReportingUnitPlural returns the old "reporting_unit_plural" field's value of the Feature entity.
+// If the Feature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeatureMutation) OldReportingUnitPlural(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReportingUnitPlural is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReportingUnitPlural requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReportingUnitPlural: %w", err)
+	}
+	return oldValue.ReportingUnitPlural, nil
+}
+
+// ClearReportingUnitPlural clears the value of the "reporting_unit_plural" field.
+func (m *FeatureMutation) ClearReportingUnitPlural() {
+	m.reporting_unit_plural = nil
+	m.clearedFields[feature.FieldReportingUnitPlural] = struct{}{}
+}
+
+// ReportingUnitPluralCleared returns if the "reporting_unit_plural" field was cleared in this mutation.
+func (m *FeatureMutation) ReportingUnitPluralCleared() bool {
+	_, ok := m.clearedFields[feature.FieldReportingUnitPlural]
+	return ok
+}
+
+// ResetReportingUnitPlural resets all changes to the "reporting_unit_plural" field.
+func (m *FeatureMutation) ResetReportingUnitPlural() {
+	m.reporting_unit_plural = nil
+	delete(m.clearedFields, feature.FieldReportingUnitPlural)
+}
+
+// SetReportingUnitConversionRate sets the "reporting_unit_conversion_rate" field.
+func (m *FeatureMutation) SetReportingUnitConversionRate(d decimal.Decimal) {
+	m.reporting_unit_conversion_rate = &d
+}
+
+// ReportingUnitConversionRate returns the value of the "reporting_unit_conversion_rate" field in the mutation.
+func (m *FeatureMutation) ReportingUnitConversionRate() (r decimal.Decimal, exists bool) {
+	v := m.reporting_unit_conversion_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReportingUnitConversionRate returns the old "reporting_unit_conversion_rate" field's value of the Feature entity.
+// If the Feature object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FeatureMutation) OldReportingUnitConversionRate(ctx context.Context) (v *decimal.Decimal, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReportingUnitConversionRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReportingUnitConversionRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReportingUnitConversionRate: %w", err)
+	}
+	return oldValue.ReportingUnitConversionRate, nil
+}
+
+// ClearReportingUnitConversionRate clears the value of the "reporting_unit_conversion_rate" field.
+func (m *FeatureMutation) ClearReportingUnitConversionRate() {
+	m.reporting_unit_conversion_rate = nil
+	m.clearedFields[feature.FieldReportingUnitConversionRate] = struct{}{}
+}
+
+// ReportingUnitConversionRateCleared returns if the "reporting_unit_conversion_rate" field was cleared in this mutation.
+func (m *FeatureMutation) ReportingUnitConversionRateCleared() bool {
+	_, ok := m.clearedFields[feature.FieldReportingUnitConversionRate]
+	return ok
+}
+
+// ResetReportingUnitConversionRate resets all changes to the "reporting_unit_conversion_rate" field.
+func (m *FeatureMutation) ResetReportingUnitConversionRate() {
+	m.reporting_unit_conversion_rate = nil
+	delete(m.clearedFields, feature.FieldReportingUnitConversionRate)
+}
+
 // SetAlertSettings sets the "alert_settings" field.
 func (m *FeatureMutation) SetAlertSettings(ts types.AlertSettings) {
 	m.alert_settings = &ts
@@ -24403,7 +24553,7 @@ func (m *FeatureMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *FeatureMutation) Fields() []string {
-	fields := make([]string, 0, 16)
+	fields := make([]string, 0, 19)
 	if m.tenant_id != nil {
 		fields = append(fields, feature.FieldTenantID)
 	}
@@ -24449,6 +24599,15 @@ func (m *FeatureMutation) Fields() []string {
 	if m.unit_plural != nil {
 		fields = append(fields, feature.FieldUnitPlural)
 	}
+	if m.reporting_unit_singular != nil {
+		fields = append(fields, feature.FieldReportingUnitSingular)
+	}
+	if m.reporting_unit_plural != nil {
+		fields = append(fields, feature.FieldReportingUnitPlural)
+	}
+	if m.reporting_unit_conversion_rate != nil {
+		fields = append(fields, feature.FieldReportingUnitConversionRate)
+	}
 	if m.alert_settings != nil {
 		fields = append(fields, feature.FieldAlertSettings)
 	}
@@ -24490,6 +24649,12 @@ func (m *FeatureMutation) Field(name string) (ent.Value, bool) {
 		return m.UnitSingular()
 	case feature.FieldUnitPlural:
 		return m.UnitPlural()
+	case feature.FieldReportingUnitSingular:
+		return m.ReportingUnitSingular()
+	case feature.FieldReportingUnitPlural:
+		return m.ReportingUnitPlural()
+	case feature.FieldReportingUnitConversionRate:
+		return m.ReportingUnitConversionRate()
 	case feature.FieldAlertSettings:
 		return m.AlertSettings()
 	}
@@ -24531,6 +24696,12 @@ func (m *FeatureMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUnitSingular(ctx)
 	case feature.FieldUnitPlural:
 		return m.OldUnitPlural(ctx)
+	case feature.FieldReportingUnitSingular:
+		return m.OldReportingUnitSingular(ctx)
+	case feature.FieldReportingUnitPlural:
+		return m.OldReportingUnitPlural(ctx)
+	case feature.FieldReportingUnitConversionRate:
+		return m.OldReportingUnitConversionRate(ctx)
 	case feature.FieldAlertSettings:
 		return m.OldAlertSettings(ctx)
 	}
@@ -24647,6 +24818,27 @@ func (m *FeatureMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUnitPlural(v)
 		return nil
+	case feature.FieldReportingUnitSingular:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReportingUnitSingular(v)
+		return nil
+	case feature.FieldReportingUnitPlural:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReportingUnitPlural(v)
+		return nil
+	case feature.FieldReportingUnitConversionRate:
+		v, ok := value.(decimal.Decimal)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReportingUnitConversionRate(v)
+		return nil
 	case feature.FieldAlertSettings:
 		v, ok := value.(types.AlertSettings)
 		if !ok {
@@ -24708,6 +24900,15 @@ func (m *FeatureMutation) ClearedFields() []string {
 	if m.FieldCleared(feature.FieldUnitPlural) {
 		fields = append(fields, feature.FieldUnitPlural)
 	}
+	if m.FieldCleared(feature.FieldReportingUnitSingular) {
+		fields = append(fields, feature.FieldReportingUnitSingular)
+	}
+	if m.FieldCleared(feature.FieldReportingUnitPlural) {
+		fields = append(fields, feature.FieldReportingUnitPlural)
+	}
+	if m.FieldCleared(feature.FieldReportingUnitConversionRate) {
+		fields = append(fields, feature.FieldReportingUnitConversionRate)
+	}
 	if m.FieldCleared(feature.FieldAlertSettings) {
 		fields = append(fields, feature.FieldAlertSettings)
 	}
@@ -24748,6 +24949,15 @@ func (m *FeatureMutation) ClearField(name string) error {
 		return nil
 	case feature.FieldUnitPlural:
 		m.ClearUnitPlural()
+		return nil
+	case feature.FieldReportingUnitSingular:
+		m.ClearReportingUnitSingular()
+		return nil
+	case feature.FieldReportingUnitPlural:
+		m.ClearReportingUnitPlural()
+		return nil
+	case feature.FieldReportingUnitConversionRate:
+		m.ClearReportingUnitConversionRate()
 		return nil
 	case feature.FieldAlertSettings:
 		m.ClearAlertSettings()
@@ -24804,6 +25014,15 @@ func (m *FeatureMutation) ResetField(name string) error {
 		return nil
 	case feature.FieldUnitPlural:
 		m.ResetUnitPlural()
+		return nil
+	case feature.FieldReportingUnitSingular:
+		m.ResetReportingUnitSingular()
+		return nil
+	case feature.FieldReportingUnitPlural:
+		m.ResetReportingUnitPlural()
+		return nil
+	case feature.FieldReportingUnitConversionRate:
+		m.ResetReportingUnitConversionRate()
 		return nil
 	case feature.FieldAlertSettings:
 		m.ResetAlertSettings()
