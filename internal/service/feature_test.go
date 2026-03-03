@@ -104,6 +104,11 @@ func (s *FeatureServiceSuite) setupTestData() {
 		Type:        types.FeatureTypeMetered,
 		MeterID:     s.testData.meters.apiCalls.ID,
 		BaseModel:   types.GetDefaultBaseModel(s.GetContext()),
+		ReportingUnit: &types.ReportingUnit{
+			UnitSingular:   "thousand tokens",
+			UnitPlural:     "thousands of tokens",
+			ConversionRate: lo.ToPtr(decimal.RequireFromString("0.001")),
+		},
 	}
 	s.testData.features.apiCalls.CreatedAt = now
 	s.NoError(s.featureRepo.Create(s.GetContext(), s.testData.features.apiCalls))
@@ -217,6 +222,55 @@ func (s *FeatureServiceSuite) TestCreateFeature() {
 			wantErr:   true,
 			errString: "invalid meter status",
 		},
+		{
+			name: "successful creation with reporting_unit",
+			req: dto.CreateFeatureRequest{
+				Name:        "Tokens Feature",
+				Description: "Token usage",
+				LookupKey:   "tokens_key",
+				Type:        types.FeatureTypeMetered,
+				MeterID:     s.testData.meters.apiCalls.ID,
+				UnitSingular: "token",
+				UnitPlural:   "tokens",
+				ReportingUnit: &types.ReportingUnit{
+					UnitSingular:   "thousand tokens",
+					UnitPlural:     "thousands of tokens",
+					ConversionRate: lo.ToPtr(decimal.RequireFromString("0.001")),
+				},
+			},
+		},
+		{
+			name: "error - reporting_unit missing unit_singular",
+			req: dto.CreateFeatureRequest{
+				Name:        "Test Feature",
+				LookupKey:   "test_key",
+				Type:        types.FeatureTypeMetered,
+				MeterID:     s.testData.meters.apiCalls.ID,
+				ReportingUnit: &types.ReportingUnit{
+					UnitSingular:   "",
+					UnitPlural:     "thousands of tokens",
+					ConversionRate: lo.ToPtr(decimal.RequireFromString("0.001")),
+				},
+			},
+			wantErr:   true,
+			errString: "unit_singular",
+		},
+		{
+			name: "error - reporting_unit missing conversion_rate",
+			req: dto.CreateFeatureRequest{
+				Name:        "Test Feature",
+				LookupKey:   "test_key",
+				Type:        types.FeatureTypeMetered,
+				MeterID:     s.testData.meters.apiCalls.ID,
+				ReportingUnit: &types.ReportingUnit{
+					UnitSingular: "thousand tokens",
+					UnitPlural:   "thousands of tokens",
+					ConversionRate: nil,
+				},
+			},
+			wantErr:   true,
+			errString: "conversion_rate",
+		},
 	}
 
 	for _, tt := range tests {
@@ -239,6 +293,14 @@ func (s *FeatureServiceSuite) TestCreateFeature() {
 			s.Equal(tt.req.Metadata, resp.Metadata)
 			if tt.req.Type == types.FeatureTypeMetered {
 				s.Equal(tt.req.MeterID, resp.MeterID)
+			}
+			if tt.req.ReportingUnit != nil {
+				s.Require().NotNil(resp.ReportingUnit)
+				s.Equal(tt.req.ReportingUnit.UnitSingular, resp.ReportingUnit.UnitSingular)
+				s.Equal(tt.req.ReportingUnit.UnitPlural, resp.ReportingUnit.UnitPlural)
+				s.Require().NotNil(tt.req.ReportingUnit.ConversionRate)
+				s.Require().NotNil(resp.ReportingUnit.ConversionRate)
+				s.True(tt.req.ReportingUnit.ConversionRate.Equal(*resp.ReportingUnit.ConversionRate))
 			}
 		})
 	}
@@ -552,11 +614,12 @@ func (s *FeatureServiceSuite) TestGetFeaturesWithFiltersAndSorting() {
 
 func (s *FeatureServiceSuite) TestUpdateFeature() {
 	tests := []struct {
-		name      string
-		id        string
-		req       dto.UpdateFeatureRequest
-		wantErr   bool
-		errString string
+		name                        string
+		id                          string
+		req                         dto.UpdateFeatureRequest
+		wantErr                     bool
+		errString                   string
+		expectReportingUnitPreserved bool
 	}{
 		{
 			name: "successful update of metered feature",
@@ -775,6 +838,39 @@ func (s *FeatureServiceSuite) TestUpdateFeature() {
 			wantErr: false,
 		},
 		{
+			name: "partial update - reporting_unit preserved when not in request",
+			id:   s.testData.features.apiCalls.ID,
+			req: dto.UpdateFeatureRequest{
+				Name: lo.ToPtr("API Calls Feature Updated"),
+			},
+			expectReportingUnitPreserved: true,
+		},
+		{
+			name: "successful update with reporting_unit",
+			id:   s.testData.features.apiCalls.ID,
+			req: dto.UpdateFeatureRequest{
+				Name: lo.ToPtr("API Calls Feature"),
+				ReportingUnit: &types.ReportingUnit{
+					UnitSingular:   "million tokens",
+					UnitPlural:     "millions of tokens",
+					ConversionRate: lo.ToPtr(decimal.RequireFromString("0.000001")),
+				},
+			},
+		},
+		{
+			name: "error - reporting_unit missing unit_plural",
+			id:   s.testData.features.apiCalls.ID,
+			req: dto.UpdateFeatureRequest{
+				ReportingUnit: &types.ReportingUnit{
+					UnitSingular:   "token",
+					UnitPlural:     "",
+					ConversionRate: lo.ToPtr(decimal.RequireFromString("1")),
+				},
+			},
+			wantErr:   true,
+			errString: "unit_plural",
+		},
+		{
 			name: "error - feature not found",
 			id:   "nonexistent-id",
 			req: dto.UpdateFeatureRequest{
@@ -806,6 +902,24 @@ func (s *FeatureServiceSuite) TestUpdateFeature() {
 			}
 			if tt.req.Metadata != nil {
 				s.Equal(*tt.req.Metadata, resp.Metadata)
+			}
+			if tt.req.ReportingUnit != nil {
+				s.Require().NotNil(resp.ReportingUnit)
+				s.Equal(tt.req.ReportingUnit.UnitSingular, resp.ReportingUnit.UnitSingular)
+				s.Equal(tt.req.ReportingUnit.UnitPlural, resp.ReportingUnit.UnitPlural)
+				s.Require().NotNil(tt.req.ReportingUnit.ConversionRate)
+				s.Require().NotNil(resp.ReportingUnit.ConversionRate)
+				s.True(tt.req.ReportingUnit.ConversionRate.Equal(*resp.ReportingUnit.ConversionRate))
+			}
+			if tt.expectReportingUnitPreserved {
+				orig := s.testData.features.apiCalls.ReportingUnit
+				s.Require().NotNil(orig, "test data apiCalls must have ReportingUnit")
+				s.Require().NotNil(resp.ReportingUnit, "response should preserve ReportingUnit")
+				s.Equal(orig.UnitSingular, resp.ReportingUnit.UnitSingular)
+				s.Equal(orig.UnitPlural, resp.ReportingUnit.UnitPlural)
+				s.Require().NotNil(orig.ConversionRate)
+				s.Require().NotNil(resp.ReportingUnit.ConversionRate)
+				s.True(orig.ConversionRate.Equal(*resp.ReportingUnit.ConversionRate))
 			}
 			if tt.req.AlertSettings != nil {
 				s.NotNil(resp.AlertSettings)
