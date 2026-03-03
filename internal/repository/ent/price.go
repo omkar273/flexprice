@@ -99,6 +99,10 @@ func (r *priceRepository) Create(ctx context.Context, p *domainPrice.Price) erro
 		SetDisplayPriceUnitAmount(p.DisplayPriceUnitAmount).
 		SetNillableConversionRate(p.ConversionRate)
 
+	if p.GroupID != "" {
+		priceBuilder = priceBuilder.SetGroupID(p.GroupID)
+	}
+
 	price, err := priceBuilder.Save(ctx)
 
 	if err != nil {
