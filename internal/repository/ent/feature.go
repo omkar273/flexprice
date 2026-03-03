@@ -73,6 +73,14 @@ func (r *featureRepository) Create(ctx context.Context, f *domainFeature.Feature
 		SetUpdatedBy(f.UpdatedBy).
 		SetEnvironmentID(f.EnvironmentID)
 
+	if f.ReportingUnit != nil {
+		ru := f.ReportingUnit
+		createQuery = createQuery.
+			SetReportingUnitSingular(ru.UnitSingular).
+			SetReportingUnitPlural(ru.UnitPlural).
+			SetReportingUnitConversionRate(*ru.ConversionRate)
+	}
+
 	// Set alert settings if provided
 	if f.AlertSettings != nil {
 		createQuery = createQuery.SetAlertSettings(*f.AlertSettings)
@@ -273,6 +281,15 @@ func (r *featureRepository) Update(ctx context.Context, f *domainFeature.Feature
 		SetMeterID(f.MeterID).
 		SetUpdatedAt(time.Now().UTC()).
 		SetUpdatedBy(types.GetUserID(ctx))
+
+	// Partial update: only set reporting unit columns when present (from request); never clear.
+	if f.ReportingUnit != nil {
+		ru := f.ReportingUnit
+		updateQuery = updateQuery.
+			SetReportingUnitSingular(ru.UnitSingular).
+			SetReportingUnitPlural(ru.UnitPlural).
+			SetReportingUnitConversionRate(*ru.ConversionRate)
+	}
 
 	// Set alert settings if provided
 	if f.AlertSettings != nil {
