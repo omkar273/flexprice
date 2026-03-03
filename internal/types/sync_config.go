@@ -6,12 +6,16 @@ import (
 
 // SyncConfig defines which entities should be synced between FlexPrice and external providers
 type SyncConfig struct {
-	// Integration sync (Stripe, Razorpay, etc.)
+	// Integration sync (Stripe, Razorpay, QuickBooks, etc.)
 	Plan         *EntitySyncConfig `json:"plan,omitempty"`
 	Subscription *EntitySyncConfig `json:"subscription,omitempty"`
 	Invoice      *EntitySyncConfig `json:"invoice,omitempty"`
+	Payment      *EntitySyncConfig `json:"payment,omitempty"` // Payment sync (QuickBooks bidirectional)
 	// CRM sync (HubSpot, Salesforce, etc.)
-	Deal *EntitySyncConfig `json:"deal,omitempty"`
+	Deal  *EntitySyncConfig `json:"deal,omitempty"`
+	Quote *EntitySyncConfig `json:"quote,omitempty"`
+	// S3 connection metadata (for Flexprice-managed S3 connections)
+	S3 *S3ExportConfig `json:"s3,omitempty"`
 }
 
 // EntitySyncConfig defines sync direction for an entity
@@ -27,8 +31,10 @@ func DefaultSyncConfig() *SyncConfig {
 		Plan:         &EntitySyncConfig{Inbound: false, Outbound: false},
 		Subscription: &EntitySyncConfig{Inbound: false, Outbound: false},
 		Invoice:      &EntitySyncConfig{Inbound: false, Outbound: false},
+		Payment:      &EntitySyncConfig{Inbound: false, Outbound: false},
 		// CRM sync
-		Deal: &EntitySyncConfig{Inbound: false, Outbound: false},
+		Deal:  &EntitySyncConfig{Inbound: false, Outbound: false},
+		Quote: &EntitySyncConfig{Inbound: false, Outbound: false},
 	}
 }
 
@@ -52,6 +58,17 @@ func (s *SyncConfig) Validate() error {
 
 	if s.Deal != nil && s.Deal.Inbound {
 		return ierr.NewError("deal inbound sync is not allowed").Mark(ierr.ErrValidation)
+	}
+
+	if s.Quote != nil && s.Quote.Inbound {
+		return ierr.NewError("quote inbound sync is not allowed").Mark(ierr.ErrValidation)
+	}
+
+	// Validate S3 export config if present
+	if s.S3 != nil {
+		if err := s.S3.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return nil

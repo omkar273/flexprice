@@ -798,6 +798,13 @@ func TestNextBillingDate_Daily_CalendarBilling(t *testing.T) {
 			unit:          1,
 			want:          time.Date(2024, time.February, 29, 0, 0, 0, 0, jst),
 		},
+		{
+			name:          "daily: mid-day start with calendar billing should align to midnight",
+			currentPeriod: time.Date(2026, time.March, 2, 7, 58, 45, 337000000, time.UTC),
+			billingAnchor: CalculateCalendarBillingAnchor(time.Date(2026, time.March, 2, 7, 58, 45, 337000000, time.UTC), BILLING_PERIOD_DAILY),
+			unit:          1,
+			want:          time.Date(2026, time.March, 3, 0, 0, 0, 0, time.UTC),
+		},
 	}
 
 	for _, tt := range tests {
@@ -1741,4 +1748,100 @@ func TestGetNextUsageResetAt_EdgeCases(t *testing.T) {
 // Helper function for creating time pointers in tests
 func timePtr(t time.Time) *time.Time {
 	return &t
+}
+
+func TestCalendarDaysBetween(t *testing.T) {
+	utc := time.UTC
+	tests := []struct {
+		name  string
+		start time.Time
+		end   time.Time
+		want  int
+	}{
+		{
+			name:  "one day interval [start, end) - Feb 22 to Feb 23 exclusive end",
+			start: time.Date(2024, time.February, 22, 0, 0, 0, 0, utc),
+			end:   time.Date(2024, time.February, 23, 0, 0, 0, 0, utc),
+			want:  1,
+		},
+		{
+			name:  "invoice period Feb 22 to Mar 22 exclusive end (non-leap year)",
+			start: time.Date(2025, time.February, 22, 0, 0, 0, 0, utc),
+			end:   time.Date(2025, time.March, 22, 0, 0, 0, 0, utc),
+			want:  28,
+		},
+		{
+			name:  "same start and end returns 0",
+			start: time.Date(2024, time.February, 22, 0, 0, 0, 0, utc),
+			end:   time.Date(2024, time.February, 22, 0, 0, 0, 0, utc),
+			want:  0,
+		},
+		{
+			name:  "end before start returns 0",
+			start: time.Date(2024, time.March, 22, 0, 0, 0, 0, utc),
+			end:   time.Date(2024, time.February, 22, 0, 0, 0, 0, utc),
+			want:  0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := CalendarDaysBetween(tt.start, tt.end)
+			if got != tt.want {
+				t.Errorf("CalendarDaysBetween() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLineItemIntervalDays(t *testing.T) {
+	utc := time.UTC
+	tests := []struct {
+		name          string
+		lineItemStart time.Time
+		billingAnchor time.Time
+		periodCount   int
+		period        BillingPeriod
+		wantDays      int
+		wantErr       bool
+	}{
+		{
+			name:          "DAILY periodCount 1 gives 1 day interval",
+			lineItemStart: time.Date(2024, time.February, 22, 0, 0, 0, 0, utc),
+			billingAnchor: time.Date(2024, time.February, 22, 0, 0, 0, 0, utc),
+			periodCount:   1,
+			period:        BILLING_PERIOD_DAILY,
+			wantDays:      1,
+			wantErr:       false,
+		},
+		{
+			name:          "WEEKLY periodCount 1 gives 7 days",
+			lineItemStart: time.Date(2024, time.February, 22, 0, 0, 0, 0, utc),
+			billingAnchor: time.Date(2024, time.February, 22, 0, 0, 0, 0, utc),
+			periodCount:   1,
+			period:        BILLING_PERIOD_WEEKLY,
+			wantDays:      7,
+			wantErr:       false,
+		},
+		{
+			name:          "MONTHLY periodCount 1 gives 29 days for Jan 2024",
+			lineItemStart: time.Date(2024, time.January, 1, 0, 0, 0, 0, utc),
+			billingAnchor: time.Date(2024, time.January, 1, 0, 0, 0, 0, utc),
+			periodCount:   1,
+			period:        BILLING_PERIOD_MONTHLY,
+			wantDays:      31,
+			wantErr:       false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := LineItemIntervalDays(tt.lineItemStart, tt.billingAnchor, tt.periodCount, tt.period)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LineItemIntervalDays() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.wantDays {
+				t.Errorf("LineItemIntervalDays() = %v, want %v", got, tt.wantDays)
+			}
+		})
+	}
 }

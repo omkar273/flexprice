@@ -76,24 +76,43 @@ func (r *subscriptionLineItemRepository) Create(ctx context.Context, item *subsc
 		SetSubscriptionID(item.SubscriptionID).
 		SetCustomerID(item.CustomerID).
 		SetNillableEntityID(types.ToNillableString(item.EntityID)).
-		SetNillableEntityType(types.ToNillableString(string(item.EntityType))).
+		SetNillableEntityType(func() *types.InvoiceLineItemEntityType {
+			if item.EntityType == "" {
+				return nil
+			}
+			t := types.InvoiceLineItemEntityType(item.EntityType)
+			return &t
+		}()).
 		SetNillablePlanDisplayName(types.ToNillableString(item.PlanDisplayName)).
 		SetPriceID(item.PriceID).
-		SetNillablePriceType(types.ToNillableString(string(item.PriceType))).
+		SetNillablePriceType(func() *types.PriceType {
+			if item.PriceType == "" {
+				return nil
+			}
+			t := types.PriceType(item.PriceType)
+			return &t
+		}()).
 		SetNillableMeterID(types.ToNillableString(item.MeterID)).
 		SetNillableMeterDisplayName(types.ToNillableString(item.MeterDisplayName)).
-		SetNillablePriceUnitID(types.ToNillableString(item.PriceUnitID)).
-		SetNillablePriceUnit(types.ToNillableString(item.PriceUnit)).
+		SetNillablePriceUnitID(item.PriceUnitID).
+		SetNillablePriceUnit(item.PriceUnit).
 		SetNillableDisplayName(types.ToNillableString(item.DisplayName)).
 		SetQuantity(item.Quantity).
 		SetCurrency(item.Currency).
-		SetBillingPeriod(string(item.BillingPeriod)).
+		SetBillingPeriod(item.BillingPeriod).
 		SetNillableStartDate(types.ToNillableTime(item.StartDate)).
 		SetNillableEndDate(types.ToNillableTime(item.EndDate)).
 		SetNillableSubscriptionPhaseID(item.SubscriptionPhaseID).
-		SetInvoiceCadence(string(item.InvoiceCadence)).
+		SetInvoiceCadence(item.InvoiceCadence).
 		SetTrialPeriod(item.TrialPeriod).
 		SetMetadata(item.Metadata).
+		// Commitment fields
+		SetNillableCommitmentAmount(item.CommitmentAmount).
+		SetNillableCommitmentQuantity(item.CommitmentQuantity).
+		SetNillableCommitmentType(types.ToNillableString(string(item.CommitmentType))).
+		SetNillableCommitmentOverageFactor(item.CommitmentOverageFactor).
+		SetCommitmentTrueUpEnabled(item.CommitmentTrueUpEnabled).
+		SetCommitmentWindowed(item.CommitmentWindowed).
 		SetTenantID(item.TenantID).
 		SetEnvironmentID(item.EnvironmentID).
 		SetStatus(string(item.Status)).
@@ -204,21 +223,30 @@ func (r *subscriptionLineItemRepository) Update(ctx context.Context, item *subsc
 
 	client := r.client.Writer(ctx)
 	_, err := client.SubscriptionLineItem.UpdateOneID(item.ID).
-		SetNillableEntityID(types.ToNillableString(item.EntityID)).
 		SetNillablePlanDisplayName(types.ToNillableString(item.PlanDisplayName)).
 		SetPriceID(item.PriceID).
-		SetNillablePriceType(types.ToNillableString(string(item.PriceType))).
-		SetNillableMeterID(types.ToNillableString(item.MeterID)).
-		SetNillableMeterDisplayName(types.ToNillableString(item.MeterDisplayName)).
-		SetNillablePriceUnitID(types.ToNillableString(item.PriceUnitID)).
-		SetNillablePriceUnit(types.ToNillableString(item.PriceUnit)).
+		SetNillablePriceType(func() *types.PriceType {
+			if item.PriceType == "" {
+				return nil
+			}
+			t := types.PriceType(item.PriceType)
+			return &t
+		}()).
+		SetNillablePriceUnit(item.PriceUnit).
 		SetNillableDisplayName(types.ToNillableString(item.DisplayName)).
 		SetQuantity(item.Quantity).
 		SetCurrency(item.Currency).
-		SetBillingPeriod(string(item.BillingPeriod)).
+		SetBillingPeriod(item.BillingPeriod).
 		SetNillableStartDate(types.ToNillableTime(item.StartDate)).
 		SetNillableEndDate(types.ToNillableTime(item.EndDate)).
 		SetMetadata(item.Metadata).
+		// Commitment fields
+		SetNillableCommitmentAmount(item.CommitmentAmount).
+		SetNillableCommitmentQuantity(item.CommitmentQuantity).
+		SetNillableCommitmentType(types.ToNillableString(string(item.CommitmentType))).
+		SetNillableCommitmentOverageFactor(item.CommitmentOverageFactor).
+		SetCommitmentTrueUpEnabled(item.CommitmentTrueUpEnabled).
+		SetCommitmentWindowed(item.CommitmentWindowed).
 		SetStatus(string(item.Status)).
 		SetUpdatedBy(item.UpdatedBy).
 		SetUpdatedAt(time.Now()).
@@ -316,20 +344,34 @@ func (r *subscriptionLineItemRepository) CreateBulk(ctx context.Context, items [
 			SetID(item.ID).
 			SetSubscriptionID(item.SubscriptionID).
 			SetCustomerID(item.CustomerID).
-			SetNillableEntityID(types.ToNillableString(item.EntityID)).
-			SetNillableEntityType(types.ToNillableString(string(item.EntityType))).
+			SetEntityID(item.EntityID).
+			SetEntityType(types.InvoiceLineItemEntityType(item.EntityType)).
 			SetNillablePlanDisplayName(types.ToNillableString(item.PlanDisplayName)).
 			SetPriceID(item.PriceID).
-			SetNillablePriceType(types.ToNillableString(string(item.PriceType))).
+			SetNillablePriceType(func() *types.PriceType {
+				if item.PriceType == "" {
+					return nil
+				}
+				t := types.PriceType(item.PriceType)
+				return &t
+			}()).
 			SetNillableMeterID(types.ToNillableString(item.MeterID)).
 			SetNillableMeterDisplayName(types.ToNillableString(item.MeterDisplayName)).
-			SetNillablePriceUnitID(types.ToNillableString(item.PriceUnitID)).
-			SetNillablePriceUnit(types.ToNillableString(item.PriceUnit)).
+			SetNillablePriceUnitID(item.PriceUnitID).
+			SetNillablePriceUnit(item.PriceUnit).
 			SetNillableDisplayName(types.ToNillableString(item.DisplayName)).
 			SetQuantity(item.Quantity).
 			SetCurrency(item.Currency).
-			SetBillingPeriod(string(item.BillingPeriod)).
-			SetInvoiceCadence(string(item.InvoiceCadence)).
+			SetBillingPeriod(item.BillingPeriod).
+			SetInvoiceCadence(item.InvoiceCadence).
+			SetTrialPeriod(item.TrialPeriod).
+			SetNillableStartDate(types.ToNillableTime(item.StartDate)).
+			SetNillableEndDate(types.ToNillableTime(item.EndDate)).
+			SetNillableSubscriptionPhaseID(item.SubscriptionPhaseID).
+			SetQuantity(item.Quantity).
+			SetCurrency(item.Currency).
+			SetBillingPeriod(item.BillingPeriod).
+			SetInvoiceCadence(item.InvoiceCadence).
 			SetTrialPeriod(item.TrialPeriod).
 			SetNillableStartDate(types.ToNillableTime(item.StartDate)).
 			SetNillableEndDate(types.ToNillableTime(item.EndDate)).
@@ -591,12 +633,17 @@ func (o *SubscriptionLineItemQueryOptions) applyEntityQueryOptions(_ context.Con
 		query = query.Where(subscriptionlineitem.SubscriptionIDIn(f.SubscriptionIDs...))
 	}
 
+	// Apply customer IDs filter if specified
+	if len(f.CustomerIDs) > 0 {
+		query = query.Where(subscriptionlineitem.CustomerIDIn(f.CustomerIDs...))
+	}
+
 	// Apply entity IDs filter if specified
 	if len(f.EntityIDs) > 0 {
 		query = query.Where(subscriptionlineitem.EntityIDIn(f.EntityIDs...))
 	}
 	if f.EntityType != nil {
-		query = query.Where(subscriptionlineitem.EntityType(string(*f.EntityType)))
+		query = query.Where(subscriptionlineitem.EntityType(types.InvoiceLineItemEntityType(*f.EntityType)))
 	}
 
 	// Apply price IDs filter if specified
@@ -610,7 +657,11 @@ func (o *SubscriptionLineItemQueryOptions) applyEntityQueryOptions(_ context.Con
 		query = query.Where(subscriptionlineitem.CurrencyIn(f.Currencies...))
 	}
 	if len(f.BillingPeriods) > 0 {
-		query = query.Where(subscriptionlineitem.BillingPeriodIn(f.BillingPeriods...))
+		periods := make([]types.BillingPeriod, len(f.BillingPeriods))
+		for i, p := range f.BillingPeriods {
+			periods[i] = types.BillingPeriod(p)
+		}
+		query = query.Where(subscriptionlineitem.BillingPeriodIn(periods...))
 	}
 
 	if f.ActiveFilter {

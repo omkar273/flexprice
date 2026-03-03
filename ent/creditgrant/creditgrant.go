@@ -7,7 +7,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -40,6 +39,10 @@ const (
 	FieldSubscriptionID = "subscription_id"
 	// FieldCredits holds the string denoting the credits field in the database.
 	FieldCredits = "credits"
+	// FieldConversionRate holds the string denoting the conversion_rate field in the database.
+	FieldConversionRate = "conversion_rate"
+	// FieldTopupConversionRate holds the string denoting the topup_conversion_rate field in the database.
+	FieldTopupConversionRate = "topup_conversion_rate"
 	// FieldCadence holds the string denoting the cadence field in the database.
 	FieldCadence = "cadence"
 	// FieldPeriod holds the string denoting the period field in the database.
@@ -56,6 +59,12 @@ const (
 	FieldPriority = "priority"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
+	// FieldStartDate holds the string denoting the start_date field in the database.
+	FieldStartDate = "start_date"
+	// FieldEndDate holds the string denoting the end_date field in the database.
+	FieldEndDate = "end_date"
+	// FieldCreditGrantAnchor holds the string denoting the credit_grant_anchor field in the database.
+	FieldCreditGrantAnchor = "credit_grant_anchor"
 	// EdgePlan holds the string denoting the plan edge name in mutations.
 	EdgePlan = "plan"
 	// EdgeSubscription holds the string denoting the subscription edge name in mutations.
@@ -93,6 +102,8 @@ var Columns = []string{
 	FieldPlanID,
 	FieldSubscriptionID,
 	FieldCredits,
+	FieldConversionRate,
+	FieldTopupConversionRate,
 	FieldCadence,
 	FieldPeriod,
 	FieldPeriodCount,
@@ -101,6 +112,9 @@ var Columns = []string{
 	FieldExpirationDurationUnit,
 	FieldPriority,
 	FieldMetadata,
+	FieldStartDate,
+	FieldEndDate,
+	FieldCreditGrantAnchor,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -134,8 +148,6 @@ var (
 	DefaultCredits decimal.Decimal
 	// CadenceValidator is a validator for the "cadence" field. It is called by the builders before save.
 	CadenceValidator func(string) error
-	// DefaultExpirationType holds the default value on creation for the "expiration_type" field.
-	DefaultExpirationType types.CreditGrantExpiryType
 	// ExpirationTypeValidator is a validator for the "expiration_type" field. It is called by the builders before save.
 	ExpirationTypeValidator func(string) error
 	// DefaultMetadata holds the default value on creation for the "metadata" field.
@@ -210,6 +222,16 @@ func ByCredits(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCredits, opts...).ToFunc()
 }
 
+// ByConversionRate orders the results by the conversion_rate field.
+func ByConversionRate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConversionRate, opts...).ToFunc()
+}
+
+// ByTopupConversionRate orders the results by the topup_conversion_rate field.
+func ByTopupConversionRate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTopupConversionRate, opts...).ToFunc()
+}
+
 // ByCadence orders the results by the cadence field.
 func ByCadence(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCadence, opts...).ToFunc()
@@ -243,6 +265,21 @@ func ByExpirationDurationUnit(opts ...sql.OrderTermOption) OrderOption {
 // ByPriority orders the results by the priority field.
 func ByPriority(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPriority, opts...).ToFunc()
+}
+
+// ByStartDate orders the results by the start_date field.
+func ByStartDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStartDate, opts...).ToFunc()
+}
+
+// ByEndDate orders the results by the end_date field.
+func ByEndDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEndDate, opts...).ToFunc()
+}
+
+// ByCreditGrantAnchor orders the results by the credit_grant_anchor field.
+func ByCreditGrantAnchor(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreditGrantAnchor, opts...).ToFunc()
 }
 
 // ByPlanField orders the results by plan field.

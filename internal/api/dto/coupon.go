@@ -17,8 +17,8 @@ type CreateCouponRequest struct {
 	RedeemBefore      *time.Time              `json:"redeem_before,omitempty"`
 	MaxRedemptions    *int                    `json:"max_redemptions,omitempty"`
 	Rules             *map[string]interface{} `json:"rules,omitempty"`
-	AmountOff         *decimal.Decimal        `json:"amount_off,omitempty"`
-	PercentageOff     *decimal.Decimal        `json:"percentage_off,omitempty"`
+	AmountOff         *decimal.Decimal        `json:"amount_off,omitempty" swaggertype:"string"`
+	PercentageOff     *decimal.Decimal        `json:"percentage_off,omitempty" swaggertype:"string"`
 	Type              types.CouponType        `json:"type" validate:"required,oneof=fixed percentage"`
 	Cadence           types.CouponCadence     `json:"cadence" validate:"required,oneof=once repeated forever"`
 	DurationInPeriods *int                    `json:"duration_in_periods,omitempty"`
@@ -163,3 +163,33 @@ func NewCouponResponse(c *coupon.Coupon) *CouponResponse {
 
 // ListCouponsResponse represents the response for listing coupons
 type ListCouponsResponse = types.ListResponse[*CouponResponse]
+
+// ApplyDiscountRequest represents the request to apply a discount
+type ApplyDiscountRequest struct {
+	CouponID      string          `json:"coupon_id" validate:"required"`
+	OriginalPrice decimal.Decimal `json:"original_price" validate:"required" swaggertype:"string"`
+	Currency      string          `json:"currency" validate:"required"`
+}
+
+// Validate validates the ApplyDiscountRequest
+func (r *ApplyDiscountRequest) Validate() error {
+	if r.CouponID == "" {
+		return ierr.NewError("coupon_id is required").
+			WithHint("Please provide a valid coupon ID").
+			Mark(ierr.ErrValidation)
+	}
+
+	if r.OriginalPrice.LessThanOrEqual(decimal.Zero) {
+		return ierr.NewError("original_price must be greater than zero").
+			WithHint("Please provide a valid original price").
+			Mark(ierr.ErrValidation)
+	}
+
+	if r.Currency == "" {
+		return ierr.NewError("currency is required").
+			WithHint("Please provide a valid currency code").
+			Mark(ierr.ErrValidation)
+	}
+
+	return nil
+}

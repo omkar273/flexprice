@@ -35,6 +35,12 @@ type SubscriptionChangeRequest struct {
 
 	// billing_cycle is the billing cycle for the new subscription
 	BillingCycle types.BillingCycle `json:"billing_cycle" validate:"required" binding:"required"`
+
+	// change_at determines when the change should take effect (optional)
+	// If not provided or null: change executes immediately
+	// If "immediate": change executes immediately (explicit)
+	// If "period_end": change is scheduled for the end of the current billing period
+	ChangeAt *types.ScheduleType `json:"change_at,omitempty"`
 }
 
 // Validate validates the subscription change request
@@ -59,6 +65,13 @@ func (r *SubscriptionChangeRequest) Validate() error {
 	// Validate proration behavior
 	if err := r.ProrationBehavior.Validate(); err != nil {
 		return err
+	}
+
+	// Validate change_at if provided
+	if r.ChangeAt != nil {
+		if err := r.ChangeAt.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -101,10 +114,19 @@ type SubscriptionChangePreviewResponse struct {
 // SubscriptionChangeExecuteResponse represents the result of executing a subscription change
 // @Description Response after successfully executing a subscription plan change
 type SubscriptionChangeExecuteResponse struct {
-	// old_subscription contains the archived subscription details
+	// is_scheduled indicates if the change was scheduled or executed immediately
+	IsScheduled bool `json:"is_scheduled"`
+
+	// schedule_id is the ID of the created schedule (only if is_scheduled=true)
+	ScheduleID *string `json:"schedule_id,omitempty"`
+
+	// scheduled_at is when the change will execute (only if is_scheduled=true)
+	ScheduledAt *time.Time `json:"scheduled_at,omitempty"`
+
+	// old_subscription contains the archived subscription details (only if is_scheduled=false)
 	OldSubscription SubscriptionSummary `json:"old_subscription"`
 
-	// new_subscription contains the new subscription details
+	// new_subscription contains the new subscription details (only if is_scheduled=false)
 	NewSubscription SubscriptionSummary `json:"new_subscription"`
 
 	// change_type indicates whether this was an upgrade, downgrade, or lateral change
@@ -129,19 +151,19 @@ type SubscriptionChangeExecuteResponse struct {
 // ProrationDetails contains detailed proration calculations
 type ProrationDetails struct {
 	// credit_amount is the credit amount from the old subscription
-	CreditAmount decimal.Decimal `json:"credit_amount"`
+	CreditAmount decimal.Decimal `json:"credit_amount" swaggertype:"string"`
 
 	// credit_description describes what the credit is for
 	CreditDescription string `json:"credit_description"`
 
 	// charge_amount is the charge amount for the new subscription
-	ChargeAmount decimal.Decimal `json:"charge_amount"`
+	ChargeAmount decimal.Decimal `json:"charge_amount" swaggertype:"string"`
 
 	// charge_description describes what the charge is for
 	ChargeDescription string `json:"charge_description"`
 
 	// net_amount is the net amount (charge - credit)
-	NetAmount decimal.Decimal `json:"net_amount"`
+	NetAmount decimal.Decimal `json:"net_amount" swaggertype:"string"`
 
 	// proration_date is the date used for proration calculations
 	ProrationDate time.Time `json:"proration_date"`
@@ -165,13 +187,13 @@ type ProrationDetails struct {
 // InvoicePreview contains preview information for an invoice
 type InvoicePreview struct {
 	// subtotal is the subtotal amount before taxes
-	Subtotal decimal.Decimal `json:"subtotal"`
+	Subtotal decimal.Decimal `json:"subtotal" swaggertype:"string"`
 
 	// tax_amount is the total tax amount
-	TaxAmount decimal.Decimal `json:"tax_amount"`
+	TaxAmount decimal.Decimal `json:"tax_amount" swaggertype:"string"`
 
 	// total is the total amount including taxes
-	Total decimal.Decimal `json:"total"`
+	Total decimal.Decimal `json:"total" swaggertype:"string"`
 
 	// currency is the currency for all amounts
 	Currency string `json:"currency"`
@@ -189,13 +211,13 @@ type InvoiceLineItemPreview struct {
 	Description string `json:"description"`
 
 	// amount for this line item
-	Amount decimal.Decimal `json:"amount"`
+	Amount decimal.Decimal `json:"amount" swaggertype:"string"`
 
 	// quantity for this line item
-	Quantity decimal.Decimal `json:"quantity"`
+	Quantity decimal.Decimal `json:"quantity" swaggertype:"string"`
 
 	// unit_price for this line item
-	UnitPrice decimal.Decimal `json:"unit_price"`
+	UnitPrice decimal.Decimal `json:"unit_price" swaggertype:"string"`
 
 	// period_start for this line item (if applicable)
 	PeriodStart *time.Time `json:"period_start,omitempty"`

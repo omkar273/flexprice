@@ -22,12 +22,13 @@ type SubscriptionLineItem struct {
 	PriceType           types.PriceType                      `db:"price_type" json:"price_type,omitempty"`
 	MeterID             string                               `db:"meter_id" json:"meter_id,omitempty"`
 	MeterDisplayName    string                               `db:"meter_display_name" json:"meter_display_name,omitempty"`
-	PriceUnitID         string                               `db:"price_unit_id" json:"price_unit_id"`
-	PriceUnit           string                               `db:"price_unit" json:"price_unit"`
+	PriceUnitID         *string                              `db:"price_unit_id" json:"price_unit_id"`
+	PriceUnit           *string                              `db:"price_unit" json:"price_unit"`
 	DisplayName         string                               `db:"display_name" json:"display_name,omitempty"`
-	Quantity            decimal.Decimal                      `db:"quantity" json:"quantity"`
+	Quantity            decimal.Decimal                      `db:"quantity" json:"quantity" swaggertype:"string"`
 	Currency            string                               `db:"currency" json:"currency"`
 	BillingPeriod       types.BillingPeriod                  `db:"billing_period" json:"billing_period"`
+	BillingPeriodCount  int                                  `db:"billing_period_count" json:"billing_period_count"` // from price at create; default 1
 	InvoiceCadence      types.InvoiceCadence                 `db:"invoice_cadence" json:"invoice_cadence"`
 	TrialPeriod         int                                  `db:"trial_period" json:"trial_period"`
 	StartDate           time.Time                            `db:"start_date" json:"start_date,omitempty"`
@@ -35,6 +36,15 @@ type SubscriptionLineItem struct {
 	SubscriptionPhaseID *string                              `db:"subscription_phase_id" json:"subscription_phase_id,omitempty"`
 	Metadata            map[string]string                    `db:"metadata" json:"metadata,omitempty"`
 	EnvironmentID       string                               `db:"environment_id" json:"environment_id"`
+
+	// Commitment fields
+	CommitmentAmount        *decimal.Decimal     `db:"commitment_amount" json:"commitment_amount,omitempty" swaggertype:"string"`
+	CommitmentQuantity      *decimal.Decimal     `db:"commitment_quantity" json:"commitment_quantity,omitempty" swaggertype:"string"`
+	CommitmentType          types.CommitmentType `db:"commitment_type" json:"commitment_type,omitempty"`
+	CommitmentOverageFactor *decimal.Decimal     `db:"commitment_overage_factor" json:"commitment_overage_factor,omitempty" swaggertype:"string"`
+	CommitmentTrueUpEnabled bool                 `db:"commitment_true_up_enabled" json:"commitment_true_up_enabled"`
+	CommitmentWindowed      bool                 `db:"commitment_windowed" json:"commitment_windowed"`
+	CommitmentDuration      *types.BillingPeriod `db:"commitment_duration" json:"commitment_duration,omitempty"`
 
 	Price *price.Price `json:"price,omitempty"`
 
@@ -66,6 +76,18 @@ func (li *SubscriptionLineItem) IsUsage() bool {
 	return li.PriceType == types.PRICE_TYPE_USAGE && li.MeterID != ""
 }
 
+// HasCommitment returns true if the line item has commitment configured
+func (li *SubscriptionLineItem) HasCommitment() bool {
+	hasAmountCommitment := li.CommitmentAmount != nil && li.CommitmentAmount.GreaterThan(decimal.Zero)
+	hasQuantityCommitment := li.CommitmentQuantity != nil && li.CommitmentQuantity.GreaterThan(decimal.Zero)
+	return hasAmountCommitment || hasQuantityCommitment
+}
+
+// GetCommitmentType returns the commitment type for the line item
+func (li *SubscriptionLineItem) GetCommitmentType() types.CommitmentType {
+	return li.CommitmentType
+}
+
 // FromEntList converts a list of Ent SubscriptionLineItems to domain SubscriptionLineItems
 func GetLineItemFromEntList(list []*ent.SubscriptionLineItem) []*SubscriptionLineItem {
 	if list == nil {
@@ -84,24 +106,18 @@ func SubscriptionLineItemFromEnt(e *ent.SubscriptionLineItem) *SubscriptionLineI
 		return nil
 	}
 
-	var priceType, meterID, meterDisplayName, displayName string
-	var priceUnitID, priceUnit string
+	var meterID, meterDisplayName, displayName string
 	var startDate, endDate time.Time
 	var subscriptionPhaseID *string
 
-	priceType = lo.FromPtr(e.PriceType)
+	priceType := lo.FromPtr(e.PriceType)
 	if e.MeterID != nil {
 		meterID = *e.MeterID
 	}
 	if e.MeterDisplayName != nil {
 		meterDisplayName = *e.MeterDisplayName
 	}
-	if e.PriceUnitID != nil {
-		priceUnitID = *e.PriceUnitID
-	}
-	if e.PriceUnit != nil {
-		priceUnit = *e.PriceUnit
-	}
+
 	if e.DisplayName != nil {
 		displayName = *e.DisplayName
 	}
@@ -115,30 +131,54 @@ func SubscriptionLineItemFromEnt(e *ent.SubscriptionLineItem) *SubscriptionLineI
 		subscriptionPhaseID = e.SubscriptionPhaseID
 	}
 
+	// Handle commitment fields
+	var commitmentType types.CommitmentType
+	if e.CommitmentType != nil {
+		commitmentType = types.CommitmentType(*e.CommitmentType)
+	}
+
+	var commitmentDuration *types.BillingPeriod
+	if e.CommitmentDuration != nil {
+		cd := types.BillingPeriod(*e.CommitmentDuration)
+		commitmentDuration = &cd
+	}
+
+	billingPeriodCount := e.BillingPeriodCount
+	if billingPeriodCount <= 0 {
+		billingPeriodCount = 1
+	}
 	return &SubscriptionLineItem{
-		ID:                  e.ID,
-		SubscriptionID:      e.SubscriptionID,
-		CustomerID:          e.CustomerID,
-		EntityID:            lo.FromPtr(e.EntityID),
-		EntityType:          types.SubscriptionLineItemEntityType(e.EntityType),
-		PlanDisplayName:     lo.FromPtr(e.PlanDisplayName),
-		PriceID:             e.PriceID,
-		PriceType:           types.PriceType(priceType),
-		MeterID:             meterID,
-		MeterDisplayName:    meterDisplayName,
-		PriceUnitID:         priceUnitID,
-		PriceUnit:           priceUnit,
-		DisplayName:         displayName,
-		Quantity:            e.Quantity,
-		Currency:            e.Currency,
-		BillingPeriod:       types.BillingPeriod(e.BillingPeriod),
-		InvoiceCadence:      types.InvoiceCadence(e.InvoiceCadence),
-		TrialPeriod:         e.TrialPeriod,
-		StartDate:           startDate,
-		EndDate:             endDate,
-		SubscriptionPhaseID: subscriptionPhaseID,
-		Metadata:            e.Metadata,
-		EnvironmentID:       e.EnvironmentID,
+		ID:                      e.ID,
+		SubscriptionID:          e.SubscriptionID,
+		CustomerID:              e.CustomerID,
+		EntityID:                lo.FromPtr(e.EntityID),
+		EntityType:              types.SubscriptionLineItemEntityType(e.EntityType),
+		PlanDisplayName:         lo.FromPtr(e.PlanDisplayName),
+		PriceID:                 e.PriceID,
+		PriceType:               priceType,
+		MeterID:                 meterID,
+		MeterDisplayName:        meterDisplayName,
+		PriceUnitID:             e.PriceUnitID,
+		PriceUnit:               e.PriceUnit,
+		DisplayName:             displayName,
+		Quantity:                e.Quantity,
+		Currency:                e.Currency,
+		BillingPeriod:           e.BillingPeriod,
+		BillingPeriodCount:      billingPeriodCount,
+		InvoiceCadence:          e.InvoiceCadence,
+		TrialPeriod:             e.TrialPeriod,
+		StartDate:               startDate,
+		EndDate:                 endDate,
+		SubscriptionPhaseID:     subscriptionPhaseID,
+		Metadata:                e.Metadata,
+		EnvironmentID:           e.EnvironmentID,
+		CommitmentAmount:        e.CommitmentAmount,
+		CommitmentQuantity:      e.CommitmentQuantity,
+		CommitmentType:          commitmentType,
+		CommitmentOverageFactor: e.CommitmentOverageFactor,
+		CommitmentTrueUpEnabled: e.CommitmentTrueUpEnabled,
+		CommitmentWindowed:      e.CommitmentWindowed,
+		CommitmentDuration:      commitmentDuration,
 		BaseModel: types.BaseModel{
 			TenantID:  e.TenantID,
 			Status:    types.Status(e.Status),

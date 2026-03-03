@@ -27,6 +27,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/payment"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/domain/price"
+	"github.com/flexprice/flexprice/internal/domain/priceunit"
 	"github.com/flexprice/flexprice/internal/domain/proration"
 	"github.com/flexprice/flexprice/internal/domain/secret"
 	"github.com/flexprice/flexprice/internal/domain/settings"
@@ -57,9 +58,11 @@ type Stores struct {
 	SubscriptionRepo             subscription.Repository
 	SubscriptionLineItemRepo     subscription.LineItemRepository
 	SubscriptionPhaseRepo        subscription.SubscriptionPhaseRepository
+	SubscriptionScheduleRepo     subscription.SubscriptionScheduleRepository
 	EventRepo                    events.Repository
 	PlanRepo                     plan.Repository
 	PriceRepo                    price.Repository
+	PriceUnitRepo                priceunit.Repository
 	MeterRepo                    meter.Repository
 	CustomerRepo                 customer.Repository
 	InvoiceRepo                  invoice.Repository
@@ -127,7 +130,7 @@ func (s *BaseServiceTestSuite) SetupSuite() {
 	}
 
 	// Initialize cache
-	cache.Initialize(s.logger)
+	cache.Initialize(cfg, s.logger)
 }
 
 func (s *BaseServiceTestSuite) setupDependencies() {
@@ -190,9 +193,11 @@ func (s *BaseServiceTestSuite) setupStores() {
 		SubscriptionRepo:             NewInMemorySubscriptionStore(),
 		SubscriptionLineItemRepo:     NewInMemorySubscriptionLineItemStore(),
 		SubscriptionPhaseRepo:        NewInMemorySubscriptionPhaseStore(),
+		SubscriptionScheduleRepo:     NewInMemorySubscriptionScheduleStore(),
 		EventRepo:                    NewInMemoryEventStore(),
 		PlanRepo:                     NewInMemoryPlanStore(),
 		PriceRepo:                    NewInMemoryPriceStore(),
+		PriceUnitRepo:                NewInMemoryPriceUnitStore(),
 		MeterRepo:                    NewInMemoryMeterStore(),
 		CustomerRepo:                 NewInMemoryCustomerStore(),
 		InvoiceRepo:                  NewInMemoryInvoiceStore(),
@@ -241,6 +246,7 @@ func (s *BaseServiceTestSuite) clearStores() {
 	s.stores.EventRepo.(*InMemoryEventStore).Clear()
 	s.stores.PlanRepo.(*InMemoryPlanStore).Clear()
 	s.stores.PriceRepo.(*InMemoryPriceStore).Clear()
+	s.stores.PriceUnitRepo.(*InMemoryPriceUnitStore).Clear()
 	s.stores.MeterRepo.(*InMemoryMeterStore).Clear()
 	s.stores.CustomerRepo.(*InMemoryCustomerStore).Clear()
 	s.stores.InvoiceRepo.(*InMemoryInvoiceStore).Clear()
@@ -271,6 +277,7 @@ func (s *BaseServiceTestSuite) clearStores() {
 	s.stores.SubscriptionLineItemRepo.(*InMemorySubscriptionLineItemStore).Clear()
 	s.stores.SubscriptionPhaseRepo.(*InMemorySubscriptionPhaseStore).Clear()
 	s.stores.AlertLogsRepo.(*InMemoryAlertLogsStore).Clear()
+	s.stores.FeatureUsageRepo.(*InMemoryFeatureUsageStore).Clear()
 }
 
 func (s *BaseServiceTestSuite) ClearStores() {

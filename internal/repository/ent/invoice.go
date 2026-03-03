@@ -61,9 +61,9 @@ func (r *invoiceRepository) Create(ctx context.Context, inv *domainInvoice.Invoi
 		SetTenantID(inv.TenantID).
 		SetCustomerID(inv.CustomerID).
 		SetNillableSubscriptionID(inv.SubscriptionID).
-		SetInvoiceType(string(inv.InvoiceType)).
-		SetInvoiceStatus(string(inv.InvoiceStatus)).
-		SetPaymentStatus(string(inv.PaymentStatus)).
+		SetInvoiceType(inv.InvoiceType).
+		SetInvoiceStatus(inv.InvoiceStatus).
+		SetPaymentStatus(inv.PaymentStatus).
 		SetCurrency(inv.Currency).
 		SetAmountDue(inv.AmountDue).
 		SetAmountPaid(inv.AmountPaid).
@@ -76,7 +76,7 @@ func (r *invoiceRepository) Create(ctx context.Context, inv *domainInvoice.Invoi
 		SetNillablePaidAt(inv.PaidAt).
 		SetNillableVoidedAt(inv.VoidedAt).
 		SetNillableFinalizedAt(inv.FinalizedAt).
-		SetNillableBillingPeriod(inv.BillingPeriod).
+		SetBillingPeriod(types.BillingPeriod(lo.FromPtr(inv.BillingPeriod))).
 		SetNillableInvoicePdfURL(inv.InvoicePDFURL).
 		SetBillingReason(inv.BillingReason).
 		SetMetadata(inv.Metadata).
@@ -94,6 +94,7 @@ func (r *invoiceRepository) Create(ctx context.Context, inv *domainInvoice.Invoi
 		SetEnvironmentID(inv.EnvironmentID).
 		SetAdjustmentAmount(inv.AdjustmentAmount).
 		SetRefundedAmount(inv.RefundedAmount).
+		SetTotalPrepaidCreditsApplied(inv.TotalPrepaidCreditsApplied).
 		Save(ctx)
 
 	if err != nil {
@@ -163,9 +164,9 @@ func (r *invoiceRepository) CreateWithLineItems(ctx context.Context, inv *domain
 			SetTenantID(inv.TenantID).
 			SetCustomerID(inv.CustomerID).
 			SetNillableSubscriptionID(inv.SubscriptionID).
-			SetInvoiceType(string(inv.InvoiceType)).
-			SetInvoiceStatus(string(inv.InvoiceStatus)).
-			SetPaymentStatus(string(inv.PaymentStatus)).
+			SetInvoiceType(inv.InvoiceType).
+			SetInvoiceStatus(inv.InvoiceStatus).
+			SetPaymentStatus(inv.PaymentStatus).
 			SetCurrency(inv.Currency).
 			SetAmountDue(inv.AmountDue).
 			SetAmountPaid(inv.AmountPaid).
@@ -180,7 +181,7 @@ func (r *invoiceRepository) CreateWithLineItems(ctx context.Context, inv *domain
 			SetNillableVoidedAt(inv.VoidedAt).
 			SetNillableFinalizedAt(inv.FinalizedAt).
 			SetNillableInvoicePdfURL(inv.InvoicePDFURL).
-			SetNillableBillingPeriod(inv.BillingPeriod).
+			SetBillingPeriod(types.BillingPeriod(lo.FromPtr(inv.BillingPeriod))).
 			SetBillingReason(inv.BillingReason).
 			SetMetadata(inv.Metadata).
 			SetVersion(inv.Version).
@@ -196,6 +197,7 @@ func (r *invoiceRepository) CreateWithLineItems(ctx context.Context, inv *domain
 			SetNillablePeriodStart(inv.PeriodStart).
 			SetNillablePeriodEnd(inv.PeriodEnd).
 			SetEnvironmentID(inv.EnvironmentID).
+			SetTotalPrepaidCreditsApplied(inv.TotalPrepaidCreditsApplied).
 			Save(ctx)
 		if err != nil {
 			if ent.IsConstraintError(err) {
@@ -244,9 +246,9 @@ func (r *invoiceRepository) CreateWithLineItems(ctx context.Context, inv *domain
 					SetCustomerID(item.CustomerID).
 					SetNillableSubscriptionID(item.SubscriptionID).
 					SetNillableEntityID(item.EntityID).
-					SetNillableEntityType(item.EntityType).
+					SetNillableEntityType(convertStringPtrToInvoiceLineItemEntityTypePtr(item.EntityType)).
 					SetNillablePlanDisplayName(item.PlanDisplayName).
-					SetNillablePriceType(item.PriceType).
+					SetNillablePriceType(convertStringPtrToPriceTypePtr(item.PriceType)).
 					SetNillablePriceID(item.PriceID).
 					SetNillableMeterID(item.MeterID).
 					SetNillableMeterDisplayName(item.MeterDisplayName).
@@ -261,6 +263,10 @@ func (r *invoiceRepository) CreateWithLineItems(ctx context.Context, inv *domain
 					SetNillablePeriodEnd(item.PeriodEnd).
 					SetMetadata(item.Metadata).
 					SetEnvironmentID(item.EnvironmentID).
+					SetCommitmentInfo(item.CommitmentInfo).
+					SetPrepaidCreditsApplied(item.PrepaidCreditsApplied).
+					SetLineItemDiscount(item.LineItemDiscount).
+					SetInvoiceLevelDiscount(item.InvoiceLevelDiscount).
 					SetStatus(string(item.Status)).
 					SetCreatedBy(item.CreatedBy).
 					SetUpdatedBy(item.UpdatedBy).
@@ -315,9 +321,9 @@ func (r *invoiceRepository) AddLineItems(ctx context.Context, invoiceID string, 
 				SetCustomerID(item.CustomerID).
 				SetNillableSubscriptionID(item.SubscriptionID).
 				SetNillableEntityID(item.EntityID).
-				SetNillableEntityType(item.EntityType).
+				SetNillableEntityType(convertStringPtrToInvoiceLineItemEntityTypePtr(item.EntityType)).
 				SetNillablePlanDisplayName(item.PlanDisplayName).
-				SetNillablePriceType(item.PriceType).
+				SetNillablePriceType(convertStringPtrToPriceTypePtr(item.PriceType)).
 				SetNillablePriceID(item.PriceID).
 				SetNillableMeterID(item.MeterID).
 				SetNillableMeterDisplayName(item.MeterDisplayName).
@@ -330,6 +336,10 @@ func (r *invoiceRepository) AddLineItems(ctx context.Context, invoiceID string, 
 				SetNillablePeriodStart(item.PeriodStart).
 				SetNillablePeriodEnd(item.PeriodEnd).
 				SetMetadata(item.Metadata).
+				SetCommitmentInfo(item.CommitmentInfo).
+				SetPrepaidCreditsApplied(item.PrepaidCreditsApplied).
+				SetLineItemDiscount(item.LineItemDiscount).
+				SetInvoiceLevelDiscount(item.InvoiceLevelDiscount).
 				SetStatus(string(item.Status)).
 				SetCreatedBy(item.CreatedBy).
 				SetUpdatedBy(item.UpdatedBy).
@@ -440,13 +450,13 @@ func (r *invoiceRepository) Update(ctx context.Context, inv *domainInvoice.Invoi
 			invoice.TenantID(types.GetTenantID(ctx)),
 			invoice.Status(string(types.StatusPublished)),
 			invoice.EnvironmentID(types.GetEnvironmentID(ctx)),
-			invoice.Version(inv.Version), // Version check for optimistic locking
+			// invoice.Version(inv.Version), // Version check for optimistic locking
 		)
 
 	// Set all fields
 	query.
-		SetInvoiceStatus(string(inv.InvoiceStatus)).
-		SetPaymentStatus(string(inv.PaymentStatus)).
+		SetInvoiceStatus(inv.InvoiceStatus).
+		SetPaymentStatus(inv.PaymentStatus).
 		SetAmountDue(inv.AmountDue).
 		SetAmountPaid(inv.AmountPaid).
 		SetAmountRemaining(inv.AmountRemaining).
@@ -463,6 +473,7 @@ func (r *invoiceRepository) Update(ctx context.Context, inv *domainInvoice.Invoi
 		SetMetadata(inv.Metadata).
 		SetAdjustmentAmount(inv.AdjustmentAmount).
 		SetRefundedAmount(inv.RefundedAmount).
+		SetTotalPrepaidCreditsApplied(inv.TotalPrepaidCreditsApplied).
 		SetUpdatedAt(time.Now()).
 		SetUpdatedBy(types.GetUserID(ctx)).
 		SetTotal(inv.Total).
@@ -638,7 +649,7 @@ func (r *invoiceRepository) GetByIdempotencyKey(ctx context.Context, key string)
 			invoice.EnvironmentID(types.GetEnvironmentID(ctx)),
 			invoice.TenantID(types.GetTenantID(ctx)),
 			invoice.StatusEQ(string(types.StatusPublished)),
-			invoice.InvoiceStatusNEQ(string(types.InvoiceStatusVoided)),
+			invoice.InvoiceStatusNEQ(types.InvoiceStatusVoided),
 		).
 		First(ctx)
 	if err != nil {
@@ -671,7 +682,7 @@ func (r *invoiceRepository) ExistsForPeriod(ctx context.Context, subscriptionID 
 				invoice.PeriodStartEQ(periodStart),
 				invoice.PeriodEndEQ(periodEnd),
 				invoice.StatusEQ(string(types.StatusPublished)),
-				invoice.InvoiceStatusNEQ(string(types.InvoiceStatusVoided)),
+				invoice.InvoiceStatusNEQ(types.InvoiceStatusVoided),
 			),
 		).
 		Exist(ctx)
@@ -930,24 +941,16 @@ func (o InvoiceQueryOptions) applyEntityQueryOptions(_ context.Context, f *types
 		query = query.Where(invoice.SubscriptionID(f.SubscriptionID))
 	}
 	if f.InvoiceType != "" {
-		query = query.Where(invoice.InvoiceType(string(f.InvoiceType)))
+		query = query.Where(invoice.InvoiceType(f.InvoiceType))
 	}
 	if len(f.InvoiceIDs) > 0 {
 		query = query.Where(invoice.IDIn(f.InvoiceIDs...))
 	}
 	if len(f.InvoiceStatus) > 0 {
-		invoiceStatuses := make([]string, len(f.InvoiceStatus))
-		for i, status := range f.InvoiceStatus {
-			invoiceStatuses[i] = string(status)
-		}
-		query = query.Where(invoice.InvoiceStatusIn(invoiceStatuses...))
+		query = query.Where(invoice.InvoiceStatusIn(f.InvoiceStatus...))
 	}
 	if len(f.PaymentStatus) > 0 {
-		paymentStatuses := make([]string, len(f.PaymentStatus))
-		for i, status := range f.PaymentStatus {
-			paymentStatuses[i] = string(status)
-		}
-		query = query.Where(invoice.PaymentStatusIn(paymentStatuses...))
+		query = query.Where(invoice.PaymentStatusIn(f.PaymentStatus...))
 	}
 	if f.AmountDueGt != nil {
 		query = query.Where(invoice.AmountDueGT(*f.AmountDueGt))
@@ -964,6 +967,20 @@ func (o InvoiceQueryOptions) applyEntityQueryOptions(_ context.Context, f *types
 		if f.TimeRangeFilter.EndTime != nil {
 			query = query.Where(invoice.PeriodEndLTE(*f.TimeRangeFilter.EndTime))
 		}
+	}
+
+	// Apply invoice period filters (period_start / period_end GTE/LTE)
+	if f.PeriodStartGTE != nil {
+		query = query.Where(invoice.PeriodStartGTE(*f.PeriodStartGTE))
+	}
+	if f.PeriodStartLTE != nil {
+		query = query.Where(invoice.PeriodStartLTE(*f.PeriodStartLTE))
+	}
+	if f.PeriodEndGTE != nil {
+		query = query.Where(invoice.PeriodEndGTE(*f.PeriodEndGTE))
+	}
+	if f.PeriodEndLTE != nil {
+		query = query.Where(invoice.PeriodEndLTE(*f.PeriodEndLTE))
 	}
 
 	if f.Filters != nil {
@@ -1097,4 +1114,201 @@ func (r *invoiceRepository) GetInvoicesForExport(ctx context.Context, tenantID, 
 	}
 
 	return result, nil
+}
+
+// Helper functions for type conversion
+func convertStringPtrToInvoiceLineItemEntityTypePtr(s *string) *types.InvoiceLineItemEntityType {
+	if s == nil {
+		return nil
+	}
+	t := types.InvoiceLineItemEntityType(*s)
+	return &t
+}
+
+func convertStringPtrToPriceTypePtr(s *string) *types.PriceType {
+	if s == nil {
+		return nil
+	}
+	t := types.PriceType(*s)
+	return &t
+}
+
+// GetRevenueTrend returns revenue trend data grouped by time windows
+func (r *invoiceRepository) GetRevenueTrend(ctx context.Context, windowCount int) ([]types.RevenueTrendWindow, error) {
+	tenantID := types.GetTenantID(ctx)
+	envID := types.GetEnvironmentID(ctx)
+
+	span := StartRepositorySpan(ctx, "invoice", "get_revenue_trend", map[string]interface{}{
+		"tenant_id":      tenantID,
+		"environment_id": envID,
+		"window_count":   windowCount,
+	})
+	defer FinishSpan(span)
+
+	// Note: windowSize parameter is accepted for API consistency, but currently only MONTH is supported
+	// All revenue trend queries use monthly windows regardless of the parameter value
+	// Revenue is calculated as the total amount of FINALIZED and published invoices (SUM of total) includes invoices with payment status PENDING, SUCCEEDED, or FAILED
+	dateTruncPart := string(types.WindowSizeMonth)
+	intervalUnit := "1 month"
+	query := fmt.Sprintf(`
+		WITH windows AS (
+			SELECT
+				gs AS window_index,
+				(date_trunc('%s', now()) - (gs * interval '%s'))                    AS window_start,
+				(date_trunc('%s', now()) - (gs * interval '%s') + interval '%s') AS window_end
+			FROM generate_series(0, $1 - 1) AS gs
+		),
+		currencies AS (
+			SELECT DISTINCT currency
+			FROM invoices
+			WHERE tenant_id = $2
+			  AND environment_id = $3
+			  AND invoice_status = 'FINALIZED'
+			  AND status = 'published'
+		)
+		SELECT
+			w.window_index,
+			w.window_start,
+			(w.window_end - interval '1 microsecond') AS window_end_inclusive,
+			COALESCE(SUM(i.total), 0)::text     AS revenue,
+			c.currency
+		FROM windows w
+		CROSS JOIN currencies c
+		LEFT JOIN invoices i
+			ON i.created_at >= w.window_start
+		 AND i.created_at <  w.window_end
+		 AND i.tenant_id = $2
+		 AND i.environment_id = $3
+		 AND i.invoice_status = 'FINALIZED'
+		 AND i.status = 'published'
+		 AND i.currency = c.currency
+		GROUP BY w.window_index, w.window_start, w.window_end, c.currency
+		ORDER BY c.currency, w.window_index ASC`, dateTruncPart, intervalUnit, dateTruncPart, intervalUnit, intervalUnit)
+
+	rows, err := r.client.Reader(ctx).QueryContext(ctx, query, windowCount, tenantID, envID)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).WithHint("failed to get revenue trend").Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	var results []types.RevenueTrendWindow
+	for rows.Next() {
+		var result types.RevenueTrendWindow
+		if err := rows.Scan(&result.WindowIndex, &result.WindowStart, &result.WindowEnd, &result.Revenue, &result.Currency); err != nil {
+			SetSpanError(span, err)
+			return nil, ierr.WithError(err).WithHint("failed to scan revenue trend row").Mark(ierr.ErrDatabase)
+		}
+		results = append(results, result)
+	}
+
+	if err := rows.Err(); err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).WithHint("failed to iterate revenue trend rows").Mark(ierr.ErrDatabase)
+	}
+
+	SetSpanSuccess(span)
+	return results, nil
+}
+
+// GetInvoicePaymentStatus returns invoice payment status counts
+func (r *invoiceRepository) GetInvoicePaymentStatus(ctx context.Context) (*types.InvoicePaymentStatus, error) {
+	tenantID := types.GetTenantID(ctx)
+	envID := types.GetEnvironmentID(ctx)
+
+	span := StartRepositorySpan(ctx, "invoice", "get_invoice_payment_status", map[string]interface{}{
+		"tenant_id":      tenantID,
+		"environment_id": envID,
+	})
+	defer FinishSpan(span)
+
+	query := `
+		WITH invoice_history AS (
+			SELECT id, payment_status
+			FROM invoices
+			WHERE tenant_id = $1
+				AND environment_id = $2
+				AND invoice_status = 'FINALIZED'
+				AND status = 'published'
+		)
+		SELECT
+			COUNT(*) FILTER (WHERE payment_status = 'PENDING')   AS pending_count,
+			COUNT(*) FILTER (WHERE payment_status = 'SUCCEEDED') AS succeeded_count,
+			COUNT(*) FILTER (WHERE payment_status = 'FAILED')    AS failed_count
+		FROM invoice_history`
+
+	var result types.InvoicePaymentStatus
+	rows, err := r.client.Reader(ctx).QueryContext(ctx, query, tenantID, envID)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).WithHint("failed to get invoice payment status").Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		// No rows returned, return zero counts
+		return &types.InvoicePaymentStatus{}, nil
+	}
+
+	if err := rows.Scan(&result.Pending, &result.Succeeded, &result.Failed); err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).WithHint("failed to scan invoice payment status").Mark(ierr.ErrDatabase)
+	}
+
+	if err := rows.Err(); err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).WithHint("failed to iterate invoice payment status rows").Mark(ierr.ErrDatabase)
+	}
+
+	SetSpanSuccess(span)
+	return &result, nil
+}
+
+// UpdateLineItem updates a single line item with credit adjustment information
+func (r *invoiceRepository) UpdateLineItem(ctx context.Context, item *domainInvoice.InvoiceLineItem) error {
+	// Start a span for this repository operation
+	span := StartRepositorySpan(ctx, "invoice_line_item", "update", map[string]interface{}{
+		"line_item_id": item.ID,
+	})
+	defer FinishSpan(span)
+
+	r.logger.Debugw("updating line item", "line_item_id", item.ID)
+
+	client := r.client.Writer(ctx)
+
+	_, err := client.InvoiceLineItem.UpdateOneID(item.ID).
+		Where(
+			invoicelineitem.TenantID(types.GetTenantID(ctx)),
+			invoicelineitem.EnvironmentID(types.GetEnvironmentID(ctx)),
+		).
+		SetPrepaidCreditsApplied(item.PrepaidCreditsApplied).
+		SetLineItemDiscount(item.LineItemDiscount).
+		SetInvoiceLevelDiscount(item.InvoiceLevelDiscount).
+		SetMetadata(item.Metadata).
+		SetStatus(string(item.Status)).
+		SetUpdatedAt(time.Now().UTC()).
+		SetUpdatedBy(types.GetUserID(ctx)).
+		Save(ctx)
+
+	if err != nil {
+		SetSpanError(span, err)
+		if ent.IsNotFound(err) {
+			return ierr.WithError(err).
+				WithHint("Invoice line item not found").
+				WithReportableDetails(map[string]interface{}{
+					"line_item_id": item.ID,
+				}).
+				Mark(ierr.ErrNotFound)
+		}
+		return ierr.WithError(err).
+			WithHint("Failed to update line item with credit adjustments").
+			WithReportableDetails(map[string]interface{}{
+				"line_item_id": item.ID,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+
+	r.DeleteCache(ctx, item.InvoiceID)
+	SetSpanSuccess(span)
+	return nil
 }

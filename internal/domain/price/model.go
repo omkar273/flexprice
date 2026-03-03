@@ -1,6 +1,7 @@
 package price
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
+
+// max active prices per entity is 3000
+const MAX_ACTIVE_PRICES = 3000
 
 // JSONB types for complex fields
 // JSONBTiers are the tiers for the price when BillingModel is TIERED
@@ -34,7 +38,7 @@ type Price struct {
 
 	// Amount stored in main currency units (e.g., dollars, not cents)
 	// For USD: 12.50 means $12.50
-	Amount decimal.Decimal `db:"amount" json:"amount"`
+	Amount decimal.Decimal `db:"amount" json:"amount" swaggertype:"string"`
 
 	// DisplayAmount is the formatted amount with currency symbol
 	// For USD: $12.50
@@ -43,27 +47,23 @@ type Price struct {
 	// Currency 3 digit ISO currency code in lowercase ex usd, eur, gbp
 	Currency string `db:"currency" json:"currency"`
 
-	// PriceUnitType is the type of the price unit- Fiat, Custom, Crypto
+	// PriceUnitType is the type of the price unit (FIAT, CUSTOM)
 	PriceUnitType types.PriceUnitType `db:"price_unit_type" json:"price_unit_type"`
 
-	// PriceUnitID is the id of the price unit
-	PriceUnitID string `db:"price_unit_id" json:"price_unit_id,omitempty"`
+	// PriceUnitID is the id of the price unit (for CUSTOM type)
+	PriceUnitID *string `db:"price_unit_id" json:"price_unit_id,omitempty"`
 
-	// PriceUnitAmount is the amount stored in price unit
-	// For BTC: 0.00000001 means 0.00000001 BTC
-	PriceUnitAmount decimal.Decimal `db:"price_unit_amount" json:"price_unit_amount,omitempty"`
+	// PriceUnit is the code of the price unit (e.g., 'btc', 'eth')
+	PriceUnit *string `db:"price_unit" json:"price_unit,omitempty"`
 
-	// DisplayPriceUnitAmount is the formatted amount with price unit symbol
-	// For BTC: 0.00000001 BTC
+	// PriceUnitAmount is the amount of the price unit
+	PriceUnitAmount *decimal.Decimal `db:"price_unit_amount" json:"price_unit_amount,omitempty" swaggertype:"string"`
+
+	// DisplayPriceUnitAmount is the formatted amount of the price unit
 	DisplayPriceUnitAmount string `db:"display_price_unit_amount" json:"display_price_unit_amount,omitempty"`
 
-	// PriceUnit 3 digit ISO currency code in lowercase ex btc
-	// For BTC: btc
-	PriceUnit string `db:"price_unit" json:"price_unit,omitempty"`
-
-	// ConversionRate is the rate of the price unit to the base currency
-	// For BTC: 1 BTC = 100000000 USD
-	ConversionRate decimal.Decimal `db:"conversion_rate" json:"conversion_rate,omitempty"`
+	// ConversionRate is the conversion rate of the price unit to the fiat currency
+	ConversionRate *decimal.Decimal `db:"conversion_rate" json:"conversion_rate,omitempty" swaggertype:"string"`
 
 	Type types.PriceType `db:"type" json:"type"`
 
@@ -74,6 +74,12 @@ type Price struct {
 
 	BillingModel types.BillingModel `db:"billing_model" json:"billing_model"`
 
+	// DisplayName is the name of the price
+	DisplayName string `db:"display_name" json:"display_name"`
+
+	// MinQuantity is the minimum quantity of the price
+	MinQuantity *decimal.Decimal `db:"min_quantity" json:"min_quantity,omitempty" swaggertype:"string" extensions:"x-nullable"`
+
 	BillingCadence types.BillingCadence `db:"billing_cadence" json:"billing_cadence"`
 
 	InvoiceCadence types.InvoiceCadence `db:"invoice_cadence" json:"invoice_cadence"`
@@ -82,12 +88,12 @@ type Price struct {
 	// Note: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)
 	TrialPeriod int `db:"trial_period" json:"trial_period"`
 
-	TierMode types.BillingTier `db:"tier_mode" json:"tier_mode"`
+	TierMode types.BillingTier `db:"tier_mode" json:"tier_mode,omitempty"`
 
-	Tiers JSONBTiers `db:"tiers,jsonb" json:"tiers"`
+	Tiers JSONBTiers `db:"tiers,jsonb" json:"tiers,omitempty"`
 
-	// PriceUnitTiers are the tiers for the price unit
-	PriceUnitTiers JSONBTiers `db:"price_unit_tiers,jsonb" json:"price_unit_tiers"`
+	// PriceUnitTiers are the tiers for the price unit when BillingModel is TIERED
+	PriceUnitTiers JSONBTiers `db:"price_unit_tiers,jsonb" json:"price_unit_tiers,omitempty"`
 
 	// MeterID is the id of the meter for usage based pricing
 	MeterID string `db:"meter_id" json:"meter_id"`
@@ -124,6 +130,53 @@ type Price struct {
 	EndDate *time.Time `db:"end_date" json:"end_date,omitempty"`
 
 	types.BaseModel
+}
+
+// PriceCloneOverrides holds optional overrides for CopyWith. Nil fields mean "keep existing value".
+type PriceCloneOverrides struct {
+	ID             *string
+	EntityType     *types.PriceEntityType
+	EntityID       *string
+	LookupKey      *string
+	ParentPriceID  *string // nil = clear (e.g. for clones); non-nil = set value
+	BaseModel      *types.BaseModel
+}
+
+// CopyWith returns a shallow copy of the price with optional overrides applied.
+// Pointer fields on the original (StartDate, EndDate, MinQuantity, etc.) are shallow-copied.
+// If BaseModel is not in overrides, uses types.GetDefaultBaseModel(ctx).
+func (p *Price) CopyWith(ctx context.Context, overrides *PriceCloneOverrides) *Price {
+	if p == nil {
+		return nil
+	}
+	out := lo.FromPtr(p)
+	if overrides == nil {
+		return lo.ToPtr(out)
+	}
+	if overrides.ID != nil {
+		out.ID = lo.FromPtr(overrides.ID)
+	}
+	if overrides.EntityType != nil {
+		out.EntityType = lo.FromPtr(overrides.EntityType)
+	}
+	if overrides.EntityID != nil {
+		out.EntityID = lo.FromPtr(overrides.EntityID)
+	}
+	if overrides.LookupKey != nil {
+		out.LookupKey = lo.FromPtr(overrides.LookupKey)
+	}
+	if overrides.BaseModel != nil {
+		out.BaseModel = lo.FromPtr(overrides.BaseModel)
+	} else {
+		out.BaseModel = types.GetDefaultBaseModel(ctx)
+	}
+	if overrides.ParentPriceID != nil {
+		out.ParentPriceID = lo.FromPtr(overrides.ParentPriceID)
+	} else {
+		out.ParentPriceID = "" // clear so cloned prices do not retain source lineage
+	}
+
+	return lo.ToPtr(out)
 }
 
 // IsUsage returns true if the price is a usage based price
@@ -179,6 +232,16 @@ func (p *Price) GetDisplayAmount() string {
 	return fmt.Sprintf("%s%s", p.GetCurrencySymbol(), amount)
 }
 
+// GetDisplayPriceUnitAmount returns the price unit amount formatted with the price unit symbol
+// Example: "₿0.001" for Bitcoin or "£10.00" for GBP
+func (p *Price) GetDisplayPriceUnitAmount(priceUnitSymbol string) string {
+	if p.PriceUnitAmount == nil {
+		return ""
+	}
+	amount := p.PriceUnitAmount.String()
+	return fmt.Sprintf("%s%s", priceUnitSymbol, amount)
+}
+
 // CalculateAmount performs calculation
 func (p *Price) CalculateAmount(quantity decimal.Decimal) decimal.Decimal {
 	// Calculate with full precision
@@ -222,8 +285,27 @@ func FormatAmountToFloat64WithPrecision(amount decimal.Decimal, currency string)
 // PriceTransform is the quantity transformation in case of PACKAGE billing model
 // NOTE: We need to apply this to the quantity before calculating the effective price
 type TransformQuantity struct {
-	DivideBy int    `json:"divide_by,omitempty"` // Divide quantity by this number
-	Round    string `json:"round,omitempty"`     // up or down
+	DivideBy int             `json:"divide_by,omitempty"` // Divide quantity by this number
+	Round    types.RoundType `json:"round,omitempty"`     // up or down
+}
+
+func (t *TransformQuantity) Validate() error {
+	if t == nil {
+		return nil
+	}
+
+	if t.DivideBy < 1 {
+		return ierr.NewError("transform_quantity.divide_by must be greater than or equal to 1").
+			WithHint("Transform quantity divide by must be greater than or equal to 1").
+			WithReportableDetails(map[string]interface{}{
+				"divide_by": t.DivideBy,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	if err := t.Round.Validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Additional types needed for JSON fields
@@ -235,11 +317,11 @@ type PriceTier struct {
 	UpTo *uint64 `json:"up_to"`
 
 	// unit_amount is the amount per unit for the given tier
-	UnitAmount decimal.Decimal `json:"unit_amount"`
+	UnitAmount decimal.Decimal `json:"unit_amount" swaggertype:"string"`
 
 	// flat_amount is the flat amount for the given tier (optional)
 	// Applied on top of unit_amount*quantity. Useful for cases like "2.7$ + 5c"
-	FlatAmount *decimal.Decimal `json:"flat_amount,omitempty"`
+	FlatAmount *decimal.Decimal `json:"flat_amount,omitempty" swaggertype:"string"`
 }
 
 // TODO : comeup with a better way to handle jsonb fields
@@ -376,18 +458,19 @@ func FromEnt(e *ent.Price) *Price {
 
 	return &Price{
 		ID:                     e.ID,
-		Amount:                 decimal.NewFromFloat(e.Amount),
+		Amount:                 e.Amount,
 		Currency:               e.Currency,
 		DisplayAmount:          e.DisplayAmount,
-		PriceUnitType:          types.PriceUnitType(e.PriceUnitType),
-		Type:                   types.PriceType(e.Type),
-		BillingPeriod:          types.BillingPeriod(e.BillingPeriod),
+		PriceUnitType:          e.PriceUnitType,
+		Type:                   e.Type,
+		BillingPeriod:          e.BillingPeriod,
 		BillingPeriodCount:     e.BillingPeriodCount,
-		BillingModel:           types.BillingModel(e.BillingModel),
-		BillingCadence:         types.BillingCadence(e.BillingCadence),
-		InvoiceCadence:         types.InvoiceCadence(e.InvoiceCadence),
+		BillingModel:           e.BillingModel,
+		DisplayName:            e.DisplayName,
+		BillingCadence:         e.BillingCadence,
+		InvoiceCadence:         e.InvoiceCadence,
 		TrialPeriod:            e.TrialPeriod,
-		TierMode:               types.BillingTier(lo.FromPtr(e.TierMode)),
+		TierMode:               lo.FromPtr(e.TierMode),
 		Tiers:                  tiers,
 		PriceUnitTiers:         priceUnitTiers,
 		MeterID:                lo.FromPtr(e.MeterID),
@@ -398,15 +481,16 @@ func FromEnt(e *ent.Price) *Price {
 		EnvironmentID:          e.EnvironmentID,
 		PriceUnitID:            e.PriceUnitID,
 		PriceUnit:              e.PriceUnit,
-		PriceUnitAmount:        decimal.NewFromFloat(e.PriceUnitAmount),
+		PriceUnitAmount:        e.PriceUnitAmount,
 		DisplayPriceUnitAmount: e.DisplayPriceUnitAmount,
-		ConversionRate:         decimal.NewFromFloat(e.ConversionRate),
-		EntityType:             types.PriceEntityType(lo.FromPtr(e.EntityType)),
-		EntityID:               lo.FromPtr(e.EntityID),
+		ConversionRate:         e.ConversionRate,
+		EntityType:             e.EntityType,
+		EntityID:               e.EntityID,
 		ParentPriceID:          lo.FromPtr(e.ParentPriceID),
 		GroupID:                lo.FromPtr(e.GroupID),
 		StartDate:              e.StartDate,
 		EndDate:                e.EndDate,
+		MinQuantity:            e.MinQuantity,
 		BaseModel: types.BaseModel{
 			TenantID:  e.TenantID,
 			Status:    types.Status(e.Status),
@@ -430,14 +514,14 @@ func FromEntList(list []*ent.Price) []*Price {
 	return prices
 }
 
-// ToEntTiers converts domain tiers to ent tiers
-func (p *Price) ToEntTiers() []*types.PriceTier {
-	if len(p.Tiers) == 0 {
+// ToEntTiersFromJSONB converts JSONBTiers to ent tiers (reusable for both Tiers and PriceUnitTiers)
+func ToEntTiersFromJSONB(jsonbTiers JSONBTiers) []*types.PriceTier {
+	if len(jsonbTiers) == 0 {
 		return nil
 	}
 
-	tiers := make([]*types.PriceTier, len(p.Tiers))
-	for i, tier := range p.Tiers {
+	tiers := make([]*types.PriceTier, len(jsonbTiers))
+	for i, tier := range jsonbTiers {
 		tiers[i] = &types.PriceTier{
 			UpTo:       tier.UpTo,
 			UnitAmount: tier.UnitAmount,
@@ -447,21 +531,9 @@ func (p *Price) ToEntTiers() []*types.PriceTier {
 	return tiers
 }
 
-// ToPriceUnitTiers converts domain price unit tiers to ent tiers
-func (p *Price) ToPriceUnitTiers() []*types.PriceTier {
-	if len(p.PriceUnitTiers) == 0 {
-		return nil
-	}
-
-	tiers := make([]*types.PriceTier, len(p.PriceUnitTiers))
-	for i, tier := range p.PriceUnitTiers {
-		tiers[i] = &types.PriceTier{
-			UpTo:       tier.UpTo,
-			UnitAmount: tier.UnitAmount,
-			FlatAmount: tier.FlatAmount,
-		}
-	}
-	return tiers
+// ToEntTiers converts domain tiers to ent tiers
+func (p *Price) ToEntTiers() []*types.PriceTier {
+	return ToEntTiersFromJSONB(p.Tiers)
 }
 
 // ValidateTrialPeriod checks if trial period is valid

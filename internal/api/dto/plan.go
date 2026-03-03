@@ -11,19 +11,14 @@ import (
 	"github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/flexprice/flexprice/internal/validator"
-	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 )
 
 type CreatePlanRequest struct {
-	Name         string                         `json:"name" validate:"required"`
-	LookupKey    string                         `json:"lookup_key"`
-	Description  string                         `json:"description"`
-	DisplayOrder *int                           `json:"display_order,omitempty"`
-	Prices       []CreatePlanPriceRequest       `json:"prices"`
-	Entitlements []CreatePlanEntitlementRequest `json:"entitlements"`
-	CreditGrants []CreateCreditGrantRequest     `json:"credit_grants"`
-	Metadata     types.Metadata                 `json:"metadata"`
+	Name         string         `json:"name" validate:"required"`
+	LookupKey    string         `json:"lookup_key"`
+	Description  string         `json:"description"`
+	DisplayOrder *int           `json:"display_order,omitempty"`
+	Metadata     types.Metadata `json:"metadata,omitempty"`
 }
 
 type GetPricesByPlanRequest struct {
@@ -90,148 +85,6 @@ func (r *CreatePlanRequest) Validate() error {
 		return err
 	}
 
-	for _, price := range r.Prices {
-		if price.CreatePriceRequest == nil {
-			return errors.NewError("price request cannot be nil").
-				WithHint("Please provide valid price configuration").
-				Mark(errors.ErrValidation)
-		}
-
-		// Ensure price_unit_type is set, default to FIAT if not provided
-		if price.PriceUnitType == "" {
-			price.PriceUnitType = types.PRICE_UNIT_TYPE_FIAT
-		}
-
-		if err := price.Validate(); err != nil {
-			return err
-		}
-	}
-
-	for _, ent := range r.Entitlements {
-		if err := ent.Validate(); err != nil {
-			return err
-		}
-	}
-
-	for _, cg := range r.CreditGrants {
-		if err := r.validateCreditGrantForPlan(cg); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// validateCreditGrantForPlan validates a credit grant for plan creation
-// This is similar to CreditGrant.Validate() but skips plan_id validation since
-// the plan ID will be set after the plan is created
-func (r *CreatePlanRequest) validateCreditGrantForPlan(cg CreateCreditGrantRequest) error {
-	if cg.Name == "" {
-		return errors.NewError("name is required").
-			WithHint("Please provide a name for the credit grant").
-			Mark(errors.ErrValidation)
-	}
-
-	if err := cg.Scope.Validate(); err != nil {
-		return err
-	}
-
-	// For plan creation, we only validate PLAN scope (subscription scope not allowed)
-	if cg.Scope != types.CreditGrantScopePlan {
-		return errors.NewError("only PLAN scope is allowed for credit grants in plan creation").
-			WithHint("Credit grants in plan creation must have PLAN scope").
-			WithReportableDetails(map[string]interface{}{
-				"scope": cg.Scope,
-			}).
-			Mark(errors.ErrValidation)
-	}
-
-	// Ensure subscription_id is not provided for plan-scoped grants
-	if cg.SubscriptionID != nil && *cg.SubscriptionID != "" {
-		return errors.NewError("subscription_id should not be provided for plan-scoped credit grants").
-			WithHint("Credit grants in plan creation should not include subscription_id").
-			WithReportableDetails(map[string]interface{}{
-				"subscription_id": *cg.SubscriptionID,
-			}).
-			Mark(errors.ErrValidation)
-	}
-
-	// Ensure plan_id is not provided in the request (it will be set automatically)
-	if cg.PlanID != nil && *cg.PlanID != "" {
-		return errors.NewError("plan_id should not be provided for credit grants in plan creation").
-			WithHint("The plan_id will be set automatically when creating the plan").
-			WithReportableDetails(map[string]interface{}{
-				"plan_id": *cg.PlanID,
-			}).
-			Mark(errors.ErrValidation)
-	}
-
-	if cg.Credits.LessThanOrEqual(decimal.Zero) {
-		return errors.NewError("credits must be greater than zero").
-			WithHint("Please provide a positive credits").
-			WithReportableDetails(map[string]interface{}{
-				"credits": cg.Credits,
-			}).
-			Mark(errors.ErrValidation)
-	}
-
-	if err := cg.Cadence.Validate(); err != nil {
-		return err
-	}
-
-	if err := cg.ExpirationType.Validate(); err != nil {
-		return err
-	}
-
-	// Validate based on cadence
-	if cg.Cadence == types.CreditGrantCadenceRecurring {
-		if cg.Period == nil || lo.FromPtr(cg.Period) == "" {
-			return errors.NewError("period is required for RECURRING cadence").
-				WithHint("Please provide a valid period (e.g., MONTHLY, YEARLY)").
-				WithReportableDetails(map[string]interface{}{
-					"cadence": cg.Cadence,
-				}).
-				Mark(errors.ErrValidation)
-		}
-
-		if err := cg.Period.Validate(); err != nil {
-			return err
-		}
-
-		if cg.PeriodCount == nil || lo.FromPtr(cg.PeriodCount) <= 0 {
-			return errors.NewError("period_count is required for RECURRING cadence").
-				WithHint("Please provide a valid period_count").
-				WithReportableDetails(map[string]interface{}{
-					"period_count": lo.FromPtr(cg.PeriodCount),
-				}).
-				Mark(errors.ErrValidation)
-		}
-	}
-
-	if cg.ExpirationType == types.CreditGrantExpiryTypeDuration {
-		if cg.ExpirationDurationUnit == nil {
-			return errors.NewError("expiration_duration_unit is required for DURATION expiration type").
-				WithHint("Please provide a valid expiration duration unit").
-				WithReportableDetails(map[string]interface{}{
-					"expiration_type": cg.ExpirationType,
-				}).
-				Mark(errors.ErrValidation)
-		}
-
-		if err := cg.ExpirationDurationUnit.Validate(); err != nil {
-			return err
-		}
-
-		if cg.ExpirationDuration == nil || lo.FromPtr(cg.ExpirationDuration) <= 0 {
-			return errors.NewError("expiration_duration is required for DURATION expiration type").
-				WithHint("Please provide a valid expiration duration").
-				WithReportableDetails(map[string]interface{}{
-					"expiration_type": cg.ExpirationType,
-				}).
-				Mark(errors.ErrValidation)
-		}
-	}
-
 	return nil
 }
 
@@ -279,41 +132,40 @@ type PlanResponse struct {
 }
 
 type UpdatePlanRequest struct {
-	Name         *string                        `json:"name,omitempty"`
-	LookupKey    *string                        `json:"lookup_key,omitempty"`
-	Description  *string                        `json:"description,omitempty"`
-	DisplayOrder *int                           `json:"display_order,omitempty"`
-	Prices       []UpdatePlanPriceRequest       `json:"prices,omitempty"`
-	Entitlements []UpdatePlanEntitlementRequest `json:"entitlements,omitempty"`
-	CreditGrants []UpdatePlanCreditGrantRequest `json:"credit_grants,omitempty"`
-	Metadata     types.Metadata                 `json:"metadata,omitempty"`
-}
-
-type UpdatePlanPriceRequest struct {
-	// The ID of the price to update (present if the price is being updated)
-	ID string `json:"id,omitempty"`
-	// The price request to update existing price or create new price
-	*CreatePriceRequest
-}
-
-type UpdatePlanEntitlementRequest struct {
-	// The ID of the entitlement to update (present if the entitlement is being updated)
-	ID string `json:"id,omitempty"`
-	// The entitlement request to update existing entitlement or create new entitlement
-	*CreatePlanEntitlementRequest
-}
-
-type UpdatePlanCreditGrantRequest struct {
-	// The ID of the credit grant to update (present if the credit grant is being updated)
-	ID string `json:"id,omitempty"`
-	// The credit grant request to update existing credit grant or create new credit grant
-	*CreateCreditGrantRequest
+	Name         *string        `json:"name,omitempty"`
+	LookupKey    *string        `json:"lookup_key,omitempty"`
+	Description  *string        `json:"description,omitempty"`
+	DisplayOrder *int           `json:"display_order,omitempty"`
+	Metadata     types.Metadata `json:"metadata,omitempty"`
 }
 
 // ListPlansResponse represents the response for listing plans with prices, entitlements, and credit grants
 type ListPlansResponse = types.ListResponse[*PlanResponse]
 
 type SyncPlanPricesResponse struct {
+	PlanID  string                `json:"plan_id"`
+	Message string                `json:"message"`
+	Summary SyncPlanPricesSummary `json:"summary"`
+}
+
+type SyncPlanPricesSummary struct {
+	LineItemsFoundForCreation int `json:"line_items_found_for_creation"`
+	LineItemsCreated          int `json:"line_items_created"`
+	LineItemsTerminated       int `json:"line_items_terminated"`
+}
+
+// SubscriptionSyncResult contains the results of syncing a subscription with plan prices
+type SubscriptionSyncResult struct {
+	PricesProcessed                   int
+	LineItemsCreated                  int
+	LineItemsTerminated               int
+	LineItemsSkippedAlreadyTerminated int
+	LineItemsSkippedOverridden        int
+	LineItemsSkippedIncompatible      int
+	LineItemsFailed                   int
+}
+
+type SyncPlanPricesV2Response struct {
 	Message                string                 `json:"message"`
 	PlanID                 string                 `json:"plan_id"`
 	PlanName               string                 `json:"plan_name"`
@@ -340,6 +192,34 @@ type SynchronizationSummary struct {
 	ExpiredPrices int `json:"expired_prices"`
 }
 
+// ClonePlanRequest represents the request to clone a plan
+type ClonePlanRequest struct {
+	// Name is required and must be different from the source plan's name
+	Name string `json:"name"`
+	// LookupKey is required and must be unique across published plans
+	LookupKey string `json:"lookup_key"`
+	// Description overrides the source plan's description when provided
+	Description *string `json:"description,omitempty"`
+	// DisplayOrder overrides the source plan's display order when provided
+	DisplayOrder *int `json:"display_order,omitempty"`
+	// Metadata overrides the source plan's metadata when provided
+	Metadata types.Metadata `json:"metadata,omitempty"`
+}
+
+func (r *ClonePlanRequest) Validate() error {
+	if r.Name == "" {
+		return errors.NewError("name is required for cloned plan").
+			WithHint("Please provide a unique name for the cloned plan").
+			Mark(errors.ErrValidation)
+	}
+	if r.LookupKey == "" {
+		return errors.NewError("lookup_key is required for cloned plan").
+			WithHint("Please provide a unique lookup_key for the cloned plan").
+			Mark(errors.ErrValidation)
+	}
+	return nil
+}
+
 // SubscriptionSyncParams contains all parameters needed for syncing a subscription with plan prices
 type SubscriptionSyncParams struct {
 	Context              context.Context
@@ -347,15 +227,4 @@ type SubscriptionSyncParams struct {
 	PlanPriceMap         map[string]*price.Price
 	LineItems            []*subscription.SubscriptionLineItem
 	SubscriptionPriceMap map[string]*PriceResponse
-}
-
-// SubscriptionSyncResult contains the results of syncing a subscription with plan prices
-type SubscriptionSyncResult struct {
-	PricesProcessed                   int
-	LineItemsCreated                  int
-	LineItemsTerminated               int
-	LineItemsSkippedAlreadyTerminated int
-	LineItemsSkippedOverridden        int
-	LineItemsSkippedIncompatible      int
-	LineItemsFailed                   int
 }

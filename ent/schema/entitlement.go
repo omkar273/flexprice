@@ -37,7 +37,8 @@ func (Entitlement) Fields() []ent.Field {
 				"postgres": "varchar(50)",
 			}).
 			Default(string(types.ENTITLEMENT_ENTITY_TYPE_PLAN)).
-			Optional(),
+			Optional().
+			GoType(types.EntitlementEntityType("")),
 
 		field.String("entity_id").
 			SchemaType(map[string]string{
@@ -53,7 +54,8 @@ func (Entitlement) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
-			NotEmpty(),
+			NotEmpty().
+			GoType(types.FeatureType("")),
 		field.Bool("is_enabled").
 			Default(false),
 		field.Int64("usage_limit").
@@ -63,7 +65,8 @@ func (Entitlement) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(20)",
 			}).
-			Optional(),
+			Optional().
+			GoType(types.EntitlementUsageResetPeriod("")),
 		field.Bool("is_soft_limit").
 			Default(false),
 		field.String("static_value").
@@ -77,6 +80,14 @@ func (Entitlement) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("References the parent entitlement (for subscription-scoped entitlements)"),
+		field.Time("start_date").
+			Optional().
+			Nillable().
+			Comment("Start date for time-bound entitlements (subscription-scoped only)"),
+		field.Time("end_date").
+			Optional().
+			Nillable().
+			Comment("End date for time-bound entitlements (subscription-scoped only)"),
 	}
 }
 
@@ -95,5 +106,9 @@ func (Entitlement) Indexes() []ent.Index {
 		index.Fields("tenant_id", "environment_id", "entity_type", "entity_id"),
 		index.Fields("tenant_id", "environment_id", "feature_id"),
 		index.Fields("tenant_id", "environment_id", "parent_entitlement_id"),
+
+		// Index for time-based queries on subscription-scoped entitlements
+		index.Fields("entity_id", "entity_type", "feature_id", "start_date", "end_date").
+			Annotations(entsql.IndexWhere("entity_type = 'SUBSCRIPTION' AND status = 'published'")),
 	}
 }

@@ -6,10 +6,12 @@ import (
 	"time"
 
 	"github.com/flexprice/flexprice/ent"
+	"github.com/flexprice/flexprice/ent/predicate"
 	"github.com/flexprice/flexprice/ent/wallet"
 	"github.com/flexprice/flexprice/ent/wallettransaction"
 	"github.com/flexprice/flexprice/internal/cache"
 	walletdomain "github.com/flexprice/flexprice/internal/domain/wallet"
+	"github.com/flexprice/flexprice/internal/dsl"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/postgres"
@@ -48,7 +50,7 @@ func (r *walletRepository) CreateWallet(ctx context.Context, w *walletdomain.Wal
 		w.EnvironmentID = types.GetEnvironmentID(ctx)
 	}
 
-	wallet, err := client.Wallet.Create().
+	walletBuilder := client.Wallet.Create().
 		SetID(w.ID).
 		SetTenantID(w.TenantID).
 		SetCustomerID(w.CustomerID).
@@ -58,23 +60,27 @@ func (r *walletRepository) CreateWallet(ctx context.Context, w *walletdomain.Wal
 		SetMetadata(w.Metadata).
 		SetBalance(w.Balance).
 		SetCreditBalance(w.CreditBalance).
-		SetWalletStatus(string(w.WalletStatus)).
-		SetAutoTopupTrigger(string(w.AutoTopupTrigger)).
-		SetAutoTopupMinBalance(w.AutoTopupMinBalance).
-		SetAutoTopupAmount(w.AutoTopupAmount).
-		SetWalletType(string(w.WalletType)).
+		SetWalletStatus(w.WalletStatus).
+		SetWalletType(w.WalletType).
 		SetConfig(w.Config).
 		SetConversionRate(w.ConversionRate).
+		SetTopupConversionRate(w.TopupConversionRate).
 		SetStatus(string(w.Status)).
 		SetCreatedBy(w.CreatedBy).
 		SetCreatedAt(w.CreatedAt).
 		SetUpdatedBy(w.UpdatedBy).
 		SetUpdatedAt(w.UpdatedAt).
 		SetEnvironmentID(w.EnvironmentID).
-		SetAlertEnabled(w.AlertEnabled).
-		SetAlertConfig(w.AlertConfig).
-		SetAlertState(w.AlertState).
-		Save(ctx)
+		SetAlertState(types.AlertState(w.AlertState))
+
+	if w.AlertSettings != nil {
+		walletBuilder.SetAlertSettings(*w.AlertSettings)
+	}
+
+	if w.AutoTopup != nil {
+		walletBuilder.SetAutoTopup(w.AutoTopup)
+	}
+	wallet, err := walletBuilder.Save(ctx)
 
 	if err != nil {
 		SetSpanError(span, err)
@@ -155,7 +161,7 @@ func (r *walletRepository) GetWalletsByCustomerID(ctx context.Context, customerI
 			wallet.CustomerID(customerID),
 			wallet.TenantID(types.GetTenantID(ctx)),
 			wallet.StatusEQ(string(types.StatusPublished)),
-			wallet.WalletStatusEQ(string(types.WalletStatusActive)),
+			wallet.WalletStatusEQ(types.WalletStatusActive),
 			wallet.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
 		All(ctx)
@@ -195,7 +201,7 @@ func (r *walletRepository) UpdateWalletStatus(ctx context.Context, id string, st
 			wallet.StatusEQ(string(types.StatusPublished)),
 			wallet.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
-		SetWalletStatus(string(status)).
+		SetWalletStatus(status).
 		SetUpdatedBy(types.GetUserID(ctx)).
 		SetUpdatedAt(time.Now().UTC()).
 		Save(ctx)
@@ -234,12 +240,13 @@ func (r *walletRepository) UpdateWalletStatus(ctx context.Context, id string, st
 // this is to ensure that the highest priority credits are used first, then the oldest credits,
 // and if there are multiple credits with the same priority and expiry date,
 // the credits with the highest credit amount are used first
-func (r *walletRepository) FindEligibleCredits(ctx context.Context, walletID string, requiredAmount decimal.Decimal, pageSize int) ([]*walletdomain.Transaction, error) {
+func (r *walletRepository) FindEligibleCredits(ctx context.Context, walletID string, requiredAmount decimal.Decimal, pageSize int, timeReference time.Time) ([]*walletdomain.Transaction, error) {
 	// Start a span for this repository operation
 	span := StartRepositorySpan(ctx, "wallet", "find_eligible_credits", map[string]interface{}{
 		"wallet_id":       walletID,
 		"required_amount": requiredAmount.String(),
 		"page_size":       pageSize,
+		"time_reference":  timeReference.Format(time.RFC3339),
 	})
 	defer FinishSpan(span)
 
@@ -251,13 +258,14 @@ func (r *walletRepository) FindEligibleCredits(ctx context.Context, walletID str
 			Where(
 				wallettransaction.WalletID(walletID),
 				wallettransaction.EnvironmentID(types.GetEnvironmentID(ctx)),
-				wallettransaction.Type(string(types.TransactionTypeCredit)),
+				wallettransaction.Type(types.TransactionTypeCredit),
 				wallettransaction.CreditsAvailableGT(decimal.Zero),
 				wallettransaction.Or(
 					wallettransaction.ExpiryDateIsNil(),
-					wallettransaction.ExpiryDateGTE(time.Now().UTC()),
+					wallettransaction.ExpiryDateGTE(timeReference),
 				),
 				wallettransaction.StatusEQ(string(types.StatusPublished)),
+				wallettransaction.TransactionStatusEQ(types.TransactionStatusCompleted),
 			).
 			Order(
 				ent.Asc(wallettransaction.FieldPriority), // Sort by priority first (nil values come last)
@@ -370,20 +378,24 @@ func (r *walletRepository) CreateTransaction(ctx context.Context, tx *walletdoma
 		SetID(tx.ID).
 		SetTenantID(tx.TenantID).
 		SetWalletID(tx.WalletID).
-		SetType(string(tx.Type)).
+		SetNillableCustomerID(&tx.CustomerID).
+		SetType(tx.Type).
 		SetAmount(tx.Amount).
 		SetCreditAmount(tx.CreditAmount).
-		SetReferenceType(string(tx.ReferenceType)).
+		SetReferenceType(tx.ReferenceType).
 		SetReferenceID(tx.ReferenceID).
 		SetDescription(tx.Description).
 		SetMetadata(tx.Metadata).
 		SetStatus(string(tx.Status)).
-		SetTransactionStatus(string(tx.TxStatus)).
-		SetTransactionReason(string(tx.TransactionReason)).
+		SetTransactionStatus(tx.TxStatus).
+		SetTransactionReason(tx.TransactionReason).
 		SetCreditsAvailable(tx.CreditsAvailable).
 		SetNillableExpiryDate(tx.ExpiryDate).
 		SetCreditBalanceBefore(tx.CreditBalanceBefore).
 		SetCreditBalanceAfter(tx.CreditBalanceAfter).
+		SetCurrency(tx.Currency).
+		SetNillableConversionRate(tx.ConversionRate).
+		SetNillableTopupConversionRate(tx.TopupConversionRate).
 		SetCreatedAt(tx.CreatedAt).
 		SetCreatedBy(tx.CreatedBy).
 		SetUpdatedAt(tx.UpdatedAt).
@@ -525,9 +537,13 @@ func (r *walletRepository) ListWalletTransactions(ctx context.Context, f *types.
 
 	client := r.client.Reader(ctx)
 	query := client.WalletTransaction.Query()
+	var err error
 
 	// Apply entity-specific filters
-	query = r.queryOpts.applyEntityQueryOptions(ctx, f, query)
+	query, err = r.queryOpts.applyEntityQueryOptions(ctx, f, query)
+	if err != nil {
+		return nil, err
+	}
 
 	// Apply common query options
 	query = ApplyQueryOptions(ctx, query, f, r.queryOpts)
@@ -559,8 +575,12 @@ func (r *walletRepository) ListAllWalletTransactions(ctx context.Context, f *typ
 	client := r.client.Reader(ctx)
 	query := client.WalletTransaction.Query()
 	query = ApplyBaseFilters(ctx, query, f, r.queryOpts)
+	var err error
 	if f != nil {
-		query = r.queryOpts.applyEntityQueryOptions(ctx, f, query)
+		query, err = r.queryOpts.applyEntityQueryOptions(ctx, f, query)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	result, err := query.All(ctx)
@@ -590,8 +610,12 @@ func (r *walletRepository) CountWalletTransactions(ctx context.Context, f *types
 	client := r.client.Reader(ctx)
 	query := client.WalletTransaction.Query()
 	query = ApplyBaseFilters(ctx, query, f, r.queryOpts)
+	var err error
 	if f != nil {
-		query = r.queryOpts.applyEntityQueryOptions(ctx, f, query)
+		query, err = r.queryOpts.applyEntityQueryOptions(ctx, f, query)
+		if err != nil {
+			return 0, err
+		}
 	}
 
 	count, err := query.Count(ctx)
@@ -623,7 +647,7 @@ func (r *walletRepository) UpdateTransactionStatus(ctx context.Context, id strin
 			wallettransaction.StatusEQ(string(types.StatusPublished)),
 			wallettransaction.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
-		SetTransactionStatus(string(status)).
+		SetTransactionStatus(status).
 		SetUpdatedBy(types.GetUserID(ctx)).
 		SetUpdatedAt(time.Now().UTC()).
 		Save(ctx)
@@ -667,7 +691,7 @@ func (r *walletRepository) UpdateTransaction(ctx context.Context, tx *walletdoma
 			wallettransaction.StatusEQ(string(types.StatusPublished)),
 			wallettransaction.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
-		SetTransactionStatus(string(tx.TxStatus)).
+		SetTransactionStatus(tx.TxStatus).
 		SetCreditBalanceBefore(tx.CreditBalanceBefore).
 		SetCreditBalanceAfter(tx.CreditBalanceAfter).
 		SetCreditsAvailable(tx.CreditsAvailable).
@@ -741,6 +765,8 @@ func (o WalletTransactionQueryOptions) GetFieldName(field string) string {
 	switch field {
 	case "created_at":
 		return wallettransaction.FieldCreatedAt
+	case "created_by":
+		return wallettransaction.FieldCreatedBy
 	case "updated_at":
 		return wallettransaction.FieldUpdatedAt
 	case "amount":
@@ -750,26 +776,28 @@ func (o WalletTransactionQueryOptions) GetFieldName(field string) string {
 	}
 }
 
-func (o WalletTransactionQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.WalletTransactionFilter, query WalletTransactionQuery) WalletTransactionQuery {
+func (o WalletTransactionQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.WalletTransactionFilter, query WalletTransactionQuery) (WalletTransactionQuery, error) {
 	if f == nil {
-		return query
+		return query, nil
 	}
+
+	var err error
 
 	if f.WalletID != nil {
 		query = query.Where(wallettransaction.WalletID(*f.WalletID))
 	}
 
 	if f.Type != nil {
-		query = query.Where(wallettransaction.Type(string(*f.Type)))
+		query = query.Where(wallettransaction.Type(*f.Type))
 	}
 
 	if f.TransactionStatus != nil {
-		query = query.Where(wallettransaction.TransactionStatus(string(*f.TransactionStatus)))
+		query = query.Where(wallettransaction.TransactionStatus(*f.TransactionStatus))
 	}
 
 	if f.ReferenceType != nil && f.ReferenceID != nil {
 		query = query.Where(
-			wallettransaction.ReferenceType(*f.ReferenceType),
+			wallettransaction.ReferenceType(types.WalletTxReferenceType(*f.ReferenceType)),
 			wallettransaction.ReferenceID(*f.ReferenceID),
 		)
 	}
@@ -797,14 +825,40 @@ func (o WalletTransactionQueryOptions) applyEntityQueryOptions(_ context.Context
 	}
 
 	if f.TransactionReason != nil {
-		query = query.Where(wallettransaction.TransactionReason(string(*f.TransactionReason)))
+		query = query.Where(wallettransaction.TransactionReason(types.TransactionReason(*f.TransactionReason)))
 	}
 
 	if f.Priority != nil {
 		query = query.Where(wallettransaction.Priority(*f.Priority))
 	}
 
-	return query
+	// Apply filters using the generic function
+	if f.Filters != nil {
+		query, err = dsl.ApplyFilters[WalletTransactionQuery, predicate.WalletTransaction](
+			query,
+			f.Filters,
+			o.GetFieldResolver,
+			func(p dsl.Predicate) predicate.WalletTransaction { return predicate.WalletTransaction(p) },
+		)
+		if err != nil {
+			return query, err
+		}
+	}
+
+	// Apply sorts using the generic function
+	if f.Sort != nil {
+		query, err = dsl.ApplySorts[WalletTransactionQuery, wallettransaction.OrderOption](
+			query,
+			f.Sort,
+			o.GetFieldResolver,
+			func(o dsl.OrderFunc) wallettransaction.OrderOption { return wallettransaction.OrderOption(o) },
+		)
+		if err != nil {
+			return query, err
+		}
+	}
+
+	return query, nil
 }
 
 func (r *walletRepository) UpdateWallet(ctx context.Context, id string, w *walletdomain.Wallet) error {
@@ -832,30 +886,19 @@ func (r *walletRepository) UpdateWallet(ctx context.Context, id string, w *walle
 	if w.Metadata != nil {
 		update.SetMetadata(w.Metadata)
 	}
-	if w.AutoTopupTrigger != "" {
-		if w.AutoTopupTrigger == types.AutoTopupTriggerDisabled {
-			// When disabling auto top-up, set all related fields to NULL
-			update.SetAutoTopupTrigger(string(types.AutoTopupTriggerDisabled))
-			update.ClearAutoTopupMinBalance()
-			update.ClearAutoTopupAmount()
-		} else {
-			// When enabling auto top-up, set all required fields
-			update.SetAutoTopupTrigger(string(w.AutoTopupTrigger))
-			update.SetAutoTopupMinBalance(w.AutoTopupMinBalance)
-			update.SetAutoTopupAmount(w.AutoTopupAmount)
-		}
+	if w.AutoTopup != nil {
+		update.SetAutoTopup(w.AutoTopup)
 	}
 	// Check if Config has any non-nil fields
 	if w.Config.AllowedPriceTypes != nil {
 		update.SetConfig(w.Config)
 	}
-	if w.AlertConfig != nil {
-		update.SetAlertConfig(w.AlertConfig)
+	if w.AlertSettings != nil {
+		update.SetAlertSettings(*w.AlertSettings)
 	}
 	if w.AlertState != "" {
-		update.SetAlertState(w.AlertState)
+		update.SetAlertState(types.AlertState(w.AlertState))
 	}
-	update.SetAlertEnabled(w.AlertEnabled)
 	update.SetUpdatedAt(time.Now().UTC())
 	update.SetUpdatedBy(types.GetUserID(ctx))
 
@@ -929,12 +972,7 @@ func (r *walletRepository) GetWalletsByFilter(ctx context.Context, filter *types
 
 	// Apply status filter
 	if filter.Status != nil {
-		query = query.Where(wallet.WalletStatusEQ(string(*filter.Status)))
-	}
-
-	// Apply alert enabled filter
-	if filter.AlertEnabled != nil {
-		query = query.Where(wallet.AlertEnabledEQ(*filter.AlertEnabled))
+		query = query.Where(wallet.WalletStatusEQ(*filter.Status))
 	}
 
 	// Apply wallet IDs filter
@@ -1052,4 +1090,94 @@ func (r *walletRepository) GetCreditTopupsForExport(ctx context.Context, tenantI
 	}
 
 	return result, nil
+}
+
+func (o WalletTransactionQueryOptions) GetFieldResolver(st string) (string, error) {
+	fieldName := o.GetFieldName(st)
+	if fieldName == "" {
+		return "", ierr.NewErrorf("unknown field name '%s' in wallet transaction query", st).
+			WithHintf("Unknown field name '%s' in wallet transaction query", st).
+			Mark(ierr.ErrValidation)
+	}
+	return fieldName, nil
+}
+
+// GetCreditsAvailableBreakdown retrieves the breakdown of available credits by type (purchased, free)
+func (r *walletRepository) GetCreditsAvailableBreakdown(ctx context.Context, walletID string) (*types.CreditBreakdown, error) {
+	span := StartRepositorySpan(ctx, "wallet", "get_credits_available_breakdown", map[string]interface{}{
+		"wallet_id": walletID,
+	})
+	defer FinishSpan(span)
+
+	tenantID := types.GetTenantID(ctx)
+	envID := types.GetEnvironmentID(ctx)
+
+	client := r.client.Reader(ctx)
+
+	// Use raw SQL for complex aggregation query
+	query := `
+		SELECT 
+			CASE 
+				WHEN transaction_reason IN ('PURCHASED_CREDIT_INVOICED', 'PURCHASED_CREDIT_DIRECT') THEN 'PURCHASED'
+				WHEN transaction_reason IN ('FREE_CREDIT_GRANT', 'SUBSCRIPTION_CREDIT_GRANT') THEN 'FREE'
+			END AS credit_type,
+			SUM(credits_available) AS total_credits_available
+		FROM wallet_transactions
+		WHERE tenant_id = $1
+			AND environment_id = $2
+			AND wallet_id = $3
+			AND type = 'credit'
+			AND transaction_status = 'completed'
+			AND status = 'published'
+		GROUP BY credit_type
+		ORDER BY credit_type
+	`
+
+	rows, err := client.QueryContext(ctx, query, tenantID, envID, walletID)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to fetch credits available breakdown").
+			WithReportableDetails(map[string]interface{}{
+				"wallet_id": walletID,
+				"tenant_id": tenantID,
+				"env_id":    envID,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	breakdown := &types.CreditBreakdown{
+		Purchased: decimal.Zero,
+		Free:      decimal.Zero,
+	}
+
+	for rows.Next() {
+		var creditType string
+		var total decimal.Decimal
+
+		err := rows.Scan(&creditType, &total)
+		if err != nil {
+			SetSpanError(span, err)
+			return nil, ierr.WithError(err).
+				WithHint("Failed to scan credit breakdown row").
+				Mark(ierr.ErrDatabase)
+		}
+
+		switch creditType {
+		case "PURCHASED":
+			breakdown.Purchased = total
+		case "FREE":
+			breakdown.Free = total
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to iterate credit breakdown rows").
+			Mark(ierr.ErrDatabase)
+	}
+
+	return breakdown, nil
 }

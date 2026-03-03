@@ -57,16 +57,27 @@ type Aggregation struct {
 
 	// Field is the key in $event.properties on which the aggregation is to be applied
 	// For ex if the aggregation type is sum for API usage, the field could be "duration_ms"
+	// Ignored when Expression is set.
 	Field string `json:"field,omitempty"`
+
+	// Expression is an optional CEL expression to compute per-event quantity from event.properties.
+	// When set, it replaces Field-based extraction. Property names are used directly (e.g., token * duration * pixel).
+	Expression string `json:"expression,omitempty"`
 
 	// Multiplier is the multiplier for the aggregation
 	// For ex if the aggregation type is sum_with_multiplier for API usage, the multiplier could be 1000
 	// to scale up by a factor of 1000. If not provided, it will be null.
-	Multiplier *decimal.Decimal `json:"multiplier,omitempty"`
+	Multiplier *decimal.Decimal `json:"multiplier,omitempty" swaggertype:"string"`
 
 	// BucketSize is used only for MAX aggregation when windowed aggregation is needed
 	// It defines the size of time windows to calculate max values within
 	BucketSize types.WindowSize `json:"bucket_size,omitempty"`
+
+	// GroupBy is the property name in event.properties to group by before aggregating.
+	// Currently only supported for MAX aggregation with bucket_size.
+	// When set, aggregation is applied per unique value of this property within each bucket,
+	// then the per-group results are summed to produce the bucket total.
+	GroupBy string `json:"group_by,omitempty"`
 }
 
 // FromEnt converts an Ent Meter to a domain Meter
@@ -91,8 +102,10 @@ func FromEnt(e *ent.Meter) *Meter {
 		Aggregation: Aggregation{
 			Type:       e.Aggregation.Type,
 			Field:      e.Aggregation.Field,
+			Expression: e.Aggregation.Expression,
 			Multiplier: e.Aggregation.Multiplier,
 			BucketSize: e.Aggregation.BucketSize,
+			GroupBy:    e.Aggregation.GroupBy,
 		},
 		Filters:       filters,
 		ResetUsage:    types.ResetUsage(e.ResetUsage),
@@ -140,8 +153,10 @@ func (m *Meter) ToEntAggregation() schema.MeterAggregation {
 	return schema.MeterAggregation{
 		Type:       m.Aggregation.Type,
 		Field:      m.Aggregation.Field,
+		Expression: m.Aggregation.Expression,
 		Multiplier: m.Aggregation.Multiplier,
 		BucketSize: m.Aggregation.BucketSize,
+		GroupBy:    m.Aggregation.GroupBy,
 	}
 }
 
@@ -170,9 +185,10 @@ func (m *Meter) Validate() error {
 			}).
 			Mark(ierr.ErrValidation)
 	}
-	if m.Aggregation.Type.RequiresField() && m.Aggregation.Field == "" {
-		return ierr.NewError("field is required for aggregation type").
-			WithHint("Please specify a field for this aggregation type").
+	// For types that require a value: either Field OR Expression must be set
+	if m.Aggregation.Type.RequiresField() && m.Aggregation.Field == "" && m.Aggregation.Expression == "" {
+		return ierr.NewError("field or expression is required for aggregation type").
+			WithHint("Please specify a field or expression for this aggregation type").
 			WithReportableDetails(map[string]interface{}{
 				"aggregation_type": m.Aggregation.Type,
 			}).
@@ -193,18 +209,18 @@ func (m *Meter) Validate() error {
 				Mark(ierr.ErrValidation)
 		}
 	}
-	// Validate bucket_size is only used with MAX aggregation
-	if m.Aggregation.BucketSize != "" && m.Aggregation.Type != types.AggregationMax {
-		return ierr.NewError("bucket_size can only be used with MAX aggregation").
-			WithHint("BucketSize is only valid for MAX aggregation type").
+	// Validate bucket_size is only used with MAX or SUM aggregation
+	if m.Aggregation.BucketSize != "" && m.Aggregation.Type != types.AggregationMax && m.Aggregation.Type != types.AggregationSum {
+		return ierr.NewError("bucket_size can only be used with MAX or SUM aggregation").
+			WithHint("BucketSize is only valid for MAX or SUM aggregation type").
 			WithReportableDetails(map[string]interface{}{
 				"aggregation_type": m.Aggregation.Type,
 				"bucket_size":      m.Aggregation.BucketSize,
 			}).
 			Mark(ierr.ErrValidation)
 	}
-	// If bucket_size is provided for MAX aggregation, validate it's a valid window size
-	if m.IsBucketedMaxMeter() {
+	// If bucket_size is provided for MAX or SUM aggregation, validate it's a valid window size
+	if m.IsBucketedMaxMeter() || m.IsBucketedSumMeter() {
 		if err := m.Aggregation.BucketSize.Validate(); err != nil {
 			return ierr.NewError("invalid bucket_size").
 				WithHint("Please provide a valid window size for bucket_size").
@@ -213,6 +229,17 @@ func (m *Meter) Validate() error {
 				}).
 				Mark(ierr.ErrValidation)
 		}
+	}
+	// Validate group_by is only used with MAX aggregation that has bucket_size
+	if m.Aggregation.GroupBy != "" && !m.IsBucketedMaxMeter() {
+		return ierr.NewError("group_by can only be used with MAX aggregation that has bucket_size").
+			WithHint("GroupBy is only valid for MAX aggregation type with a bucket_size configured").
+			WithReportableDetails(map[string]interface{}{
+				"aggregation_type": m.Aggregation.Type,
+				"bucket_size":      m.Aggregation.BucketSize,
+				"group_by":         m.Aggregation.GroupBy,
+			}).
+			Mark(ierr.ErrValidation)
 	}
 
 	for _, filter := range m.Filters {
@@ -238,9 +265,19 @@ func (m *Meter) IsBucketedMaxMeter() bool {
 	return m.Aggregation.Type == types.AggregationMax && m.Aggregation.BucketSize != ""
 }
 
+// IsBucketedSumMeter returns true if this is a sum aggregation meter with bucket size
+func (m *Meter) IsBucketedSumMeter() bool {
+	return m.Aggregation.Type == types.AggregationSum && m.Aggregation.BucketSize != ""
+}
+
 // HasBucketSize returns true if this meter has a bucket size configured
 func (m *Meter) HasBucketSize() bool {
 	return m.Aggregation.BucketSize != ""
+}
+
+// HasGroupBy returns true if this meter has a group_by property configured
+func (m *Meter) HasGroupBy() bool {
+	return m.Aggregation.GroupBy != ""
 }
 
 // Constructor for creating new meters with defaults

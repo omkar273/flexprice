@@ -64,11 +64,6 @@ var commands = []Command{
 		Run:         internal.ImportPricing,
 	},
 	{
-		Name:        "sync-plan-prices",
-		Description: "Synchronize plan prices to all active subscriptions",
-		Run:         internal.SyncPlanPrices,
-	},
-	{
 		Name:        "reprocess-events",
 		Description: "Reprocess events",
 		Run:         internal.ReprocessEventsFromEnv,
@@ -108,6 +103,26 @@ var commands = []Command{
 		Description: "Process CSV file to create features and prices for serverless plan",
 		Run:         internal.ProcessCSVFeatures,
 	},
+	{
+		Name:        "credit-usage-report",
+		Description: "Generate credit usage report for customers in a tenant/environment",
+		Run:         internal.GenerateCreditUsageReport,
+	},
+	{
+		Name:        "import-features",
+		Description: "Import features from a CSV file",
+		Run:         internal.ImportFeatures,
+	},
+	{
+		Name:        "migrate-cga",
+		Description: "Migrate existing Credit Grant Applications to new structure (ensure environment_id is set)",
+		Run:         internal.MigrateCGA,
+	},
+	{
+		Name:        "sync-price-to-subscriptions",
+		Description: "Sync a price to all subscriptions with the same plan and start date by creating new line items",
+		Run:         internal.SyncPriceToSubscriptions,
+	},
 }
 
 // runBulkReprocessEventsCommand wraps the bulk reprocess events with command line parameters
@@ -116,6 +131,7 @@ func runBulkReprocessEventsCommand() error {
 	environmentID := os.Getenv("ENVIRONMENT_ID")
 	eventName := os.Getenv("EVENT_NAME")
 	batchSizeStr := os.Getenv("BATCH_SIZE")
+	externalCustomerID := os.Getenv("EXTERNAL_CUSTOMER_ID")
 
 	if tenantID == "" || environmentID == "" {
 		return fmt.Errorf("TENANT_ID and ENVIRONMENT_ID are required")
@@ -129,10 +145,11 @@ func runBulkReprocessEventsCommand() error {
 	}
 
 	params := internal.BulkReprocessEventsParams{
-		TenantID:      tenantID,
-		EnvironmentID: environmentID,
-		EventName:     eventName,
-		BatchSize:     batchSize,
+		TenantID:           tenantID,
+		EnvironmentID:      environmentID,
+		EventName:          eventName,
+		BatchSize:          batchSize,
+		ExternalCustomerID: externalCustomerID,
 	}
 
 	return internal.BulkReprocessEvents(params)
@@ -161,6 +178,7 @@ func main() {
 		dryRun             string
 		planID             string
 		addonID            string
+		workerCount        string
 	)
 
 	flag.BoolVar(&listCommands, "list", false, "List all available commands")
@@ -183,6 +201,7 @@ func main() {
 	flag.StringVar(&batchSize, "batch-size", "100", "Batch size for reprocessing")
 	flag.StringVar(&dryRun, "dry-run", "false", "Dry run mode (true/false)")
 	flag.StringVar(&addonID, "addon-id", "", "Addon ID for operations")
+	flag.StringVar(&workerCount, "worker-count", "10", "Number of concurrent workers for parallel processing")
 	flag.Parse()
 
 	if listCommands {
@@ -251,6 +270,9 @@ func main() {
 	}
 	if dryRun != "" {
 		os.Setenv("DRY_RUN", dryRun)
+	}
+	if workerCount != "" {
+		os.Setenv("WORKER_COUNT", workerCount)
 	}
 
 	// Find and run the command

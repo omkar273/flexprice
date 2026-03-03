@@ -14,12 +14,13 @@ type Repository interface {
 	GetUsage(ctx context.Context, params *UsageParams) (*AggregationResult, error)
 	GetUsageWithFilters(ctx context.Context, params *UsageWithFiltersParams) ([]*AggregationResult, error)
 	GetEvents(ctx context.Context, params *GetEventsParams) ([]*Event, uint64, error)
+	GetEventByID(ctx context.Context, eventID string) (*Event, error)
 	FindUnprocessedEvents(ctx context.Context, params *FindUnprocessedEventsParams) ([]*Event, error)
 	FindUnprocessedEventsFromFeatureUsage(ctx context.Context, params *FindUnprocessedEventsParams) ([]*Event, error)
 	GetDistinctEventNames(ctx context.Context, externalCustomerID string, startTime, endTime time.Time) ([]string, error)
 
 	// Monitoring methods
-	GetTotalEventCount(ctx context.Context, startTime, endTime time.Time) uint64
+	GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) (*EventCountResult, error)
 }
 
 // ProcessedEventRepository defines operations for processed events
@@ -52,22 +53,32 @@ type ProcessedEventRepository interface {
 	GetDetailedUsageAnalytics(ctx context.Context, params *UsageAnalyticsParams) ([]*DetailedUsageAnalytic, error)
 }
 
+// RawEventRepository defines operations for raw events
+type RawEventRepository interface {
+	// FindRawEvents finds raw events with filtering and keyset pagination
+	FindRawEvents(ctx context.Context, params *FindRawEventsParams) ([]*RawEvent, error)
+
+	// FindUnprocessedRawEvents finds raw events that haven't been processed yet
+	// Uses ANTI JOIN with feature_usage table to exclude already processed events
+	FindUnprocessedRawEvents(ctx context.Context, params *FindRawEventsParams) ([]*RawEvent, *KeysetCursor, error)
+}
+
 // Additional types needed for the new methods
 
 // PeriodFeatureTotal represents aggregated usage for a feature in a period
 type PeriodFeatureTotal struct {
 	FeatureID string          `json:"feature_id"`
-	Quantity  decimal.Decimal `json:"quantity"`
-	FreeUnits decimal.Decimal `json:"free_units"`
-	Cost      decimal.Decimal `json:"cost"`
+	Quantity  decimal.Decimal `json:"quantity" swaggertype:"string"`
+	FreeUnits decimal.Decimal `json:"free_units" swaggertype:"string"`
+	Cost      decimal.Decimal `json:"cost" swaggertype:"string"`
 }
 
 // UsageAnalytic represents usage analytics data grouped by source and feature
 type UsageAnalytic struct {
 	Source    string          `json:"source"`
 	FeatureID string          `json:"feature_id"`
-	Cost      decimal.Decimal `json:"cost"`
-	Usage     decimal.Decimal `json:"usage"`
+	Cost      decimal.Decimal `json:"cost" swaggertype:"string"`
+	Usage     decimal.Decimal `json:"usage" swaggertype:"string"`
 }
 
 type UsageParams struct {
@@ -98,6 +109,11 @@ type UsageParams struct {
 	// - Custom business cycles (fiscal months, quarterly periods)
 	// - Multi-tenant billing with different anchor dates per customer
 	BillingAnchor *time.Time `json:"billing_anchor,omitempty"`
+	// GroupByProperty is the property name in event.properties to group by before aggregating.
+	// When set, aggregation is applied per unique value of this property within each bucket,
+	// then the per-group results are summed to produce the bucket total.
+	// Currently only supported for MAX aggregation with bucket_size.
+	GroupByProperty string `json:"group_by_property,omitempty"`
 }
 
 // UsageSummaryParams defines parameters for querying pre-computed usage
@@ -162,6 +178,18 @@ type EventIterator struct {
 	ID        string
 }
 
+// EventCountPoint represents a single time-series data point for event counts
+type EventCountPoint struct {
+	Timestamp  time.Time `json:"timestamp"`
+	EventCount uint64    `json:"event_count"`
+}
+
+// EventCountResult represents the result of a windowed event count query
+type EventCountResult struct {
+	TotalCount uint64            `json:"total_count"`
+	Points     []EventCountPoint `json:"points,omitempty"`
+}
+
 // FilterGroup represents a group of filters with priority
 type FilterGroup struct {
 	// ID is the identifier for the filter group. We are using the price ID
@@ -187,4 +215,21 @@ type FeatureUsageParams struct {
 	PriceID       string `json:"price_id"`
 	MeterID       string `json:"meter_id"`
 	SubLineItemID string `json:"sub_line_item_id"`
+	// QuerySource: when InvoiceCreation, ClickHouse uses FINAL for ReplacingMergeTree deduplication; other sources do not.
+	Source types.UsageSource `json:"query_source,omitempty"`
+}
+
+// Cost Usage Params
+
+type GetCostUsageEventsParams struct {
+	StartTime   time.Time `json:"start_time" validate:"required"`
+	EndTime     time.Time `json:"end_time" validate:"required"`
+	CustomerID  string    `json:"customer_id"`
+	CostSheetID string    `json:"costsheet_id"`
+	MeterID     string    `json:"meter_id"`
+	FeatureID   string    `json:"feature_id"`
+	PriceID     string    `json:"price_id"`
+	Offset      int       `json:"offset"`
+	Limit       int       `json:"limit"`
+	CountTotal  bool      `json:"count_total"`
 }

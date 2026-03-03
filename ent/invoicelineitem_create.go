@@ -13,6 +13,7 @@ import (
 	"github.com/flexprice/flexprice/ent/couponapplication"
 	"github.com/flexprice/flexprice/ent/invoice"
 	"github.com/flexprice/flexprice/ent/invoicelineitem"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -154,15 +155,15 @@ func (ilic *InvoiceLineItemCreate) SetNillableEntityID(s *string) *InvoiceLineIt
 }
 
 // SetEntityType sets the "entity_type" field.
-func (ilic *InvoiceLineItemCreate) SetEntityType(s string) *InvoiceLineItemCreate {
-	ilic.mutation.SetEntityType(s)
+func (ilic *InvoiceLineItemCreate) SetEntityType(tliet types.InvoiceLineItemEntityType) *InvoiceLineItemCreate {
+	ilic.mutation.SetEntityType(tliet)
 	return ilic
 }
 
 // SetNillableEntityType sets the "entity_type" field if the given value is not nil.
-func (ilic *InvoiceLineItemCreate) SetNillableEntityType(s *string) *InvoiceLineItemCreate {
-	if s != nil {
-		ilic.SetEntityType(*s)
+func (ilic *InvoiceLineItemCreate) SetNillableEntityType(tliet *types.InvoiceLineItemEntityType) *InvoiceLineItemCreate {
+	if tliet != nil {
+		ilic.SetEntityType(*tliet)
 	}
 	return ilic
 }
@@ -196,15 +197,15 @@ func (ilic *InvoiceLineItemCreate) SetNillablePriceID(s *string) *InvoiceLineIte
 }
 
 // SetPriceType sets the "price_type" field.
-func (ilic *InvoiceLineItemCreate) SetPriceType(s string) *InvoiceLineItemCreate {
-	ilic.mutation.SetPriceType(s)
+func (ilic *InvoiceLineItemCreate) SetPriceType(tt types.PriceType) *InvoiceLineItemCreate {
+	ilic.mutation.SetPriceType(tt)
 	return ilic
 }
 
 // SetNillablePriceType sets the "price_type" field if the given value is not nil.
-func (ilic *InvoiceLineItemCreate) SetNillablePriceType(s *string) *InvoiceLineItemCreate {
-	if s != nil {
-		ilic.SetPriceType(*s)
+func (ilic *InvoiceLineItemCreate) SetNillablePriceType(tt *types.PriceType) *InvoiceLineItemCreate {
+	if tt != nil {
+		ilic.SetPriceType(*tt)
 	}
 	return ilic
 }
@@ -361,6 +362,54 @@ func (ilic *InvoiceLineItemCreate) SetMetadata(m map[string]string) *InvoiceLine
 	return ilic
 }
 
+// SetCommitmentInfo sets the "commitment_info" field.
+func (ilic *InvoiceLineItemCreate) SetCommitmentInfo(ti *types.CommitmentInfo) *InvoiceLineItemCreate {
+	ilic.mutation.SetCommitmentInfo(ti)
+	return ilic
+}
+
+// SetPrepaidCreditsApplied sets the "prepaid_credits_applied" field.
+func (ilic *InvoiceLineItemCreate) SetPrepaidCreditsApplied(d decimal.Decimal) *InvoiceLineItemCreate {
+	ilic.mutation.SetPrepaidCreditsApplied(d)
+	return ilic
+}
+
+// SetNillablePrepaidCreditsApplied sets the "prepaid_credits_applied" field if the given value is not nil.
+func (ilic *InvoiceLineItemCreate) SetNillablePrepaidCreditsApplied(d *decimal.Decimal) *InvoiceLineItemCreate {
+	if d != nil {
+		ilic.SetPrepaidCreditsApplied(*d)
+	}
+	return ilic
+}
+
+// SetLineItemDiscount sets the "line_item_discount" field.
+func (ilic *InvoiceLineItemCreate) SetLineItemDiscount(d decimal.Decimal) *InvoiceLineItemCreate {
+	ilic.mutation.SetLineItemDiscount(d)
+	return ilic
+}
+
+// SetNillableLineItemDiscount sets the "line_item_discount" field if the given value is not nil.
+func (ilic *InvoiceLineItemCreate) SetNillableLineItemDiscount(d *decimal.Decimal) *InvoiceLineItemCreate {
+	if d != nil {
+		ilic.SetLineItemDiscount(*d)
+	}
+	return ilic
+}
+
+// SetInvoiceLevelDiscount sets the "invoice_level_discount" field.
+func (ilic *InvoiceLineItemCreate) SetInvoiceLevelDiscount(d decimal.Decimal) *InvoiceLineItemCreate {
+	ilic.mutation.SetInvoiceLevelDiscount(d)
+	return ilic
+}
+
+// SetNillableInvoiceLevelDiscount sets the "invoice_level_discount" field if the given value is not nil.
+func (ilic *InvoiceLineItemCreate) SetNillableInvoiceLevelDiscount(d *decimal.Decimal) *InvoiceLineItemCreate {
+	if d != nil {
+		ilic.SetInvoiceLevelDiscount(*d)
+	}
+	return ilic
+}
+
 // SetID sets the "id" field.
 func (ilic *InvoiceLineItemCreate) SetID(s string) *InvoiceLineItemCreate {
 	ilic.mutation.SetID(s)
@@ -446,6 +495,18 @@ func (ilic *InvoiceLineItemCreate) defaults() {
 		v := invoicelineitem.DefaultQuantity
 		ilic.mutation.SetQuantity(v)
 	}
+	if _, ok := ilic.mutation.PrepaidCreditsApplied(); !ok {
+		v := invoicelineitem.DefaultPrepaidCreditsApplied
+		ilic.mutation.SetPrepaidCreditsApplied(v)
+	}
+	if _, ok := ilic.mutation.LineItemDiscount(); !ok {
+		v := invoicelineitem.DefaultLineItemDiscount
+		ilic.mutation.SetLineItemDiscount(v)
+	}
+	if _, ok := ilic.mutation.InvoiceLevelDiscount(); !ok {
+		v := invoicelineitem.DefaultInvoiceLevelDiscount
+		ilic.mutation.SetInvoiceLevelDiscount(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -481,6 +542,11 @@ func (ilic *InvoiceLineItemCreate) check() error {
 	if v, ok := ilic.mutation.CustomerID(); ok {
 		if err := invoicelineitem.CustomerIDValidator(v); err != nil {
 			return &ValidationError{Name: "customer_id", err: fmt.Errorf(`ent: validator failed for field "InvoiceLineItem.customer_id": %w`, err)}
+		}
+	}
+	if v, ok := ilic.mutation.PriceType(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "price_type", err: fmt.Errorf(`ent: validator failed for field "InvoiceLineItem.price_type": %w`, err)}
 		}
 	}
 	if _, ok := ilic.mutation.Amount(); !ok {
@@ -638,6 +704,22 @@ func (ilic *InvoiceLineItemCreate) createSpec() (*InvoiceLineItem, *sqlgraph.Cre
 	if value, ok := ilic.mutation.Metadata(); ok {
 		_spec.SetField(invoicelineitem.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
+	}
+	if value, ok := ilic.mutation.CommitmentInfo(); ok {
+		_spec.SetField(invoicelineitem.FieldCommitmentInfo, field.TypeJSON, value)
+		_node.CommitmentInfo = value
+	}
+	if value, ok := ilic.mutation.PrepaidCreditsApplied(); ok {
+		_spec.SetField(invoicelineitem.FieldPrepaidCreditsApplied, field.TypeOther, value)
+		_node.PrepaidCreditsApplied = &value
+	}
+	if value, ok := ilic.mutation.LineItemDiscount(); ok {
+		_spec.SetField(invoicelineitem.FieldLineItemDiscount, field.TypeOther, value)
+		_node.LineItemDiscount = &value
+	}
+	if value, ok := ilic.mutation.InvoiceLevelDiscount(); ok {
+		_spec.SetField(invoicelineitem.FieldInvoiceLevelDiscount, field.TypeOther, value)
+		_node.InvoiceLevelDiscount = &value
 	}
 	if nodes := ilic.mutation.InvoiceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

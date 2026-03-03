@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/security"
+	temporalService "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/types"
 )
 
@@ -175,6 +177,134 @@ func (s *connectionService) encryptMetadata(encryptedSecretData types.Connection
 			}
 		}
 
+	case types.SecretProviderQuickBooks:
+		if encryptedSecretData.QuickBooks == nil {
+			s.Logger.Warnw("QuickBooks metadata is nil, cannot encrypt", "provider_type", providerType)
+			return types.ConnectionMetadata{}, ierr.NewError("QuickBooks metadata is required").
+				WithHint("QuickBooks connection requires encrypted_secret_data with client_id, client_secret, realm_id, and environment").
+				Mark(ierr.ErrValidation)
+		}
+		// Encrypt client credentials
+		encryptedClientID, err := s.encryptionService.Encrypt(encryptedSecretData.QuickBooks.ClientID)
+		if err != nil {
+			return types.ConnectionMetadata{}, err
+		}
+		encryptedClientSecret, err := s.encryptionService.Encrypt(encryptedSecretData.QuickBooks.ClientSecret)
+		if err != nil {
+			return types.ConnectionMetadata{}, err
+		}
+
+		// Encrypt optional auth_code if provided (for initial setup)
+		var encryptedAuthCode string
+		if encryptedSecretData.QuickBooks.AuthCode != "" {
+			encryptedAuthCode, err = s.encryptionService.Encrypt(encryptedSecretData.QuickBooks.AuthCode)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+		}
+
+		// Encrypt tokens if already present (for connection updates or manual token provision)
+		var encryptedAccessToken, encryptedRefreshToken string
+		if encryptedSecretData.QuickBooks.AccessToken != "" {
+			encryptedAccessToken, err = s.encryptionService.Encrypt(encryptedSecretData.QuickBooks.AccessToken)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+		}
+		if encryptedSecretData.QuickBooks.RefreshToken != "" {
+			encryptedRefreshToken, err = s.encryptionService.Encrypt(encryptedSecretData.QuickBooks.RefreshToken)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+		}
+
+		// Encrypt webhook verifier token if provided (optional, for webhook security)
+		var encryptedWebhookVerifierToken string
+		if encryptedSecretData.QuickBooks.WebhookVerifierToken != "" {
+			encryptedWebhookVerifierToken, err = s.encryptionService.Encrypt(encryptedSecretData.QuickBooks.WebhookVerifierToken)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+		}
+
+		encryptedMetadata.QuickBooks = &types.QuickBooksConnectionMetadata{
+			ClientID:             encryptedClientID,
+			ClientSecret:         encryptedClientSecret,
+			AuthCode:             encryptedAuthCode,
+			RedirectURI:          encryptedSecretData.QuickBooks.RedirectURI,
+			AccessToken:          encryptedAccessToken,
+			RefreshToken:         encryptedRefreshToken,
+			RealmID:              encryptedSecretData.QuickBooks.RealmID,
+			Environment:          encryptedSecretData.QuickBooks.Environment,
+			IncomeAccountID:      encryptedSecretData.QuickBooks.IncomeAccountID,
+			WebhookVerifierToken: encryptedWebhookVerifierToken,
+		}
+
+	case types.SecretProviderNomod:
+		if encryptedSecretData.Nomod == nil {
+			s.Logger.Warnw("Nomod metadata is nil, cannot encrypt", "provider_type", providerType)
+			return types.ConnectionMetadata{}, ierr.NewError("Nomod metadata is required").
+				WithHint("Nomod connection requires encrypted_secret_data with api_key").
+				Mark(ierr.ErrValidation)
+		}
+		// Encrypt API key
+		encryptedAPIKey, err := s.encryptionService.Encrypt(encryptedSecretData.Nomod.APIKey)
+		if err != nil {
+			return types.ConnectionMetadata{}, err
+		}
+
+		nomodMeta := &types.NomodConnectionMetadata{
+			APIKey: encryptedAPIKey,
+		}
+
+		// Encrypt webhook secret if provided
+		if encryptedSecretData.Nomod.WebhookSecret != "" {
+			encryptedWebhookSecret, err := s.encryptionService.Encrypt(encryptedSecretData.Nomod.WebhookSecret)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+			nomodMeta.WebhookSecret = encryptedWebhookSecret
+		}
+
+		encryptedMetadata.Nomod = nomodMeta
+
+	case types.SecretProviderMoyasar:
+		if encryptedSecretData.Moyasar == nil {
+			s.Logger.Warnw("Moyasar metadata is nil, cannot encrypt", "provider_type", providerType)
+			return types.ConnectionMetadata{}, ierr.NewError("Moyasar metadata is required").
+				WithHint("Moyasar connection requires encrypted_secret_data with secret_key").
+				Mark(ierr.ErrValidation)
+		}
+		// Encrypt secret key (required)
+		encryptedSecretKey, err := s.encryptionService.Encrypt(encryptedSecretData.Moyasar.SecretKey)
+		if err != nil {
+			return types.ConnectionMetadata{}, err
+		}
+
+		moyasarMeta := &types.MoyasarConnectionMetadata{
+			SecretKey: encryptedSecretKey,
+		}
+
+		// Encrypt publishable key if provided (optional)
+		if encryptedSecretData.Moyasar.PublishableKey != "" {
+			encryptedPublishableKey, err := s.encryptionService.Encrypt(encryptedSecretData.Moyasar.PublishableKey)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+			moyasarMeta.PublishableKey = encryptedPublishableKey
+		}
+
+		// Encrypt webhook secret if provided (optional)
+		if encryptedSecretData.Moyasar.WebhookSecret != "" {
+			encryptedWebhookSecret, err := s.encryptionService.Encrypt(encryptedSecretData.Moyasar.WebhookSecret)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+			moyasarMeta.WebhookSecret = encryptedWebhookSecret
+		}
+
+		encryptedMetadata.Moyasar = moyasarMeta
+
 	default:
 		// For other providers or unknown types, use generic format
 		if encryptedSecretData.Generic != nil {
@@ -259,7 +389,47 @@ func (s *connectionService) CreateConnection(ctx context.Context, req dto.Create
 	conn.CreatedBy = types.GetUserID(ctx)
 	conn.UpdatedBy = types.GetUserID(ctx)
 
+	// Check if this is a Flexprice-managed S3 connection
+	if conn.ProviderType == types.SecretProviderS3 && conn.SyncConfig != nil && conn.SyncConfig.S3 != nil && conn.SyncConfig.S3.IsFlexpriceManaged {
+		s.Logger.Infow("creating flexprice-managed S3 connection",
+			"tenant_id", conn.TenantID,
+			"connection_id", conn.ID)
+
+		// Validate that Flexprice config has required credentials
+		if s.Config.FlexpriceS3Exports.AWSAccessKeyID == "" || s.Config.FlexpriceS3Exports.AWSSecretAccessKey == "" {
+			return nil, ierr.NewError("flexprice S3 exports not configured").
+				WithHint("FlexpriceS3Exports credentials are missing from configuration").
+				Mark(ierr.ErrSystem)
+		}
+
+		// Inject Flexprice credentials from config
+		conn.EncryptedSecretData.S3 = &types.S3ConnectionMetadata{
+			AWSAccessKeyID:     s.Config.FlexpriceS3Exports.AWSAccessKeyID,
+			AWSSecretAccessKey: s.Config.FlexpriceS3Exports.AWSSecretAccessKey,
+			AWSSessionToken:    s.Config.FlexpriceS3Exports.AWSSessionToken,
+		}
+
+		// Set bucket and region from config
+		conn.SyncConfig.S3.Bucket = s.Config.FlexpriceS3Exports.Bucket
+		conn.SyncConfig.S3.Region = s.Config.FlexpriceS3Exports.Region
+		// Tenant + Environment isolation: tenant_id/environment_id
+		conn.SyncConfig.S3.KeyPrefix = fmt.Sprintf("%s/%s", conn.TenantID, conn.EnvironmentID)
+
+		s.Logger.Infow("injected flexprice S3 credentials",
+			"bucket", conn.SyncConfig.S3.Bucket,
+			"region", conn.SyncConfig.S3.Region,
+			"key_prefix", conn.SyncConfig.S3.KeyPrefix,
+			"tenant_id", conn.TenantID,
+			"environment_id", conn.EnvironmentID)
+	}
+
 	// Encrypt metadata
+	s.Logger.Debugw("encrypting metadata",
+		"provider_type", conn.ProviderType,
+		"has_quickbooks", conn.EncryptedSecretData.QuickBooks != nil,
+		"has_stripe", conn.EncryptedSecretData.Stripe != nil,
+		"has_chargebee", conn.EncryptedSecretData.Chargebee != nil,
+		"has_s3", conn.EncryptedSecretData.S3 != nil)
 	encryptedMetadata, err := s.encryptMetadata(conn.EncryptedSecretData, conn.ProviderType)
 	if err != nil {
 		s.Logger.Errorw("failed to encrypt metadata", "error", err)
@@ -274,6 +444,31 @@ func (s *connectionService) CreateConnection(ctx context.Context, req dto.Create
 	}
 
 	s.Logger.Infow("connection created successfully", "connection_id", conn.ID)
+
+	// For QuickBooks connections with auth_code, exchange it immediately for tokens
+	// OAuth 2.0 auth codes expire quickly (typically 10 minutes), so we must exchange them ASAP
+	if conn.ProviderType == types.SecretProviderQuickBooks && s.IntegrationFactory != nil {
+		qbIntegration, err := s.IntegrationFactory.GetQuickBooksIntegration(ctx)
+		if err != nil {
+			s.Logger.Errorw("failed to get QuickBooks integration after connection creation",
+				"connection_id", conn.ID,
+				"error", err)
+			// Don't fail connection creation, but log the error
+		} else {
+			// Try to ensure valid access token (will exchange auth_code if present)
+			if err := qbIntegration.Client.EnsureValidAccessToken(ctx); err != nil {
+				s.Logger.Errorw("failed to exchange QuickBooks auth code for tokens",
+					"connection_id", conn.ID,
+					"error", err)
+				// Don't fail connection creation, but log the error
+				// User will need to re-authenticate
+			} else {
+				s.Logger.Infow("successfully exchanged QuickBooks auth code for tokens",
+					"connection_id", conn.ID)
+			}
+		}
+	}
+
 	return dto.ToConnectionResponse(conn), nil
 }
 
@@ -340,6 +535,32 @@ func (s *connectionService) UpdateConnection(ctx context.Context, id string, req
 	if req.SyncConfig != nil {
 		conn.SyncConfig = req.SyncConfig
 	}
+
+	// Update encrypted_secret_data if provided (e.g., webhook_verifier_token)
+	// Only process if there's actual provider-specific data (not just an empty wrapper struct)
+	if req.EncryptedSecretData != nil && req.EncryptedSecretData.QuickBooks != nil {
+		// Encrypt and merge the new secret data with existing data
+		encryptedMetadata, err := s.encryptMetadata(*req.EncryptedSecretData, conn.ProviderType)
+		if err != nil {
+			s.Logger.Errorw("failed to encrypt connection metadata during update", "error", err, "connection_id", id)
+			return nil, err
+		}
+
+		// Merge with existing encrypted_secret_data for QuickBooks
+		// This ensures we don't overwrite existing tokens (access_token, refresh_token, etc.)
+		if conn.ProviderType == types.SecretProviderQuickBooks {
+			existingData := conn.EncryptedSecretData
+			if existingData.QuickBooks == nil {
+				existingData.QuickBooks = &types.QuickBooksConnectionMetadata{}
+			}
+			if encryptedMetadata.QuickBooks != nil && encryptedMetadata.QuickBooks.WebhookVerifierToken != "" {
+				// Only update webhook_verifier_token, don't overwrite access_token, refresh_token, etc.
+				existingData.QuickBooks.WebhookVerifierToken = encryptedMetadata.QuickBooks.WebhookVerifierToken
+			}
+			conn.EncryptedSecretData = existingData
+		}
+	}
+
 	conn.UpdatedAt = time.Now()
 	conn.UpdatedBy = types.GetUserID(ctx)
 
@@ -361,6 +582,31 @@ func (s *connectionService) DeleteConnection(ctx context.Context, id string) err
 	if err != nil {
 		s.Logger.Errorw("failed to get connection for deletion", "error", err, "connection_id", id)
 		return err
+	}
+
+	// Get all scheduled tasks for the connection
+	schedTasks, err := s.ScheduledTaskRepo.GetByConnection(ctx, conn.ID)
+	if err != nil {
+		s.Logger.Errorw("failed to get scheduled tasks by connection", "error", err, "connection_id", id)
+		return err
+	}
+
+	scheduledTaskService := NewScheduledTaskService(
+		s.ScheduledTaskRepo,
+		s.ConnectionRepo,
+		temporalService.GetGlobalTemporalClient(),
+		s.Logger,
+		s.Config,
+	)
+
+	// Scheduled tasks cleanup
+	for _, schedTask := range schedTasks {
+		if err := scheduledTaskService.DeleteScheduledTask(ctx, schedTask.ID); err != nil {
+			s.Logger.Errorw("failed to delete scheduled task", "error", err, "scheduled_task_id", schedTask.ID)
+			return ierr.WithError(err).
+				WithHint("Failed to delete scheduled task").
+				Mark(ierr.ErrDatabase)
+		}
 	}
 
 	conn.UpdatedAt = time.Now()

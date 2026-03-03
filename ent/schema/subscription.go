@@ -53,7 +53,8 @@ func (Subscription) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
-			Default(string(types.SubscriptionStatusActive)),
+			Default(string(types.SubscriptionStatusActive)).
+			GoType(types.SubscriptionStatus("")),
 		field.String("currency").
 			SchemaType(map[string]string{
 				"postgres": "varchar(10)",
@@ -61,10 +62,8 @@ func (Subscription) Fields() []ent.Field {
 			NotEmpty().
 			Immutable(),
 		field.Time("billing_anchor").
-			Immutable().
 			Default(time.Now),
 		field.Time("start_date").
-			Immutable().
 			Default(time.Now),
 		field.Time("end_date").
 			Optional().
@@ -89,10 +88,12 @@ func (Subscription) Fields() []ent.Field {
 			Nillable(),
 		field.String("billing_cadence").
 			NotEmpty().
-			Immutable(),
+			Immutable().
+			GoType(types.BillingCadence("")),
 		field.String("billing_period").
 			NotEmpty().
-			Immutable(),
+			Immutable().
+			GoType(types.BillingPeriod("")),
 		field.Int("billing_period_count").
 			Default(1).
 			Immutable(),
@@ -107,7 +108,8 @@ func (Subscription) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
-			Default(string(types.PauseStatusNone)),
+			Default(string(types.PauseStatusNone)).
+			GoType(types.PauseStatus("")),
 		field.String("active_pause_id").
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
@@ -117,13 +119,21 @@ func (Subscription) Fields() []ent.Field {
 		field.String("billing_cycle").
 			NotEmpty().
 			Immutable().
-			Default(string(types.BillingCycleAnniversary)),
+			Default(string(types.BillingCycleAnniversary)).
+			GoType(types.BillingCycle("")),
 		field.Other("commitment_amount", decimal.Decimal{}).
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{
 				"postgres": "decimal(20,6)",
 			}),
+		field.String("commitment_duration").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Optional().
+			Nillable().
+			GoType(types.BillingPeriod("")),
 		field.Other("overage_factor", decimal.Decimal{}).
 			Optional().
 			Nillable().
@@ -132,13 +142,19 @@ func (Subscription) Fields() []ent.Field {
 				"postgres": "decimal(10,6)",
 			}),
 		// Payment behavior and collection method fields
-		field.Enum("payment_behavior").
-			Values("allow_incomplete", "default_incomplete", "error_if_incomplete", "default_active").
-			Default("default_active").
+		field.String("payment_behavior").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Default(string(types.PaymentBehaviorDefaultActive)).
+			GoType(types.PaymentBehavior("")).
 			Comment("Determines how subscription payments are handled"),
-		field.Enum("collection_method").
-			Values("charge_automatically", "send_invoice").
-			Default("charge_automatically").
+		field.String("collection_method").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Default(string(types.CollectionMethodChargeAutomatically)).
+			GoType(types.CollectionMethod("")).
 			Comment("Determines how invoices are collected"),
 		field.String("gateway_payment_method_id").
 			SchemaType(map[string]string{
@@ -151,7 +167,34 @@ func (Subscription) Fields() []ent.Field {
 		field.String("proration_behavior").
 			NotEmpty().
 			Immutable().
-			Default(string(types.ProrationBehaviorNone)),
+			Default(string(types.ProrationBehaviorNone)).
+			GoType(types.ProrationBehavior("")),
+		field.Bool("enable_true_up").
+			Default(false).
+			Comment("Enable Commitment True Up Fee"),
+		field.String("invoicing_customer_id").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Optional().
+			Nillable().
+			Comment("Customer ID to use for invoicing (can differ from the subscription customer)"),
+		field.String("parent_subscription_id").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Optional().
+			Nillable().
+			Comment("Parent subscription ID for hierarchy (e.g. child subscription under a parent)"),
+		// Payment terms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+		field.String("payment_terms").
+			SchemaType(map[string]string{
+				"postgres": "varchar(20)",
+			}).
+			Optional().
+			Nillable().
+			GoType(types.PaymentTerms("")).
+			Comment("Payment terms for invoice due date (e.g. 15 NET, 30 NET, 45 NET, 60 NET, 75 NET, 90 NET)"),
 	}
 }
 
@@ -161,11 +204,17 @@ func (Subscription) Edges() []ent.Edge {
 		edge.To("line_items", SubscriptionLineItem.Type),
 		edge.To("pauses", SubscriptionPause.Type),
 		edge.To("phases", SubscriptionPhase.Type),
+		edge.To("schedules", SubscriptionSchedule.Type).
+			Comment("Subscription can have multiple schedules for plan changes, addons, etc."),
 		edge.To("credit_grants", CreditGrant.Type),
 		edge.To("coupon_associations", CouponAssociation.Type).
 			Comment("Subscription can have multiple coupon associations"),
 		edge.To("coupon_applications", CouponApplication.Type).
 			Comment("Subscription can have multiple coupon applications"),
+		edge.To("invoicing_customer", Customer.Type).
+			Unique().
+			Field("invoicing_customer_id").
+			Comment("Customer to use for invoicing (can differ from the subscription customer)"),
 	}
 }
 

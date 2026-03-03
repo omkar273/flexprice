@@ -6,6 +6,7 @@ import (
 
 	"github.com/flexprice/flexprice/internal/domain/addon"
 	"github.com/flexprice/flexprice/internal/domain/addonassociation"
+	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/flexprice/flexprice/internal/validator"
 )
@@ -82,8 +83,10 @@ type ListAddonsResponse = types.ListResponse[*AddonResponse]
 type AddAddonToSubscriptionRequest struct {
 	AddonID   string                 `json:"addon_id" validate:"required"`
 	StartDate *time.Time             `json:"start_date,omitempty"`
-	EndDate   *time.Time             `json:"end_date,omitempty"`
 	Metadata  map[string]interface{} `json:"metadata"`
+
+	// LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)
+	LineItemCommitments map[string]*LineItemCommitmentConfig `json:"line_item_commitments,omitempty" validate:"omitempty,dive"`
 
 	// SkipEntityValidation is used to skip the entitlement check for the addon
 	// This is used to add an addon to a subscription without checking the entitlement compatibility
@@ -106,7 +109,6 @@ func (a *AddAddonToSubscriptionRequest) ToAddonAssociation(ctx context.Context, 
 		AddonID:       a.AddonID,
 		AddonStatus:   types.AddonStatusActive,
 		StartDate:     &startDate,
-		EndDate:       a.EndDate,
 		Metadata:      a.Metadata,
 		EnvironmentID: types.GetEnvironmentID(ctx),
 		BaseModel:     types.GetDefaultBaseModel(ctx),
@@ -119,13 +121,22 @@ func (r *AddAddonToSubscriptionRequest) Validate() error {
 		return err
 	}
 
+	if err := validateLineItemCommitments(r.LineItemCommitments); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // AddonAssociationResponse represents the response for an addon association
 type AddonAssociationResponse struct {
 	*addonassociation.AddonAssociation
+	Addon        *AddonResponse        `json:"addon,omitempty"`
+	Subscription *SubscriptionResponse `json:"subscription,omitempty"`
 }
+
+// ListAddonAssociationsResponse represents the response for listing addon associations
+type ListAddonAssociationsResponse = types.ListResponse[*AddonAssociationResponse]
 
 // GetActiveAddonAssociationRequest represents the request to get active addon associations
 type GetActiveAddonAssociationRequest struct {
@@ -133,6 +144,7 @@ type GetActiveAddonAssociationRequest struct {
 	EntityID   string                           `json:"entity_id" validate:"required"`
 	EntityType types.AddonAssociationEntityType `json:"entity_type" validate:"required"`
 	StartDate  *time.Time                       `json:"start_date,omitempty"`
+	EndDate    *time.Time                       `json:"end_date,omitempty"`
 }
 
 func (r *GetActiveAddonAssociationRequest) Validate() error {
@@ -143,6 +155,13 @@ func (r *GetActiveAddonAssociationRequest) Validate() error {
 
 	if err := r.EntityType.Validate(); err != nil {
 		return err
+	}
+
+	// Ensure end date is not before start date
+	if r.StartDate != nil && r.EndDate != nil && r.EndDate.Before(*r.StartDate) {
+		return ierr.NewError("end_date cannot be before start_date").
+			WithHint("Provide an end_date that is on or after start_date").
+			Mark(ierr.ErrValidation)
 	}
 	return nil
 }

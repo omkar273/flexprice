@@ -28,11 +28,14 @@ type Repository interface {
 	UpdateTransaction(ctx context.Context, tx *Transaction) error
 
 	// Credit/Debit specific operations
-	FindEligibleCredits(ctx context.Context, walletID string, requiredAmount decimal.Decimal, pageSize int) ([]*Transaction, error)
+	FindEligibleCredits(ctx context.Context, walletID string, requiredAmount decimal.Decimal, pageSize int, timeReference time.Time) ([]*Transaction, error)
 	ConsumeCredits(ctx context.Context, credits []*Transaction, amount decimal.Decimal) error
 	CreateTransaction(ctx context.Context, tx *Transaction) error
 	UpdateWalletBalance(ctx context.Context, walletID string, finalBalance, newCreditBalance decimal.Decimal) error
 
 	// Export operations
 	GetCreditTopupsForExport(ctx context.Context, tenantID, envID string, startTime, endTime time.Time, limit, offset int) ([]*CreditTopupsExportData, error)
+
+	// Credit breakdown operations
+	GetCreditsAvailableBreakdown(ctx context.Context, walletID string) (*types.CreditBreakdown, error)
 }

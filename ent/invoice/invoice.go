@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -87,6 +88,8 @@ const (
 	FieldInvoiceNumber = "invoice_number"
 	// FieldBillingSequence holds the string denoting the billing_sequence field in the database.
 	FieldBillingSequence = "billing_sequence"
+	// FieldTotalPrepaidCreditsApplied holds the string denoting the total_prepaid_credits_applied field in the database.
+	FieldTotalPrepaidCreditsApplied = "total_prepaid_credits_applied"
 	// FieldIdempotencyKey holds the string denoting the idempotency_key field in the database.
 	FieldIdempotencyKey = "idempotency_key"
 	// EdgeLineItems holds the string denoting the line_items edge name in mutations.
@@ -150,6 +153,7 @@ var Columns = []string{
 	FieldVersion,
 	FieldInvoiceNumber,
 	FieldBillingSequence,
+	FieldTotalPrepaidCreditsApplied,
 	FieldIdempotencyKey,
 }
 
@@ -181,9 +185,9 @@ var (
 	// InvoiceTypeValidator is a validator for the "invoice_type" field. It is called by the builders before save.
 	InvoiceTypeValidator func(string) error
 	// DefaultInvoiceStatus holds the default value on creation for the "invoice_status" field.
-	DefaultInvoiceStatus string
+	DefaultInvoiceStatus types.InvoiceStatus
 	// DefaultPaymentStatus holds the default value on creation for the "payment_status" field.
-	DefaultPaymentStatus string
+	DefaultPaymentStatus types.PaymentStatus
 	// CurrencyValidator is a validator for the "currency" field. It is called by the builders before save.
 	CurrencyValidator func(string) error
 	// DefaultAmountDue holds the default value on creation for the "amount_due" field.
@@ -206,6 +210,8 @@ var (
 	DefaultTotal decimal.Decimal
 	// DefaultVersion holds the default value on creation for the "version" field.
 	DefaultVersion int
+	// DefaultTotalPrepaidCreditsApplied holds the default value on creation for the "total_prepaid_credits_applied" field.
+	DefaultTotalPrepaidCreditsApplied decimal.Decimal
 )
 
 // OrderOption defines the ordering options for the Invoice queries.
@@ -389,6 +395,11 @@ func ByInvoiceNumber(opts ...sql.OrderTermOption) OrderOption {
 // ByBillingSequence orders the results by the billing_sequence field.
 func ByBillingSequence(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBillingSequence, opts...).ToFunc()
+}
+
+// ByTotalPrepaidCreditsApplied orders the results by the total_prepaid_credits_applied field.
+func ByTotalPrepaidCreditsApplied(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTotalPrepaidCreditsApplied, opts...).ToFunc()
 }
 
 // ByIdempotencyKey orders the results by the idempotency_key field.

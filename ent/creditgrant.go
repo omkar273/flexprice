@@ -46,6 +46,10 @@ type CreditGrant struct {
 	SubscriptionID *string `json:"subscription_id,omitempty"`
 	// Credits holds the value of the "credits" field.
 	Credits decimal.Decimal `json:"credits,omitempty"`
+	// ConversionRate holds the value of the "conversion_rate" field.
+	ConversionRate *decimal.Decimal `json:"conversion_rate,omitempty"`
+	// TopupConversionRate holds the value of the "topup_conversion_rate" field.
+	TopupConversionRate *decimal.Decimal `json:"topup_conversion_rate,omitempty"`
 	// Cadence holds the value of the "cadence" field.
 	Cadence types.CreditGrantCadence `json:"cadence,omitempty"`
 	// Period holds the value of the "period" field.
@@ -62,6 +66,12 @@ type CreditGrant struct {
 	Priority *int `json:"priority,omitempty"`
 	// Metadata holds the value of the "metadata" field.
 	Metadata map[string]string `json:"metadata,omitempty"`
+	// StartDate holds the value of the "start_date" field.
+	StartDate *time.Time `json:"start_date,omitempty"`
+	// EndDate holds the value of the "end_date" field.
+	EndDate *time.Time `json:"end_date,omitempty"`
+	// CreditGrantAnchor holds the value of the "credit_grant_anchor" field.
+	CreditGrantAnchor *time.Time `json:"credit_grant_anchor,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the CreditGrantQuery when eager-loading is set.
 	Edges        CreditGrantEdges `json:"edges"`
@@ -106,6 +116,8 @@ func (*CreditGrant) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case creditgrant.FieldConversionRate, creditgrant.FieldTopupConversionRate:
+			values[i] = &sql.NullScanner{S: new(decimal.Decimal)}
 		case creditgrant.FieldMetadata:
 			values[i] = new([]byte)
 		case creditgrant.FieldCredits:
@@ -114,7 +126,7 @@ func (*CreditGrant) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case creditgrant.FieldID, creditgrant.FieldTenantID, creditgrant.FieldStatus, creditgrant.FieldCreatedBy, creditgrant.FieldUpdatedBy, creditgrant.FieldEnvironmentID, creditgrant.FieldName, creditgrant.FieldScope, creditgrant.FieldPlanID, creditgrant.FieldSubscriptionID, creditgrant.FieldCadence, creditgrant.FieldPeriod, creditgrant.FieldExpirationType, creditgrant.FieldExpirationDurationUnit:
 			values[i] = new(sql.NullString)
-		case creditgrant.FieldCreatedAt, creditgrant.FieldUpdatedAt:
+		case creditgrant.FieldCreatedAt, creditgrant.FieldUpdatedAt, creditgrant.FieldStartDate, creditgrant.FieldEndDate, creditgrant.FieldCreditGrantAnchor:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -211,6 +223,20 @@ func (cg *CreditGrant) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				cg.Credits = *value
 			}
+		case creditgrant.FieldConversionRate:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field conversion_rate", values[i])
+			} else if value.Valid {
+				cg.ConversionRate = new(decimal.Decimal)
+				*cg.ConversionRate = *value.S.(*decimal.Decimal)
+			}
+		case creditgrant.FieldTopupConversionRate:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field topup_conversion_rate", values[i])
+			} else if value.Valid {
+				cg.TopupConversionRate = new(decimal.Decimal)
+				*cg.TopupConversionRate = *value.S.(*decimal.Decimal)
+			}
 		case creditgrant.FieldCadence:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field cadence", values[i])
@@ -265,6 +291,27 @@ func (cg *CreditGrant) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &cg.Metadata); err != nil {
 					return fmt.Errorf("unmarshal field metadata: %w", err)
 				}
+			}
+		case creditgrant.FieldStartDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field start_date", values[i])
+			} else if value.Valid {
+				cg.StartDate = new(time.Time)
+				*cg.StartDate = value.Time
+			}
+		case creditgrant.FieldEndDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field end_date", values[i])
+			} else if value.Valid {
+				cg.EndDate = new(time.Time)
+				*cg.EndDate = value.Time
+			}
+		case creditgrant.FieldCreditGrantAnchor:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field credit_grant_anchor", values[i])
+			} else if value.Valid {
+				cg.CreditGrantAnchor = new(time.Time)
+				*cg.CreditGrantAnchor = value.Time
 			}
 		default:
 			cg.selectValues.Set(columns[i], values[i])
@@ -352,6 +399,16 @@ func (cg *CreditGrant) String() string {
 	builder.WriteString("credits=")
 	builder.WriteString(fmt.Sprintf("%v", cg.Credits))
 	builder.WriteString(", ")
+	if v := cg.ConversionRate; v != nil {
+		builder.WriteString("conversion_rate=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := cg.TopupConversionRate; v != nil {
+		builder.WriteString("topup_conversion_rate=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("cadence=")
 	builder.WriteString(fmt.Sprintf("%v", cg.Cadence))
 	builder.WriteString(", ")
@@ -385,6 +442,21 @@ func (cg *CreditGrant) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("metadata=")
 	builder.WriteString(fmt.Sprintf("%v", cg.Metadata))
+	builder.WriteString(", ")
+	if v := cg.StartDate; v != nil {
+		builder.WriteString("start_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := cg.EndDate; v != nil {
+		builder.WriteString("end_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := cg.CreditGrantAnchor; v != nil {
+		builder.WriteString("credit_grant_anchor=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

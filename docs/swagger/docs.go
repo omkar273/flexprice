@@ -9,138 +9,26 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "contact": {
+            "name": "API Support"
+        },
+        "license": {
+            "name": "AGPL-3.0",
+            "url": "https://www.gnu.org/licenses/agpl-3.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
         "/addons": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get addons with optional filtering",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Addons"
-                ],
-                "summary": "List addons",
-                "parameters": [
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "addon_ids",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "onetime"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "AddonTypeOnetime"
-                        ],
-                        "name": "addon_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "lookup_keys",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListAddonsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new addon",
+                "description": "Use when defining an optional purchasable item (e.g. extra storage or support tier). Ideal for add-ons that customers can attach to a subscription.",
                 "consumes": [
                     "application/json"
                 ],
@@ -151,6 +39,7 @@ const docTemplate = `{
                     "Addons"
                 ],
                 "summary": "Create addon",
+                "operationId": "createAddon",
                 "parameters": [
                     {
                         "description": "Addon Request",
@@ -170,13 +59,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -191,7 +80,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get an addon by lookup key",
+                "description": "Use when resolving an addon by external id (e.g. from your product catalog). Ideal for integrations.",
                 "produces": [
                     "application/json"
                 ],
@@ -199,6 +88,7 @@ const docTemplate = `{
                     "Addons"
                 ],
                 "summary": "Get addon by lookup key",
+                "operationId": "getAddonByLookupKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -216,13 +106,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -237,7 +127,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List addons by filter",
+                "description": "Use when listing or searching addons (e.g. catalog or subscription builder). Returns a paginated list; supports filtering and sorting.",
                 "consumes": [
                     "application/json"
                 ],
@@ -247,7 +137,8 @@ const docTemplate = `{
                 "tags": [
                     "Addons"
                 ],
-                "summary": "List addons by filter",
+                "summary": "Query addons",
+                "operationId": "queryAddon",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -267,13 +158,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -288,7 +179,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get an addon by ID",
+                "description": "Use when you need to load a single addon (e.g. for display or to attach to a subscription).",
                 "produces": [
                     "application/json"
                 ],
@@ -296,6 +187,7 @@ const docTemplate = `{
                     "Addons"
                 ],
                 "summary": "Get addon",
+                "operationId": "getAddon",
                 "parameters": [
                     {
                         "type": "string",
@@ -313,13 +205,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -332,7 +224,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update an existing addon",
+                "description": "Use when changing addon details (e.g. name, pricing, or metadata).",
                 "consumes": [
                     "application/json"
                 ],
@@ -343,6 +235,7 @@ const docTemplate = `{
                     "Addons"
                 ],
                 "summary": "Update addon",
+                "operationId": "updateAddon",
                 "parameters": [
                     {
                         "type": "string",
@@ -369,13 +262,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -388,7 +281,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete an addon",
+                "description": "Use when retiring an addon (e.g. end-of-life). Returns 200 with success message.",
                 "produces": [
                     "application/json"
                 ],
@@ -396,6 +289,7 @@ const docTemplate = `{
                     "Addons"
                 ],
                 "summary": "Delete addon",
+                "operationId": "deleteAddon",
                 "parameters": [
                     {
                         "type": "string",
@@ -409,17 +303,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -434,10 +328,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all entitlements for an addon",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when checking what features or limits an addon grants (e.g. for display or entitlement logic).",
                 "produces": [
                     "application/json"
                 ],
@@ -445,6 +336,7 @@ const docTemplate = `{
                     "Entitlements"
                 ],
                 "summary": "Get addon entitlements",
+                "operationId": "getAddonEntitlements",
                 "parameters": [
                     {
                         "type": "string",
@@ -462,19 +354,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -482,14 +374,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/alert/search": {
+        "/alerts/search": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List alert logs by filter with optional expand for customer, wallet, and feature",
+                "description": "Use when viewing or searching alert history (e.g. support triage or customer-facing alert log). Returns a paginated list; supports filtering by type, customer, subscription.",
                 "consumes": [
                     "application/json"
                 ],
@@ -497,9 +389,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Alert Logs"
+                    "Alerts"
                 ],
-                "summary": "List alert logs by filter",
+                "summary": "Query alert logs",
+                "operationId": "queryAlertLog",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -519,480 +412,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/login": {
-            "post": {
-                "description": "Login a user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Login",
-                "parameters": [
-                    {
-                        "description": "Login request",
-                        "name": "login",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/signup": {
-            "post": {
-                "description": "Sign up a new user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Sign up",
-                "parameters": [
-                    {
-                        "description": "Sign up request",
-                        "name": "signup",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.SignUpRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.AuthResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/connections": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get a list of connections",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Connections"
-                ],
-                "summary": "Get connections",
-                "parameters": [
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "connection_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "flexprice",
-                            "stripe",
-                            "s3",
-                            "hubspot"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "SecretProviderFlexPrice",
-                            "SecretProviderStripe",
-                            "SecretProviderS3",
-                            "SecretProviderHubSpot"
-                        ],
-                        "name": "provider_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListConnectionsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create a new integration connection",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Connections"
-                ],
-                "summary": "Create a connection",
-                "parameters": [
-                    {
-                        "description": "Connection",
-                        "name": "connection",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.CreateConnectionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ConnectionResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/connections/search": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List connections by filter",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Connections"
-                ],
-                "summary": "List connections by filter",
-                "parameters": [
-                    {
-                        "description": "Filter",
-                        "name": "filter",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.ConnectionFilter"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListConnectionsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/connections/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get a connection by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Connections"
-                ],
-                "summary": "Get a connection",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Connection ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ConnectionResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update a connection by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Connections"
-                ],
-                "summary": "Update a connection",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Connection ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Connection",
-                        "name": "connection",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateConnectionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ConnectionResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete a connection by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Connections"
-                ],
-                "summary": "Delete a connection",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Connection ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1007,7 +433,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new costsheet with the specified name",
+                "description": "Use when setting up a new pricing configuration (e.g. a new product or region). Costsheets group prices and define the default for the environment.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1017,7 +443,8 @@ const docTemplate = `{
                 "tags": [
                     "Costs"
                 ],
-                "summary": "Create a new costsheet",
+                "summary": "Create costsheet",
+                "operationId": "createCostsheet",
                 "parameters": [
                     {
                         "description": "Costsheet configuration",
@@ -1031,13 +458,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Created costsheet",
                         "schema": {
                             "$ref": "#/definitions/dto.CreateCostsheetResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1049,7 +476,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1064,32 +491,30 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get the active costsheet for the current tenant",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when you need the tenant's default pricing configuration (e.g. for checkout or plan display). Returns the active costsheet for the environment.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Costs"
                 ],
-                "summary": "Get active costsheet for tenant",
+                "summary": "Get active costsheet",
+                "operationId": "getActiveCostsheet",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Active costsheet",
                         "schema": {
                             "$ref": "#/definitions/dto.CostsheetResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "No active costsheet",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1104,7 +529,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve combined analytics with ROI, margin, and detailed breakdowns. If start_time and end_time are not provided, defaults to last 7 days.",
+                "description": "Use when building dashboards or reports that need revenue vs cost, ROI, and margin over a time period (e.g. finance views or executive summaries).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1115,6 +540,7 @@ const docTemplate = `{
                     "Costs"
                 ],
                 "summary": "Get combined revenue and cost analytics",
+                "operationId": "getDetailedCostAnalytics",
                 "parameters": [
                     {
                         "description": "Combined analytics request (start_time/end_time optional - defaults to last 7 days)",
@@ -1134,13 +560,65 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/costs/analytics-v2": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when you need the same revenue/cost/ROI analytics but computed from the costsheet usage-tracking pipeline (e.g. for consistency with usage-based cost data).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Costs"
+                ],
+                "summary": "Get combined revenue and cost analytics (V2)",
+                "operationId": "getDetailedCostAnalyticsV2",
+                "parameters": [
+                    {
+                        "description": "Combined analytics request (start_time/end_time optional - defaults to last 7 days)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetCostAnalyticsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetDetailedCostAnalyticsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1155,7 +633,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List costsheet records by filter with POST body",
+                "description": "Use when listing or searching costsheets (e.g. admin catalog). Returns a paginated list; supports filtering and sorting.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1165,7 +643,8 @@ const docTemplate = `{
                 "tags": [
                     "Costs"
                 ],
-                "summary": "List costsheets by filter",
+                "summary": "Query costsheets",
+                "operationId": "queryCostsheet",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -1179,19 +658,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Paginated costsheets",
                         "schema": {
                             "$ref": "#/definitions/dto.ListCostsheetResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1206,17 +685,15 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a costsheet by ID with optional price expansion",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when you need to load a single costsheet (e.g. for editing or display). Supports optional expand for related prices.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Costs"
                 ],
-                "summary": "Get a costsheet by ID",
+                "summary": "Get costsheet",
+                "operationId": "getCostsheet",
                 "parameters": [
                     {
                         "type": "string",
@@ -1234,25 +711,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Costsheet details",
                         "schema": {
                             "$ref": "#/definitions/dto.GetCostsheetResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Costsheet not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1265,7 +742,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a costsheet with the specified configuration",
+                "description": "Use when changing costsheet name or metadata.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1275,7 +752,8 @@ const docTemplate = `{
                 "tags": [
                     "Costs"
                 ],
-                "summary": "Update a costsheet",
+                "summary": "Update costsheet",
+                "operationId": "updateCostsheet",
                 "parameters": [
                     {
                         "type": "string",
@@ -1296,19 +774,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated costsheet",
                         "schema": {
                             "$ref": "#/definitions/dto.UpdateCostsheetResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Costsheet not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1320,7 +798,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1333,7 +811,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Soft delete a costsheet by setting its status to deleted",
+                "description": "Use when retiring a costsheet (e.g. end-of-life product). Soft-deletes; status set to deleted.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1343,7 +821,8 @@ const docTemplate = `{
                 "tags": [
                     "Costs"
                 ],
-                "summary": "Delete a costsheet",
+                "summary": "Delete costsheet",
+                "operationId": "deleteCostsheet",
                 "parameters": [
                     {
                         "type": "string",
@@ -1355,25 +834,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Costsheet deleted",
                         "schema": {
                             "$ref": "#/definitions/dto.DeleteCostsheetResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Costsheet not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1382,118 +861,6 @@ const docTemplate = `{
             }
         },
         "/coupons": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Lists coupons with filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coupons"
-                ],
-                "summary": "List coupons with filtering",
-                "parameters": [
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "coupon_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListCouponsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -1503,7 +870,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Creates a new coupon",
+                "description": "Use when creating a discount (e.g. promo code or referral). Ideal for percent or fixed value, with optional validity and usage limits.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1513,7 +880,8 @@ const docTemplate = `{
                 "tags": [
                     "Coupons"
                 ],
-                "summary": "Create a new coupon",
+                "summary": "Create coupon",
+                "operationId": "createCoupon",
                 "parameters": [
                     {
                         "description": "Coupon request",
@@ -1533,7 +901,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1551,13 +919,65 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/coupons/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when listing or searching coupons (e.g. promo management). Returns a paginated list; supports filtering and sorting.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coupons"
+                ],
+                "summary": "Query coupons",
+                "operationId": "queryCoupon",
+                "parameters": [
+                    {
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.CouponFilter"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListCouponsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1570,22 +990,17 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves a coupon by ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when you need to load a single coupon (e.g. for display or to validate a code).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Coupons"
                 ],
-                "summary": "Get a coupon by ID",
+                "summary": "Get coupon",
+                "operationId": "getCoupon",
                 "parameters": [
                     {
                         "type": "string",
@@ -1603,31 +1018,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1643,7 +1046,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Updates an existing coupon",
+                "description": "Use when changing coupon config (e.g. value, validity, or usage limits).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1653,7 +1056,8 @@ const docTemplate = `{
                 "tags": [
                     "Coupons"
                 ],
-                "summary": "Update a coupon",
+                "summary": "Update coupon",
+                "operationId": "updateCoupon",
                 "parameters": [
                     {
                         "type": "string",
@@ -1680,7 +1084,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1698,13 +1102,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1720,7 +1124,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Deletes a coupon",
+                "description": "Use when retiring a coupon (e.g. campaign ended). Returns 200 with success message.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1730,7 +1134,8 @@ const docTemplate = `{
                 "tags": [
                     "Coupons"
                 ],
-                "summary": "Delete a coupon",
+                "summary": "Delete coupon",
+                "operationId": "deleteCoupon",
                 "parameters": [
                     {
                         "type": "string",
@@ -1751,7 +1156,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1769,13 +1174,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1784,142 +1189,13 @@ const docTemplate = `{
             }
         },
         "/creditgrants": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get credit grants with the specified filter",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "CreditGrants"
-                ],
-                "summary": "Get credit grants",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Specific filters for credit grants",
-                        "name": "plan_ids",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "PLAN",
-                            "SUBSCRIPTION"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "CreditGrantScopePlan",
-                            "CreditGrantScopeSubscription"
-                        ],
-                        "name": "scope",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "subscription_ids",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListCreditGrantsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new credit grant with the specified configuration",
+                "description": "Use when giving a customer or plan credits (e.g. prepaid balance or promotional credits). Scope can be plan or subscription; supports start/end dates.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1927,9 +1203,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "CreditGrants"
+                    "Credit Grants"
                 ],
-                "summary": "Create a new credit grant",
+                "summary": "Create credit grant",
+                "operationId": "createCreditGrant",
                 "parameters": [
                     {
                         "description": "Credit Grant configuration",
@@ -1949,13 +1226,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -1970,17 +1247,15 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a credit grant by ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when you need to load a single credit grant (e.g. for display or to check balance).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "CreditGrants"
+                    "Credit Grants"
                 ],
-                "summary": "Get a credit grant by ID",
+                "summary": "Get credit grant",
+                "operationId": "getCreditGrant",
                 "parameters": [
                     {
                         "type": "string",
@@ -1998,13 +1273,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2017,7 +1292,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a credit grant with the specified configuration",
+                "description": "Use when changing a credit grant (e.g. amount or end date). Request body contains the fields to update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2025,9 +1300,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "CreditGrants"
+                    "Credit Grants"
                 ],
-                "summary": "Update a credit grant",
+                "summary": "Update credit grant",
+                "operationId": "updateCreditGrant",
                 "parameters": [
                     {
                         "type": "string",
@@ -2054,13 +1330,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2073,7 +1349,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a credit grant",
+                "description": "Use when removing or ending a credit grant (e.g. revoke promo or close prepaid). Plan-scoped grants are archived; subscription-scoped supports optional effective_date in body.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2081,9 +1357,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "CreditGrants"
+                    "Credit Grants"
                 ],
-                "summary": "Delete a credit grant",
+                "summary": "Delete credit grant",
+                "operationId": "deleteCreditGrant",
                 "parameters": [
                     {
                         "type": "string",
@@ -2091,23 +1368,31 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Optional: effective_date for subscription-scoped grants",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.DeleteCreditGrantRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2116,165 +1401,6 @@ const docTemplate = `{
             }
         },
         "/creditnotes": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Lists credit notes with filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Credit Notes"
-                ],
-                "summary": "List credit notes with filtering",
-                "parameters": [
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "credit_note_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "enum": [
-                                "DRAFT",
-                                "FINALIZED",
-                                "VOIDED"
-                            ],
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "credit_note_status",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "ADJUSTMENT",
-                            "REFUND"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "CreditNoteTypeAdjustment",
-                            "CreditNoteTypeRefund"
-                        ],
-                        "name": "credit_note_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "invoice_id",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListCreditNotesResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -2284,7 +1410,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Creates a new credit note",
+                "description": "Use when issuing a refund or adjustment (e.g. customer dispute or proration). Links to an invoice; create as draft then finalize.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2294,7 +1420,8 @@ const docTemplate = `{
                 "tags": [
                     "Credit Notes"
                 ],
-                "summary": "Create a new credit note",
+                "summary": "Create credit note",
+                "operationId": "createCreditNote",
                 "parameters": [
                     {
                         "description": "Credit note request",
@@ -2314,7 +1441,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2332,13 +1459,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2351,22 +1478,17 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves a credit note by ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when you need to load a single credit note (e.g. for display or reconciliation).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Credit Notes"
                 ],
-                "summary": "Get a credit note by ID",
+                "summary": "Get credit note",
+                "operationId": "getCreditNote",
                 "parameters": [
                     {
                         "type": "string",
@@ -2384,31 +1506,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error\" \"Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2426,7 +1536,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Processes a draft credit note",
+                "description": "Use when locking a draft credit note and applying the credit (e.g. after approval). Once finalized, applied per billing provider.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2436,7 +1546,8 @@ const docTemplate = `{
                 "tags": [
                     "Credit Notes"
                 ],
-                "summary": "Process a draft credit note",
+                "summary": "Finalize credit note",
+                "operationId": "processCreditNote",
                 "parameters": [
                     {
                         "type": "string",
@@ -2454,7 +1565,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2472,13 +1583,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2496,7 +1607,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Voids a credit note",
+                "description": "Use when cancelling a draft credit note (e.g. created by mistake). Only draft credit notes can be voided.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2506,7 +1617,8 @@ const docTemplate = `{
                 "tags": [
                     "Credit Notes"
                 ],
-                "summary": "Void a credit note",
+                "summary": "Void credit note",
+                "operationId": "voidCreditNote",
                 "parameters": [
                     {
                         "type": "string",
@@ -2524,7 +1636,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2542,13 +1654,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2557,13 +1669,13 @@ const docTemplate = `{
             }
         },
         "/customers": {
-            "get": {
+            "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get customers",
+                "description": "Use when updating customer details (e.g. name, email, or metadata). Identify by id or external_customer_id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2573,104 +1685,46 @@ const docTemplate = `{
                 "tags": [
                     "Customers"
                 ],
-                "summary": "Get customers",
+                "summary": "Update customer",
+                "operationId": "updateCustomer",
                 "parameters": [
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "customer_ids",
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "name": "email",
+                        "description": "Customer External ID",
+                        "name": "external_customer_id",
                         "in": "query"
                     },
                     {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "external_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "external_ids",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
+                        "description": "Customer",
+                        "name": "customer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateCustomerRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListCustomersResponse"
+                            "$ref": "#/definitions/dto.CustomerResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2683,7 +1737,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a customer",
+                "description": "Use when onboarding a new billing customer (e.g. sign-up or CRM sync). Ideal for linking via external_customer_id to your app's user id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2693,7 +1747,8 @@ const docTemplate = `{
                 "tags": [
                     "Customers"
                 ],
-                "summary": "Create a customer",
+                "summary": "Create customer",
+                "operationId": "createCustomer",
                 "parameters": [
                     {
                         "description": "Customer",
@@ -2713,13 +1768,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2727,29 +1782,27 @@ const docTemplate = `{
                 }
             }
         },
-        "/customers/lookup/{lookup_key}": {
+        "/customers/external/{external_id}": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a customer by lookup key (external_id)",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when resolving a customer by your app's id (e.g. from your user table). Ideal for integrations that key by external id.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Customers"
                 ],
-                "summary": "Get a customer by lookup key",
+                "summary": "Get customer by external ID",
+                "operationId": "getCustomerByExternalId",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Customer Lookup Key (external_id)",
-                        "name": "lookup_key",
+                        "description": "Customer External ID",
+                        "name": "external_id",
                         "in": "path",
                         "required": true
                     }
@@ -2762,19 +1815,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2789,7 +1842,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List customers by filter",
+                "description": "Use when listing or searching customers (e.g. admin CRM or reporting). Returns a paginated list; supports filtering and sorting.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2799,7 +1852,8 @@ const docTemplate = `{
                 "tags": [
                     "Customers"
                 ],
-                "summary": "List customers by filter",
+                "summary": "Query customers",
+                "operationId": "queryCustomer",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -2819,13 +1873,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2840,7 +1894,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get customer usage summary by customer_id or customer_lookup_key (external_customer_id)",
+                "description": "Use when showing a customer's usage (e.g. portal or overage alerts). Identify by customer_id or customer_lookup_key; supports filters.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2851,6 +1905,7 @@ const docTemplate = `{
                     "Customers"
                 ],
                 "summary": "Get customer usage summary",
+                "operationId": "getCustomerUsageSummary",
                 "parameters": [
                     {
                         "type": "string",
@@ -2898,13 +1953,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2919,7 +1974,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all wallets for a customer by lookup key or id",
+                "description": "Use when resolving wallets by external customer id or lookup key (e.g. from your app's user id). Supports optional real-time balance and expand.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2930,7 +1985,25 @@ const docTemplate = `{
                     "Wallets"
                 ],
                 "summary": "Get Customer Wallets",
+                "operationId": "getCustomerWallets",
                 "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "populated from x-max-live header, not query param",
+                        "name": "-",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "expand",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "name": "from_cache",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "name": "id",
@@ -2959,19 +2032,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -2986,17 +2059,15 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a customer",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when you need to load a single customer (e.g. for a billing portal or to attach a subscription).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Customers"
                 ],
-                "summary": "Get a customer",
+                "summary": "Get customer",
+                "operationId": "getCustomer",
                 "parameters": [
                     {
                         "type": "string",
@@ -3014,69 +2085,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update a customer",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Customers"
-                ],
-                "summary": "Update a customer",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Customer ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Customer",
-                        "name": "customer",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateCustomerRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CustomerResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3089,7 +2104,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a customer",
+                "description": "Use when removing a customer (e.g. GDPR or churn). Returns 204 No Content on success.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3099,7 +2114,8 @@ const docTemplate = `{
                 "tags": [
                     "Customers"
                 ],
-                "summary": "Delete a customer",
+                "summary": "Delete customer",
+                "operationId": "deleteCustomer",
                 "parameters": [
                     {
                         "type": "string",
@@ -3114,13 +2130,13 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3135,10 +2151,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get customer entitlements",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when checking what a customer can access (e.g. feature gating or usage limits). Supports optional filters (feature_ids, subscription_ids).",
                 "produces": [
                     "application/json"
                 ],
@@ -3146,6 +2159,7 @@ const docTemplate = `{
                     "Customers"
                 ],
                 "summary": "Get customer entitlements",
+                "operationId": "getCustomerEntitlements",
                 "parameters": [
                     {
                         "type": "string",
@@ -3153,24 +2167,6 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "feature_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "subscription_ids",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3181,13 +2177,66 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/customers/{id}/grants/upcoming": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when showing upcoming or pending credits for a customer (e.g. in a portal or for forecasting).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "Get upcoming credit grant applications",
+                "operationId": "getCustomerUpcomingGrants",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Customer ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListCreditGrantApplicationsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3202,7 +2251,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a customer invoice summary",
+                "description": "Use when showing a customer's invoice overview (e.g. billing portal or balance summary). Includes totals and multi-currency breakdown.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3212,7 +2261,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Get a customer invoice summary",
+                "summary": "Get customer invoice summary",
+                "operationId": "getCustomerInvoiceSummary",
                 "parameters": [
                     {
                         "type": "string",
@@ -3230,13 +2280,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3251,7 +2301,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all wallets for a customer",
+                "description": "Use when showing a customer's wallets (e.g. balance overview by currency or in a billing portal). Supports optional expand for balance breakdown.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3262,6 +2312,7 @@ const docTemplate = `{
                     "Wallets"
                 ],
                 "summary": "Get wallets by customer ID",
+                "operationId": "getWalletsByCustomerId",
                 "parameters": [
                     {
                         "type": "string",
@@ -3282,13 +2333,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3297,167 +2348,13 @@ const docTemplate = `{
             }
         },
         "/entitlements": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get entitlements with the specified filter",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Entitlements"
-                ],
-                "summary": "Get entitlements",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "entity_ids",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "PLAN",
-                            "SUBSCRIPTION",
-                            "ADDON"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "ENTITLEMENT_ENTITY_TYPE_PLAN",
-                            "ENTITLEMENT_ENTITY_TYPE_SUBSCRIPTION",
-                            "ENTITLEMENT_ENTITY_TYPE_ADDON"
-                        ],
-                        "name": "entity_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "feature_ids",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "metered",
-                            "boolean",
-                            "static"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "FeatureTypeMetered",
-                            "FeatureTypeBoolean",
-                            "FeatureTypeStatic"
-                        ],
-                        "name": "feature_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "name": "is_enabled",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "plan_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListEntitlementsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new entitlement with the specified configuration",
+                "description": "Use when attaching a feature (and its limit) to a plan or addon (e.g. \"10 seats\" or \"1000 API calls\"). Defines what the plan/addon includes.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3467,7 +2364,8 @@ const docTemplate = `{
                 "tags": [
                     "Entitlements"
                 ],
-                "summary": "Create a new entitlement",
+                "summary": "Create entitlement",
+                "operationId": "createEntitlement",
                 "parameters": [
                     {
                         "description": "Entitlement configuration",
@@ -3487,13 +2385,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3508,7 +2406,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create multiple entitlements with the specified configurations",
+                "description": "Use when attaching many features to a plan or addon at once (e.g. initial plan setup or import). Bulk version of create entitlement.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3518,7 +2416,8 @@ const docTemplate = `{
                 "tags": [
                     "Entitlements"
                 ],
-                "summary": "Create multiple entitlements in bulk",
+                "summary": "Create entitlements in bulk",
+                "operationId": "createEntitlementsBulk",
                 "parameters": [
                     {
                         "description": "Bulk entitlement configuration",
@@ -3538,13 +2437,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3559,7 +2458,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List entitlements by filter",
+                "description": "Use when listing or searching entitlements (e.g. plan editor or audit). Returns a paginated list; supports filtering by plan, addon, feature.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3569,7 +2468,8 @@ const docTemplate = `{
                 "tags": [
                     "Entitlements"
                 ],
-                "summary": "List entitlements by filter",
+                "summary": "Query entitlements",
+                "operationId": "queryEntitlement",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -3589,13 +2489,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3610,17 +2510,15 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get an entitlement by ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when you need to load a single entitlement (e.g. to display or edit a feature limit).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Entitlements"
                 ],
-                "summary": "Get an entitlement by ID",
+                "summary": "Get entitlement",
+                "operationId": "getEntitlement",
                 "parameters": [
                     {
                         "type": "string",
@@ -3638,13 +2536,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3657,7 +2555,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update an entitlement with the specified configuration",
+                "description": "Use when changing an entitlement (e.g. increasing or decreasing a limit). Request body contains the fields to update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3667,7 +2565,8 @@ const docTemplate = `{
                 "tags": [
                     "Entitlements"
                 ],
-                "summary": "Update an entitlement",
+                "summary": "Update entitlement",
+                "operationId": "updateEntitlement",
                 "parameters": [
                     {
                         "type": "string",
@@ -3694,13 +2593,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3713,7 +2612,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete an entitlement",
+                "description": "Use when removing a feature from a plan or addon (e.g. deprecating a capability). Returns 200 with success message.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3723,7 +2622,8 @@ const docTemplate = `{
                 "tags": [
                     "Entitlements"
                 ],
-                "summary": "Delete an entitlement",
+                "summary": "Delete entitlement",
+                "operationId": "deleteEntitlement",
                 "parameters": [
                     {
                         "type": "string",
@@ -3737,17 +2637,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3756,95 +2656,13 @@ const docTemplate = `{
             }
         },
         "/entity-integration-mappings": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve a list of entity integration mappings with optional filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Entity Integration Mappings"
-                ],
-                "summary": "List entity integration mappings",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by FlexPrice entity ID",
-                        "name": "entity_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by entity type",
-                        "name": "entity_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by provider type",
-                        "name": "provider_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by provider entity ID",
-                        "name": "provider_entity_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of results to return (default: 20, max: 100)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Pagination offset (default: 0)",
-                        "name": "offset",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListEntityIntegrationMappingsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new entity integration mapping",
+                "description": "Use when linking a FlexPrice entity to an external system (e.g. CRM or payment provider) so you can sync or reconcile by external ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3855,6 +2673,7 @@ const docTemplate = `{
                     "Entity Integration Mappings"
                 ],
                 "summary": "Create entity integration mapping",
+                "operationId": "createEntityIntegrationMapping",
                 "parameters": [
                     {
                         "description": "Entity integration mapping data",
@@ -3874,7 +2693,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3892,7 +2711,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -3901,72 +2720,13 @@ const docTemplate = `{
             }
         },
         "/entity-integration-mappings/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieve a specific entity integration mapping by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Entity Integration Mappings"
-                ],
-                "summary": "Get entity integration mapping",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Entity integration mapping ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.EntityIntegrationMappingResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "delete": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete an entity integration mapping",
+                "description": "Use when unlinking a FlexPrice entity from an external system or cleaning up stale integration mappings.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3977,6 +2737,7 @@ const docTemplate = `{
                     "Entity Integration Mappings"
                 ],
                 "summary": "Delete entity integration mapping",
+                "operationId": "deleteEntityIntegrationMapping",
                 "parameters": [
                     {
                         "type": "string",
@@ -3991,7 +2752,7 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4003,13 +2764,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4018,93 +2779,13 @@ const docTemplate = `{
             }
         },
         "/environments": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get environments",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Environments"
-                ],
-                "summary": "Get environments",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListEnvironmentsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create an environment",
+                "description": "Use when setting up a new environment (e.g. production, staging) for the tenant. Ideal for separating billing or config per environment.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4114,7 +2795,8 @@ const docTemplate = `{
                 "tags": [
                     "Environments"
                 ],
-                "summary": "Create an environment",
+                "summary": "Create environment",
+                "operationId": "createEnvironment",
                 "parameters": [
                     {
                         "description": "Environment",
@@ -4134,13 +2816,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4149,66 +2831,13 @@ const docTemplate = `{
             }
         },
         "/environments/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get an environment",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Environments"
-                ],
-                "summary": "Get an environment",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Environment ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.EnvironmentResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update an environment",
+                "description": "Use when changing environment name or settings (e.g. renaming or updating metadata).",
                 "consumes": [
                     "application/json"
                 ],
@@ -4218,7 +2847,8 @@ const docTemplate = `{
                 "tags": [
                     "Environments"
                 ],
-                "summary": "Update an environment",
+                "summary": "Update environment",
+                "operationId": "updateEnvironment",
                 "parameters": [
                     {
                         "type": "string",
@@ -4245,19 +2875,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4272,7 +2902,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Ingest a new event into the system",
+                "description": "Use when sending a single usage event from your app (e.g. one API call or one GB stored). Events are processed asynchronously; returns 202 with event_id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4283,6 +2913,7 @@ const docTemplate = `{
                     "Events"
                 ],
                 "summary": "Ingest event",
+                "operationId": "ingestEvent",
                 "parameters": [
                     {
                         "description": "Event data",
@@ -4305,13 +2936,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4326,7 +2957,10 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve comprehensive usage analytics with filtering, grouping, and time-series data",
+                "description": "Use when building analytics views (e.g. usage by feature or customer over time). Supports filtering, grouping, and time-series breakdown.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -4334,6 +2968,7 @@ const docTemplate = `{
                     "Events"
                 ],
                 "summary": "Get usage analytics",
+                "operationId": "getUsageAnalytics",
                 "parameters": [
                     {
                         "description": "Request body",
@@ -4353,13 +2988,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4374,7 +3009,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Ingest bulk events into the system",
+                "description": "Use when batching usage events (e.g. backfill or high-volume ingestion). More efficient than single event calls; returns 202 when accepted.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4384,7 +3019,8 @@ const docTemplate = `{
                 "tags": [
                     "Events"
                 ],
-                "summary": "Bulk Ingest events",
+                "summary": "Bulk ingest events",
+                "operationId": "ingestEventsBulk",
                 "parameters": [
                     {
                         "description": "Event data",
@@ -4407,13 +3043,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4421,30 +3057,31 @@ const docTemplate = `{
                 }
             }
         },
-        "/events/monitoring": {
-            "get": {
+        "/events/huggingface-inference": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve monitoring data for events including consumer lag and event metrics (last 24 hours by default)",
+                "description": "Use when fetching Hugging Face inference usage or billing data (e.g. for HF-specific reporting or reconciliation).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Events"
                 ],
-                "summary": "Get monitoring data",
+                "summary": "Get Hugging Face inference data",
+                "operationId": "getHuggingfaceInferenceData",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetMonitoringDataResponse"
+                            "$ref": "#/definitions/dto.GetHuggingFaceBillingDataResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4459,7 +3096,10 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve raw events with pagination and filtering",
+                "description": "Use when debugging ingestion or exporting raw event data (e.g. support or audit). Returns a paginated list; supports time range and sorting.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -4467,6 +3107,7 @@ const docTemplate = `{
                     "Events"
                 ],
                 "summary": "List raw events",
+                "operationId": "listRawEvents",
                 "parameters": [
                     {
                         "description": "Request body",
@@ -4486,13 +3127,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4507,7 +3148,10 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve aggregated usage statistics for events",
+                "description": "Use when building usage reports or dashboards across events. Supports filters and grouping; defaults to last 7 days if no range provided.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -4515,6 +3159,7 @@ const docTemplate = `{
                     "Events"
                 ],
                 "summary": "Get usage statistics",
+                "operationId": "getUsageStatistics",
                 "parameters": [
                     {
                         "description": "Request body",
@@ -4534,13 +3179,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4555,7 +3200,10 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve aggregated usage statistics using meter configuration",
+                "description": "Use when showing usage for a specific meter (e.g. dashboard or overage check). Supports time range, filters, and grouping by customer or subscription.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -4563,6 +3211,7 @@ const docTemplate = `{
                     "Events"
                 ],
                 "summary": "Get usage by meter",
+                "operationId": "getUsageByMeter",
                 "parameters": [
                     {
                         "description": "Request body",
@@ -4582,9 +3231,56 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when debugging a specific event (e.g. why it failed or how it was aggregated). Includes processing status and debug info.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Events"
+                ],
+                "summary": "Get event",
+                "operationId": "getEvent",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetEventByIDResponse"
                         }
                     },
                     "404": {
@@ -4594,7 +3290,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4603,143 +3299,13 @@ const docTemplate = `{
             }
         },
         "/features": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List features with optional filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Features"
-                ],
-                "summary": "List features",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Feature specific filters",
-                        "name": "feature_ids",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "lookup_key",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "lookup_keys",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "meter_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "name_contains",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListFeaturesResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new feature",
+                "description": "Use when defining a new feature or capability to gate or meter (e.g. feature flags or usage-based limits). Ideal for boolean or usage features.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4749,7 +3315,8 @@ const docTemplate = `{
                 "tags": [
                     "Features"
                 ],
-                "summary": "Create a new feature",
+                "summary": "Create feature",
+                "operationId": "createFeature",
                 "parameters": [
                     {
                         "description": "Feature to create",
@@ -4769,13 +3336,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4790,7 +3357,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List features by filter",
+                "description": "Use when listing or searching features (e.g. catalog or entitlement setup). Returns a paginated list; supports filtering and sorting.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4800,7 +3367,8 @@ const docTemplate = `{
                 "tags": [
                     "Features"
                 ],
-                "summary": "List features by filter",
+                "summary": "Query features",
+                "operationId": "queryFeature",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -4820,13 +3388,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4835,66 +3403,13 @@ const docTemplate = `{
             }
         },
         "/features/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get a feature by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Features"
-                ],
-                "summary": "Get a feature by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Feature ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.FeatureResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a feature by ID",
+                "description": "Use when changing feature definition (e.g. name, type, or meter). Request body contains the fields to update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4904,7 +3419,8 @@ const docTemplate = `{
                 "tags": [
                     "Features"
                 ],
-                "summary": "Update a feature",
+                "summary": "Update feature",
+                "operationId": "updateFeature",
                 "parameters": [
                     {
                         "type": "string",
@@ -4931,19 +3447,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -4956,7 +3472,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a feature by ID",
+                "description": "Use when retiring a feature (e.g. deprecated capability). Returns 200 with success message.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4966,7 +3482,8 @@ const docTemplate = `{
                 "tags": [
                     "Features"
                 ],
-                "summary": "Delete a feature",
+                "summary": "Delete feature",
+                "operationId": "deleteFeature",
                 "parameters": [
                     {
                         "type": "string",
@@ -4980,23 +3497,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5011,7 +3528,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new group for organizing entities (prices, plans, customers, etc.)",
+                "description": "Use when organizing entities into a group (e.g. for filtering prices or plans by product line or region).",
                 "consumes": [
                     "application/json"
                 ],
@@ -5021,7 +3538,8 @@ const docTemplate = `{
                 "tags": [
                     "Groups"
                 ],
-                "summary": "Create a group",
+                "summary": "Create group",
+                "operationId": "createGroup",
                 "parameters": [
                     {
                         "description": "Group",
@@ -5041,13 +3559,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5062,7 +3580,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get groups with optional filtering via query parameters",
+                "description": "Use when listing or searching groups (e.g. admin catalog). Returns a paginated list; supports filtering and sorting.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5072,49 +3590,17 @@ const docTemplate = `{
                 "tags": [
                     "Groups"
                 ],
-                "summary": "Get groups",
+                "summary": "Query groups",
+                "operationId": "queryGroup",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Filter by entity type (e.g., 'price')",
-                        "name": "entity_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by group name (contains search)",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by lookup key (exact match)",
-                        "name": "lookup_key",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of items to return (default: 20)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of items to skip (default: 0)",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Field to sort by (name, created_at, updated_at)",
-                        "name": "sort_by",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Sort order (asc, desc)",
-                        "name": "sort_order",
-                        "in": "query"
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.GroupFilter"
+                        }
                     }
                 ],
                 "responses": {
@@ -5125,13 +3611,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5146,7 +3632,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a group by ID",
+                "description": "Use when you need to load a single group (e.g. for display or to assign entities).",
                 "consumes": [
                     "application/json"
                 ],
@@ -5156,7 +3642,8 @@ const docTemplate = `{
                 "tags": [
                     "Groups"
                 ],
-                "summary": "Get a group",
+                "summary": "Get group",
+                "operationId": "getGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -5174,19 +3661,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5199,7 +3686,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a group and remove all entity associations",
+                "description": "Use when removing a group and clearing its entity associations (e.g. retiring a product line). Returns 204 or 200 on success.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5209,7 +3696,8 @@ const docTemplate = `{
                 "tags": [
                     "Groups"
                 ],
-                "summary": "Delete a group",
+                "summary": "Delete group",
+                "operationId": "deleteGroup",
                 "parameters": [
                     {
                         "type": "string",
@@ -5224,19 +3712,19 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5245,202 +3733,13 @@ const docTemplate = `{
             }
         },
         "/invoices": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "List invoices with optional filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Invoices"
-                ],
-                "summary": "List invoices",
-                "parameters": [
-                    {
-                        "type": "number",
-                        "description": "amount_due_gt filters invoices with a total amount due greater than the specified value\nUseful for finding invoices above a certain threshold or identifying high-value invoices",
-                        "name": "amount_due_gt",
-                        "in": "query"
-                    },
-                    {
-                        "type": "number",
-                        "description": "amount_remaining_gt filters invoices with an outstanding balance greater than the specified value\nUseful for finding invoices that still have significant unpaid amounts",
-                        "name": "amount_remaining_gt",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "customer_id filters invoices for a specific customer using FlexPrice's internal customer ID\nThis is the ID returned by FlexPrice when creating or retrieving customers",
-                        "name": "customer_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "external_customer_id filters invoices for a customer using your system's customer identifier\nThis is the ID you provided when creating the customer in FlexPrice",
-                        "name": "external_customer_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "invoice_ids restricts results to invoices with the specified IDs\nUse this to retrieve specific invoices when you know their exact identifiers",
-                        "name": "invoice_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "enum": [
-                                "DRAFT",
-                                "FINALIZED",
-                                "VOIDED"
-                            ],
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "invoice_status filters by the current state of invoices in their lifecycle\nMultiple statuses can be specified to include invoices in any of the listed states",
-                        "name": "invoice_status",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "SUBSCRIPTION",
-                            "ONE_OFF",
-                            "CREDIT"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "InvoiceTypeSubscription",
-                            "InvoiceTypeOneOff",
-                            "InvoiceTypeCredit"
-                        ],
-                        "description": "invoice_type filters by the nature of the invoice (SUBSCRIPTION, ONE_OFF, or CREDIT)\nUse this to separate recurring charges from one-time fees or credit adjustments",
-                        "name": "invoice_type",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "enum": [
-                                "INITIATED",
-                                "PENDING",
-                                "PROCESSING",
-                                "SUCCEEDED",
-                                "OVERPAID",
-                                "FAILED",
-                                "REFUNDED",
-                                "PARTIALLY_REFUNDED"
-                            ],
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "payment_status filters by the payment state of invoices\nMultiple statuses can be specified to include invoices with any of the listed payment states",
-                        "name": "payment_status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "SkipLineItems if true, will not include line items in the response",
-                        "name": "skip_line_items",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "subscription_id filters invoices generated for a specific subscription\nOnly returns invoices that were created as part of the specified subscription's billing",
-                        "name": "subscription_id",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListInvoicesResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new one off invoice with the provided details",
+                "description": "Use when creating a manual or one-off invoice (e.g. custom charge or non-recurring billing). Invoice is created in draft; finalize when ready.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5450,7 +3749,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Create a new one off invoice",
+                "summary": "Create one-off invoice",
+                "operationId": "createInvoice",
                 "parameters": [
                     {
                         "description": "Invoice details",
@@ -5470,13 +3770,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5491,7 +3791,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a preview invoice",
+                "description": "Use when showing a customer what they will be charged (e.g. preview before checkout or plan change). No invoice is created.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5501,7 +3801,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Get a preview invoice",
+                "summary": "Get invoice preview",
+                "operationId": "getInvoicePreview",
                 "parameters": [
                     {
                         "description": "Preview Invoice Request",
@@ -5521,13 +3822,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5542,7 +3843,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List invoices by filter",
+                "description": "Use when listing or searching invoices (e.g. admin view or customer history). Returns a paginated list; supports filtering by customer, status, date range.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5552,7 +3853,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "List invoices by filter",
+                "summary": "Query invoices",
+                "operationId": "queryInvoice",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -5572,13 +3874,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5593,7 +3895,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get detailed information about an invoice",
+                "description": "Use when loading an invoice for display or editing (e.g. portal or reconciliation). Supports group_by for usage breakdown and force_runtime_recalculation.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5603,7 +3905,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Get an invoice by ID",
+                "summary": "Get invoice",
+                "operationId": "getInvoice",
                 "parameters": [
                     {
                         "type": "string",
@@ -5637,13 +3940,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5656,7 +3959,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update invoice details like PDF URL and due date.",
+                "description": "Use when updating invoice metadata or due date (e.g. PDF URL, net terms). For paid invoices only safe fields can be updated.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5666,7 +3969,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Update an invoice",
+                "summary": "Update invoice",
+                "operationId": "updateInvoice",
                 "parameters": [
                     {
                         "type": "string",
@@ -5693,19 +3997,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5720,7 +4024,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Triggers a communication webhook event containing all information about the invoice",
+                "description": "Use when sending an invoice to the customer (e.g. trigger email or Slack). Payload includes full invoice details for your integration.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5730,7 +4034,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Trigger communication webhook for an invoice",
+                "summary": "Trigger invoice communication webhook",
+                "operationId": "triggerInvoiceCommsWebhook",
                 "parameters": [
                     {
                         "type": "string",
@@ -5744,23 +4049,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5775,7 +4080,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Finalize a draft invoice",
+                "description": "Use when locking an invoice for payment (e.g. after review). Once finalized, line items are locked; invoice can be paid or voided.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5785,7 +4090,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Finalize an invoice",
+                "summary": "Finalize invoice",
+                "operationId": "finalizeInvoice",
                 "parameters": [
                     {
                         "type": "string",
@@ -5799,17 +4105,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5824,7 +4130,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update the payment status of an invoice",
+                "description": "Use when reconciling payment status from an external gateway or manual entry (e.g. mark paid after bank confirmation).",
                 "consumes": [
                     "application/json"
                 ],
@@ -5835,6 +4141,7 @@ const docTemplate = `{
                     "Invoices"
                 ],
                 "summary": "Update invoice payment status",
+                "operationId": "updateInvoicePaymentStatus",
                 "parameters": [
                     {
                         "type": "string",
@@ -5861,19 +4168,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5888,7 +4195,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Attempt to pay an invoice using customer's available wallets",
+                "description": "Use when paying an invoice with the customer's wallet balance (e.g. prepaid credits or balance applied at checkout).",
                 "consumes": [
                     "application/json"
                 ],
@@ -5898,7 +4205,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Attempt payment for an invoice",
+                "summary": "Attempt invoice payment",
+                "operationId": "attemptInvoicePayment",
                 "parameters": [
                     {
                         "type": "string",
@@ -5912,23 +4220,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5943,11 +4251,12 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieve the PDF document for a specific invoice by its ID",
+                "description": "Use when delivering an invoice PDF to the customer (e.g. email attachment or download). Use url=true for a presigned URL instead of binary.",
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Get PDF for an invoice",
+                "summary": "Get invoice PDF",
+                "operationId": "getInvoicePdf",
                 "parameters": [
                     {
                         "type": "string",
@@ -5971,19 +4280,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -5998,7 +4307,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Recalculate totals and line items for a draft invoice, useful when subscription line items or usage data has changed",
+                "description": "Use when subscription or usage data changed and you need to refresh a draft invoice before finalizing. Optional finalize=true to lock after recalc.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6008,7 +4317,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Recalculate invoice totals and line items",
+                "summary": "Recalculate invoice",
+                "operationId": "recalculateInvoice",
                 "parameters": [
                     {
                         "type": "string",
@@ -6032,19 +4342,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6059,7 +4369,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Void an invoice that hasn't been paid",
+                "description": "Use when cancelling an invoice (e.g. order cancelled or duplicate). Only unpaid invoices can be voided.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6069,7 +4379,8 @@ const docTemplate = `{
                 "tags": [
                     "Invoices"
                 ],
-                "summary": "Void an invoice",
+                "summary": "Void invoice",
+                "operationId": "voidInvoice",
                 "parameters": [
                     {
                         "type": "string",
@@ -6083,17 +4394,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6108,7 +4419,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List payments with the specified filter",
+                "description": "Use when listing or searching payments (e.g. reconciliation UI or customer payment history). Returns a paginated list; supports filtering by customer, invoice, status.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6119,6 +4430,7 @@ const docTemplate = `{
                     "Payments"
                 ],
                 "summary": "List payments",
+                "operationId": "listPayments",
                 "parameters": [
                     {
                         "type": "string",
@@ -6148,6 +4460,12 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "gateway_payment_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "For filtering by gateway tracking ID",
+                        "name": "gateway_tracking_id",
                         "in": "query"
                     },
                     {
@@ -6224,19 +4542,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Paginated payments",
                         "schema": {
                             "$ref": "#/definitions/dto.ListPaymentsResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6249,7 +4567,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new payment with the specified configuration",
+                "description": "Use when recording a payment against an invoice (e.g. after receiving funds via a gateway or manual entry).",
                 "consumes": [
                     "application/json"
                 ],
@@ -6259,7 +4577,8 @@ const docTemplate = `{
                 "tags": [
                     "Payments"
                 ],
-                "summary": "Create a new payment",
+                "summary": "Create payment",
+                "operationId": "createPayment",
                 "parameters": [
                     {
                         "description": "Payment configuration",
@@ -6273,19 +4592,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Created payment",
                         "schema": {
                             "$ref": "#/definitions/dto.PaymentResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6300,7 +4619,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a payment by ID",
+                "description": "Use when you need to load a single payment (e.g. for a receipt view or reconciliation).",
                 "consumes": [
                     "application/json"
                 ],
@@ -6310,7 +4629,8 @@ const docTemplate = `{
                 "tags": [
                     "Payments"
                 ],
-                "summary": "Get a payment by ID",
+                "summary": "Get payment",
+                "operationId": "getPayment",
                 "parameters": [
                     {
                         "type": "string",
@@ -6322,19 +4642,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Payment details",
                         "schema": {
                             "$ref": "#/definitions/dto.PaymentResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6347,7 +4673,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a payment with the specified configuration",
+                "description": "Use when updating payment status or metadata (e.g. after reconciliation or adding a reference).",
                 "consumes": [
                     "application/json"
                 ],
@@ -6357,7 +4683,8 @@ const docTemplate = `{
                 "tags": [
                     "Payments"
                 ],
-                "summary": "Update a payment",
+                "summary": "Update payment",
+                "operationId": "updatePayment",
                 "parameters": [
                     {
                         "type": "string",
@@ -6378,19 +4705,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated payment",
                         "schema": {
                             "$ref": "#/definitions/dto.PaymentResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6403,7 +4730,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a payment",
+                "description": "Use when removing or voiding a payment record (e.g. correcting erroneous entries). Returns 200 with success message.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6413,7 +4740,8 @@ const docTemplate = `{
                 "tags": [
                     "Payments"
                 ],
-                "summary": "Delete a payment",
+                "summary": "Delete payment",
+                "operationId": "deletePayment",
                 "parameters": [
                     {
                         "type": "string",
@@ -6425,19 +4753,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Payment deleted",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6452,7 +4786,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Process a payment",
+                "description": "Use when you need to charge or process a payment (e.g. trigger the payment provider to capture funds). Returns updated payment with status.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6462,7 +4796,8 @@ const docTemplate = `{
                 "tags": [
                     "Payments"
                 ],
-                "summary": "Process a payment",
+                "summary": "Process payment",
+                "operationId": "processPayment",
                 "parameters": [
                     {
                         "type": "string",
@@ -6474,19 +4809,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Processed payment",
                         "schema": {
                             "$ref": "#/definitions/dto.PaymentResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6495,119 +4836,13 @@ const docTemplate = `{
             }
         },
         "/plans": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get plans with optional filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Plans"
-                ],
-                "summary": "Get plans",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "lookup_key",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "plan_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListPlansResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new plan with the specified configuration",
+                "description": "Use when defining a new pricing plan (e.g. Free, Pro, Enterprise). Attach prices and entitlements; customers subscribe to plans.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6617,7 +4852,8 @@ const docTemplate = `{
                 "tags": [
                     "Plans"
                 ],
-                "summary": "Create a new plan",
+                "summary": "Create plan",
+                "operationId": "createPlan",
                 "parameters": [
                     {
                         "description": "Plan configuration",
@@ -6637,13 +4873,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6658,7 +4894,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List plans by filter",
+                "description": "Use when listing or searching plans (e.g. plan picker or admin catalog). Returns a paginated list; supports filtering and sorting.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6668,7 +4904,8 @@ const docTemplate = `{
                 "tags": [
                     "Plans"
                 ],
-                "summary": "List plans by filter",
+                "summary": "Query plans",
+                "operationId": "queryPlan",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -6688,13 +4925,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6709,17 +4946,15 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a plan by ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when you need to load a single plan (e.g. for display or to create a subscription).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Plans"
                 ],
-                "summary": "Get a plan",
+                "summary": "Get plan",
+                "operationId": "getPlan",
                 "parameters": [
                     {
                         "type": "string",
@@ -6737,19 +4972,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6762,7 +4997,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a plan by ID",
+                "description": "Use when changing plan details (e.g. name, interval, or metadata). Partial update supported.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6772,7 +5007,8 @@ const docTemplate = `{
                 "tags": [
                     "Plans"
                 ],
-                "summary": "Update a plan",
+                "summary": "Update plan",
+                "operationId": "updatePlan",
                 "parameters": [
                     {
                         "type": "string",
@@ -6799,19 +5035,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6824,7 +5060,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a plan by ID",
+                "description": "Use when retiring a plan (e.g. end-of-life). Existing subscriptions may be affected. Returns 200 with success message.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6834,7 +5070,8 @@ const docTemplate = `{
                 "tags": [
                     "Plans"
                 ],
-                "summary": "Delete a plan",
+                "summary": "Delete plan",
+                "operationId": "deletePlan",
                 "parameters": [
                     {
                         "type": "string",
@@ -6848,7 +5085,71 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/{id}/clone": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Clone an existing plan, copying its active prices, published entitlements, and published credit grants",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Plans"
+                ],
+                "summary": "Clone a plan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Clone configuration",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ClonePlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PlanResponse"
                         }
                     },
                     "400": {
@@ -6859,6 +5160,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6879,17 +5186,15 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all credit grants for a plan",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when listing credits attached to a plan (e.g. included prepaid or promo credits).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "CreditGrants"
+                    "Credit Grants"
                 ],
                 "summary": "Get plan credit grants",
+                "operationId": "getPlanCreditGrants",
                 "parameters": [
                     {
                         "type": "string",
@@ -6907,19 +5212,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6934,10 +5239,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all entitlements for a plan",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use when checking what a plan includes (e.g. feature list or limits for display or gating).",
                 "produces": [
                     "application/json"
                 ],
@@ -6945,6 +5247,7 @@ const docTemplate = `{
                     "Entitlements"
                 ],
                 "summary": "Get plan entitlements",
+                "operationId": "getPlanEntitlements",
                 "parameters": [
                     {
                         "type": "string",
@@ -6962,19 +5265,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -6989,7 +5292,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Synchronize current plan prices with all existing active subscriptions",
+                "description": "Use when you have changed plan prices and need to push them to all active subscriptions (e.g. global price update). Returns workflow ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7000,6 +5303,7 @@ const docTemplate = `{
                     "Plans"
                 ],
                 "summary": "Synchronize plan prices",
+                "operationId": "syncPlanPrices",
                 "parameters": [
                     {
                         "type": "string",
@@ -7044,187 +5348,13 @@ const docTemplate = `{
             }
         },
         "/prices": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get prices with the specified filter",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Prices"
-                ],
-                "summary": "Get prices",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "default": false,
-                        "name": "allow_expired_prices",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "entity_ids",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "PLAN",
-                            "SUBSCRIPTION",
-                            "ADDON",
-                            "PRICE",
-                            "COSTSHEET"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "PRICE_ENTITY_TYPE_PLAN",
-                            "PRICE_ENTITY_TYPE_SUBSCRIPTION",
-                            "PRICE_ENTITY_TYPE_ADDON",
-                            "PRICE_ENTITY_TYPE_PRICE",
-                            "PRICE_ENTITY_TYPE_COSTSHEET"
-                        ],
-                        "name": "entity_type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "meter_ids",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "parent_price_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Price override filtering fields",
-                        "name": "plan_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "price_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_date_lt",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "subscription_id",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListPricesResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new price with the specified configuration. Supports both regular and price unit configurations.",
+                "description": "Use when adding a new price to a plan or catalog (e.g. per-seat, flat, or metered). Ideal for both simple and usage-based pricing.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7234,7 +5364,8 @@ const docTemplate = `{
                 "tags": [
                     "Prices"
                 ],
-                "summary": "Create a new price",
+                "summary": "Create price",
+                "operationId": "createPrice",
                 "parameters": [
                     {
                         "description": "Price configuration",
@@ -7254,13 +5385,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7275,7 +5406,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create multiple prices with the specified configurations. Supports both regular and price unit configurations.",
+                "description": "Use when creating many prices at once (e.g. importing a catalog or setting up a plan with multiple tiers).",
                 "consumes": [
                     "application/json"
                 ],
@@ -7285,7 +5416,8 @@ const docTemplate = `{
                 "tags": [
                     "Prices"
                 ],
-                "summary": "Create multiple prices in bulk",
+                "summary": "Create prices in bulk",
+                "operationId": "createPricesBulk",
                 "parameters": [
                     {
                         "description": "Bulk price configuration",
@@ -7305,13 +5437,115 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/prices/lookup/{lookup_key}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when resolving a price by external id (e.g. from your catalog or CMS). Ideal for integrations.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prices"
+                ],
+                "summary": "Get price by lookup key",
+                "operationId": "getPriceByLookupKey",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Lookup key",
+                        "name": "lookup_key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PriceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/prices/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when listing or searching prices (e.g. plan builder or catalog). Returns a paginated list; supports filtering and sorting.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prices"
+                ],
+                "summary": "Query prices",
+                "operationId": "queryPrice",
+                "parameters": [
+                    {
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.PriceFilter"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListPricesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7326,7 +5560,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a paginated list of price units with optional filtering",
+                "description": "Use when listing price units (e.g. in a catalog or when creating prices). Returns a paginated list; supports status, sort, and pagination.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7337,6 +5571,7 @@ const docTemplate = `{
                     "Price Units"
                 ],
                 "summary": "List price units",
+                "operationId": "listPriceUnits",
                 "parameters": [
                     {
                         "type": "string",
@@ -7345,13 +5580,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "maximum": 1000,
+                        "minimum": 1,
                         "type": "integer",
+                        "default": 50,
                         "description": "Limit number of results",
                         "name": "limit",
                         "in": "query"
                     },
                     {
+                        "minimum": 0,
                         "type": "integer",
+                        "default": 0,
                         "description": "Offset for pagination",
                         "name": "offset",
                         "in": "query"
@@ -7363,8 +5603,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
                         "type": "string",
-                        "description": "Sort order (asc/desc)",
+                        "description": "Sort order",
                         "name": "order",
                         "in": "query"
                     }
@@ -7377,7 +5621,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7390,7 +5640,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new price unit with the provided details",
+                "description": "Use when defining a new unit of measure for pricing (e.g. GB, API call, seat). Ideal for metered or usage-based prices.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7400,7 +5650,8 @@ const docTemplate = `{
                 "tags": [
                     "Price Units"
                 ],
-                "summary": "Create a new price unit",
+                "summary": "Create price unit",
+                "operationId": "createPriceUnit",
                 "parameters": [
                     {
                         "description": "Price unit details",
@@ -7416,11 +5667,17 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.PriceUnitResponse"
+                            "$ref": "#/definitions/dto.CreatePriceUnitResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7435,7 +5692,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a price unit by code",
+                "description": "Use when resolving a price unit by code (e.g. from an external catalog or config). Ideal for integrations.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7445,7 +5702,8 @@ const docTemplate = `{
                 "tags": [
                     "Price Units"
                 ],
-                "summary": "Get a price unit by code",
+                "summary": "Get price unit by code",
+                "operationId": "getPriceUnitByCode",
                 "parameters": [
                     {
                         "type": "string",
@@ -7463,13 +5721,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7484,7 +5748,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List price units by filter",
+                "description": "Use when searching or listing price units (e.g. admin catalog). Returns a paginated list; supports filtering and sorting.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7494,7 +5758,8 @@ const docTemplate = `{
                 "tags": [
                     "Price Units"
                 ],
-                "summary": "List price units by filter",
+                "summary": "Query price units",
+                "operationId": "queryPriceUnit",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -7502,7 +5767,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/priceunit.PriceUnitFilter"
+                            "$ref": "#/definitions/types.PriceUnitFilter"
                         }
                     }
                 ],
@@ -7514,13 +5779,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7535,7 +5800,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a price unit by ID",
+                "description": "Use when you need to load a single price unit (e.g. for display or when creating a price).",
                 "consumes": [
                     "application/json"
                 ],
@@ -7545,7 +5810,8 @@ const docTemplate = `{
                 "tags": [
                     "Price Units"
                 ],
-                "summary": "Get a price unit by ID",
+                "summary": "Get price unit",
+                "operationId": "getPriceUnit",
                 "parameters": [
                     {
                         "type": "string",
@@ -7568,8 +5834,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7582,7 +5848,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update an existing price unit with the provided details. Only name, symbol, precision, and conversion_rate can be updated. Status changes are not allowed.",
+                "description": "Use when renaming or updating metadata for a price unit. Code is immutable once created.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7592,7 +5858,8 @@ const docTemplate = `{
                 "tags": [
                     "Price Units"
                 ],
-                "summary": "Update a price unit",
+                "summary": "Update price unit",
+                "operationId": "updatePriceUnit",
                 "parameters": [
                     {
                         "type": "string",
@@ -7638,7 +5905,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Archive an existing price unit. The unit will be marked as archived and cannot be used in new prices.",
+                "description": "Use when removing a price unit that is no longer needed. Fails if any price references this unit.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7648,7 +5915,8 @@ const docTemplate = `{
                 "tags": [
                     "Price Units"
                 ],
-                "summary": "Archive a price unit",
+                "summary": "Delete price unit",
+                "operationId": "deletePriceUnit",
                 "parameters": [
                     {
                         "type": "string",
@@ -7662,7 +5930,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
@@ -7687,7 +5955,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a price by ID with expanded meter and price unit information",
+                "description": "Use when you need to load a single price (e.g. for display or editing). Response includes expanded meter and price unit when applicable.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7697,7 +5965,8 @@ const docTemplate = `{
                 "tags": [
                     "Prices"
                 ],
-                "summary": "Get a price by ID",
+                "summary": "Get price",
+                "operationId": "getPrice",
                 "parameters": [
                     {
                         "type": "string",
@@ -7715,13 +5984,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7734,7 +6003,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a price with the specified configuration",
+                "description": "Use when changing price configuration (e.g. amount, billing scheme, or metadata).",
                 "consumes": [
                     "application/json"
                 ],
@@ -7744,7 +6013,8 @@ const docTemplate = `{
                 "tags": [
                     "Prices"
                 ],
-                "summary": "Update a price",
+                "summary": "Update price",
+                "operationId": "updatePrice",
                 "parameters": [
                     {
                         "type": "string",
@@ -7771,13 +6041,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7790,7 +6060,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a price",
+                "description": "Use when retiring a price (e.g. end-of-life or replacement). Optional effective date or cascade for subscriptions.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7800,7 +6070,8 @@ const docTemplate = `{
                 "tags": [
                     "Prices"
                 ],
-                "summary": "Delete a price",
+                "summary": "Delete price",
+                "operationId": "deletePrice",
                 "parameters": [
                     {
                         "type": "string",
@@ -7808,23 +6079,32 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Delete Price Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.DeletePriceRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7839,7 +6119,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns all available roles with their permissions, names, and descriptions",
+                "description": "Use when building role pickers or permission UIs. Returns all roles with permissions and descriptions.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7850,6 +6130,7 @@ const docTemplate = `{
                     "RBAC"
                 ],
                 "summary": "List all RBAC roles",
+                "operationId": "listRbacRoles",
                 "responses": {
                     "200": {
                         "description": "List of roles",
@@ -7877,7 +6158,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Returns details of a specific role including permissions, name, and description",
+                "description": "Use when you need to show or edit a single role (e.g. role detail page). Includes permissions, name, and description.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7888,6 +6169,7 @@ const docTemplate = `{
                     "RBAC"
                 ],
                 "summary": "Get a specific RBAC role",
+                "operationId": "getRbacRole",
                 "parameters": [
                     {
                         "type": "string",
@@ -7924,7 +6206,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a paginated list of API keys",
+                "description": "Use when listing API keys (e.g. admin view or rotating keys). Returns a paginated list.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7932,9 +6214,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "secrets"
+                    "Secrets"
                 ],
                 "summary": "List API keys",
+                "operationId": "listApiKeys",
                 "parameters": [
                     {
                         "type": "integer",
@@ -7963,13 +6246,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -7982,7 +6265,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new API key. Provide 'service_account_id' in body to create API key for a service account, otherwise creates for authenticated user.",
+                "description": "Use when issuing a new API key (e.g. for a service account or for the current user). Provide service_account_id to create for a service account.",
                 "consumes": [
                     "application/json"
                 ],
@@ -7990,12 +6273,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "secrets"
+                    "Secrets"
                 ],
                 "summary": "Create a new API key",
+                "operationId": "createApiKey",
                 "parameters": [
                     {
-                        "description": "API key creation request\\",
+                        "description": "API key creation request",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -8012,13 +6296,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8033,7 +6317,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete an API key by ID",
+                "description": "Use when revoking an API key (e.g. rotation or compromise). Permanently invalidates the key.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8041,9 +6325,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "secrets"
+                    "Secrets"
                 ],
                 "summary": "Delete an API key",
+                "operationId": "deleteApiKey",
                 "parameters": [
                     {
                         "type": "string",
@@ -8058,13 +6343,13 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8072,94 +6357,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/secrets/integrations/linked": {
+        "/secrets/integrations/by-provider/{provider}": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a list of unique providers which have a valid linked integration secret",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Integrations"
-                ],
-                "summary": "List linked integrations",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.LinkedIntegrationsResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/secrets/integrations/{id}": {
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete integration credentials",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Integrations"
-                ],
-                "summary": "Delete an integration",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Integration ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/secrets/integrations/{provider}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get details of a specific integration",
+                "description": "Use when you need to check or display integration config (e.g. which provider is linked). Sensitive values may be redacted.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8170,6 +6375,7 @@ const docTemplate = `{
                     "Integrations"
                 ],
                 "summary": "Get integration details",
+                "operationId": "getIntegration",
                 "parameters": [
                     {
                         "type": "string",
@@ -8187,26 +6393,28 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     }
                 }
-            },
+            }
+        },
+        "/secrets/integrations/create/{provider}": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create or update integration credentials",
+                "description": "Use when storing or updating credentials for an external integration (e.g. Stripe, HubSpot). Secrets are encrypted at rest.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8217,6 +6425,7 @@ const docTemplate = `{
                     "Integrations"
                 ],
                 "summary": "Create or update an integration",
+                "operationId": "createOrUpdateIntegration",
                 "parameters": [
                     {
                         "type": "string",
@@ -8243,13 +6452,95 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/secrets/integrations/linked": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when showing which integrations are connected (e.g. settings page). Returns providers that have valid linked credentials.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrations"
+                ],
+                "summary": "List linked integrations",
+                "operationId": "listLinkedIntegrations",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LinkedIntegrationsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/secrets/integrations/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when disconnecting an integration (e.g. switching provider or removing OAuth). Deletes stored credentials.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Integrations"
+                ],
+                "summary": "Delete an integration",
+                "operationId": "deleteIntegration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Integration ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8258,187 +6549,13 @@ const docTemplate = `{
             }
         },
         "/subscriptions": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get subscriptions with optional filtering",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Subscriptions"
-                ],
-                "summary": "List subscriptions",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ActiveAt filters subscriptions that are active at the given time",
-                        "name": "active_at",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "enum": [
-                                "RECURRING",
-                                "ONETIME"
-                            ],
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "BillingCadence filters by billing cadence",
-                        "name": "billing_cadence",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "enum": [
-                                "MONTHLY",
-                                "ANNUAL",
-                                "WEEKLY",
-                                "DAILY",
-                                "QUARTERLY",
-                                "HALF_YEARLY"
-                            ],
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "BillingPeriod filters by billing period",
-                        "name": "billing_period",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "CustomerID filters by customer ID",
-                        "name": "customer_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "end_time",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "expand",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 1000,
-                        "minimum": 1,
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "name": "order",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "PlanID filters by plan ID",
-                        "name": "plan_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "start_time",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "published",
-                            "deleted",
-                            "archived"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "StatusPublished",
-                            "StatusDeleted",
-                            "StatusArchived"
-                        ],
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "subscription_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "enum": [
-                                "active",
-                                "paused",
-                                "cancelled",
-                                "incomplete",
-                                "incomplete_expired",
-                                "past_due",
-                                "trialing",
-                                "unpaid"
-                            ],
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "SubscriptionStatus filters by subscription status",
-                        "name": "subscription_status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "WithLineItems includes line items in the response",
-                        "name": "with_line_items",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ListSubscriptionsResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new subscription",
+                "description": "Use when onboarding a customer to a plan or starting a new subscription. Ideal for draft subscriptions (activate later) or active from start.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8449,6 +6566,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Create subscription",
+                "operationId": "createSubscription",
                 "parameters": [
                     {
                         "description": "Subscription Request",
@@ -8468,13 +6586,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8489,7 +6607,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Add an addon to a subscription",
+                "description": "Use when adding an optional product or add-on to an existing subscription (e.g. extra storage or support tier).",
                 "consumes": [
                     "application/json"
                 ],
@@ -8500,6 +6618,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Add addon to subscription",
+                "operationId": "addSubscriptionAddon",
                 "parameters": [
                     {
                         "description": "Add Addon Request",
@@ -8507,7 +6626,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.AddAddonToSubscriptionRequest"
+                            "$ref": "#/definitions/dto.AddAddonRequest"
                         }
                     }
                 ],
@@ -8519,13 +6638,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8538,7 +6657,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Remove an addon from a subscription",
+                "description": "Use when removing an add-on from a subscription (e.g. downgrade or opt-out).",
                 "consumes": [
                     "application/json"
                 ],
@@ -8549,6 +6668,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Remove addon from subscription",
+                "operationId": "removeSubscriptionAddon",
                 "parameters": [
                     {
                         "description": "Remove Addon Request",
@@ -8564,17 +6684,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8589,7 +6709,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a subscription line item by terminating the existing one and creating a new one",
+                "description": "Use when changing a subscription line item (e.g. quantity or price). Implemented by ending the current line and creating a new one for clean billing.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8600,6 +6720,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Update subscription line item",
+                "operationId": "updateSubscriptionLineItem",
                 "parameters": [
                     {
                         "type": "string",
@@ -8626,13 +6747,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8645,7 +6766,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a subscription line item by setting its end date",
+                "description": "Use when removing a charge or seat from a subscription (e.g. downgrade). Line item ends; retained for history but no longer billed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8656,6 +6777,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Delete subscription line item",
+                "operationId": "deleteSubscriptionLineItem",
                 "parameters": [
                     {
                         "type": "string",
@@ -8682,13 +6804,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8703,7 +6825,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List subscriptions by filter",
+                "description": "Use when listing or searching subscriptions (e.g. admin view or customer subscription list). Returns a paginated list; supports filtering by customer, plan, status.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8713,7 +6835,8 @@ const docTemplate = `{
                 "tags": [
                     "Subscriptions"
                 ],
-                "summary": "List subscriptions by filter",
+                "summary": "Query subscriptions",
+                "operationId": "querySubscription",
                 "parameters": [
                     {
                         "description": "Filter",
@@ -8733,13 +6856,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8754,7 +6877,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get usage for a subscription",
+                "description": "Use when showing usage for a subscription (e.g. in a portal or for overage checks). Supports time range and filters.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8765,6 +6888,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Get usage by subscription",
+                "operationId": "getSubscriptionUsage",
                 "parameters": [
                     {
                         "description": "Usage request",
@@ -8784,13 +6908,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8805,7 +6929,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a subscription by ID",
+                "description": "Use when you need to load a single subscription (e.g. for a billing portal or to check status).",
                 "produces": [
                     "application/json"
                 ],
@@ -8813,6 +6937,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Get subscription",
+                "operationId": "getSubscription",
                 "parameters": [
                     {
                         "type": "string",
@@ -8830,13 +6955,185 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when changing subscription details (e.g. quantity, billing anchor, or parent). Supports partial update; send \"\" to clear parent_subscription_id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Update subscription",
+                "operationId": "updateSubscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Subscription Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/activate": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when turning a draft subscription live (e.g. after collecting payment or completing setup). Once activated, billing and entitlements apply.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Activate draft subscription",
+                "operationId": "activateSubscription",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Activate Draft Subscription Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ActivateDraftSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/addons/associations": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when listing which add-ons are currently attached to a subscription (e.g. for display or editing).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get active addon associations",
+                "operationId": "getSubscriptionAddonAssociations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.AddonAssociationResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8851,7 +7148,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Cancel a subscription with enhanced proration support",
+                "description": "Use when a customer churns or downgrades. Supports immediate or end-of-period cancellation and proration. Ideal for self-serve or support-driven cancellations.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8862,6 +7159,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Cancel subscription",
+                "operationId": "cancelSubscription",
                 "parameters": [
                     {
                         "type": "string",
@@ -8888,13 +7186,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8909,7 +7207,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Execute a subscription plan change, including proration and invoice generation",
+                "description": "Use when applying a plan change (e.g. upgrade or downgrade). Executes proration and generates invoice or credit as needed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -8920,6 +7218,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Execute subscription plan change",
+                "operationId": "executeSubscriptionChange",
                 "parameters": [
                     {
                         "type": "string",
@@ -8946,19 +7245,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -8973,7 +7272,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Preview the impact of changing a subscription's plan, including proration calculations",
+                "description": "Use when showing a customer the cost of a plan change before they confirm (e.g. upgrade/downgrade preview with proration).",
                 "consumes": [
                     "application/json"
                 ],
@@ -8984,6 +7283,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Preview subscription plan change",
+                "operationId": "previewSubscriptionChange",
                 "parameters": [
                     {
                         "type": "string",
@@ -9010,19 +7310,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9037,7 +7337,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all entitlements for a subscription",
+                "description": "Use when checking what features or limits a subscription has (e.g. entitlement checks or feature gating). Optional feature_ids to filter.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9048,6 +7348,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Get subscription entitlements",
+                "operationId": "getSubscriptionEntitlements",
                 "parameters": [
                     {
                         "type": "string",
@@ -9075,19 +7376,137 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/grants/upcoming": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when showing upcoming or pending credits for a subscription (e.g. in a portal or for forecasting).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get upcoming credit grant applications",
+                "operationId": "getSubscriptionUpcomingGrants",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListCreditGrantApplicationsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/lineitems": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when adding a new charge or seat to a subscription (e.g. extra seat or one-time add). Supports price_id or inline price.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Create subscription line item",
+                "operationId": "createSubscriptionLineItem",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create Line Item Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateSubscriptionLineItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9102,7 +7521,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Pause a subscription with the specified parameters",
+                "description": "Use when temporarily stopping a subscription (e.g. customer hold or seasonal pause). Billing and access pause; resume when ready.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9113,6 +7532,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Pause a subscription",
+                "operationId": "pauseSubscription",
                 "parameters": [
                     {
                         "type": "string",
@@ -9139,19 +7559,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9161,7 +7581,7 @@ const docTemplate = `{
         },
         "/subscriptions/{id}/pauses": {
             "get": {
-                "description": "List all pauses for a subscription",
+                "description": "Use when showing pause history for a subscription (e.g. support or audit). Returns all past and future pauses.",
                 "produces": [
                     "application/json"
                 ],
@@ -9169,6 +7589,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "List all pauses for a subscription",
+                "operationId": "listSubscriptionPauses",
                 "parameters": [
                     {
                         "type": "string",
@@ -9189,19 +7610,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9216,7 +7637,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Resume a paused subscription with the specified parameters",
+                "description": "Use when reactivating a paused subscription (e.g. end of hold). Billing and access resume from the resume date.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9227,6 +7648,7 @@ const docTemplate = `{
                     "Subscriptions"
                 ],
                 "summary": "Resume a paused subscription",
+                "operationId": "resumeSubscription",
                 "parameters": [
                     {
                         "type": "string",
@@ -9253,19 +7675,72 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/{id}/v2": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when you need a subscription with related data (line items, prices, plan). Supports expand for detailed payloads without extra round-trips.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get subscription (V2)",
+                "operationId": "getSubscriptionV2",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comma-separated list of fields to expand (e.g., 'subscription_line_items,prices,plan')",
+                        "name": "expand",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubscriptionResponseV2"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9280,7 +7755,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List tasks with optional filtering",
+                "description": "Use when listing or searching async tasks (e.g. admin queue view). Returns list with optional filtering.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9291,6 +7766,7 @@ const docTemplate = `{
                     "Tasks"
                 ],
                 "summary": "List tasks",
+                "operationId": "listTasks",
                 "parameters": [
                     {
                         "type": "string",
@@ -9306,13 +7782,15 @@ const docTemplate = `{
                         "enum": [
                             "EVENTS",
                             "PRICES",
-                            "CUSTOMERS"
+                            "CUSTOMERS",
+                            "FEATURES"
                         ],
                         "type": "string",
                         "x-enum-varnames": [
                             "EntityTypeEvents",
                             "EntityTypePrices",
-                            "EntityTypeCustomers"
+                            "EntityTypeCustomers",
+                            "EntityTypeFeatures"
                         ],
                         "name": "entity_type",
                         "in": "query"
@@ -9413,13 +7891,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9432,7 +7910,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new task for processing files asynchronously",
+                "description": "Use when submitting a file or job for async processing (e.g. export or import). Returns task ID to poll for status and result.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9443,6 +7921,7 @@ const docTemplate = `{
                     "Tasks"
                 ],
                 "summary": "Create a new task",
+                "operationId": "createTask",
                 "parameters": [
                     {
                         "description": "Task configuration",
@@ -9462,13 +7941,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9483,7 +7962,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get the result of a task processing workflow",
+                "description": "Use when fetching the outcome of a completed task (e.g. export URL or error message). Call after task status is complete.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9494,6 +7973,7 @@ const docTemplate = `{
                     "Tasks"
                 ],
                 "summary": "Get task processing result",
+                "operationId": "getTaskResult",
                 "parameters": [
                     {
                         "type": "string",
@@ -9511,19 +7991,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9538,7 +8018,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a list of scheduled tasks with optional filters",
+                "description": "Use when listing or managing scheduled tasks in an admin UI. Returns a list; supports filtering by status, type, and pagination.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9546,9 +8026,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ScheduledTasks"
+                    "Scheduled Tasks"
                 ],
                 "summary": "List scheduled tasks",
+                "operationId": "listScheduledTasks",
                 "parameters": [
                     {
                         "type": "integer",
@@ -9595,13 +8076,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9614,7 +8095,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new scheduled task for data export",
+                "description": "Use when setting up recurring data exports or other scheduled jobs. Ideal for report generation or syncing data on a schedule.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9622,9 +8103,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ScheduledTasks"
+                    "Scheduled Tasks"
                 ],
-                "summary": "Create a scheduled task",
+                "summary": "Create scheduled task",
+                "operationId": "createScheduledTask",
                 "parameters": [
                     {
                         "description": "Scheduled Task",
@@ -9644,13 +8126,65 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/scheduled/schedule-update-billing-period": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when you need to trigger a billing-period update workflow (e.g. to recalculate or sync billing windows).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Scheduled Tasks"
+                ],
+                "summary": "Schedule update billing period",
+                "operationId": "scheduleUpdateBillingPeriod",
+                "parameters": [
+                    {
+                        "description": "Schedule Update Billing Period Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9665,7 +8199,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a scheduled task by ID",
+                "description": "Use when you need to load a single scheduled task (e.g. to show details in a UI or check its configuration).",
                 "consumes": [
                     "application/json"
                 ],
@@ -9673,9 +8207,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ScheduledTasks"
+                    "Scheduled Tasks"
                 ],
-                "summary": "Get a scheduled task",
+                "summary": "Get scheduled task",
+                "operationId": "getScheduledTask",
                 "parameters": [
                     {
                         "type": "string",
@@ -9693,19 +8228,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9718,7 +8253,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a scheduled task by ID - Only enabled field can be changed (pause/resume)",
+                "description": "Use when pausing or resuming a scheduled task. Only the enabled field can be changed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9726,9 +8261,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ScheduledTasks"
+                    "Scheduled Tasks"
                 ],
                 "summary": "Update a scheduled task",
+                "operationId": "updateScheduledTask",
                 "parameters": [
                     {
                         "type": "string",
@@ -9780,7 +8316,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Archive a scheduled task by ID (soft delete) - Sets status to archived and deletes from Temporal",
+                "description": "Use when removing a scheduled task from the active roster. Archives the task and removes it from the scheduler (soft delete).",
                 "consumes": [
                     "application/json"
                 ],
@@ -9788,9 +8324,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ScheduledTasks"
+                    "Scheduled Tasks"
                 ],
                 "summary": "Delete a scheduled task",
+                "operationId": "deleteScheduledTask",
                 "parameters": [
                     {
                         "type": "string",
@@ -9832,7 +8369,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Trigger a force run export immediately for a scheduled task with optional custom time range",
+                "description": "Use when you need to run a scheduled export immediately (e.g. on-demand report or catch-up). Supports optional custom time range.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9840,9 +8377,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "ScheduledTasks"
+                    "Scheduled Tasks"
                 ],
                 "summary": "Trigger force run",
+                "operationId": "triggerScheduledTaskRun",
                 "parameters": [
                     {
                         "type": "string",
@@ -9868,19 +8406,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9895,7 +8433,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a task by ID",
+                "description": "Use when checking task status or progress (e.g. polling after create). Returns task by ID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9906,6 +8444,7 @@ const docTemplate = `{
                     "Tasks"
                 ],
                 "summary": "Get a task",
+                "operationId": "getTask",
                 "parameters": [
                     {
                         "type": "string",
@@ -9923,19 +8462,78 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{id}/download": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when letting a user download an exported file (e.g. report or data export). Returns a presigned URL; supports FlexPrice or customer-owned S3.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tasks"
+                ],
+                "summary": "Download task export file",
+                "operationId": "downloadTaskExport",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -9950,7 +8548,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a task's status",
+                "description": "Use when updating task status (e.g. marking complete or failed from a worker). Typically called by backend processors.",
                 "consumes": [
                     "application/json"
                 ],
@@ -9961,6 +8559,7 @@ const docTemplate = `{
                     "Tasks"
                 ],
                 "summary": "Update task status",
+                "operationId": "updateTaskStatus",
                 "parameters": [
                     {
                         "type": "string",
@@ -9983,23 +8582,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10014,7 +8613,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List tax associations",
+                "description": "Use when listing tax associations (e.g. tax config or audit). Returns list with optional filtering.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10025,15 +8624,31 @@ const docTemplate = `{
                     "Tax Associations"
                 ],
                 "summary": "List tax associations",
+                "operationId": "listTaxAssociations",
                 "parameters": [
                     {
-                        "description": "Tax Association Filter",
-                        "name": "tax_association",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/types.TaxAssociationFilter"
-                        }
+                        "type": "string",
+                        "description": "Entity Type",
+                        "name": "entity_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Entity ID",
+                        "name": "entity_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "External Customer ID",
+                        "name": "external_customer_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tax Rate ID",
+                        "name": "tax_rate_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -10044,13 +8659,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10063,7 +8678,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new tax association",
+                "description": "Use when linking a tax rate to an entity (e.g. customer, product, or region) so that rate applies on invoices.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10074,6 +8689,7 @@ const docTemplate = `{
                     "Tax Associations"
                 ],
                 "summary": "Create Tax Association",
+                "operationId": "createTaxAssociation",
                 "parameters": [
                     {
                         "description": "Tax Config Request",
@@ -10093,13 +8709,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10114,7 +8730,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a tax association by ID",
+                "description": "Use when you need to load a single tax association (e.g. for display or editing).",
                 "consumes": [
                     "application/json"
                 ],
@@ -10125,6 +8741,7 @@ const docTemplate = `{
                     "Tax Associations"
                 ],
                 "summary": "Get Tax Association",
+                "operationId": "getTaxAssociation",
                 "parameters": [
                     {
                         "type": "string",
@@ -10142,13 +8759,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10161,7 +8778,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a tax association by ID",
+                "description": "Use when changing a tax association (e.g. switch rate or entity). Request body contains the fields to update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10172,6 +8789,7 @@ const docTemplate = `{
                     "Tax Associations"
                 ],
                 "summary": "Update tax association",
+                "operationId": "updateTaxAssociation",
                 "parameters": [
                     {
                         "type": "string",
@@ -10198,13 +8816,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10217,7 +8835,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a tax association by ID",
+                "description": "Use when removing a tax association (e.g. entity no longer subject to that rate).",
                 "consumes": [
                     "application/json"
                 ],
@@ -10228,6 +8846,7 @@ const docTemplate = `{
                     "Tax Associations"
                 ],
                 "summary": "Delete tax association",
+                "operationId": "deleteTaxAssociation",
                 "parameters": [
                     {
                         "type": "string",
@@ -10245,13 +8864,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10266,7 +8885,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get tax rates",
+                "description": "Use when listing tax rates (e.g. tax config UI). Returns tax rates with optional filters.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10277,6 +8896,7 @@ const docTemplate = `{
                     "Tax Rates"
                 ],
                 "summary": "Get tax rates",
+                "operationId": "getTaxRates",
                 "parameters": [
                     {
                         "type": "string",
@@ -10375,13 +8995,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10394,7 +9014,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a tax rate",
+                "description": "Use when defining a new tax rate (e.g. VAT or sales tax) for use in invoices. Attach to customers or products via tax associations.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10405,6 +9025,7 @@ const docTemplate = `{
                     "Tax Rates"
                 ],
                 "summary": "Create a tax rate",
+                "operationId": "createTaxRate",
                 "parameters": [
                     {
                         "description": "Tax rate to create",
@@ -10424,13 +9045,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10445,7 +9066,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a tax rate",
+                "description": "Use when you need to load a single tax rate (e.g. for display or when creating an association).",
                 "consumes": [
                     "application/json"
                 ],
@@ -10456,6 +9077,7 @@ const docTemplate = `{
                     "Tax Rates"
                 ],
                 "summary": "Get a tax rate",
+                "operationId": "getTaxRate",
                 "parameters": [
                     {
                         "type": "string",
@@ -10473,13 +9095,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10492,7 +9114,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a tax rate",
+                "description": "Use when changing a tax rate (e.g. rate value or name). Request body contains the fields to update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10503,6 +9125,7 @@ const docTemplate = `{
                     "Tax Rates"
                 ],
                 "summary": "Update a tax rate",
+                "operationId": "updateTaxRate",
                 "parameters": [
                     {
                         "type": "string",
@@ -10529,13 +9152,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10548,7 +9171,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a tax rate",
+                "description": "Use when retiring a tax rate (e.g. no longer applicable). Fails if still referenced by associations.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10559,6 +9182,7 @@ const docTemplate = `{
                     "Tax Rates"
                 ],
                 "summary": "Delete a tax rate",
+                "operationId": "deleteTaxRate",
                 "parameters": [
                     {
                         "type": "string",
@@ -10573,13 +9197,13 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10594,7 +9218,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get the subscription and usage details for the current tenant",
+                "description": "Use when showing the current tenant's billing usage (e.g. admin billing page or usage caps). Returns subscription and usage for the tenant.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10605,78 +9229,28 @@ const docTemplate = `{
                     "Tenants"
                 ],
                 "summary": "Get billing usage for the current tenant",
+                "operationId": "getTenantBillingUsage",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Tenant billing usage",
                         "schema": {
                             "$ref": "#/definitions/dto.TenantBillingUsage"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Tenant not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/tenants": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Create a new tenant",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Tenants"
-                ],
-                "summary": "Create a new tenant",
-                "parameters": [
-                    {
-                        "description": "Create tenant request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.CreateTenantRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/dto.TenantResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10691,7 +9265,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a tenant's details including name and billing information",
+                "description": "Use when changing tenant details (e.g. name or billing info). Request body contains the fields to update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10702,6 +9276,7 @@ const docTemplate = `{
                     "Tenants"
                 ],
                 "summary": "Update a tenant",
+                "operationId": "updateTenant",
                 "parameters": [
                     {
                         "description": "Update tenant request",
@@ -10715,25 +9290,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated tenant",
                         "schema": {
                             "$ref": "#/definitions/dto.TenantResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Tenant not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10759,6 +9334,7 @@ const docTemplate = `{
                     "Tenants"
                 ],
                 "summary": "Get tenant by ID",
+                "operationId": "getTenantById",
                 "parameters": [
                     {
                         "type": "string",
@@ -10770,19 +9346,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Tenant details",
                         "schema": {
                             "$ref": "#/definitions/dto.TenantResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Tenant not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10797,7 +9373,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new service account with required roles. Only service accounts can be created via this endpoint.",
+                "description": "Use when provisioning API access for automation, CI/CD pipelines, or headless integrations that need scoped API keys.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10808,6 +9384,7 @@ const docTemplate = `{
                     "Users"
                 ],
                 "summary": "Create service account",
+                "operationId": "createUser",
                 "parameters": [
                     {
                         "description": "Create service account request (type must be 'service_account', roles are required)",
@@ -10827,13 +9404,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10848,17 +9425,15 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get the current user's information",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Use to show the logged-in user's profile in the UI or to check permissions and roles for the current session.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get user info",
+                "summary": "Get current user",
+                "operationId": "getUserInfo",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -10873,7 +9448,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10888,7 +9463,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Search and filter service accounts by type, roles, etc.",
+                "description": "Use when listing or searching service accounts in an admin UI, or when auditing who has API access and which roles they have.",
                 "consumes": [
                     "application/json"
                 ],
@@ -10898,10 +9473,11 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "List service accounts with filters",
+                "summary": "Query users",
+                "operationId": "queryUser",
                 "parameters": [
                     {
-                        "description": "Filter parameters",
+                        "description": "Filter",
                         "name": "filter",
                         "in": "body",
                         "required": true,
@@ -10918,15 +9494,171 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/subscription-schedules": {
+            "get": {
+                "description": "Use when listing or searching scheduled changes across subscriptions (e.g. admin view). Returns schedules with optional filtering.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "List all subscription schedules",
+                "operationId": "listAllSubscriptionSchedules",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Filter to pending schedules only",
+                        "name": "pending_only",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by subscription ID",
+                        "name": "subscription_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit results",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetPendingSchedulesResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/subscription-schedules/{id}": {
+            "get": {
+                "description": "Use when you need to load a single scheduled change (e.g. to show when a plan change or renewal takes effect).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Get subscription schedule",
+                "operationId": "getSubscriptionSchedule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Schedule ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubscriptionScheduleResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/subscriptions/schedules/{schedule_id}/cancel": {
+            "post": {
+                "description": "Use when cancelling a scheduled change (e.g. customer changed mind). Identify by schedule ID in path or by subscription ID + schedule type in body.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Cancel subscription schedule",
+                "operationId": "cancelSubscriptionSchedule",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Schedule ID (optional if using request body)",
+                        "name": "schedule_id",
+                        "in": "path"
+                    },
+                    {
+                        "description": "Cancel request (optional if using path parameter)",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CancelScheduleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CancelScheduleResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/subscriptions/{subscription_id}/schedules": {
+            "get": {
+                "description": "Use when listing scheduled changes for a subscription (e.g. upcoming plan change or renewal). Returns all schedules for that subscription.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "List subscription schedules",
+                "operationId": "listSubscriptionSchedules",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "subscription_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetPendingSchedulesResponse"
                         }
                     }
                 }
@@ -10939,7 +9671,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new wallet for a customer",
+                "description": "Use when giving a customer a prepaid or credit balance (e.g. prepaid plans or promotional credits).",
                 "consumes": [
                     "application/json"
                 ],
@@ -10950,6 +9682,7 @@ const docTemplate = `{
                     "Wallets"
                 ],
                 "summary": "Create a new wallet",
+                "operationId": "createWallet",
                 "parameters": [
                     {
                         "description": "Create wallet request",
@@ -10969,13 +9702,117 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/wallets/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when listing or searching wallets (e.g. admin view or reporting). Returns a paginated list; supports filtering by customer and status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wallets"
+                ],
+                "summary": "Query wallets",
+                "operationId": "queryWallet",
+                "parameters": [
+                    {
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.WalletFilter"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.ListResponse-dto_WalletResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/wallets/transactions/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when searching or reporting on wallet transactions (e.g. cross-wallet history or reconciliation). Returns a paginated list; supports filtering by wallet, customer, type, date range.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wallets"
+                ],
+                "summary": "Query wallet transactions",
+                "operationId": "queryWalletTransaction",
+                "parameters": [
+                    {
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.WalletTransactionFilter"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListWalletTransactionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -10990,7 +9827,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a wallet by its ID",
+                "description": "Use when you need to load a single wallet (e.g. for a balance or settings view).",
                 "consumes": [
                     "application/json"
                 ],
@@ -11000,7 +9837,8 @@ const docTemplate = `{
                 "tags": [
                     "Wallets"
                 ],
-                "summary": "Get wallet by ID",
+                "summary": "Get wallet",
+                "operationId": "getWallet",
                 "parameters": [
                     {
                         "type": "string",
@@ -11018,19 +9856,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -11043,7 +9881,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Update a wallet's details including auto top-up configuration",
+                "description": "Use when changing wallet settings (e.g. enabling or updating auto top-up thresholds).",
                 "consumes": [
                     "application/json"
                 ],
@@ -11054,6 +9892,7 @@ const docTemplate = `{
                     "Wallets"
                 ],
                 "summary": "Update a wallet",
+                "operationId": "updateWallet",
                 "parameters": [
                     {
                         "type": "string",
@@ -11080,19 +9919,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -11107,7 +9946,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get real-time balance of a wallet",
+                "description": "Use when displaying or checking current wallet balance (e.g. before charging or in a portal). Supports optional expand for credits breakdown and from_cache.",
                 "consumes": [
                     "application/json"
                 ],
@@ -11118,6 +9957,7 @@ const docTemplate = `{
                     "Wallets"
                 ],
                 "summary": "Get wallet balance",
+                "operationId": "getWalletBalance",
                 "parameters": [
                     {
                         "type": "string",
@@ -11125,6 +9965,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Expand fields (e.g., credits_available_breakdown)",
+                        "name": "expand",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -11135,83 +9981,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/wallets/{id}/debit": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Debit a wallet by debiting credits from a wallet",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Wallets"
-                ],
-                "summary": "Debit a wallet",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Wallet ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Debit wallet request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.ManualBalanceDebitRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WalletResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -11226,7 +10008,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Terminates a wallet by closing it and debiting remaining balance",
+                "description": "Use when closing a customer wallet (e.g. churn or migration). Closes the wallet and applies remaining balance per policy (refund or forfeit).",
                 "consumes": [
                     "application/json"
                 ],
@@ -11237,6 +10019,7 @@ const docTemplate = `{
                     "Wallets"
                 ],
                 "summary": "Terminate a wallet",
+                "operationId": "terminateWallet",
                 "parameters": [
                     {
                         "type": "string",
@@ -11254,19 +10037,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -11281,7 +10064,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Add credits to a wallet",
+                "description": "Use when adding funds to a wallet (e.g. top-up, refund, or manual credit). Supports optional idempotency via reference.",
                 "consumes": [
                     "application/json"
                 ],
@@ -11292,6 +10075,7 @@ const docTemplate = `{
                     "Wallets"
                 ],
                 "summary": "Top up wallet",
+                "operationId": "topUpWallet",
                 "parameters": [
                     {
                         "type": "string",
@@ -11314,23 +10098,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.WalletResponse"
+                            "$ref": "#/definitions/dto.TopUpWalletResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -11345,7 +10129,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get transactions for a wallet with pagination",
+                "description": "Use when showing transaction history for a wallet (e.g. credit/debit log or audit). Returns a paginated list; supports limit, offset, and filters.",
                 "consumes": [
                     "application/json"
                 ],
@@ -11356,6 +10140,7 @@ const docTemplate = `{
                     "Wallets"
                 ],
                 "summary": "Get wallet transactions",
+                "operationId": "getWalletTransactions",
                 "parameters": [
                     {
                         "type": "string",
@@ -11363,6 +10148,11 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "created_by",
+                        "in": "query"
                     },
                     {
                         "type": "number",
@@ -11433,11 +10223,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
                         "name": "start_time",
                         "in": "query"
                     },
@@ -11466,7 +10251,8 @@ const docTemplate = `{
                             "CREDIT_NOTE",
                             "CREDIT_EXPIRED",
                             "WALLET_TERMINATION",
-                            "MANUAL_BALANCE_DEBIT"
+                            "MANUAL_BALANCE_DEBIT",
+                            "CREDIT_ADJUSTMENT"
                         ],
                         "type": "string",
                         "x-enum-varnames": [
@@ -11478,7 +10264,8 @@ const docTemplate = `{
                             "TransactionReasonCreditNote",
                             "TransactionReasonCreditExpired",
                             "TransactionReasonWalletTermination",
-                            "TransactionReasonManualBalanceDebit"
+                            "TransactionReasonManualBalanceDebit",
+                            "TransactionReasonCreditAdjustment"
                         ],
                         "name": "transaction_reason",
                         "in": "query"
@@ -11520,19 +10307,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Resource not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server error",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
@@ -11540,9 +10327,77 @@ const docTemplate = `{
                 }
             }
         },
+        "/webhooks/chargebee/{tenant_id}/{environment_id}": {
+            "post": {
+                "description": "Use as the Chargebee webhook endpoint URL. Receives payment and subscription events from Chargebee to sync status into FlexPrice.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Handle Chargebee webhook events",
+                "operationId": "handleChargebeeWebhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment ID",
+                        "name": "environment_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Basic Auth credentials",
+                        "name": "Authorization",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Webhook processed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/webhooks/hubspot/{tenant_id}/{environment_id}": {
             "post": {
-                "description": "Process incoming HubSpot webhook events for deal closed won and customer creation",
+                "description": "Use as the HubSpot webhook endpoint URL. Receives deal and customer events (e.g. deal closed won) to create or update customers in FlexPrice.",
                 "consumes": [
                     "application/json"
                 ],
@@ -11553,6 +10408,7 @@ const docTemplate = `{
                     "Webhooks"
                 ],
                 "summary": "Handle HubSpot webhook events",
+                "operationId": "handleHubspotWebhook",
                 "parameters": [
                     {
                         "type": "string",
@@ -11587,9 +10443,226 @@ const docTemplate = `{
                 }
             }
         },
+        "/webhooks/moyasar/{tenant_id}/{environment_id}": {
+            "post": {
+                "description": "Use as the Moyasar webhook endpoint URL. Receives payment events from Moyasar to update payment status in FlexPrice.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Handle Moyasar webhook events",
+                "operationId": "handleMoyasarWebhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment ID",
+                        "name": "environment_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Moyasar webhook signature",
+                        "name": "X-Moyasar-Signature",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Webhook received (always returns 200)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/webhooks/nomod/{tenant_id}/{environment_id}": {
+            "post": {
+                "description": "Use as the Nomod webhook endpoint URL. Receives payment and invoice events from Nomod to keep FlexPrice in sync.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Handle Nomod webhook events",
+                "operationId": "handleNomodWebhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment ID",
+                        "name": "environment_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Nomod webhook secret (if configured)",
+                        "name": "X-API-KEY",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Webhook processed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid or missing X-API-KEY",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/webhooks/quickbooks/{tenant_id}/{environment_id}": {
+            "post": {
+                "description": "Use as the QuickBooks webhook endpoint URL. Receives payment events from QuickBooks to sync payment status into FlexPrice.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Handle QuickBooks webhook events",
+                "operationId": "handleQuickbooksWebhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment ID",
+                        "name": "environment_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "QuickBooks webhook signature",
+                        "name": "intuit-signature",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Webhook processed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid signature",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/webhooks/razorpay/{tenant_id}/{environment_id}": {
+            "post": {
+                "description": "Use as the Razorpay webhook endpoint URL. Receives payment capture and failure events to update invoice or payment status in FlexPrice.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Handle Razorpay webhook events",
+                "operationId": "handleRazorpayWebhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tenant ID",
+                        "name": "tenant_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Environment ID",
+                        "name": "environment_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Razorpay webhook signature",
+                        "name": "X-Razorpay-Signature",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Webhook received (always returns 200)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/webhooks/stripe/{tenant_id}/{environment_id}": {
             "post": {
-                "description": "Process incoming Stripe webhook events for payment status updates and customer creation",
+                "description": "Use as the Stripe webhook endpoint URL. Receives payment and customer events from Stripe to keep FlexPrice in sync (e.g. payment succeeded, customer created).",
                 "consumes": [
                     "application/json"
                 ],
@@ -11600,6 +10673,7 @@ const docTemplate = `{
                     "Webhooks"
                 ],
                 "summary": "Handle Stripe webhook events",
+                "operationId": "handleStripeWebhook",
                 "parameters": [
                     {
                         "type": "string",
@@ -11647,54 +10721,61 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/workflows/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Use when listing or auditing workflow runs (e.g. ops dashboard or debugging). Returns a paginated list; supports filtering by workflow type and status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Workflows"
+                ],
+                "summary": "Query workflows",
+                "operationId": "queryWorkflow",
+                "parameters": [
+                    {
+                        "description": "Filter",
+                        "name": "filter",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.WorkflowExecutionFilter"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListWorkflowsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "addon.Addon": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "environment_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "lookup_key": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "name": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.AddonType"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
         "costsheet.Filter": {
             "type": "object",
             "properties": {
@@ -11761,14 +10842,21 @@ const docTemplate = `{
                 }
             }
         },
-        "coupon.Coupon": {
+        "coupon_application.CouponApplication": {
             "type": "object",
             "properties": {
-                "amount_off": {
-                    "type": "number"
+                "applied_at": {
+                    "type": "string"
                 },
-                "cadence": {
-                    "$ref": "#/definitions/types.CouponCadence"
+                "coupon_association_id": {
+                    "type": "string"
+                },
+                "coupon_id": {
+                    "type": "string"
+                },
+                "coupon_snapshot": {
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "created_at": {
                     "type": "string"
@@ -11779,17 +10867,29 @@ const docTemplate = `{
                 "currency": {
                     "type": "string"
                 },
-                "duration_in_periods": {
-                    "type": "integer"
+                "discount_percentage": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "$ref": "#/definitions/types.CouponType"
+                },
+                "discounted_amount": {
+                    "type": "string"
                 },
                 "environment_id": {
+                    "type": "string"
+                },
+                "final_price": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "max_redemptions": {
-                    "type": "integer"
+                "invoice_id": {
+                    "type": "string"
+                },
+                "invoice_line_item_id": {
+                    "type": "string"
                 },
                 "metadata": {
                     "type": "object",
@@ -11797,33 +10897,17 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "name": {
+                "original_price": {
                     "type": "string"
-                },
-                "percentage_off": {
-                    "type": "number"
-                },
-                "redeem_after": {
-                    "type": "string"
-                },
-                "redeem_before": {
-                    "type": "string"
-                },
-                "rules": {
-                    "type": "object",
-                    "additionalProperties": true
                 },
                 "status": {
                     "$ref": "#/definitions/types.Status"
                 },
-                "tenant_id": {
+                "subscription_id": {
                     "type": "string"
                 },
-                "total_redemptions": {
-                    "type": "integer"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.CouponType"
+                "tenant_id": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -11837,7 +10921,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coupon": {
-                    "$ref": "#/definitions/coupon.Coupon"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_coupon.Coupon"
                 },
                 "coupon_id": {
                     "type": "string"
@@ -11897,7 +10981,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
@@ -11940,76 +11024,43 @@ const docTemplate = `{
                 }
             }
         },
-        "customer.Customer": {
+        "dto.ActivateDraftSubscriptionRequest": {
             "type": "object",
+            "required": [
+                "start_date"
+            ],
             "properties": {
-                "address_city": {
-                    "description": "AddressCity is the city of the customer's address",
+                "start_date": {
+                    "description": "start_date is the new start date for the subscription when activating",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.AddAddonRequest": {
+            "type": "object",
+            "required": [
+                "addon_id",
+                "subscription_id"
+            ],
+            "properties": {
+                "addon_id": {
                     "type": "string"
                 },
-                "address_country": {
-                    "description": "AddressCountry is the country of the customer's address (ISO 3166-1 alpha-2)",
-                    "type": "string"
-                },
-                "address_line1": {
-                    "description": "AddressLine1 is the first line of the customer's address",
-                    "type": "string"
-                },
-                "address_line2": {
-                    "description": "AddressLine2 is the second line of the customer's address",
-                    "type": "string"
-                },
-                "address_postal_code": {
-                    "description": "AddressPostalCode is the postal code of the customer's address",
-                    "type": "string"
-                },
-                "address_state": {
-                    "description": "AddressState is the state of the customer's address",
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "email": {
-                    "description": "Email is the email of the customer",
-                    "type": "string"
-                },
-                "environment_id": {
-                    "description": "EnvironmentID is the environment identifier for the customer",
-                    "type": "string"
-                },
-                "external_id": {
-                    "description": "ExternalID is the external identifier for the customer",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID is the unique identifier for the customer",
-                    "type": "string"
-                },
-                "metadata": {
-                    "description": "Metadata",
+                "line_item_commitments": {
+                    "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
                     "type": "object",
                     "additionalProperties": {
-                        "type": "string"
+                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
                     }
                 },
-                "name": {
-                    "description": "Name is the name of the customer",
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "start_date": {
                     "type": "string"
                 },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
+                "subscription_id": {
                     "type": "string"
                 }
             }
@@ -12023,8 +11074,12 @@ const docTemplate = `{
                 "addon_id": {
                     "type": "string"
                 },
-                "end_date": {
-                    "type": "string"
+                "line_item_commitments": {
+                    "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
+                    }
                 },
                 "metadata": {
                     "type": "object",
@@ -12038,6 +11093,9 @@ const docTemplate = `{
         "dto.AddonAssociationResponse": {
             "type": "object",
             "properties": {
+                "addon": {
+                    "$ref": "#/definitions/dto.AddonResponse"
+                },
                 "addon_id": {
                     "type": "string"
                 },
@@ -12080,6 +11138,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/types.Status"
+                },
+                "subscription": {
+                    "$ref": "#/definitions/dto.SubscriptionResponse"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -12219,14 +11280,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AlertConfig": {
-            "type": "object",
-            "properties": {
-                "threshold": {
-                    "$ref": "#/definitions/dto.Threshold"
-                }
-            }
-        },
         "dto.AlertLogResponse": {
             "type": "object",
             "properties": {
@@ -12291,20 +11344,6 @@ const docTemplate = `{
                 },
                 "wallet": {
                     "$ref": "#/definitions/dto.WalletResponse"
-                }
-            }
-        },
-        "dto.AuthResponse": {
-            "type": "object",
-            "properties": {
-                "tenant_id": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
                 }
             }
         },
@@ -12377,15 +11416,59 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CancelScheduleRequest": {
+            "description": "Request to cancel a subscription schedule (supports two modes)",
+            "type": "object",
+            "properties": {
+                "schedule_id": {
+                    "description": "schedule_id is the ID of the schedule to cancel (optional if subscription_id and schedule_type are provided)",
+                    "type": "string"
+                },
+                "schedule_type": {
+                    "description": "schedule_type is the type of schedule to cancel (required if schedule_id is not provided)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionScheduleChangeType"
+                        }
+                    ]
+                },
+                "subscription_id": {
+                    "description": "subscription_id is the ID of the subscription (required if schedule_id is not provided)",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CancelScheduleResponse": {
+            "description": "Confirmation of schedule cancellation",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "message is a confirmation message",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "status is the new status (should be \"cancelled\")",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ScheduleStatus"
+                        }
+                    ]
+                }
+            }
+        },
         "dto.CancelSubscriptionRequest": {
             "type": "object",
             "required": [
                 "cancellation_type"
             ],
             "properties": {
-                "_": {
-                    "description": "SuppressWebhook is an internal flag to suppress webhook events during cancellation.",
-                    "type": "boolean"
+                "cancel_immediately_inovice_policy": {
+                    "description": "CancelImmediatelyInvoicePolicy controls whether to generate a final invoice on immediate cancellation. Defaults to skip.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.CancelImmediatelyInvoicePolicy"
+                        }
+                    ]
                 },
                 "cancellation_type": {
                     "description": "CancellationType determines when the cancellation takes effect",
@@ -12450,48 +11533,35 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "total_credit_amount": {
-                    "type": "number"
+                    "type": "string"
                 }
             }
         },
-        "dto.ConnectionResponse": {
+        "dto.ClonePlanRequest": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "description": {
+                    "description": "Description overrides the source plan's description when provided",
                     "type": "string"
                 },
-                "created_by": {
-                    "type": "string"
+                "display_order": {
+                    "description": "DisplayOrder overrides the source plan's display order when provided",
+                    "type": "integer"
                 },
-                "environment_id": {
-                    "type": "string"
-                },
-                "id": {
+                "lookup_key": {
+                    "description": "LookupKey is required and must be unique across published plans",
                     "type": "string"
                 },
                 "metadata": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "description": "Metadata overrides the source plan's metadata when provided",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.Metadata"
+                        }
+                    ]
                 },
                 "name": {
-                    "type": "string"
-                },
-                "provider_type": {
-                    "$ref": "#/definitions/types.SecretProvider"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "sync_config": {
-                    "$ref": "#/definitions/types.SyncConfig"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
+                    "description": "Name is required and must be different from the source plan's name",
                     "type": "string"
                 }
             }
@@ -12550,13 +11620,13 @@ const docTemplate = `{
                 },
                 "total_cost": {
                     "description": "Aggregated metrics",
-                    "type": "number"
+                    "type": "string"
                 },
                 "total_events": {
                     "type": "integer"
                 },
                 "total_quantity": {
-                    "type": "number"
+                    "type": "string"
                 }
             }
         },
@@ -12564,13 +11634,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "cost": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "event_count": {
                     "type": "integer"
                 },
                 "quantity": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "timestamp": {
                     "type": "string"
@@ -12654,19 +11724,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "discount_percentage": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "discount_type": {
                     "$ref": "#/definitions/types.CouponType"
                 },
                 "discounted_amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "environment_id": {
                     "type": "string"
                 },
                 "final_price": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -12684,7 +11754,7 @@ const docTemplate = `{
                     }
                 },
                 "original_price": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "status": {
                     "$ref": "#/definitions/types.Status"
@@ -12707,7 +11777,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coupon": {
-                    "$ref": "#/definitions/coupon.Coupon"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_coupon.Coupon"
                 },
                 "coupon_id": {
                     "type": "string"
@@ -12767,7 +11837,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "amount_off": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "cadence": {
                     "$ref": "#/definitions/types.CouponCadence"
@@ -12803,7 +11873,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "percentage_off": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "redeem_after": {
                     "type": "string"
@@ -13005,32 +12075,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateConnectionRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "provider_type"
-            ],
-            "properties": {
-                "encrypted_secret_data": {
-                    "$ref": "#/definitions/types.ConnectionMetadata"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "provider_type": {
-                    "$ref": "#/definitions/types.SecretProvider"
-                },
-                "sync_config": {
-                    "$ref": "#/definitions/types.SyncConfig"
-                }
-            }
-        },
         "dto.CreateCostsheetRequest": {
             "type": "object",
             "required": [
@@ -13075,7 +12119,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "amount_off": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "cadence": {
                     "enum": [
@@ -13108,7 +12152,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "percentage_off": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "redeem_after": {
                     "type": "string"
@@ -13145,8 +12189,15 @@ const docTemplate = `{
                 "cadence": {
                     "$ref": "#/definitions/types.CreditGrantCadence"
                 },
+                "conversion_rate": {
+                    "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
+                },
                 "credits": {
-                    "type": "number"
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
                 },
                 "expiration_duration": {
                     "type": "integer"
@@ -13178,7 +12229,14 @@ const docTemplate = `{
                 "scope": {
                     "$ref": "#/definitions/types.CreditGrantScope"
                 },
+                "start_date": {
+                    "type": "string"
+                },
                 "subscription_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
                     "type": "string"
                 }
             }
@@ -13192,7 +12250,7 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "description": "amount is the monetary amount to be credited for this line item",
-                    "type": "number"
+                    "type": "string"
                 },
                 "display_name": {
                     "description": "display_name is an optional human-readable name for this credit note line item",
@@ -13327,6 +12385,18 @@ const docTemplate = `{
                     "description": "name is the full name or company name of the customer",
                     "type": "string"
                 },
+                "parent_customer_external_id": {
+                    "description": "parent_customer_external_id is the external ID of the parent customer from your system\nExactly one of parent_customer_id or parent_customer_external_id may be provided",
+                    "type": "string"
+                },
+                "parent_customer_id": {
+                    "description": "parent_customer_id is the internal FlexPrice ID of the parent customer",
+                    "type": "string"
+                },
+                "skip_onboarding_workflow": {
+                    "description": "skip_onboarding_workflow when true, prevents the customer onboarding workflow from being triggered\nThis is used internally when a customer is created via a workflow to prevent infinite loops\nDefault: false",
+                    "type": "boolean"
+                },
                 "tax_rate_overrides": {
                     "description": "tax_rate_overrides contains tax rate configurations to be linked to this customer",
                     "type": "array",
@@ -13343,6 +12413,9 @@ const docTemplate = `{
                 "feature_type"
             ],
             "properties": {
+                "end_date": {
+                    "type": "string"
+                },
                 "entity_id": {
                     "type": "string"
                 },
@@ -13365,6 +12438,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "plan_id": {
+                    "type": "string"
+                },
+                "start_date": {
                     "type": "string"
                 },
                 "static_value": {
@@ -13512,7 +12588,15 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "description": "amount is the monetary amount for this line item",
-                    "type": "number"
+                    "type": "string"
+                },
+                "commitment_info": {
+                    "description": "commitment_info contains details about any commitment applied to this line item",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.CommitmentInfo"
+                        }
+                    ]
                 },
                 "display_name": {
                     "description": "display_name is the optional human-readable name for this line item",
@@ -13524,6 +12608,14 @@ const docTemplate = `{
                 },
                 "entity_type": {
                     "description": "entity_type is the optional type of the entity associated with this line item",
+                    "type": "string"
+                },
+                "invoice_level_discount": {
+                    "description": "invoice_level_discount is the discount amount in invoice currency applied to all line items on the invoice.",
+                    "type": "string"
+                },
+                "line_item_discount": {
+                    "description": "line_item_discount is the discount amount in invoice currency applied directly to this line item.",
                     "type": "string"
                 },
                 "metadata": {
@@ -13558,6 +12650,10 @@ const docTemplate = `{
                     "description": "TODO: !REMOVE after migration\nplan_id is the optional unique identifier of the plan associated with this line item",
                     "type": "string"
                 },
+                "prepaid_credits_applied": {
+                    "description": "prepaid_credits_applied is the amount in invoice currency reduced from this line item due to prepaid credits application.",
+                    "type": "string"
+                },
                 "price_id": {
                     "description": "price_id is the optional unique identifier of the price associated with this line item",
                     "type": "string"
@@ -13572,11 +12668,11 @@ const docTemplate = `{
                 },
                 "price_unit_amount": {
                     "description": "price_unit_amount is the optional amount converted to the price unit currency",
-                    "type": "number"
+                    "type": "string"
                 },
                 "quantity": {
                     "description": "quantity is the quantity of units for this line item",
-                    "type": "number"
+                    "type": "string"
                 }
             }
         },
@@ -13592,11 +12688,11 @@ const docTemplate = `{
             "properties": {
                 "amount_due": {
                     "description": "amount_due is the total amount that needs to be paid for this invoice",
-                    "type": "number"
+                    "type": "string"
                 },
                 "amount_paid": {
                     "description": "amount_paid is the amount that has been paid towards this invoice",
-                    "type": "number"
+                    "type": "string"
                 },
                 "billing_period": {
                     "description": "billing_period is the period this invoice covers (e.g., \"monthly\", \"yearly\")",
@@ -13633,16 +12729,12 @@ const docTemplate = `{
                     "description": "due_date is the date by which payment is expected",
                     "type": "string"
                 },
-                "environment_id": {
-                    "description": "environment_id is the unique identifier of the environment this invoice belongs to",
-                    "type": "string"
-                },
                 "idempotency_key": {
                     "description": "idempotency_key is an optional key used to prevent duplicate invoice creation",
                     "type": "string"
                 },
                 "invoice_coupons": {
-                    "description": "Invoice Coupns",
+                    "description": "Invoice Coupons",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.InvoiceCoupon"
@@ -13711,7 +12803,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "prepared_tax_rates": {
-                    "description": "prepared_tax_rates contains the tax rates pre-resolved by the caller (e.g., billing service)\nThese are applied at invoice level by the invoice service without further resolution",
+                    "description": "prepared_tax_rates contains the tax rates pre-resolved by the caller (e.g., billing service)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.TaxRateResponse"
@@ -13723,7 +12815,7 @@ const docTemplate = `{
                 },
                 "subtotal": {
                     "description": "subtotal is the amount before taxes and discounts are applied",
-                    "type": "number"
+                    "type": "string"
                 },
                 "tax_rate_overrides": {
                     "description": "tax_rate_overrides is the tax rate overrides to be applied to the invoice",
@@ -13741,7 +12833,11 @@ const docTemplate = `{
                 },
                 "total": {
                     "description": "total is the total amount of the invoice including taxes and discounts",
-                    "type": "number"
+                    "type": "string"
+                },
+                "total_prepaid_applied": {
+                    "description": "total_prepaid_applied is the total amount of prepaid applied to this invoice.",
+                    "type": "string"
                 }
             }
         },
@@ -13787,7 +12883,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "cancel_url": {
                     "type": "string"
@@ -13829,181 +12925,17 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreatePlanEntitlementRequest": {
-            "type": "object",
-            "required": [
-                "feature_id",
-                "feature_type"
-            ],
-            "properties": {
-                "entity_id": {
-                    "type": "string"
-                },
-                "entity_type": {
-                    "$ref": "#/definitions/types.EntitlementEntityType"
-                },
-                "feature_id": {
-                    "type": "string"
-                },
-                "feature_type": {
-                    "$ref": "#/definitions/types.FeatureType"
-                },
-                "is_enabled": {
-                    "type": "boolean"
-                },
-                "is_soft_limit": {
-                    "type": "boolean"
-                },
-                "parent_entitlement_id": {
-                    "type": "string"
-                },
-                "plan_id": {
-                    "type": "string"
-                },
-                "static_value": {
-                    "type": "string"
-                },
-                "usage_limit": {
-                    "type": "integer"
-                },
-                "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
-                }
-            }
-        },
-        "dto.CreatePlanPriceRequest": {
-            "type": "object",
-            "required": [
-                "billing_cadence",
-                "billing_model",
-                "billing_period",
-                "currency",
-                "invoice_cadence",
-                "price_unit_type",
-                "type"
-            ],
-            "properties": {
-                "amount": {
-                    "type": "string"
-                },
-                "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
-                },
-                "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
-                },
-                "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
-                },
-                "billing_period_count": {
-                    "type": "integer",
-                    "default": 1
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "end_date": {
-                    "type": "string"
-                },
-                "entity_id": {
-                    "description": "TODO: this will be required in the future as we will not allow prices to be created without an entity id",
-                    "type": "string"
-                },
-                "entity_type": {
-                    "description": "TODO: this will be required in the future as we will not allow prices to be created without an entity type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.PriceEntityType"
-                        }
-                    ]
-                },
-                "filter_values": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "group_id": {
-                    "description": "GroupID is the id of the group to add the price to",
-                    "type": "string"
-                },
-                "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
-                },
-                "lookup_key": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "meter_id": {
-                    "type": "string"
-                },
-                "plan_id": {
-                    "description": "TODO: This is deprecated and will be removed in the future",
-                    "type": "string"
-                },
-                "price_unit_config": {
-                    "$ref": "#/definitions/dto.PriceUnitConfig"
-                },
-                "price_unit_type": {
-                    "$ref": "#/definitions/types.PriceUnitType"
-                },
-                "start_date": {
-                    "type": "string"
-                },
-                "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
-                },
-                "tiers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
-                    }
-                },
-                "transform_quantity": {
-                    "$ref": "#/definitions/price.TransformQuantity"
-                },
-                "trial_period": {
-                    "type": "integer"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.PriceType"
-                }
-            }
-        },
         "dto.CreatePlanRequest": {
             "type": "object",
             "required": [
                 "name"
             ],
             "properties": {
-                "credit_grants": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CreateCreditGrantRequest"
-                    }
-                },
                 "description": {
                     "type": "string"
                 },
                 "display_order": {
                     "type": "integer"
-                },
-                "entitlements": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CreatePlanEntitlementRequest"
-                    }
                 },
                 "lookup_key": {
                     "type": "string"
@@ -14013,12 +12945,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "prices": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CreatePlanPriceRequest"
-                    }
                 }
             }
         },
@@ -14029,6 +12955,8 @@ const docTemplate = `{
                 "billing_model",
                 "billing_period",
                 "currency",
+                "entity_id",
+                "entity_type",
                 "invoice_cadence",
                 "price_unit_type",
                 "type"
@@ -14056,20 +12984,17 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "display_name": {
+                    "type": "string"
+                },
                 "end_date": {
                     "type": "string"
                 },
                 "entity_id": {
-                    "description": "TODO: this will be required in the future as we will not allow prices to be created without an entity id",
                     "type": "string"
                 },
                 "entity_type": {
-                    "description": "TODO: this will be required in the future as we will not allow prices to be created without an entity type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.PriceEntityType"
-                        }
-                    ]
+                    "$ref": "#/definitions/types.PriceEntityType"
                 },
                 "filter_values": {
                     "type": "object",
@@ -14099,9 +13024,9 @@ const docTemplate = `{
                 "meter_id": {
                     "type": "string"
                 },
-                "plan_id": {
-                    "description": "TODO: This is deprecated and will be removed in the future",
-                    "type": "string"
+                "min_quantity": {
+                    "description": "MinQuantity is the minimum quantity of the price",
+                    "type": "integer"
                 },
                 "price_unit_config": {
                     "$ref": "#/definitions/dto.PriceUnitConfig"
@@ -14163,25 +13088,71 @@ const docTemplate = `{
             ],
             "properties": {
                 "base_currency": {
+                    "description": "base_currency  is the currency that the price unit is based on",
                     "type": "string"
                 },
                 "code": {
                     "type": "string"
                 },
                 "conversion_rate": {
-                    "type": "number"
+                    "description": "ConversionRate defines the exchange rate from this price unit to the base currency.\nThis rate is used to convert amounts in the custom price unit to the base currency for storage and billing.\n\nConversion formula:\n  price_unit_amount * conversion_rate = base_currency_amount\n\nExample:\n  If conversion_rate = \"0.01\" and base_currency = \"usd\":\n  100 price_unit tokens * 0.01 = 1.00 USD\n\nNote: Rounding precision is determined by the base currency (e.g., USD uses 2 decimal places, JPY uses 0).",
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
                 },
                 "name": {
                     "type": "string"
                 },
-                "precision": {
-                    "type": "integer",
-                    "maximum": 8,
-                    "minimum": 0
+                "symbol": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreatePriceUnitResponse": {
+            "type": "object",
+            "properties": {
+                "base_currency": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "conversion_rate": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
                 },
                 "symbol": {
-                    "type": "string",
-                    "maxLength": 10
+                    "type": "string"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
                 }
             }
         },
@@ -14217,6 +13188,66 @@ const docTemplate = `{
                 },
                 "job_config": {
                     "$ref": "#/definitions/types.S3JobConfig"
+                }
+            }
+        },
+        "dto.CreateSubscriptionLineItemRequest": {
+            "type": "object",
+            "properties": {
+                "commitment_amount": {
+                    "description": "Commitment fields",
+                    "type": "number"
+                },
+                "commitment_duration": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "commitment_overage_factor": {
+                    "type": "number"
+                },
+                "commitment_quantity": {
+                    "type": "number"
+                },
+                "commitment_true_up_enabled": {
+                    "type": "boolean"
+                },
+                "commitment_type": {
+                    "$ref": "#/definitions/types.CommitmentType"
+                },
+                "commitment_windowed": {
+                    "type": "boolean"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "price": {
+                    "description": "Price defines a new price inline; server creates a subscription-scoped price and adds the line item. Exactly one of price_id or price must be set. Entity/currency are set from the subscription.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.SubscriptionPriceCreateRequest"
+                        }
+                    ]
+                },
+                "price_id": {
+                    "description": "PriceID references an existing price (plan, addon, or subscription-scoped). Exactly one of price_id or price must be set.",
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "subscription_phase_id": {
+                    "type": "string"
                 }
             }
         },
@@ -14264,7 +13295,15 @@ const docTemplate = `{
                 },
                 "commitment_amount": {
                     "description": "CommitmentAmount is the minimum amount a customer commits to paying for a billing period",
-                    "type": "number"
+                    "type": "string"
+                },
+                "commitment_duration": {
+                    "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on MONTHLY billing)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.BillingPeriod"
+                        }
+                    ]
                 },
                 "coupons": {
                     "type": "array",
@@ -14290,6 +13329,10 @@ const docTemplate = `{
                     "description": "Timezone of the customer.\nIf not set, the default value is UTC.",
                     "type": "string"
                 },
+                "enable_true_up": {
+                    "description": "Enable Commitment True Up Fee",
+                    "type": "boolean"
+                },
                 "end_date": {
                     "type": "string"
                 },
@@ -14300,6 +13343,21 @@ const docTemplate = `{
                 "gateway_payment_method_id": {
                     "type": "string"
                 },
+                "invoice_billing": {
+                    "description": "invoice_billing determines which customer should receive invoices for a subscription\n\"invoice_to_parent\" - Invoices are sent to the parent customer\n\"invoice_to_self\" - Invoices are sent to the subscription's customer",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.InvoiceBilling"
+                        }
+                    ]
+                },
+                "line_item_commitments": {
+                    "description": "LineItemCommitments allows setting commitment configuration per line item (keyed by price_id)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
+                    }
+                },
                 "line_item_coupons": {
                     "type": "object",
                     "additionalProperties": {
@@ -14307,6 +13365,13 @@ const docTemplate = `{
                         "items": {
                             "type": "string"
                         }
+                    }
+                },
+                "line_items": {
+                    "description": "LineItems are extra line items to add at creation (each with price_id or price), in addition to plan prices",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreateSubscriptionLineItemRequest"
                     }
                 },
                 "lookup_key": {
@@ -14320,7 +13385,7 @@ const docTemplate = `{
                 },
                 "overage_factor": {
                     "description": "OverageFactor is a multiplier applied to usage beyond the commitment amount",
-                    "type": "number"
+                    "type": "string"
                 },
                 "override_entitlements": {
                     "description": "OverrideEntitlements allows customizing specific entitlements for this subscription",
@@ -14336,11 +13401,23 @@ const docTemplate = `{
                         "$ref": "#/definitions/dto.OverrideLineItemRequest"
                     }
                 },
+                "parent_subscription_id": {
+                    "description": "ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)",
+                    "type": "string"
+                },
                 "payment_behavior": {
                     "description": "Payment behavior configuration",
                     "allOf": [
                         {
                             "$ref": "#/definitions/types.PaymentBehavior"
+                        }
+                    ]
+                },
+                "payment_terms": {
+                    "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PaymentTerms"
                         }
                     ]
                 },
@@ -14364,6 +13441,14 @@ const docTemplate = `{
                 },
                 "start_date": {
                     "type": "string"
+                },
+                "subscription_status": {
+                    "description": "SubscriptionStatus determines the initial status of the subscription\nIf set to \"draft\", the subscription will be created as a draft (skips invoice creation and payment processing)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionStatus"
+                        }
+                    ]
                 },
                 "tax_rate_overrides": {
                     "description": "tax_rate_overrides is the tax rate overrides\tto be applied to the subscription",
@@ -14413,8 +13498,6 @@ const docTemplate = `{
         "dto.CreateTaxAssociationRequest": {
             "type": "object",
             "required": [
-                "entity_id",
-                "entity_type",
                 "tax_rate_code"
             ],
             "properties": {
@@ -14429,6 +13512,9 @@ const docTemplate = `{
                 },
                 "entity_type": {
                     "$ref": "#/definitions/types.TaxRateEntityType"
+                },
+                "external_customer_id": {
+                    "type": "string"
                 },
                 "metadata": {
                     "type": "object",
@@ -14461,7 +13547,7 @@ const docTemplate = `{
                 },
                 "fixed_value": {
                     "description": "fixed_value is the fixed monetary amount when tax_rate_type is \"fixed\"",
-                    "type": "number"
+                    "type": "string"
                 },
                 "metadata": {
                     "description": "metadata contains additional key-value pairs for storing extra information",
@@ -14476,7 +13562,7 @@ const docTemplate = `{
                 },
                 "percentage_value": {
                     "description": "percentage_value is the percentage value (0-100) when tax_rate_type is \"percentage\"",
-                    "type": "number"
+                    "type": "string"
                 },
                 "scope": {
                     "description": "scope defines where this tax rate applies",
@@ -14493,20 +13579,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/types.TaxRateType"
                         }
                     ]
-                }
-            }
-        },
-        "dto.CreateTenantRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "billing_details": {
-                    "$ref": "#/definitions/dto.TenantBillingDetails"
-                },
-                "name": {
-                    "type": "string"
                 }
             }
         },
@@ -14541,34 +13613,26 @@ const docTemplate = `{
                 "currency"
             ],
             "properties": {
-                "alert_config": {
-                    "description": "alert_config is the alert configuration for the wallet (optional)",
+                "alert_settings": {
+                    "description": "alert_settings is the alert settings for the wallet (optional)\nIf not provided, tenant level alert settings will be used",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.AlertConfig"
+                            "$ref": "#/definitions/types.AlertSettings"
                         }
                     ]
                 },
-                "alert_enabled": {
-                    "description": "alert_enabled is the flag to enable alerts for the wallet\ndefaults to true, can be explicitly set to false to disable alerts",
-                    "type": "boolean"
-                },
-                "auto_topup_amount": {
-                    "type": "number"
-                },
-                "auto_topup_min_balance": {
-                    "type": "number"
-                },
-                "auto_topup_trigger": {
-                    "$ref": "#/definitions/types.AutoTopupTrigger"
-                },
-                "config": {
-                    "$ref": "#/definitions/types.WalletConfig"
+                "auto_topup": {
+                    "description": "auto top-up object",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.AutoTopup"
+                        }
+                    ]
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
-                    "type": "number",
-                    "default": 1
+                    "type": "string",
+                    "default": "1"
                 },
                 "currency": {
                     "type": "string"
@@ -14589,8 +13653,8 @@ const docTemplate = `{
                 },
                 "initial_credits_to_load": {
                     "description": "initial_credits_to_load is the number of credits to load to the wallet\nif not provided, the wallet will be created with 0 balance\nNOTE: this is not the amount in the currency, but the number of credits",
-                    "type": "number",
-                    "default": 0
+                    "type": "string",
+                    "default": "0"
                 },
                 "initial_credits_to_load_expiry_date": {
                     "description": "initial_credits_to_load_expiry_date YYYYMMDD format in UTC timezone (optional to set nil means no expiry)\nfor ex 20250101 means the credits will expire on 2025-01-01 00:00:00 UTC\nhence they will be available for use until 2024-12-31 23:59:59 UTC",
@@ -14599,11 +13663,87 @@ const docTemplate = `{
                 "metadata": {
                     "$ref": "#/definitions/types.Metadata"
                 },
-                "name": {
+                "price_unit": {
+                    "description": "price_unit is the code of the price unit to use for wallet creation\nIf provided, the price unit will be used to set the currency and conversion rate of the wallet:\n- currency: set to price unit's base_currency\n- conversion_rate: set to price unit's conversion_rate",
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
                     "type": "string"
                 },
                 "wallet_type": {
                     "$ref": "#/definitions/types.WalletType"
+                }
+            }
+        },
+        "dto.CreditGrantApplicationResponse": {
+            "type": "object",
+            "properties": {
+                "application_reason": {
+                    "$ref": "#/definitions/types.CreditGrantApplicationReason"
+                },
+                "application_status": {
+                    "$ref": "#/definitions/types.ApplicationStatus"
+                },
+                "applied_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "credit_grant_id": {
+                    "type": "string"
+                },
+                "credits": {
+                    "type": "number"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "failure_reason": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "idempotency_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
+                "period_end": {
+                    "type": "string"
+                },
+                "period_start": {
+                    "type": "string"
+                },
+                "retry_count": {
+                    "type": "integer"
+                },
+                "scheduled_for": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "subscription_id": {
+                    "type": "string"
+                },
+                "subscription_status_at_application": {
+                    "$ref": "#/definitions/types.SubscriptionStatus"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
                 }
             }
         },
@@ -14613,14 +13753,24 @@ const docTemplate = `{
                 "cadence": {
                     "$ref": "#/definitions/types.CreditGrantCadence"
                 },
+                "conversion_rate": {
+                    "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
                 "created_by": {
                     "type": "string"
                 },
+                "credit_grant_anchor": {
+                    "type": "string"
+                },
                 "credits": {
-                    "type": "number"
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
                 },
                 "environment_id": {
                     "type": "string"
@@ -14658,6 +13808,9 @@ const docTemplate = `{
                 "scope": {
                     "$ref": "#/definitions/types.CreditGrantScope"
                 },
+                "start_date": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/types.Status"
                 },
@@ -14665,6 +13818,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tenant_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
                     "type": "string"
                 },
                 "updated_at": {
@@ -14712,7 +13869,7 @@ const docTemplate = `{
                     "description": "customer contains the customer information associated with this credit note",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/customer.Customer"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_customer.Customer"
                         }
                     ]
                 },
@@ -14803,7 +13960,7 @@ const docTemplate = `{
                 },
                 "total_amount": {
                     "description": "total_amount is the total including creditable invoice-level discounts or minimums, and tax",
-                    "type": "number"
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -14813,6 +13970,29 @@ const docTemplate = `{
                 },
                 "voided_at": {
                     "description": "voided_at is the timestamp when the credit note was voided",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CustomAnalyticItem": {
+            "type": "object",
+            "properties": {
+                "feature_name": {
+                    "description": "Name of the feature this applies to",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Calculation name (e.g., \"Revenue per Minute\")",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"feature\", \"meter\", \"event_name\"",
+                    "type": "string"
+                },
+                "value": {
                     "type": "string"
                 }
             }
@@ -14852,19 +14032,19 @@ const docTemplate = `{
                 },
                 "total_overdue_amount": {
                     "description": "total_overdue_amount is the total amount of overdue invoices in this currency",
-                    "type": "number"
+                    "type": "string"
                 },
                 "total_revenue_amount": {
                     "description": "total_revenue_amount is the total revenue generated from this customer in this currency",
-                    "type": "number"
+                    "type": "string"
                 },
                 "total_unpaid_amount": {
                     "description": "total_unpaid_amount is the total amount of unpaid invoices in this currency",
-                    "type": "number"
+                    "type": "string"
                 },
                 "unpaid_fixed_charges": {
                     "description": "unpaid_fixed_charges is the total amount of unpaid fixed charges in this currency",
-                    "type": "number"
+                    "type": "string"
                 },
                 "unpaid_invoice_count": {
                     "description": "unpaid_invoice_count is the number of unpaid invoices for this customer in this currency",
@@ -14872,7 +14052,21 @@ const docTemplate = `{
                 },
                 "unpaid_usage_charges": {
                     "description": "unpaid_usage_charges is the total amount of unpaid usage-based charges in this currency",
-                    "type": "number"
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CustomerLookupResult": {
+            "type": "object",
+            "properties": {
+                "customer": {
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_customer.Customer"
+                },
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.DebugTrackerStatus"
                 }
             }
         },
@@ -14957,6 +14151,13 @@ const docTemplate = `{
                     "description": "Name is the name of the customer",
                     "type": "string"
                 },
+                "parent_customer": {
+                    "$ref": "#/definitions/dto.CustomerResponse"
+                },
+                "parent_customer_id": {
+                    "description": "ParentCustomerID is the parent customer identifier for the customer",
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/types.Status"
                 },
@@ -14991,6 +14192,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.DebugTracker": {
+            "type": "object",
+            "properties": {
+                "customer_lookup": {
+                    "$ref": "#/definitions/dto.CustomerLookupResult"
+                },
+                "failure_point": {
+                    "$ref": "#/definitions/types.FailurePoint"
+                },
+                "meter_matching": {
+                    "$ref": "#/definitions/dto.MeterMatchingResult"
+                },
+                "price_lookup": {
+                    "$ref": "#/definitions/dto.PriceLookupResult"
+                },
+                "subscription_line_item_lookup": {
+                    "$ref": "#/definitions/dto.SubscriptionLineItemLookupResult"
+                }
+            }
+        },
         "dto.DeleteCostsheetResponse": {
             "type": "object",
             "properties": {
@@ -14998,6 +14219,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DeleteCreditGrantRequest": {
+            "type": "object",
+            "properties": {
+                "effective_date": {
+                    "description": "EffectiveDate is optional; when set (subscription scope) the grant end date is set to this time.",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DeletePriceRequest": {
+            "type": "object",
+            "properties": {
+                "end_date": {
                     "type": "string"
                 }
             }
@@ -15024,6 +14262,9 @@ const docTemplate = `{
                 },
                 "display_order": {
                     "type": "integer"
+                },
+                "end_date": {
+                    "type": "string"
                 },
                 "entity_id": {
                     "type": "string"
@@ -15060,6 +14301,9 @@ const docTemplate = `{
                 },
                 "plan_id": {
                     "description": "TODO: Remove this once we have a proper entitlement entity type",
+                    "type": "string"
+                },
+                "start_date": {
                     "type": "string"
                 },
                 "static_value": {
@@ -15224,6 +14468,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.EventCostInfo": {
+            "type": "object",
+            "properties": {
+                "costNanoUsd": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.FeatureResponse": {
             "type": "object",
             "properties": {
@@ -15283,11 +14538,40 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.FeatureUsageInfo": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "feature_id": {
+                    "type": "string"
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "processed_at": {
+                    "type": "string"
+                },
+                "qty_total": {
+                    "type": "string"
+                },
+                "sub_line_item_id": {
+                    "type": "string"
+                },
+                "subscription_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.FeatureUsageSummary": {
             "type": "object",
             "properties": {
                 "current_usage": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "feature": {
                     "$ref": "#/definitions/dto.FeatureResponse"
@@ -15314,7 +14598,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_percent": {
-                    "type": "number"
+                    "type": "string"
                 }
             }
         },
@@ -15381,29 +14665,49 @@ const docTemplate = `{
                 },
                 "margin": {
                     "description": "Revenue - Cost",
-                    "type": "number"
+                    "type": "string"
                 },
                 "margin_percent": {
                     "description": "(Margin / Revenue) * 100",
-                    "type": "number"
+                    "type": "string"
                 },
                 "roi": {
                     "description": "(Revenue - Cost) / Cost",
-                    "type": "number"
+                    "type": "string"
                 },
                 "roi_percent": {
                     "description": "ROI * 100",
-                    "type": "number"
+                    "type": "string"
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "total_cost": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "total_revenue": {
                     "description": "Derived metrics",
-                    "type": "number"
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GetEventByIDResponse": {
+            "type": "object",
+            "properties": {
+                "debug_tracker": {
+                    "$ref": "#/definitions/dto.DebugTracker"
+                },
+                "event": {
+                    "$ref": "#/definitions/dto.Event"
+                },
+                "processed_events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.FeatureUsageInfo"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.EventProcessingStatusType"
                 }
             }
         },
@@ -15500,17 +14804,31 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetMonitoringDataResponse": {
+        "dto.GetHuggingFaceBillingDataResponse": {
             "type": "object",
             "properties": {
-                "consumption_lag": {
+                "requests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.EventCostInfo"
+                    }
+                }
+            }
+        },
+        "dto.GetPendingSchedulesResponse": {
+            "description": "List of pending schedules for a subscription",
+            "type": "object",
+            "properties": {
+                "count": {
+                    "description": "count is the number of pending schedules",
                     "type": "integer"
                 },
-                "post_processing_lag": {
-                    "type": "integer"
-                },
-                "total_count": {
-                    "type": "integer"
+                "schedules": {
+                    "description": "schedules is the list of pending schedules",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SubscriptionScheduleResponse"
+                    }
                 }
             }
         },
@@ -15596,6 +14914,12 @@ const docTemplate = `{
                 "currency": {
                     "type": "string"
                 },
+                "custom_analytics": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CustomAnalyticItem"
+                    }
+                },
                 "items": {
                     "type": "array",
                     "items": {
@@ -15603,7 +14927,7 @@ const docTemplate = `{
                     }
                 },
                 "total_cost": {
-                    "type": "number"
+                    "type": "string"
                 }
             }
         },
@@ -15778,8 +15102,12 @@ const docTemplate = `{
                         }
                     }
                 },
+                "group_by_property": {
+                    "description": "GroupByProperty is the property name in event.properties to group by before aggregating.\nWhen set, aggregation is applied per unique value of this property within each bucket,\nthen the per-group results are summed to produce the bucket total.",
+                    "type": "string"
+                },
                 "multiplier": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "property_name": {
                     "description": "will be empty/ignored in case of COUNT",
@@ -15959,7 +15287,7 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "description": "amount for this line item",
-                    "type": "number"
+                    "type": "string"
                 },
                 "description": {
                     "description": "description of the line item",
@@ -15979,11 +15307,11 @@ const docTemplate = `{
                 },
                 "quantity": {
                     "description": "quantity for this line item",
-                    "type": "number"
+                    "type": "string"
                 },
                 "unit_price": {
                     "description": "unit_price for this line item",
-                    "type": "number"
+                    "type": "string"
                 }
             }
         },
@@ -15991,119 +15319,102 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "amount": {
-                    "description": "amount is the monetary amount for this line item",
-                    "type": "number"
+                    "type": "string"
+                },
+                "commitment_info": {
+                    "$ref": "#/definitions/types.CommitmentInfo"
                 },
                 "created_at": {
-                    "description": "created_at is the timestamp when this line item was created",
                     "type": "string"
                 },
                 "created_by": {
-                    "description": "created_by is the identifier of the user who created this line item",
                     "type": "string"
                 },
                 "currency": {
-                    "description": "currency is the three-letter ISO currency code for this line item",
                     "type": "string"
                 },
                 "customer_id": {
-                    "description": "customer_id is the unique identifier of the customer associated with this line item",
                     "type": "string"
                 },
                 "display_name": {
-                    "description": "display_name is the optional human-readable name for this line item",
                     "type": "string"
                 },
                 "entity_id": {
-                    "description": "entity_id is the optional unique identifier of the entity associated with this line item",
                     "type": "string"
                 },
                 "entity_type": {
-                    "description": "entity_type is the optional type of the entity associated with this line item",
+                    "type": "string"
+                },
+                "environment_id": {
                     "type": "string"
                 },
                 "id": {
-                    "description": "id is the unique identifier for this line item",
                     "type": "string"
                 },
                 "invoice_id": {
-                    "description": "invoice_id is the unique identifier of the invoice this line item belongs to",
+                    "type": "string"
+                },
+                "invoice_level_discount": {
+                    "description": "invoice_level_discount is the discount amount in invoice currency applied to all line items on the invoice.",
+                    "type": "string"
+                },
+                "line_item_discount": {
+                    "description": "line_item_discount is the discount amount in invoice currency applied directly to this line item.",
                     "type": "string"
                 },
                 "metadata": {
-                    "description": "metadata contains additional custom key-value pairs for storing extra information about this line item",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.Metadata"
-                        }
-                    ]
+                    "$ref": "#/definitions/types.Metadata"
                 },
                 "meter_display_name": {
-                    "description": "meter_display_name is the optional human-readable name of the meter",
                     "type": "string"
                 },
                 "meter_id": {
-                    "description": "meter_id is the optional unique identifier of the meter used for usage tracking",
                     "type": "string"
                 },
                 "period_end": {
-                    "description": "period_end is the optional end date of the period this line item covers",
                     "type": "string"
                 },
                 "period_start": {
-                    "description": "period_start is the optional start date of the period this line item covers",
                     "type": "string"
                 },
                 "plan_display_name": {
-                    "description": "plan_display_name is the optional human-readable name of the plan",
                     "type": "string"
                 },
-                "plan_id": {
-                    "description": "plan_id is the optional unique identifier of the plan associated with this line item",
+                "prepaid_credits_applied": {
+                    "description": "prepaid_credits_applied is the amount in invoice currency reduced from this line item due to prepaid credits application.",
                     "type": "string"
                 },
                 "price_id": {
-                    "description": "price_id is the optional unique identifier of the price associated with this line item",
                     "type": "string"
                 },
                 "price_type": {
-                    "description": "price_type indicates the type of pricing (fixed, usage, tiered, etc.)",
                     "type": "string"
                 },
                 "price_unit": {
-                    "description": "price_unit is the optional 3-digit ISO code of the price unit associated with this line item",
                     "type": "string"
                 },
                 "price_unit_amount": {
-                    "description": "price_unit_amount is the optional amount converted to the price unit currency",
-                    "type": "number"
+                    "type": "string"
                 },
                 "price_unit_id": {
-                    "description": "price_unit_id is the optional unique identifier of the price unit associated with this line item",
                     "type": "string"
                 },
                 "quantity": {
-                    "description": "quantity is the quantity of units for this line item",
-                    "type": "number"
-                },
-                "status": {
-                    "description": "status represents the current status of this line item",
                     "type": "string"
                 },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
                 "subscription_id": {
-                    "description": "subscription_id is the optional unique identifier of the subscription associated with this line item",
                     "type": "string"
                 },
                 "tenant_id": {
-                    "description": "tenant_id is the unique identifier of the tenant this line item belongs to",
                     "type": "string"
                 },
                 "updated_at": {
-                    "description": "updated_at is the timestamp when this line item was last updated",
                     "type": "string"
                 },
                 "updated_by": {
-                    "description": "updated_by is the identifier of the user who last updated this line item",
                     "type": "string"
                 },
                 "usage_analytics": {
@@ -16142,62 +15453,64 @@ const docTemplate = `{
                 },
                 "subtotal": {
                     "description": "subtotal is the subtotal amount before taxes",
-                    "type": "number"
+                    "type": "string"
                 },
                 "tax_amount": {
                     "description": "tax_amount is the total tax amount",
-                    "type": "number"
+                    "type": "string"
                 },
                 "total": {
                     "description": "total is the total amount including taxes",
-                    "type": "number"
+                    "type": "string"
                 }
             }
         },
         "dto.InvoiceResponse": {
             "type": "object",
             "properties": {
+                "adjustment_amount": {
+                    "description": "adjustment_amount is the total sum of credit notes of type \"adjustment\".\nThese are non-cash reductions applied to the invoice (e.g. goodwill credit, billing correction).",
+                    "type": "string"
+                },
                 "amount_due": {
                     "description": "amount_due is the total amount that needs to be paid for this invoice",
-                    "type": "number"
+                    "type": "string"
                 },
                 "amount_paid": {
-                    "description": "amount_paid is the amount that has been paid towards this invoice",
-                    "type": "number"
+                    "description": "amount_paid is the amount that has already been paid towards this invoice",
+                    "type": "string"
                 },
                 "amount_remaining": {
-                    "description": "amount_remaining is the amount still outstanding on this invoice",
-                    "type": "number"
+                    "description": "amount_remaining is the outstanding amount still owed on this invoice (calculated as amount_due minus amount_paid)",
+                    "type": "string"
                 },
                 "billing_period": {
-                    "description": "billing_period is the period this invoice covers (e.g., \"monthly\", \"yearly\")",
+                    "description": "billing_period describes the billing period this invoice covers (e.g., \"January 2024\", \"Q1 2024\")",
                     "type": "string"
                 },
                 "billing_reason": {
-                    "description": "billing_reason indicates why this invoice was created (subscription_cycle, manual, etc.)",
+                    "description": "billing_reason indicates why this invoice was generated (e.g., \"subscription_billing\", \"manual_charge\")",
                     "type": "string"
                 },
                 "billing_sequence": {
-                    "description": "billing_sequence is the optional sequence number for billing cycles",
+                    "description": "billing_sequence is the sequential number indicating the billing cycle for subscription invoices",
                     "type": "integer"
                 },
                 "coupon_applications": {
-                    "description": "coupon_applications contains the coupon applications associated with this invoice",
+                    "description": "coupon_applications contains the coupon applications associated with this invoice (overrides embedded field)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.CouponApplicationResponse"
                     }
                 },
                 "created_at": {
-                    "description": "created_at is the timestamp when this invoice was created",
                     "type": "string"
                 },
                 "created_by": {
-                    "description": "created_by is the identifier of the user who created this invoice",
                     "type": "string"
                 },
                 "currency": {
-                    "description": "currency is the three-letter ISO currency code (e.g., USD, EUR) for the invoice",
+                    "description": "currency is the three-letter ISO currency code (e.g., USD, EUR, GBP) that applies to all monetary amounts on this invoice",
                     "type": "string"
                 },
                 "customer": {
@@ -16209,19 +15522,23 @@ const docTemplate = `{
                     ]
                 },
                 "customer_id": {
-                    "description": "customer_id is the unique identifier of the customer this invoice belongs to",
+                    "description": "customer_id is the ID of the customer who will receive this invoice",
                     "type": "string"
                 },
                 "description": {
-                    "description": "description is the optional text description of the invoice",
+                    "description": "description is an optional description or notes about this invoice",
                     "type": "string"
                 },
                 "due_date": {
-                    "description": "due_date is the date by which payment is expected",
+                    "description": "due_date is the date when payment for this invoice is due",
+                    "type": "string"
+                },
+                "environment_id": {
+                    "description": "environment_id is the ID of the environment this invoice belongs to (for multi-environment setups)",
                     "type": "string"
                 },
                 "finalized_at": {
-                    "description": "finalized_at is the timestamp when this invoice was finalized",
+                    "description": "finalized_at is the timestamp when this invoice was finalized and made ready for payment",
                     "type": "string"
                 },
                 "id": {
@@ -16229,19 +15546,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "idempotency_key": {
-                    "description": "idempotency_key is the optional key used to prevent duplicate invoice creation",
+                    "description": "idempotency_key is a unique key used to prevent duplicate invoice creation when retrying API calls",
                     "type": "string"
                 },
                 "invoice_number": {
-                    "description": "invoice_number is the optional human-readable identifier for the invoice",
+                    "description": "invoice_number is the human-readable invoice number displayed to customers (e.g., INV-2024-001)",
                     "type": "string"
                 },
                 "invoice_pdf_url": {
-                    "description": "invoice_pdf_url is the optional URL to the PDF version of this invoice",
+                    "description": "invoice_pdf_url is the URL where customers can download the PDF version of this invoice",
                     "type": "string"
                 },
                 "invoice_status": {
-                    "description": "invoice_status represents the current status of the invoice (draft, finalized, etc.)",
+                    "description": "invoice_status represents the current status of the invoice - values include draft, open, paid, void, etc.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/types.InvoiceStatus"
@@ -16249,7 +15566,7 @@ const docTemplate = `{
                     ]
                 },
                 "invoice_type": {
-                    "description": "invoice_type indicates the type of invoice (subscription, one_time, etc.)",
+                    "description": "invoice_type indicates the type of invoice - whether this is a subscription invoice, one-time charge, or other billing type",
                     "allOf": [
                         {
                             "$ref": "#/definitions/types.InvoiceType"
@@ -16257,14 +15574,14 @@ const docTemplate = `{
                     ]
                 },
                 "line_items": {
-                    "description": "line_items contains the individual items that make up this invoice",
+                    "description": "line_items contains the individual items that make up this invoice (overrides embedded field)",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.InvoiceLineItemResponse"
                     }
                 },
                 "metadata": {
-                    "description": "metadata contains additional custom key-value pairs for storing extra information",
+                    "description": "metadata contains custom key-value pairs for storing additional information about this invoice",
                     "allOf": [
                         {
                             "$ref": "#/definitions/types.Metadata"
@@ -16273,14 +15590,14 @@ const docTemplate = `{
                 },
                 "overpaid_amount": {
                     "description": "overpaid_amount is the amount overpaid if payment_status is OVERPAID (amount_paid - total)",
-                    "type": "number"
+                    "type": "string"
                 },
                 "paid_at": {
-                    "description": "paid_at is the timestamp when this invoice was paid",
+                    "description": "paid_at is the timestamp when this invoice was fully paid",
                     "type": "string"
                 },
                 "payment_status": {
-                    "description": "payment_status represents the payment status of the invoice (unpaid, paid, etc.)",
+                    "description": "payment_status indicates whether the invoice has been paid, is pending, or failed",
                     "allOf": [
                         {
                             "$ref": "#/definitions/types.PaymentStatus"
@@ -16288,16 +15605,19 @@ const docTemplate = `{
                     ]
                 },
                 "period_end": {
-                    "description": "period_end is the end date of the billing period",
+                    "description": "period_end is the end date of the billing period covered by this invoice",
                     "type": "string"
                 },
                 "period_start": {
-                    "description": "period_start is the start date of the billing period",
+                    "description": "period_start is the start date of the billing period covered by this invoice",
+                    "type": "string"
+                },
+                "refunded_amount": {
+                    "description": "refunded_amount is the total sum of credit notes of type \"refund\".\nThese are actual refunds issued to the customer.",
                     "type": "string"
                 },
                 "status": {
-                    "description": "status represents the current status of this invoice",
-                    "type": "string"
+                    "$ref": "#/definitions/types.Status"
                 },
                 "subscription": {
                     "description": "subscription contains the associated subscription information if requested",
@@ -16308,12 +15628,12 @@ const docTemplate = `{
                     ]
                 },
                 "subscription_id": {
-                    "description": "subscription_id is the optional unique identifier of the subscription associated with this invoice",
+                    "description": "subscription_id is the ID of the subscription this invoice is associated with (only present for subscription-based invoices)",
                     "type": "string"
                 },
                 "subtotal": {
-                    "description": "subtotal is the amount before taxes and discounts are applied",
-                    "type": "number"
+                    "description": "subtotal is the sum of all line items before any taxes, discounts, or additional fees",
+                    "type": "string"
                 },
                 "taxes": {
                     "description": "tax_applied_records contains the tax applied records associated with this invoice",
@@ -16323,36 +15643,78 @@ const docTemplate = `{
                     }
                 },
                 "tenant_id": {
-                    "description": "tenant_id is the unique identifier of the tenant this invoice belongs to",
                     "type": "string"
                 },
                 "total": {
-                    "description": "total is the total amount of the invoice including taxes and discounts",
-                    "type": "number"
+                    "description": "total is the final amount including taxes, fees, and discounts",
+                    "type": "string"
                 },
                 "total_discount": {
-                    "description": "total_discount is the total discount amount from coupon applications",
-                    "type": "number"
+                    "description": "total_discount is the sum of all coupon discounts applied to the invoice",
+                    "type": "string"
+                },
+                "total_prepaid_credits_applied": {
+                    "description": "total_prepaid_credits_applied is the total amount of prepaid credits applied to this invoice.",
+                    "type": "string"
                 },
                 "total_tax": {
-                    "description": "total_tax is the total tax amount for this invoice",
-                    "type": "number"
+                    "description": "total_tax is the sum of all taxes combined at the invoice level.",
+                    "type": "string"
                 },
                 "updated_at": {
-                    "description": "updated_at is the timestamp when this invoice was last updated",
                     "type": "string"
                 },
                 "updated_by": {
-                    "description": "updated_by is the identifier of the user who last updated this invoice",
                     "type": "string"
                 },
                 "version": {
-                    "description": "version is the version number of this invoice",
+                    "description": "version is the version number for tracking changes to this invoice",
                     "type": "integer"
                 },
                 "voided_at": {
-                    "description": "voided_at is the timestamp when this invoice was voided",
+                    "description": "voided_at is the timestamp when this invoice was voided or cancelled",
                     "type": "string"
+                }
+            }
+        },
+        "dto.LineItemCommitmentConfig": {
+            "type": "object",
+            "properties": {
+                "commitment_amount": {
+                    "description": "CommitmentAmount is the minimum amount committed for this line item",
+                    "type": "number"
+                },
+                "commitment_duration": {
+                    "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on MONTHLY billing)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.BillingPeriod"
+                        }
+                    ]
+                },
+                "commitment_quantity": {
+                    "description": "CommitmentQuantity is the minimum quantity committed for this line item",
+                    "type": "number"
+                },
+                "commitment_type": {
+                    "description": "CommitmentType specifies whether commitment is based on amount or quantity",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.CommitmentType"
+                        }
+                    ]
+                },
+                "enable_true_up": {
+                    "description": "EnableTrueUp determines if true-up fee should be applied when usage is below commitment",
+                    "type": "boolean"
+                },
+                "is_window_commitment": {
+                    "description": "IsWindowCommitment determines if commitment is applied per window (e.g., per day) rather than per billing period",
+                    "type": "boolean"
+                },
+                "overage_factor": {
+                    "description": "OverageFactor is a multiplier applied to usage beyond the commitment",
+                    "type": "number"
                 }
             }
         },
@@ -16395,26 +15757,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListConnectionsResponse": {
-            "type": "object",
-            "properties": {
-                "connections": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ConnectionResponse"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
         "dto.ListCostsheetResponse": {
             "type": "object",
             "properties": {
@@ -16443,13 +15785,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListCreditGrantsResponse": {
+        "dto.ListCreditGrantApplicationsResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreditGrantResponse"
+                        "$ref": "#/definitions/dto.CreditGrantApplicationResponse"
                     }
                 },
                 "pagination": {
@@ -16457,13 +15799,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListCreditNotesResponse": {
+        "dto.ListCreditGrantsResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreditNoteResponse"
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
                     }
                 },
                 "pagination": {
@@ -16497,40 +15839,6 @@ const docTemplate = `{
                 },
                 "pagination": {
                     "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListEntityIntegrationMappingsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.EntityIntegrationMappingResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListEnvironmentsResponse": {
-            "type": "object",
-            "properties": {
-                "environments": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.EnvironmentResponse"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -16747,59 +16055,94 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.LoginRequest": {
+        "dto.ListWorkflowsResponse": {
             "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
             "properties": {
-                "email": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.WorkflowExecutionDTO"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "dto.MatchedMeter": {
+            "type": "object",
+            "properties": {
+                "event_name": {
                     "type": "string"
                 },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
+                "meter": {
+                    "$ref": "#/definitions/meter.Meter"
                 },
-                "token": {
+                "meter_id": {
                     "type": "string"
                 }
             }
         },
-        "dto.ManualBalanceDebitRequest": {
+        "dto.MatchedPrice": {
             "type": "object",
-            "required": [
-                "idempotency_key",
-                "transaction_reason"
-            ],
             "properties": {
-                "credits": {
-                    "description": "credits is the number of credits to debit from the wallet",
-                    "type": "number"
-                },
-                "description": {
-                    "description": "description to add any specific details about the transaction",
+                "meter_id": {
                     "type": "string"
                 },
-                "idempotency_key": {
-                    "description": "idempotency_key is a unique key for the transaction",
+                "price": {
+                    "$ref": "#/definitions/price.Price"
+                },
+                "price_id": {
                     "type": "string"
                 },
-                "metadata": {
-                    "description": "metadata is a map of key-value pairs to store any additional information about the transaction",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.Metadata"
-                        }
-                    ]
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MatchedSubscriptionLineItem": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
                 },
-                "transaction_reason": {
-                    "description": "transaction_reason is the reason for the transaction",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.TransactionReason"
-                        }
-                    ]
+                "is_active_for_event": {
+                    "type": "boolean"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "sub_line_item_id": {
+                    "type": "string"
+                },
+                "subscription_id": {
+                    "type": "string"
+                },
+                "subscription_line_item": {
+                    "$ref": "#/definitions/subscription.SubscriptionLineItem"
+                },
+                "timestamp_within_range": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.MeterMatchingResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "matched_meters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MatchedMeter"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.DebugTrackerStatus"
                 }
             }
         },
@@ -16880,7 +16223,7 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "description": "Amount is the new price amount that overrides the original price (optional)",
-                    "type": "number"
+                    "type": "string"
                 },
                 "billing_model": {
                     "$ref": "#/definitions/types.BillingModel"
@@ -16889,9 +16232,20 @@ const docTemplate = `{
                     "description": "PriceID references the plan price to override",
                     "type": "string"
                 },
+                "price_unit_amount": {
+                    "description": "PriceUnitAmount is the amount of the price unit (for CUSTOM type, FLAT_FEE/PACKAGE billing models)",
+                    "type": "string"
+                },
+                "price_unit_tiers": {
+                    "description": "PriceUnitTiers are the tiers for the price unit (for CUSTOM type, TIERED billing model)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreatePriceTier"
+                    }
+                },
                 "quantity": {
                     "description": "Quantity for this line item (optional)",
-                    "type": "number"
+                    "type": "string"
                 },
                 "tier_mode": {
                     "description": "TierMode determines how to calculate the price for a given quantity",
@@ -17002,7 +16356,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "attempts": {
                     "type": "array",
@@ -17174,6 +16528,23 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PriceLookupResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "matched_prices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MatchedPrice"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                }
+            }
+        },
         "dto.PriceResponse": {
             "type": "object",
             "properties": {
@@ -17182,7 +16553,7 @@ const docTemplate = `{
                 },
                 "amount": {
                     "description": "Amount stored in main currency units (e.g., dollars, not cents)\nFor USD: 12.50 means $12.50",
-                    "type": "number"
+                    "type": "string"
                 },
                 "billing_cadence": {
                     "$ref": "#/definitions/types.BillingCadence"
@@ -17199,8 +16570,8 @@ const docTemplate = `{
                     "default": 1
                 },
                 "conversion_rate": {
-                    "description": "ConversionRate is the rate of the price unit to the base currency\nFor BTC: 1 BTC = 100000000 USD",
-                    "type": "number"
+                    "description": "ConversionRate is the conversion rate of the price unit to the fiat currency",
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
@@ -17220,8 +16591,12 @@ const docTemplate = `{
                     "description": "DisplayAmount is the formatted amount with currency symbol\nFor USD: $12.50",
                     "type": "string"
                 },
+                "display_name": {
+                    "description": "DisplayName is the name of the price",
+                    "type": "string"
+                },
                 "display_price_unit_amount": {
-                    "description": "DisplayPriceUnitAmount is the formatted amount with price unit symbol\nFor BTC: 0.00000001 BTC",
+                    "description": "DisplayPriceUnitAmount is the formatted amount of the price unit",
                     "type": "string"
                 },
                 "end_date": {
@@ -17272,6 +16647,11 @@ const docTemplate = `{
                     "description": "MeterID is the id of the meter for usage based pricing",
                     "type": "string"
                 },
+                "min_quantity": {
+                    "description": "MinQuantity is the minimum quantity of the price",
+                    "type": "string",
+                    "x-nullable": true
+                },
                 "parent_price_id": {
                     "description": "ParentPriceID references the root price (always set for price lineage tracking)",
                     "type": "string"
@@ -17279,31 +16659,27 @@ const docTemplate = `{
                 "plan": {
                     "$ref": "#/definitions/dto.PlanResponse"
                 },
-                "plan_id": {
-                    "description": "TODO: Remove this once we have a proper price entity type",
-                    "type": "string"
-                },
                 "price_unit": {
-                    "description": "PriceUnit 3 digit ISO currency code in lowercase ex btc\nFor BTC: btc",
+                    "description": "PriceUnit is the code of the price unit (e.g., 'btc', 'eth')",
                     "type": "string"
                 },
                 "price_unit_amount": {
-                    "description": "PriceUnitAmount is the amount stored in price unit\nFor BTC: 0.00000001 means 0.00000001 BTC",
-                    "type": "number"
+                    "description": "PriceUnitAmount is the amount of the price unit",
+                    "type": "string"
                 },
                 "price_unit_id": {
-                    "description": "PriceUnitID is the id of the price unit",
+                    "description": "PriceUnitID is the id of the price unit (for CUSTOM type)",
                     "type": "string"
                 },
                 "price_unit_tiers": {
-                    "description": "PriceUnitTiers are the tiers for the price unit",
+                    "description": "PriceUnitTiers are the tiers for the price unit when BillingModel is TIERED",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/price.PriceTier"
                     }
                 },
                 "price_unit_type": {
-                    "description": "PriceUnitType is the type of the price unit- Fiat, Custom, Crypto",
+                    "description": "PriceUnitType is the type of the price unit (FIAT, CUSTOM)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/types.PriceUnitType"
@@ -17380,7 +16756,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "conversion_rate": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
@@ -17394,11 +16770,11 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
                 "name": {
                     "type": "string"
-                },
-                "precision": {
-                    "type": "integer"
                 },
                 "status": {
                     "$ref": "#/definitions/types.Status"
@@ -17421,10 +16797,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "charge_amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "credit_amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
@@ -17433,7 +16809,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "original_amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "plan_name": {
                     "type": "string"
@@ -17451,7 +16827,7 @@ const docTemplate = `{
             "properties": {
                 "charge_amount": {
                     "description": "charge_amount is the charge amount for the new subscription",
-                    "type": "number"
+                    "type": "string"
                 },
                 "charge_description": {
                     "description": "charge_description describes what the charge is for",
@@ -17459,7 +16835,7 @@ const docTemplate = `{
                 },
                 "credit_amount": {
                     "description": "credit_amount is the credit amount from the old subscription",
-                    "type": "number"
+                    "type": "string"
                 },
                 "credit_description": {
                     "description": "credit_description describes what the credit is for",
@@ -17487,7 +16863,7 @@ const docTemplate = `{
                 },
                 "net_amount": {
                     "description": "net_amount is the net amount (charge - credit)",
-                    "type": "number"
+                    "type": "string"
                 },
                 "proration_date": {
                     "description": "proration_date is the date used for proration calculations",
@@ -17502,9 +16878,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "addon_association_id": {
-                    "type": "string"
-                },
-                "effective_from": {
                     "type": "string"
                 },
                 "reason": {
@@ -17637,27 +17010,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SignUpRequest": {
-            "type": "object",
-            "required": [
-                "email"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                },
-                "tenant_name": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.SourceUsageItem": {
             "type": "object",
             "properties": {
@@ -17714,6 +17066,10 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "is_scheduled": {
+                    "description": "is_scheduled indicates if the change was scheduled or executed immediately",
+                    "type": "boolean"
+                },
                 "metadata": {
                     "description": "metadata from the request",
                     "type": "object",
@@ -17722,7 +17078,7 @@ const docTemplate = `{
                     }
                 },
                 "new_subscription": {
-                    "description": "new_subscription contains the new subscription details",
+                    "description": "new_subscription contains the new subscription details (only if is_scheduled=false)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/dto.SubscriptionSummary"
@@ -17730,7 +17086,7 @@ const docTemplate = `{
                     ]
                 },
                 "old_subscription": {
-                    "description": "old_subscription contains the archived subscription details",
+                    "description": "old_subscription contains the archived subscription details (only if is_scheduled=false)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/dto.SubscriptionSummary"
@@ -17744,6 +17100,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/dto.ProrationDetails"
                         }
                     ]
+                },
+                "schedule_id": {
+                    "description": "schedule_id is the ID of the created schedule (only if is_scheduled=true)",
+                    "type": "string"
+                },
+                "scheduled_at": {
+                    "description": "scheduled_at is when the change will execute (only if is_scheduled=true)",
+                    "type": "string"
                 }
             }
         },
@@ -17863,6 +17227,14 @@ const docTemplate = `{
                     "type": "integer",
                     "default": 1
                 },
+                "change_at": {
+                    "description": "change_at determines when the change should take effect (optional)\nIf not provided or null: change executes immediately\nIf \"immediate\": change executes immediately (explicit)\nIf \"period_end\": change is scheduled for the end of the current billing period",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ScheduleType"
+                        }
+                    ]
+                },
                 "metadata": {
                     "description": "metadata contains additional key-value pairs for storing extra information",
                     "type": "object",
@@ -17901,11 +17273,54 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SubscriptionLineItemLookupResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "matched_line_items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MatchedSubscriptionLineItem"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                }
+            }
+        },
         "dto.SubscriptionLineItemResponse": {
             "type": "object",
             "properties": {
                 "billing_period": {
                     "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "billing_period_count": {
+                    "description": "from price at create; default 1",
+                    "type": "integer"
+                },
+                "commitment_amount": {
+                    "description": "Commitment fields",
+                    "type": "string"
+                },
+                "commitment_duration": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "commitment_overage_factor": {
+                    "type": "string"
+                },
+                "commitment_quantity": {
+                    "type": "string"
+                },
+                "commitment_true_up_enabled": {
+                    "type": "boolean"
+                },
+                "commitment_type": {
+                    "$ref": "#/definitions/types.CommitmentType"
+                },
+                "commitment_windowed": {
+                    "type": "boolean"
                 },
                 "created_at": {
                     "type": "string"
@@ -17971,7 +17386,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "quantity": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "start_date": {
                     "type": "string"
@@ -18166,6 +17581,97 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SubscriptionPriceCreateRequest": {
+            "type": "object",
+            "required": [
+                "billing_cadence",
+                "billing_model",
+                "billing_period",
+                "invoice_cadence",
+                "price_unit_type",
+                "type"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "billing_cadence": {
+                    "$ref": "#/definitions/types.BillingCadence"
+                },
+                "billing_model": {
+                    "$ref": "#/definitions/types.BillingModel"
+                },
+                "billing_period": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "billing_period_count": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "filter_values": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "invoice_cadence": {
+                    "$ref": "#/definitions/types.InvoiceCadence"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "min_quantity": {
+                    "type": "integer"
+                },
+                "price_unit_config": {
+                    "$ref": "#/definitions/dto.PriceUnitConfig"
+                },
+                "price_unit_type": {
+                    "$ref": "#/definitions/types.PriceUnitType"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "tier_mode": {
+                    "$ref": "#/definitions/types.BillingTier"
+                },
+                "tiers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreatePriceTier"
+                    }
+                },
+                "transform_quantity": {
+                    "$ref": "#/definitions/price.TransformQuantity"
+                },
+                "trial_period": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.PriceType"
+                }
+            }
+        },
         "dto.SubscriptionResponse": {
             "type": "object",
             "properties": {
@@ -18214,7 +17720,15 @@ const docTemplate = `{
                 },
                 "commitment_amount": {
                     "description": "CommitmentAmount is the minimum amount a customer commits to paying for a billing period",
-                    "type": "number"
+                    "type": "string"
+                },
+                "commitment_duration": {
+                    "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on a MONTHLY subscription)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.BillingPeriod"
+                        }
+                    ]
                 },
                 "coupon_associations": {
                     "description": "CouponAssociations are the coupon associations for this subscription",
@@ -18228,6 +17742,13 @@ const docTemplate = `{
                 },
                 "created_by": {
                     "type": "string"
+                },
+                "credit_grants": {
+                    "description": "Credit grants are the credit grants for this subscription",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
+                    }
                 },
                 "currency": {
                     "description": "Currency is the currency of the subscription in lowercase 3 digit ISO codes",
@@ -18251,6 +17772,9 @@ const docTemplate = `{
                 "customer_timezone": {
                     "type": "string"
                 },
+                "enable_true_up": {
+                    "type": "boolean"
+                },
                 "end_date": {
                     "description": "EndDate is the end date of the subscription",
                     "type": "string"
@@ -18265,6 +17789,10 @@ const docTemplate = `{
                 },
                 "id": {
                     "description": "ID is the unique identifier for the subscription",
+                    "type": "string"
+                },
+                "invoicing_customer_id": {
+                    "description": "InvoicingCustomerID is the customer ID to use for invoicing\nThis can differ from the subscription customer (e.g., parent company invoicing for child company)",
                     "type": "string"
                 },
                 "latest_invoice": {
@@ -18290,7 +17818,11 @@ const docTemplate = `{
                 },
                 "overage_factor": {
                     "description": "OverageFactor is a multiplier applied to usage beyond the commitment amount",
-                    "type": "number"
+                    "type": "string"
+                },
+                "parent_subscription_id": {
+                    "description": "ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)",
+                    "type": "string"
                 },
                 "pause_status": {
                     "$ref": "#/definitions/types.PauseStatus"
@@ -18304,6 +17836,14 @@ const docTemplate = `{
                 "payment_behavior": {
                     "description": "PaymentBehavior determines how subscription payments are handled",
                     "type": "string"
+                },
+                "payment_terms": {
+                    "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PaymentTerms"
+                        }
+                    ]
                 },
                 "phases": {
                     "description": "Phases are the subscription phases for this subscription",
@@ -18352,6 +17892,308 @@ const docTemplate = `{
                 "version": {
                     "description": "Version is used for optimistic locking",
                     "type": "integer"
+                }
+            }
+        },
+        "dto.SubscriptionResponseV2": {
+            "type": "object",
+            "properties": {
+                "active_pause_id": {
+                    "description": "ActivePauseID references the current active pause configuration\nThis will be null if no pause is active or scheduled",
+                    "type": "string"
+                },
+                "billing_anchor": {
+                    "description": "BillingAnchor is the reference point that aligns future billing cycle dates.\nIt sets the day of week for week intervals, the day of month for month and year intervals,\nand the month of year for year intervals. The timestamp is in UTC format.",
+                    "type": "string"
+                },
+                "billing_cadence": {
+                    "$ref": "#/definitions/types.BillingCadence"
+                },
+                "billing_cycle": {
+                    "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.BillingCycle"
+                        }
+                    ]
+                },
+                "billing_period": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "billing_period_count": {
+                    "description": "BillingPeriodCount is the total number units of the billing period.",
+                    "type": "integer",
+                    "default": 1
+                },
+                "cancel_at": {
+                    "description": "CancelAt is the date the subscription will be canceled",
+                    "type": "string"
+                },
+                "cancel_at_period_end": {
+                    "description": "CancelAtPeriodEnd is whether the subscription was canceled at the end of the current period",
+                    "type": "boolean"
+                },
+                "cancelled_at": {
+                    "description": "CanceledAt is the date the subscription was canceled",
+                    "type": "string"
+                },
+                "collection_method": {
+                    "description": "CollectionMethod determines how invoices are collected",
+                    "type": "string"
+                },
+                "commitment_amount": {
+                    "description": "CommitmentAmount is the minimum amount a customer commits to paying for a billing period",
+                    "type": "string"
+                },
+                "commitment_duration": {
+                    "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on a MONTHLY subscription)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.BillingPeriod"
+                        }
+                    ]
+                },
+                "coupon_associations": {
+                    "description": "CouponAssociations are included when \"coupon_associations\" is in expand parameter",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CouponAssociationResponse"
+                    }
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "credit_grants": {
+                    "description": "CreditGrants are included when \"credit_grants\" is in expand parameter",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
+                    }
+                },
+                "currency": {
+                    "description": "Currency is the currency of the subscription in lowercase 3 digit ISO codes",
+                    "type": "string"
+                },
+                "current_period_end": {
+                    "description": "CurrentPeriodEnd is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created.",
+                    "type": "string"
+                },
+                "current_period_start": {
+                    "description": "CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created.",
+                    "type": "string"
+                },
+                "customer": {
+                    "description": "Customer is expanded only if \"customer\" is in expand parameter",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.CustomerResponse"
+                        }
+                    ]
+                },
+                "customer_id": {
+                    "description": "CustomerID is the identifier for the customer in our system",
+                    "type": "string"
+                },
+                "customer_timezone": {
+                    "type": "string"
+                },
+                "enable_true_up": {
+                    "type": "boolean"
+                },
+                "end_date": {
+                    "description": "EndDate is the end date of the subscription",
+                    "type": "string"
+                },
+                "environment_id": {
+                    "description": "EnvironmentID is the environment identifier for the subscription",
+                    "type": "string"
+                },
+                "gateway_payment_method_id": {
+                    "description": "GatewayPaymentMethodID is the gateway payment method ID for this subscription",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID is the unique identifier for the subscription",
+                    "type": "string"
+                },
+                "invoicing_customer_id": {
+                    "description": "InvoicingCustomerID is the customer ID to use for invoicing\nThis can differ from the subscription customer (e.g., parent company invoicing for child company)",
+                    "type": "string"
+                },
+                "line_items": {
+                    "description": "LineItems is expanded only if \"subscription_line_items\" is in expand parameter\nEach line item can optionally include expanded price data",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
+                    }
+                },
+                "lookup_key": {
+                    "description": "LookupKey is the key used to lookup the subscription in our system",
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
+                "overage_factor": {
+                    "description": "OverageFactor is a multiplier applied to usage beyond the commitment amount",
+                    "type": "string"
+                },
+                "parent_subscription_id": {
+                    "description": "ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)",
+                    "type": "string"
+                },
+                "pause_status": {
+                    "$ref": "#/definitions/types.PauseStatus"
+                },
+                "pauses": {
+                    "description": "Pauses are included when subscription has pause status",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/subscription.SubscriptionPause"
+                    }
+                },
+                "payment_behavior": {
+                    "description": "PaymentBehavior determines how subscription payments are handled",
+                    "type": "string"
+                },
+                "payment_terms": {
+                    "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PaymentTerms"
+                        }
+                    ]
+                },
+                "phases": {
+                    "description": "Phases are included when \"phases\" is in expand parameter",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SubscriptionPhaseResponse"
+                    }
+                },
+                "plan": {
+                    "description": "Plan is expanded only if \"plan\" is in expand parameter",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.PlanResponse"
+                        }
+                    ]
+                },
+                "plan_id": {
+                    "description": "PlanID is the identifier for the plan in our system",
+                    "type": "string"
+                },
+                "proration_behavior": {
+                    "$ref": "#/definitions/types.ProrationBehavior"
+                },
+                "start_date": {
+                    "description": "StartDate is the start date of the subscription",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "subscription_status": {
+                    "$ref": "#/definitions/types.SubscriptionStatus"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "trial_end": {
+                    "description": "TrialEnd is the end date of the trial period",
+                    "type": "string"
+                },
+                "trial_start": {
+                    "description": "TrialStart is the start date of the trial period",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "version": {
+                    "description": "Version is used for optimistic locking",
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.SubscriptionScheduleResponse": {
+            "description": "Full details of a subscription schedule",
+            "type": "object",
+            "properties": {
+                "can_be_cancelled": {
+                    "description": "can_be_cancelled indicates if the schedule can be cancelled",
+                    "type": "boolean"
+                },
+                "cancelled_at": {
+                    "description": "cancelled_at is when the schedule was cancelled",
+                    "type": "string"
+                },
+                "configuration": {
+                    "description": "configuration contains type-specific configuration (e.g., target_plan_id for plan changes)"
+                },
+                "created_at": {
+                    "description": "created_at timestamp",
+                    "type": "string"
+                },
+                "days_until_execution": {
+                    "description": "days_until_execution is the number of days until execution",
+                    "type": "integer"
+                },
+                "error_message": {
+                    "description": "error_message contains the error if execution failed",
+                    "type": "string"
+                },
+                "executed_at": {
+                    "description": "executed_at is when the schedule was executed",
+                    "type": "string"
+                },
+                "execution_result": {
+                    "description": "execution_result contains type-specific execution result"
+                },
+                "id": {
+                    "description": "id of the schedule",
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "metadata from the schedule",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "schedule_type": {
+                    "description": "schedule_type is the type of schedule (plan_change, addon_change, etc.)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionScheduleChangeType"
+                        }
+                    ]
+                },
+                "scheduled_at": {
+                    "description": "scheduled_at is when the schedule will execute",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "status is the current status of the schedule",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ScheduleStatus"
+                        }
+                    ]
+                },
+                "subscription_id": {
+                    "description": "subscription_id is the ID of the subscription",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "updated_at timestamp",
+                    "type": "string"
                 }
             }
         },
@@ -18430,6 +18272,18 @@ const docTemplate = `{
                 },
                 "quantity": {
                     "type": "number"
+                },
+                "subscription_line_item_id": {
+                    "description": "For feature_usage: direct match by sub_line_item_id",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -18554,7 +18408,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Status"
                 },
                 "tax_amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "tax_association_id": {
                     "type": "string"
@@ -18566,7 +18420,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "taxable_amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -18583,6 +18437,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "auto_apply": {
+                    "description": "Whether this tax should be automatically applied",
                     "type": "boolean"
                 },
                 "created_at": {
@@ -18592,36 +18447,48 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "currency": {
+                    "description": "Currency",
                     "type": "string"
                 },
                 "entity_id": {
+                    "description": "ID of the entity this tax rate applies to",
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.TaxRateEntityType"
+                    "description": "Type of entity this tax rate applies to",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.TaxRateEntityType"
+                        }
+                    ]
                 },
                 "environment_id": {
+                    "description": "EnvironmentID is the ID of the environment this tax rate config belongs to",
                     "type": "string"
                 },
                 "id": {
+                    "description": "ID of the ent.",
                     "type": "string"
                 },
                 "metadata": {
+                    "description": "Metadata holds the value of the \"metadata\" field.",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     }
                 },
                 "priority": {
+                    "description": "Priority for tax resolution (lower number = higher priority)",
                     "type": "integer"
                 },
                 "status": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.Status"
                 },
                 "tax_rate": {
                     "$ref": "#/definitions/dto.TaxRateResponse"
                 },
                 "tax_rate_id": {
+                    "description": "Reference to the TaxRate entity",
                     "type": "string"
                 },
                 "tenant_id": {
@@ -18631,12 +18498,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_by": {
-                    "type": "string"
-                },
-                "valid_from": {
-                    "type": "string"
-                },
-                "valid_to": {
                     "type": "string"
                 }
             }
@@ -18705,7 +18566,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "fixed_value": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -18720,7 +18581,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "percentage_value": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "scope": {
                     "$ref": "#/definitions/types.TaxRateScope"
@@ -18802,32 +18663,19 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.Threshold": {
-            "type": "object",
-            "properties": {
-                "type": {
-                    "description": "amount",
-                    "type": "string"
-                },
-                "value": {
-                    "type": "number"
-                }
-            }
-        },
         "dto.TopUpWalletRequest": {
             "type": "object",
             "required": [
-                "idempotency_key",
                 "transaction_reason"
             ],
             "properties": {
                 "amount": {
                     "description": "amount is the amount in the currency of the wallet to be added\nNOTE: this is not the number of credits to add, but the amount in the currency\namount = credits_to_add * conversion_rate\nif both amount and credits_to_add are provided, amount will be ignored\nex if the wallet has a conversion_rate of 2 then adding an amount of\n10 USD in the wallet wil add 5 credits in the wallet",
-                    "type": "number"
+                    "type": "string"
                 },
                 "credits_to_add": {
                     "description": "credits_to_add is the number of credits to add to the wallet",
-                    "type": "number"
+                    "type": "string"
                 },
                 "description": {
                     "description": "description to add any specific details about the transaction",
@@ -18855,6 +18703,31 @@ const docTemplate = `{
                 },
                 "transaction_reason": {
                     "$ref": "#/definitions/types.TransactionReason"
+                }
+            }
+        },
+        "dto.TopUpWalletResponse": {
+            "type": "object",
+            "properties": {
+                "invoice_id": {
+                    "description": "Invoice ID if an invoice was created (only for PURCHASED_CREDIT_INVOICED)",
+                    "type": "string"
+                },
+                "wallet": {
+                    "description": "Wallet details after the operation",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.WalletResponse"
+                        }
+                    ]
+                },
+                "wallet_transaction": {
+                    "description": "Wallet transaction created (could be PENDING or COMPLETED)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/dto.WalletTransactionResponse"
+                        }
+                    ]
                 }
             }
         },
@@ -18902,22 +18775,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "dto.UpdateConnectionRequest": {
-            "type": "object",
-            "properties": {
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "sync_config": {
-                    "$ref": "#/definitions/types.SyncConfig"
                 }
             }
         },
@@ -19035,6 +18892,14 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "name is the updated name or company name for the customer",
+                    "type": "string"
+                },
+                "parent_customer_external_id": {
+                    "description": "parent_customer_external_id is the external ID of the parent customer from your system\nExactly one of parent_customer_id or parent_customer_external_id may be provided\nIf you provide the external ID, the parent customer value will be ignored",
+                    "type": "string"
+                },
+                "parent_customer_id": {
+                    "description": "parent_customer_id is the internal FlexPrice ID of the parent customer",
                     "type": "string"
                 }
             }
@@ -19156,7 +19021,7 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "description": "amount is the optional payment amount to record",
-                    "type": "number"
+                    "type": "string"
                 },
                 "payment_status": {
                     "description": "payment_status is the new payment status to set for the invoice (paid, unpaid, etc.)",
@@ -19168,241 +19033,15 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdatePlanCreditGrantRequest": {
-            "type": "object",
-            "required": [
-                "cadence",
-                "credits",
-                "name",
-                "scope"
-            ],
-            "properties": {
-                "cadence": {
-                    "$ref": "#/definitions/types.CreditGrantCadence"
-                },
-                "credits": {
-                    "type": "number"
-                },
-                "expiration_duration": {
-                    "type": "integer"
-                },
-                "expiration_duration_unit": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryDurationUnit"
-                },
-                "expiration_type": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryType"
-                },
-                "id": {
-                    "description": "The ID of the credit grant to update (present if the credit grant is being updated)",
-                    "type": "string"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/types.Metadata"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "period": {
-                    "$ref": "#/definitions/types.CreditGrantPeriod"
-                },
-                "period_count": {
-                    "type": "integer"
-                },
-                "plan_id": {
-                    "type": "string"
-                },
-                "priority": {
-                    "type": "integer"
-                },
-                "scope": {
-                    "$ref": "#/definitions/types.CreditGrantScope"
-                },
-                "subscription_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.UpdatePlanEntitlementRequest": {
-            "type": "object",
-            "required": [
-                "feature_id",
-                "feature_type"
-            ],
-            "properties": {
-                "entity_id": {
-                    "type": "string"
-                },
-                "entity_type": {
-                    "$ref": "#/definitions/types.EntitlementEntityType"
-                },
-                "feature_id": {
-                    "type": "string"
-                },
-                "feature_type": {
-                    "$ref": "#/definitions/types.FeatureType"
-                },
-                "id": {
-                    "description": "The ID of the entitlement to update (present if the entitlement is being updated)",
-                    "type": "string"
-                },
-                "is_enabled": {
-                    "type": "boolean"
-                },
-                "is_soft_limit": {
-                    "type": "boolean"
-                },
-                "parent_entitlement_id": {
-                    "type": "string"
-                },
-                "plan_id": {
-                    "type": "string"
-                },
-                "static_value": {
-                    "type": "string"
-                },
-                "usage_limit": {
-                    "type": "integer"
-                },
-                "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
-                }
-            }
-        },
-        "dto.UpdatePlanPriceRequest": {
-            "type": "object",
-            "required": [
-                "billing_cadence",
-                "billing_model",
-                "billing_period",
-                "currency",
-                "invoice_cadence",
-                "price_unit_type",
-                "type"
-            ],
-            "properties": {
-                "amount": {
-                    "type": "string"
-                },
-                "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
-                },
-                "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
-                },
-                "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
-                },
-                "billing_period_count": {
-                    "type": "integer",
-                    "default": 1
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "end_date": {
-                    "type": "string"
-                },
-                "entity_id": {
-                    "description": "TODO: this will be required in the future as we will not allow prices to be created without an entity id",
-                    "type": "string"
-                },
-                "entity_type": {
-                    "description": "TODO: this will be required in the future as we will not allow prices to be created without an entity type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.PriceEntityType"
-                        }
-                    ]
-                },
-                "filter_values": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "group_id": {
-                    "description": "GroupID is the id of the group to add the price to",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "The ID of the price to update (present if the price is being updated)",
-                    "type": "string"
-                },
-                "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
-                },
-                "lookup_key": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "meter_id": {
-                    "type": "string"
-                },
-                "plan_id": {
-                    "description": "TODO: This is deprecated and will be removed in the future",
-                    "type": "string"
-                },
-                "price_unit_config": {
-                    "$ref": "#/definitions/dto.PriceUnitConfig"
-                },
-                "price_unit_type": {
-                    "$ref": "#/definitions/types.PriceUnitType"
-                },
-                "start_date": {
-                    "type": "string"
-                },
-                "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
-                },
-                "tiers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
-                    }
-                },
-                "transform_quantity": {
-                    "$ref": "#/definitions/price.TransformQuantity"
-                },
-                "trial_period": {
-                    "type": "integer"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.PriceType"
-                }
-            }
-        },
         "dto.UpdatePlanRequest": {
             "type": "object",
             "properties": {
-                "credit_grants": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UpdatePlanCreditGrantRequest"
-                    }
-                },
                 "description": {
                     "type": "string"
                 },
                 "display_order": {
                     "type": "integer"
                 },
-                "entitlements": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UpdatePlanEntitlementRequest"
-                    }
-                },
                 "lookup_key": {
                     "type": "string"
                 },
@@ -19411,12 +19050,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "prices": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UpdatePlanPriceRequest"
-                    }
                 }
             }
         },
@@ -19425,12 +19058,15 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "description": "Amount is the new price amount that overrides the original price (optional)",
-                    "type": "number"
+                    "type": "string"
                 },
                 "billing_model": {
                     "$ref": "#/definitions/types.BillingModel"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "display_name": {
                     "type": "string"
                 },
                 "effective_from": {
@@ -19448,6 +19084,17 @@ const docTemplate = `{
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
+                    }
+                },
+                "price_unit_amount": {
+                    "description": "PriceUnitAmount is the price unit amount (for CUSTOM price unit type, FLAT_FEE/PACKAGE billing models)",
+                    "type": "string"
+                },
+                "price_unit_tiers": {
+                    "description": "PriceUnitTiers are the price unit tiers (for CUSTOM price unit type, TIERED billing model)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "tier_mode": {
@@ -19478,20 +19125,11 @@ const docTemplate = `{
         "dto.UpdatePriceUnitRequest": {
             "type": "object",
             "properties": {
-                "conversion_rate": {
-                    "type": "number"
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
                 },
                 "name": {
                     "type": "string"
-                },
-                "precision": {
-                    "type": "integer",
-                    "maximum": 8,
-                    "minimum": 0
-                },
-                "symbol": {
-                    "type": "string",
-                    "maxLength": 10
                 }
             }
         },
@@ -19511,10 +19149,32 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "description": "Amount is the new price amount that overrides the original price",
-                    "type": "number"
+                    "type": "string"
                 },
                 "billing_model": {
                     "$ref": "#/definitions/types.BillingModel"
+                },
+                "commitment_amount": {
+                    "description": "Commitment fields",
+                    "type": "number"
+                },
+                "commitment_duration": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "commitment_overage_factor": {
+                    "type": "number"
+                },
+                "commitment_quantity": {
+                    "type": "number"
+                },
+                "commitment_true_up_enabled": {
+                    "type": "boolean"
+                },
+                "commitment_type": {
+                    "$ref": "#/definitions/types.CommitmentType"
+                },
+                "commitment_windowed": {
+                    "type": "boolean"
                 },
                 "effective_from": {
                     "description": "EffectiveFrom for the existing line item (if not provided, defaults to now)",
@@ -19549,6 +19209,24 @@ const docTemplate = `{
                             "$ref": "#/definitions/price.TransformQuantity"
                         }
                     ]
+                }
+            }
+        },
+        "dto.UpdateSubscriptionRequest": {
+            "type": "object",
+            "properties": {
+                "cancel_at": {
+                    "type": "string"
+                },
+                "cancel_at_period_end": {
+                    "type": "boolean"
+                },
+                "parent_subscription_id": {
+                    "description": "ParentSubscriptionID sets or clears the parent subscription. Omit to leave unchanged; send \"\" to clear.",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.SubscriptionStatus"
                 }
             }
         },
@@ -19612,20 +19290,11 @@ const docTemplate = `{
         "dto.UpdateWalletRequest": {
             "type": "object",
             "properties": {
-                "alert_config": {
-                    "$ref": "#/definitions/dto.AlertConfig"
+                "alert_settings": {
+                    "$ref": "#/definitions/types.AlertSettings"
                 },
-                "alert_enabled": {
-                    "type": "boolean"
-                },
-                "auto_topup_amount": {
-                    "type": "number"
-                },
-                "auto_topup_min_balance": {
-                    "type": "number"
-                },
-                "auto_topup_trigger": {
-                    "$ref": "#/definitions/types.AutoTopupTrigger"
+                "auto_topup": {
+                    "$ref": "#/definitions/types.AutoTopup"
                 },
                 "config": {
                     "$ref": "#/definitions/types.WalletConfig"
@@ -19651,12 +19320,15 @@ const docTemplate = `{
                     "description": "Full addon object (only if expand includes \"addon\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/addon.Addon"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_addon.Addon"
                         }
                     ]
                 },
                 "aggregation_type": {
                     "$ref": "#/definitions/types.AggregationType"
+                },
+                "commitment_info": {
+                    "$ref": "#/definitions/types.CommitmentInfo"
                 },
                 "currency": {
                     "type": "string"
@@ -19672,7 +19344,7 @@ const docTemplate = `{
                     "description": "Full feature object (only if expand includes \"feature\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/feature.Feature"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_feature.Feature"
                         }
                     ]
                 },
@@ -19698,7 +19370,7 @@ const docTemplate = `{
                     "description": "Full plan object (only if expand includes \"plan\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/plan.Plan"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_plan.Plan"
                         }
                     ]
                 },
@@ -19733,6 +19405,13 @@ const docTemplate = `{
                 "source": {
                     "type": "string"
                 },
+                "sources": {
+                    "description": "List of sources when not grouping by source",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "sub_line_item_id": {
                     "description": "Subscription line item ID",
                     "type": "string"
@@ -19750,24 +19429,42 @@ const docTemplate = `{
                     ]
                 },
                 "total_cost": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "total_usage": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "unit": {
                     "type": "string"
                 },
                 "unit_plural": {
                     "type": "string"
+                },
+                "window_size": {
+                    "description": "Window size for bucketed meters (only set if meter is bucketed)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.WindowSize"
+                        }
+                    ]
                 }
             }
         },
         "dto.UsageAnalyticPoint": {
             "type": "object",
             "properties": {
+                "computed_commitment_utilized_amount": {
+                    "description": "Commitment breakdown (only populated for windowed commitments)",
+                    "type": "string"
+                },
+                "computed_overage_amount": {
+                    "type": "string"
+                },
+                "computed_true_up_amount": {
+                    "type": "string"
+                },
                 "cost": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "event_count": {
                     "description": "Number of events in this time window",
@@ -19777,7 +19474,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "usage": {
-                    "type": "number"
+                    "type": "string"
                 }
             }
         },
@@ -19847,26 +19544,17 @@ const docTemplate = `{
         "dto.WalletBalanceResponse": {
             "type": "object",
             "properties": {
-                "alert_config": {
-                    "$ref": "#/definitions/types.AlertConfig"
-                },
-                "alert_enabled": {
-                    "type": "boolean"
+                "alert_settings": {
+                    "$ref": "#/definitions/types.AlertSettings"
                 },
                 "alert_state": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.AlertState"
                 },
-                "auto_topup_amount": {
-                    "type": "number"
-                },
-                "auto_topup_min_balance": {
-                    "type": "number"
-                },
-                "auto_topup_trigger": {
-                    "$ref": "#/definitions/types.AutoTopupTrigger"
+                "auto_topup": {
+                    "$ref": "#/definitions/types.AutoTopup"
                 },
                 "balance": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "balance_updated_at": {
                     "type": "string"
@@ -19875,7 +19563,8 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WalletConfig"
                 },
                 "conversion_rate": {
-                    "type": "number"
+                    "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
@@ -19884,13 +19573,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "credit_balance": {
-                    "type": "number"
+                    "type": "string"
+                },
+                "credits_available_breakdown": {
+                    "$ref": "#/definitions/types.CreditBreakdown"
                 },
                 "currency": {
                     "type": "string"
                 },
                 "current_period_usage": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "customer_id": {
                     "type": "string"
@@ -19911,15 +19603,22 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "real_time_balance": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "real_time_credit_balance": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "status": {
                     "$ref": "#/definitions/types.Status"
                 },
                 "tenant_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
+                },
+                "unpaid_invoices_amount": {
                     "type": "string"
                 },
                 "updated_at": {
@@ -19939,38 +19638,36 @@ const docTemplate = `{
         "dto.WalletResponse": {
             "type": "object",
             "properties": {
-                "alert_config": {
-                    "$ref": "#/definitions/types.AlertConfig"
-                },
-                "alert_enabled": {
-                    "type": "boolean"
+                "alert_settings": {
+                    "$ref": "#/definitions/types.AlertSettings"
                 },
                 "alert_state": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.AlertState"
                 },
-                "auto_topup_amount": {
-                    "type": "number"
-                },
-                "auto_topup_min_balance": {
-                    "type": "number"
-                },
-                "auto_topup_trigger": {
-                    "$ref": "#/definitions/types.AutoTopupTrigger"
+                "auto_topup": {
+                    "$ref": "#/definitions/types.AutoTopup"
                 },
                 "balance": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "config": {
                     "$ref": "#/definitions/types.WalletConfig"
                 },
                 "conversion_rate": {
-                    "type": "number"
+                    "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
                 },
+                "created_by": {
+                    "type": "string"
+                },
                 "credit_balance": {
-                    "type": "number"
+                    "type": "string"
+                },
+                "credits_available_breakdown": {
+                    "$ref": "#/definitions/types.CreditBreakdown"
                 },
                 "currency": {
                     "type": "string"
@@ -19979,6 +19676,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "environment_id": {
                     "type": "string"
                 },
                 "id": {
@@ -19990,7 +19690,20 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits",
+                    "type": "string"
+                },
                 "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 },
                 "wallet_status": {
@@ -20005,30 +19718,55 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "amount": {
-                    "type": "number"
+                    "type": "string"
+                },
+                "conversion_rate": {
+                    "description": "conversion_rate is the conversion rate for the transaction to the currency",
+                    "type": "string"
                 },
                 "created_at": {
                     "type": "string"
                 },
+                "created_by": {
+                    "type": "string"
+                },
+                "created_by_user": {
+                    "$ref": "#/definitions/dto.UserResponse"
+                },
                 "credit_amount": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "credit_balance_after": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "credit_balance_before": {
-                    "type": "number"
+                    "type": "string"
                 },
                 "credits_available": {
-                    "type": "number"
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "customer": {
+                    "$ref": "#/definitions/dto.CustomerResponse"
+                },
+                "customer_id": {
+                    "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "environment_id": {
                     "type": "string"
                 },
                 "expiry_date": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "idempotency_key": {
                     "type": "string"
                 },
                 "metadata": {
@@ -20043,6 +19781,16 @@ const docTemplate = `{
                 "reference_type": {
                     "$ref": "#/definitions/types.WalletTxReferenceType"
                 },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "topup_conversion_rate": {
+                    "description": "topup_conversion_rate is the conversion rate for the topup to the currency",
+                    "type": "string"
+                },
                 "transaction_reason": {
                     "$ref": "#/definitions/types.TransactionReason"
                 },
@@ -20050,12 +19798,61 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.TransactionStatus"
                 },
                 "type": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.TransactionType"
                 },
                 "updated_at": {
                     "type": "string"
                 },
+                "updated_by": {
+                    "type": "string"
+                },
+                "wallet": {
+                    "$ref": "#/definitions/dto.WalletResponse"
+                },
                 "wallet_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.WorkflowExecutionDTO": {
+            "type": "object",
+            "properties": {
+                "close_time": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "entity": {
+                    "description": "e.g. plan, invoice, subscription",
+                    "type": "string"
+                },
+                "entity_id": {
+                    "description": "e.g. plan ID, invoice ID",
+                    "type": "string"
+                },
+                "run_id": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "task_queue": {
+                    "type": "string"
+                },
+                "total_duration": {
+                    "type": "string"
+                },
+                "workflow_id": {
+                    "type": "string"
+                },
+                "workflow_type": {
                     "type": "string"
                 }
             }
@@ -20063,10 +19860,6 @@ const docTemplate = `{
         "errors.ErrorDetail": {
             "type": "object",
             "properties": {
-                "details": {
-                    "type": "object",
-                    "additionalProperties": {}
-                },
                 "internal_error": {
                     "type": "string"
                 },
@@ -20086,7 +19879,202 @@ const docTemplate = `{
                 }
             }
         },
-        "feature.Feature": {
+        "github_com_flexprice_flexprice_internal_domain_addon.Addon": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.AddonType"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_domain_coupon.Coupon": {
+            "type": "object",
+            "properties": {
+                "amount_off": {
+                    "type": "string"
+                },
+                "cadence": {
+                    "$ref": "#/definitions/types.CouponCadence"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "duration_in_periods": {
+                    "type": "integer"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "max_redemptions": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "percentage_off": {
+                    "type": "string"
+                },
+                "redeem_after": {
+                    "type": "string"
+                },
+                "redeem_before": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "total_redemptions": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.CouponType"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_domain_customer.Customer": {
+            "type": "object",
+            "properties": {
+                "address_city": {
+                    "description": "AddressCity is the city of the customer's address",
+                    "type": "string"
+                },
+                "address_country": {
+                    "description": "AddressCountry is the country of the customer's address (ISO 3166-1 alpha-2)",
+                    "type": "string"
+                },
+                "address_line1": {
+                    "description": "AddressLine1 is the first line of the customer's address",
+                    "type": "string"
+                },
+                "address_line2": {
+                    "description": "AddressLine2 is the second line of the customer's address",
+                    "type": "string"
+                },
+                "address_postal_code": {
+                    "description": "AddressPostalCode is the postal code of the customer's address",
+                    "type": "string"
+                },
+                "address_state": {
+                    "description": "AddressState is the state of the customer's address",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Email is the email of the customer",
+                    "type": "string"
+                },
+                "environment_id": {
+                    "description": "EnvironmentID is the environment identifier for the customer",
+                    "type": "string"
+                },
+                "external_id": {
+                    "description": "ExternalID is the external identifier for the customer",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID is the unique identifier for the customer",
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "Metadata",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "Name is the name of the customer",
+                    "type": "string"
+                },
+                "parent_customer_id": {
+                    "description": "ParentCustomerID is the parent customer identifier for the customer",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_flexprice_flexprice_internal_domain_feature.Feature": {
             "type": "object",
             "properties": {
                 "alert_settings": {
@@ -20142,150 +20130,7 @@ const docTemplate = `{
                 }
             }
         },
-        "gin.H": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "github_com_flexprice_flexprice_internal_types.Value": {
-            "type": "object",
-            "properties": {
-                "array": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "boolean": {
-                    "type": "boolean"
-                },
-                "date": {
-                    "type": "string"
-                },
-                "number": {
-                    "type": "number"
-                },
-                "string": {
-                    "type": "string"
-                }
-            }
-        },
-        "meter.Aggregation": {
-            "type": "object",
-            "properties": {
-                "bucket_size": {
-                    "description": "BucketSize is used only for MAX aggregation when windowed aggregation is needed\nIt defines the size of time windows to calculate max values within",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.WindowSize"
-                        }
-                    ]
-                },
-                "field": {
-                    "description": "Field is the key in $event.properties on which the aggregation is to be applied\nFor ex if the aggregation type is sum for API usage, the field could be \"duration_ms\"",
-                    "type": "string"
-                },
-                "multiplier": {
-                    "description": "Multiplier is the multiplier for the aggregation\nFor ex if the aggregation type is sum_with_multiplier for API usage, the multiplier could be 1000\nto scale up by a factor of 1000. If not provided, it will be null.",
-                    "type": "number"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.AggregationType"
-                }
-            }
-        },
-        "meter.Filter": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "description": "Key is the key for the filter from $event.properties\nCurrently we support only first level keys in the properties and not nested keys",
-                    "type": "string"
-                },
-                "values": {
-                    "description": "Values are the possible values for the filter to be considered for the meter\nFor ex \"model_name\" could have values \"o1-mini\", \"gpt-4o\" etc",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "meter.Meter": {
-            "type": "object",
-            "properties": {
-                "aggregation": {
-                    "description": "Aggregation defines the aggregation type and field for the meter\nIt is used to aggregate the events into a single value for calculating the usage",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/meter.Aggregation"
-                        }
-                    ]
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "environment_id": {
-                    "description": "EnvironmentID is the environment identifier for the meter",
-                    "type": "string"
-                },
-                "event_name": {
-                    "description": "EventName is the unique identifier for the event that this meter is tracking\nIt is a mandatory field in the events table and hence being used as the primary matching field\nWe can have multiple meters tracking the same event but with different filters and aggregation",
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "Filters define the criteria for the meter to be applied on the events before aggregation\nIt also defines the possible values on which later the charges will be applied",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/meter.Filter"
-                    }
-                },
-                "id": {
-                    "description": "ID is the unique identifier for the meter",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name is the display name of the meter",
-                    "type": "string"
-                },
-                "reset_usage": {
-                    "description": "ResetUsage defines whether the usage should be reset periodically or not\nFor ex meters tracking total storage used do not get reset but meters tracking\ntotal API requests do.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.ResetUsage"
-                        }
-                    ]
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.TemporalWorkflowResult": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "run_id": {
-                    "type": "string"
-                },
-                "workflow_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "plan.Plan": {
+        "github_com_flexprice_flexprice_internal_domain_plan.Plan": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -20317,492 +20162,6 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/types.Status"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "price.JSONBFilters": {
-            "type": "object",
-            "additionalProperties": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                }
-            }
-        },
-        "price.JSONBMetadata": {
-            "type": "object",
-            "additionalProperties": {
-                "type": "string"
-            }
-        },
-        "price.JSONBTransformQuantity": {
-            "type": "object",
-            "properties": {
-                "divide_by": {
-                    "description": "Divide quantity by this number",
-                    "type": "integer"
-                },
-                "round": {
-                    "description": "up or down",
-                    "type": "string"
-                }
-            }
-        },
-        "price.Price": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "description": "Amount stored in main currency units (e.g., dollars, not cents)\nFor USD: 12.50 means $12.50",
-                    "type": "number"
-                },
-                "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
-                },
-                "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
-                },
-                "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
-                },
-                "billing_period_count": {
-                    "description": "BillingPeriodCount is the count of the billing period ex 1, 3, 6, 12",
-                    "type": "integer",
-                    "default": 1
-                },
-                "conversion_rate": {
-                    "description": "ConversionRate is the rate of the price unit to the base currency\nFor BTC: 1 BTC = 100000000 USD",
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "currency": {
-                    "description": "Currency 3 digit ISO currency code in lowercase ex usd, eur, gbp",
-                    "type": "string"
-                },
-                "description": {
-                    "description": "Description of the price",
-                    "type": "string"
-                },
-                "display_amount": {
-                    "description": "DisplayAmount is the formatted amount with currency symbol\nFor USD: $12.50",
-                    "type": "string"
-                },
-                "display_price_unit_amount": {
-                    "description": "DisplayPriceUnitAmount is the formatted amount with price unit symbol\nFor BTC: 0.00000001 BTC",
-                    "type": "string"
-                },
-                "end_date": {
-                    "description": "EndDate is the end date of the price",
-                    "type": "string"
-                },
-                "entity_id": {
-                    "description": "EntityID holds the value of the \"entity_id\" field.",
-                    "type": "string"
-                },
-                "entity_type": {
-                    "description": "EntityType holds the value of the \"entity_type\" field.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.PriceEntityType"
-                        }
-                    ]
-                },
-                "environment_id": {
-                    "description": "EnvironmentID is the environment identifier for the price",
-                    "type": "string"
-                },
-                "group_id": {
-                    "description": "GroupID references the group this price belongs to",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID uuid identifier for the price",
-                    "type": "string"
-                },
-                "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
-                },
-                "lookup_key": {
-                    "description": "LookupKey used for looking up the price in the database",
-                    "type": "string"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/price.JSONBMetadata"
-                },
-                "meter_id": {
-                    "description": "MeterID is the id of the meter for usage based pricing",
-                    "type": "string"
-                },
-                "parent_price_id": {
-                    "description": "ParentPriceID references the root price (always set for price lineage tracking)",
-                    "type": "string"
-                },
-                "price_unit": {
-                    "description": "PriceUnit 3 digit ISO currency code in lowercase ex btc\nFor BTC: btc",
-                    "type": "string"
-                },
-                "price_unit_amount": {
-                    "description": "PriceUnitAmount is the amount stored in price unit\nFor BTC: 0.00000001 means 0.00000001 BTC",
-                    "type": "number"
-                },
-                "price_unit_id": {
-                    "description": "PriceUnitID is the id of the price unit",
-                    "type": "string"
-                },
-                "price_unit_tiers": {
-                    "description": "PriceUnitTiers are the tiers for the price unit",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/price.PriceTier"
-                    }
-                },
-                "price_unit_type": {
-                    "description": "PriceUnitType is the type of the price unit- Fiat, Custom, Crypto",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.PriceUnitType"
-                        }
-                    ]
-                },
-                "start_date": {
-                    "description": "StartDate is the start date of the price",
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
-                },
-                "tiers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/price.PriceTier"
-                    }
-                },
-                "transform_quantity": {
-                    "$ref": "#/definitions/price.JSONBTransformQuantity"
-                },
-                "trial_period": {
-                    "description": "TrialPeriod is the number of days for the trial period\nNote: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)",
-                    "type": "integer"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.PriceType"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "price.PriceTier": {
-            "type": "object",
-            "properties": {
-                "flat_amount": {
-                    "description": "flat_amount is the flat amount for the given tier (optional)\nApplied on top of unit_amount*quantity. Useful for cases like \"2.7$ + 5c\"",
-                    "type": "number"
-                },
-                "unit_amount": {
-                    "description": "unit_amount is the amount per unit for the given tier",
-                    "type": "number"
-                },
-                "up_to": {
-                    "description": "up_to is the quantity up to which this tier applies. It is null for the last tier.\nIMPORTANT: Tier boundaries are INCLUSIVE.\n- If up_to is 1000, then quantity less than or equal to 1000 belongs to this tier\n- This behavior is consistent across both VOLUME and SLAB tier modes",
-                    "type": "integer"
-                }
-            }
-        },
-        "price.TransformQuantity": {
-            "type": "object",
-            "properties": {
-                "divide_by": {
-                    "description": "Divide quantity by this number",
-                    "type": "integer"
-                },
-                "round": {
-                    "description": "up or down",
-                    "type": "string"
-                }
-            }
-        },
-        "priceunit.PriceUnitFilter": {
-            "type": "object",
-            "properties": {
-                "environment_id": {
-                    "description": "EnvironmentID filters by specific environment ID",
-                    "type": "string"
-                },
-                "filters": {
-                    "description": "Filters allows complex filtering based on multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
-                    }
-                },
-                "queryFilter": {
-                    "description": "QueryFilter contains pagination and basic query parameters",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.QueryFilter"
-                        }
-                    ]
-                },
-                "sort": {
-                    "description": "Sort allows sorting by multiple fields",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/types.SortCondition"
-                    }
-                },
-                "status": {
-                    "description": "Status filters by price unit status",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.Status"
-                        }
-                    ]
-                },
-                "tenant_id": {
-                    "description": "TenantID filters by specific tenant ID",
-                    "type": "string"
-                },
-                "timeRangeFilter": {
-                    "description": "TimeRangeFilter allows filtering by time periods",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.TimeRangeFilter"
-                        }
-                    ]
-                }
-            }
-        },
-        "subscription.SubscriptionLineItem": {
-            "type": "object",
-            "properties": {
-                "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "customer_id": {
-                    "type": "string"
-                },
-                "display_name": {
-                    "type": "string"
-                },
-                "end_date": {
-                    "type": "string"
-                },
-                "entity_id": {
-                    "type": "string"
-                },
-                "entity_type": {
-                    "$ref": "#/definitions/types.SubscriptionLineItemEntityType"
-                },
-                "environment_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
-                },
-                "metadata": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "meter_display_name": {
-                    "type": "string"
-                },
-                "meter_id": {
-                    "type": "string"
-                },
-                "plan_display_name": {
-                    "type": "string"
-                },
-                "price": {
-                    "$ref": "#/definitions/price.Price"
-                },
-                "price_id": {
-                    "type": "string"
-                },
-                "price_type": {
-                    "$ref": "#/definitions/types.PriceType"
-                },
-                "price_unit": {
-                    "type": "string"
-                },
-                "price_unit_id": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "number"
-                },
-                "start_date": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "subscription_id": {
-                    "type": "string"
-                },
-                "subscription_phase_id": {
-                    "type": "string"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "trial_period": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "subscription.SubscriptionPause": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "environment_id": {
-                    "description": "EnvironmentID is the environment identifier for the pause",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID is the unique identifier for the subscription pause",
-                    "type": "string"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/types.Metadata"
-                },
-                "original_period_end": {
-                    "description": "OriginalPeriodEnd is the end of the billing period when the pause was created",
-                    "type": "string"
-                },
-                "original_period_start": {
-                    "description": "OriginalPeriodStart is the start of the billing period when the pause was created",
-                    "type": "string"
-                },
-                "pause_end": {
-                    "description": "PauseEnd is when the pause will end (null for indefinite)",
-                    "type": "string"
-                },
-                "pause_mode": {
-                    "$ref": "#/definitions/types.PauseMode"
-                },
-                "pause_start": {
-                    "description": "PauseStart is when the pause actually started",
-                    "type": "string"
-                },
-                "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
-                },
-                "reason": {
-                    "description": "Reason is the reason for pausing",
-                    "type": "string"
-                },
-                "resume_mode": {
-                    "$ref": "#/definitions/types.ResumeMode"
-                },
-                "resumed_at": {
-                    "description": "ResumedAt is when the pause was actually ended (if manually resumed)",
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "subscription_id": {
-                    "description": "SubscriptionID is the identifier for the subscription",
-                    "type": "string"
-                },
-                "tenant_id": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "subscription.SubscriptionPhase": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "end_date": {
-                    "description": "EndDate is when the phase ends (nil if phase is still active or indefinite)",
-                    "type": "string"
-                },
-                "environment_id": {
-                    "description": "EnvironmentID is the environment identifier for the phase",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID is the unique identifier for the subscription phase",
-                    "type": "string"
-                },
-                "metadata": {
-                    "description": "Metadata contains additional key-value pairs",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.Metadata"
-                        }
-                    ]
-                },
-                "start_date": {
-                    "description": "StartDate is when the phase starts",
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "subscription_id": {
-                    "description": "SubscriptionID is the identifier for the subscription",
-                    "type": "string"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20905,10 +20264,12 @@ const docTemplate = `{
         "types.AddonType": {
             "type": "string",
             "enum": [
-                "onetime"
+                "onetime",
+                "multiple_instance"
             ],
             "x-enum-varnames": [
-                "AddonTypeOnetime"
+                "AddonTypeOnetime",
+                "AddonTypeMultipleInstance"
             ]
         },
         "types.AggregationType": {
@@ -20957,14 +20318,6 @@ const docTemplate = `{
                 "AlertConditionAbove",
                 "AlertConditionBelow"
             ]
-        },
-        "types.AlertConfig": {
-            "type": "object",
-            "properties": {
-                "threshold": {
-                    "$ref": "#/definitions/types.WalletAlertThreshold"
-                }
-            }
         },
         "types.AlertEntityType": {
             "type": "string",
@@ -21095,15 +20448,6 @@ const docTemplate = `{
                 }
             }
         },
-        "types.AlertThresholdType": {
-            "type": "string",
-            "enum": [
-                "amount"
-            ],
-            "x-enum-varnames": [
-                "AlertThresholdTypeAmount"
-            ]
-        },
         "types.AlertType": {
             "type": "string",
             "enum": [
@@ -21117,16 +20461,39 @@ const docTemplate = `{
                 "AlertTypeFeatureWalletBalance"
             ]
         },
-        "types.AutoTopupTrigger": {
+        "types.ApplicationStatus": {
             "type": "string",
             "enum": [
-                "disabled",
-                "balance_below_threshold"
+                "applied",
+                "failed",
+                "pending",
+                "skipped",
+                "cancelled"
             ],
             "x-enum-varnames": [
-                "AutoTopupTriggerDisabled",
-                "AutoTopupTriggerBalanceBelowThreshold"
+                "ApplicationStatusApplied",
+                "ApplicationStatusFailed",
+                "ApplicationStatusPending",
+                "ApplicationStatusSkipped",
+                "ApplicationStatusCancelled"
             ]
+        },
+        "types.AutoTopup": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "invoicing": {
+                    "type": "boolean"
+                },
+                "threshold": {
+                    "type": "number"
+                }
+            }
         },
         "types.BillingCadence": {
             "type": "string",
@@ -21193,6 +20560,17 @@ const docTemplate = `{
                 "BILLING_TIER_SLAB"
             ]
         },
+        "types.CancelImmediatelyInvoicePolicy": {
+            "type": "string",
+            "enum": [
+                "generate_invoice",
+                "skip"
+            ],
+            "x-enum-varnames": [
+                "CancelImmediatelyInvoicePolicyGenerateInvoice",
+                "CancelImmediatelyInvoicePolicySkip"
+            ]
+        },
         "types.CancellationType": {
             "type": "string",
             "enum": [
@@ -21215,17 +20593,75 @@ const docTemplate = `{
                 "CollectionMethodSendInvoice"
             ]
         },
-        "types.ConnectionFilter": {
+        "types.CommitmentInfo": {
             "type": "object",
             "properties": {
-                "connection_ids": {
+                "amount": {
+                    "type": "string"
+                },
+                "computed_commitment_utilized_amount": {
+                    "type": "string"
+                },
+                "computed_overage_amount": {
+                    "type": "string"
+                },
+                "computed_true_up_amount": {
+                    "description": "total_cost = computed_commitment_utilized_amount + computed_overage_amount + computed_true_up_amount",
+                    "type": "string"
+                },
+                "duration": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "is_windowed": {
+                    "type": "boolean"
+                },
+                "overage_factor": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "description": "Only used for quantity-based commitments",
+                    "type": "string"
+                },
+                "true_up_enabled": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.CommitmentType"
+                }
+            }
+        },
+        "types.CommitmentType": {
+            "type": "string",
+            "enum": [
+                "amount",
+                "quantity"
+            ],
+            "x-enum-varnames": [
+                "COMMITMENT_TYPE_AMOUNT",
+                "COMMITMENT_TYPE_QUANTITY"
+            ]
+        },
+        "types.CouponCadence": {
+            "type": "string",
+            "enum": [
+                "once",
+                "repeated",
+                "forever"
+            ],
+            "x-enum-varnames": [
+                "CouponCadenceOnce",
+                "CouponCadenceRepeated",
+                "CouponCadenceForever"
+            ]
+        },
+        "types.CouponFilter": {
+            "type": "object",
+            "properties": {
+                "coupon_ids": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
-                },
-                "end_time": {
-                    "type": "string"
                 },
                 "expand": {
                     "type": "string"
@@ -21252,63 +20688,16 @@ const docTemplate = `{
                         "desc"
                     ]
                 },
-                "provider_type": {
-                    "$ref": "#/definitions/types.SecretProvider"
-                },
                 "sort": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/types.SortCondition"
                     }
                 },
-                "start_time": {
-                    "type": "string"
-                },
                 "status": {
                     "$ref": "#/definitions/types.Status"
                 }
             }
-        },
-        "types.ConnectionMetadata": {
-            "type": "object",
-            "properties": {
-                "generic": {
-                    "$ref": "#/definitions/types.GenericConnectionMetadata"
-                },
-                "hubspot": {
-                    "$ref": "#/definitions/types.HubSpotConnectionMetadata"
-                },
-                "s3": {
-                    "$ref": "#/definitions/types.S3ConnectionMetadata"
-                },
-                "settings": {
-                    "$ref": "#/definitions/types.ConnectionSettings"
-                },
-                "stripe": {
-                    "$ref": "#/definitions/types.StripeConnectionMetadata"
-                }
-            }
-        },
-        "types.ConnectionSettings": {
-            "type": "object",
-            "properties": {
-                "invoice_sync_enable": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "types.CouponCadence": {
-            "type": "string",
-            "enum": [
-                "once",
-                "repeated",
-                "forever"
-            ],
-            "x-enum-varnames": [
-                "CouponCadenceOnce",
-                "CouponCadenceRepeated",
-                "CouponCadenceForever"
-            ]
         },
         "types.CouponType": {
             "type": "string",
@@ -21319,6 +20708,30 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "CouponTypeFixed",
                 "CouponTypePercentage"
+            ]
+        },
+        "types.CreditBreakdown": {
+            "type": "object",
+            "properties": {
+                "free": {
+                    "type": "string"
+                },
+                "purchased": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.CreditGrantApplicationReason": {
+            "type": "string",
+            "enum": [
+                "first_time_recurring_credit_grant",
+                "recurring_credit_grant",
+                "onetime_credit_grant"
+            ],
+            "x-enum-varnames": [
+                "ApplicationReasonFirstTimeRecurringCreditGrant",
+                "ApplicationReasonRecurringCreditGrant",
+                "ApplicationReasonOnetimeCreditGrant"
             ]
         },
         "types.CreditGrantCadence": {
@@ -21484,6 +20897,12 @@ const docTemplate = `{
                         "desc"
                     ]
                 },
+                "parent_customer_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "sort": {
                     "type": "array",
                     "items": {
@@ -21511,6 +20930,21 @@ const docTemplate = `{
                 "DataTypeNumber",
                 "DataTypeDate",
                 "DataTypeArray"
+            ]
+        },
+        "types.DebugTrackerStatus": {
+            "type": "string",
+            "enum": [
+                "unprocessed",
+                "not_found",
+                "found",
+                "error"
+            ],
+            "x-enum-varnames": [
+                "DebugTrackerStatusUnprocessed",
+                "DebugTrackerStatusNotFound",
+                "DebugTrackerStatusFound",
+                "DebugTrackerStatusError"
             ]
         },
         "types.EntitlementEntityType": {
@@ -21620,30 +21054,58 @@ const docTemplate = `{
                 "ENTITLEMENT_USAGE_RESET_PERIOD_NEVER"
             ]
         },
-        "types.EntitySyncConfig": {
-            "type": "object",
-            "properties": {
-                "inbound": {
-                    "description": "Inbound from external provider to FlexPrice",
-                    "type": "boolean"
-                },
-                "outbound": {
-                    "description": "Outbound from FlexPrice to external provider",
-                    "type": "boolean"
-                }
-            }
-        },
         "types.EntityType": {
             "type": "string",
             "enum": [
                 "EVENTS",
                 "PRICES",
-                "CUSTOMERS"
+                "CUSTOMERS",
+                "FEATURES"
             ],
             "x-enum-varnames": [
                 "EntityTypeEvents",
                 "EntityTypePrices",
-                "EntityTypeCustomers"
+                "EntityTypeCustomers",
+                "EntityTypeFeatures"
+            ]
+        },
+        "types.EventProcessingStatusType": {
+            "type": "string",
+            "enum": [
+                "processed",
+                "processing",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "EventProcessingStatusTypeProcessed",
+                "EventProcessingStatusTypeProcessing",
+                "EventProcessingStatusTypeFailed"
+            ]
+        },
+        "types.FailurePoint": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
+                "failure_point_type": {
+                    "$ref": "#/definitions/types.FailurePointType"
+                }
+            }
+        },
+        "types.FailurePointType": {
+            "type": "string",
+            "enum": [
+                "customer_lookup",
+                "meter_lookup",
+                "price_lookup",
+                "subscription_line_item_lookup"
+            ],
+            "x-enum-varnames": [
+                "FailurePointTypeCustomerLookup",
+                "FailurePointTypeMeterLookup",
+                "FailurePointTypePriceLookup",
+                "FailurePointTypeSubscriptionLineItemLookup"
             ]
         },
         "types.FeatureFilter": {
@@ -21754,7 +21216,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.FilterOperatorType"
                 },
                 "value": {
-                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Value"
+                    "$ref": "#/definitions/types.Value"
                 }
             }
         },
@@ -21763,6 +21225,7 @@ const docTemplate = `{
             "enum": [
                 "eq",
                 "contains",
+                "not_contains",
                 "gt",
                 "lt",
                 "in",
@@ -21773,6 +21236,7 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "EQUAL",
                 "CONTAINS",
+                "NOT_CONTAINS",
                 "GREATER_THAN",
                 "LESS_THAN",
                 "IN",
@@ -21781,29 +21245,65 @@ const docTemplate = `{
                 "AFTER"
             ]
         },
-        "types.GenericConnectionMetadata": {
+        "types.GroupFilter": {
             "type": "object",
             "properties": {
-                "data": {
-                    "type": "object",
-                    "additionalProperties": true
-                }
-            }
-        },
-        "types.HubSpotConnectionMetadata": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "description": "Private App Access Token (encrypted)",
+                "end_time": {
                     "type": "string"
                 },
-                "app_id": {
-                    "description": "HubSpot App ID (optional, not encrypted)",
+                "entity_type": {
                     "type": "string"
                 },
-                "client_secret": {
-                    "description": "Private App Client Secret for webhook verification (encrypted)",
+                "expand": {
                     "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.FilterCondition"
+                    }
+                },
+                "group_ids": {
+                    "description": "Group specific filters",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
                 }
             }
         },
@@ -21816,7 +21316,10 @@ const docTemplate = `{
                 "subscription",
                 "payment",
                 "credit_note",
-                "addon"
+                "addon",
+                "item",
+                "item_price",
+                "price"
             ],
             "x-enum-varnames": [
                 "IntegrationEntityTypeCustomer",
@@ -21825,7 +21328,21 @@ const docTemplate = `{
                 "IntegrationEntityTypeSubscription",
                 "IntegrationEntityTypePayment",
                 "IntegrationEntityTypeCreditNote",
-                "IntegrationEntityTypeAddon"
+                "IntegrationEntityTypeAddon",
+                "IntegrationEntityTypeItem",
+                "IntegrationEntityTypeItemPrice",
+                "IntegrationEntityTypePrice"
+            ]
+        },
+        "types.InvoiceBilling": {
+            "type": "string",
+            "enum": [
+                "invoice_to_parent",
+                "invoice_to_self"
+            ],
+            "x-enum-varnames": [
+                "InvoiceBillingInvoiceToParent",
+                "InvoiceBillingInvoiceToSelf"
             ]
         },
         "types.InvoiceBillingReason": {
@@ -21932,6 +21449,22 @@ const docTemplate = `{
                         "$ref": "#/definitions/types.PaymentStatus"
                     }
                 },
+                "period_end_gte": {
+                    "description": "period_end_gte filters invoices with period_end \u003e= value",
+                    "type": "string"
+                },
+                "period_end_lte": {
+                    "description": "period_end_lte filters invoices with period_end \u003c= value",
+                    "type": "string"
+                },
+                "period_start_gte": {
+                    "description": "period_start_gte filters invoices with period_start \u003e= value",
+                    "type": "string"
+                },
+                "period_start_lte": {
+                    "description": "period_start_lte filters invoices with period_start \u003c= value",
+                    "type": "string"
+                },
                 "skip_line_items": {
                     "description": "SkipLineItems if true, will not include line items in the response",
                     "type": "boolean"
@@ -21979,12 +21512,6 @@ const docTemplate = `{
                 "InvoiceTypeOneOff",
                 "InvoiceTypeCredit"
             ]
-        },
-        "types.Metadata": {
-            "type": "object",
-            "additionalProperties": {
-                "type": "string"
-            }
         },
         "types.PaginationResponse": {
             "type": "object",
@@ -22057,10 +21584,16 @@ const docTemplate = `{
         "types.PaymentGatewayType": {
             "type": "string",
             "enum": [
-                "stripe"
+                "stripe",
+                "razorpay",
+                "nomod",
+                "moyasar"
             ],
             "x-enum-varnames": [
-                "PaymentGatewayTypeStripe"
+                "PaymentGatewayTypeStripe",
+                "PaymentGatewayTypeRazorpay",
+                "PaymentGatewayTypeNomod",
+                "PaymentGatewayTypeMoyasar"
             ]
         },
         "types.PaymentMethodType": {
@@ -22101,6 +21634,25 @@ const docTemplate = `{
                 "PaymentStatusFailed",
                 "PaymentStatusRefunded",
                 "PaymentStatusPartiallyRefunded"
+            ]
+        },
+        "types.PaymentTerms": {
+            "type": "string",
+            "enum": [
+                "15 NET",
+                "30 NET",
+                "45 NET",
+                "60 NET",
+                "75 NET",
+                "90 NET"
+            ],
+            "x-enum-varnames": [
+                "PaymentTerms15Net",
+                "PaymentTerms30Net",
+                "PaymentTerms45Net",
+                "PaymentTerms60Net",
+                "PaymentTerms75Net",
+                "PaymentTerms90Net"
             ]
         },
         "types.PlanFilter": {
@@ -22175,6 +21727,90 @@ const docTemplate = `{
                 "PRICE_ENTITY_TYPE_COSTSHEET"
             ]
         },
+        "types.PriceFilter": {
+            "type": "object",
+            "properties": {
+                "allow_expired_prices": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "entity_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "entity_type": {
+                    "$ref": "#/definitions/types.PriceEntityType"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "DSL filters",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "meter_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "parent_price_id": {
+                    "type": "string"
+                },
+                "plan_ids": {
+                    "description": "Price override filtering fields",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "price_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort": {
+                    "type": "string"
+                },
+                "start_date_lt": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "subscription_id": {
+                    "type": "string"
+                }
+            }
+        },
         "types.PriceType": {
             "type": "string",
             "enum": [
@@ -22185,6 +21821,58 @@ const docTemplate = `{
                 "PRICE_TYPE_USAGE",
                 "PRICE_TYPE_FIXED"
             ]
+        },
+        "types.PriceUnitFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "price_unit_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                }
+            }
         },
         "types.PriceUnitType": {
             "type": "string",
@@ -22270,6 +21958,17 @@ const docTemplate = `{
                 "ResumeModeAuto"
             ]
         },
+        "types.RoundType": {
+            "type": "string",
+            "enum": [
+                "up",
+                "down"
+            ],
+            "x-enum-varnames": [
+                "ROUND_UP",
+                "ROUND_DOWN"
+            ]
+        },
         "types.S3CompressionType": {
             "type": "string",
             "enum": [
@@ -22280,23 +21979,6 @@ const docTemplate = `{
                 "S3CompressionTypeNone",
                 "S3CompressionTypeGzip"
             ]
-        },
-        "types.S3ConnectionMetadata": {
-            "type": "object",
-            "properties": {
-                "aws_access_key_id": {
-                    "description": "AWS access key (encrypted)",
-                    "type": "string"
-                },
-                "aws_secret_access_key": {
-                    "description": "AWS secret access key (encrypted)",
-                    "type": "string"
-                },
-                "aws_session_token": {
-                    "description": "AWS session token for temporary credentials (encrypted)",
-                    "type": "string"
-                }
-            }
         },
         "types.S3EncryptionType": {
             "type": "string",
@@ -22352,22 +22034,53 @@ const docTemplate = `{
                 }
             }
         },
+        "types.ScheduleStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "executing",
+                "executed",
+                "cancelled",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "ScheduleStatusPending",
+                "ScheduleStatusExecuting",
+                "ScheduleStatusExecuted",
+                "ScheduleStatusCancelled",
+                "ScheduleStatusFailed"
+            ]
+        },
+        "types.ScheduleType": {
+            "type": "string",
+            "enum": [
+                "immediate",
+                "end_of_period"
+            ],
+            "x-enum-varnames": [
+                "ScheduleTypeImmediate",
+                "ScheduleTypePeriodEnd"
+            ]
+        },
         "types.ScheduledTaskEntityType": {
             "type": "string",
             "enum": [
                 "events",
                 "invoice",
-                "credit_topups"
+                "credit_topups",
+                "credit_usage"
             ],
             "x-enum-varnames": [
                 "ScheduledTaskEntityTypeEvents",
                 "ScheduledTaskEntityTypeInvoice",
-                "ScheduledTaskEntityTypeCreditTopups"
+                "ScheduledTaskEntityTypeCreditTopups",
+                "ScheduledTaskEntityTypeCreditUsage"
             ]
         },
         "types.ScheduledTaskInterval": {
             "type": "string",
             "enum": [
+                "15MIN",
                 "custom",
                 "hourly",
                 "daily"
@@ -22376,11 +22089,13 @@ const docTemplate = `{
                 "ScheduledTaskIntervalCustom": "10 minutes for testing"
             },
             "x-enum-descriptions": [
+                "",
                 "10 minutes for testing",
                 "",
                 ""
             ],
             "x-enum-varnames": [
+                "ScheduledTaskIntervalEvery15Minutes",
                 "ScheduledTaskIntervalCustom",
                 "ScheduledTaskIntervalHourly",
                 "ScheduledTaskIntervalDaily"
@@ -22392,13 +22107,23 @@ const docTemplate = `{
                 "flexprice",
                 "stripe",
                 "s3",
-                "hubspot"
+                "hubspot",
+                "razorpay",
+                "chargebee",
+                "quickbooks",
+                "nomod",
+                "moyasar"
             ],
             "x-enum-varnames": [
                 "SecretProviderFlexPrice",
                 "SecretProviderStripe",
                 "SecretProviderS3",
-                "SecretProviderHubSpot"
+                "SecretProviderHubSpot",
+                "SecretProviderRazorpay",
+                "SecretProviderChargebee",
+                "SecretProviderQuickBooks",
+                "SecretProviderNomod",
+                "SecretProviderMoyasar"
             ]
         },
         "types.SecretType": {
@@ -22449,23 +22174,6 @@ const docTemplate = `{
                 "StatusArchived"
             ]
         },
-        "types.StripeConnectionMetadata": {
-            "type": "object",
-            "properties": {
-                "account_id": {
-                    "type": "string"
-                },
-                "publishable_key": {
-                    "type": "string"
-                },
-                "secret_key": {
-                    "type": "string"
-                },
-                "webhook_secret": {
-                    "type": "string"
-                }
-            }
-        },
         "types.SubscriptionChangeType": {
             "type": "string",
             "enum": [
@@ -22510,10 +22218,21 @@ const docTemplate = `{
                 "expand": {
                     "type": "string"
                 },
+                "external_customer_id": {
+                    "description": "ExternalCustomerID filters by external customer ID",
+                    "type": "string"
+                },
                 "filters": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/types.FilterCondition"
+                    }
+                },
+                "invoicing_customer_ids": {
+                    "description": "InvoicingCustomerIDs filters by invoicing customer ID",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 },
                 "limit": {
@@ -22531,6 +22250,13 @@ const docTemplate = `{
                         "asc",
                         "desc"
                     ]
+                },
+                "parent_subscription_ids": {
+                    "description": "ParentSubscriptionIDs filters by parent subscription IDs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "plan_id": {
                     "description": "PlanID filters by plan ID",
@@ -22571,11 +22297,24 @@ const docTemplate = `{
             "type": "string",
             "enum": [
                 "plan",
-                "addon"
+                "addon",
+                "subscription"
             ],
             "x-enum-varnames": [
                 "SubscriptionLineItemEntityTypePlan",
-                "SubscriptionLineItemEntityTypeAddon"
+                "SubscriptionLineItemEntityTypeAddon",
+                "SubscriptionLineItemEntityTypeSubscription"
+            ]
+        },
+        "types.SubscriptionScheduleChangeType": {
+            "type": "string",
+            "enum": [
+                "plan_change",
+                "cancellation"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionScheduleChangeTypePlanChange",
+                "SubscriptionScheduleChangeTypeCancellation"
             ]
         },
         "types.SubscriptionStatus": {
@@ -22585,48 +22324,17 @@ const docTemplate = `{
                 "paused",
                 "cancelled",
                 "incomplete",
-                "incomplete_expired",
-                "past_due",
                 "trialing",
-                "unpaid"
+                "draft"
             ],
             "x-enum-varnames": [
                 "SubscriptionStatusActive",
                 "SubscriptionStatusPaused",
                 "SubscriptionStatusCancelled",
                 "SubscriptionStatusIncomplete",
-                "SubscriptionStatusIncompleteExpired",
-                "SubscriptionStatusPastDue",
                 "SubscriptionStatusTrialing",
-                "SubscriptionStatusUnpaid"
+                "SubscriptionStatusDraft"
             ]
-        },
-        "types.SyncConfig": {
-            "type": "object",
-            "properties": {
-                "deal": {
-                    "description": "CRM sync (HubSpot, Salesforce, etc.)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.EntitySyncConfig"
-                        }
-                    ]
-                },
-                "invoice": {
-                    "$ref": "#/definitions/types.EntitySyncConfig"
-                },
-                "plan": {
-                    "description": "Integration sync (Stripe, Razorpay, etc.)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.EntitySyncConfig"
-                        }
-                    ]
-                },
-                "subscription": {
-                    "$ref": "#/definitions/types.EntitySyncConfig"
-                }
-            }
         },
         "types.TaskStatus": {
             "type": "string",
@@ -22653,66 +22361,6 @@ const docTemplate = `{
                 "TaskTypeImport",
                 "TaskTypeExport"
             ]
-        },
-        "types.TaxAssociationFilter": {
-            "type": "object",
-            "properties": {
-                "auto_apply": {
-                    "type": "boolean"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "end_time": {
-                    "type": "string"
-                },
-                "entity_id": {
-                    "type": "string"
-                },
-                "entity_type": {
-                    "$ref": "#/definitions/types.TaxRateEntityType"
-                },
-                "expand": {
-                    "type": "string"
-                },
-                "limit": {
-                    "type": "integer",
-                    "maximum": 1000,
-                    "minimum": 1
-                },
-                "offset": {
-                    "type": "integer",
-                    "minimum": 0
-                },
-                "order": {
-                    "type": "string",
-                    "enum": [
-                        "asc",
-                        "desc"
-                    ]
-                },
-                "sort": {
-                    "type": "string"
-                },
-                "start_time": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/types.Status"
-                },
-                "tax_association_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "tax_rate_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
         },
         "types.TaxRateEntityType": {
             "type": "string",
@@ -22786,7 +22434,8 @@ const docTemplate = `{
                 "CREDIT_NOTE",
                 "CREDIT_EXPIRED",
                 "WALLET_TERMINATION",
-                "MANUAL_BALANCE_DEBIT"
+                "MANUAL_BALANCE_DEBIT",
+                "CREDIT_ADJUSTMENT"
             ],
             "x-enum-varnames": [
                 "TransactionReasonInvoicePayment",
@@ -22797,7 +22446,8 @@ const docTemplate = `{
                 "TransactionReasonCreditNote",
                 "TransactionReasonCreditExpired",
                 "TransactionReasonWalletTermination",
-                "TransactionReasonManualBalanceDebit"
+                "TransactionReasonManualBalanceDebit",
+                "TransactionReasonCreditAdjustment"
             ]
         },
         "types.TransactionStatus": {
@@ -22905,19 +22555,26 @@ const docTemplate = `{
                 "UserTypeServiceAccount"
             ]
         },
-        "types.WalletAlertThreshold": {
+        "types.Value": {
             "type": "object",
             "properties": {
-                "type": {
-                    "description": "amount",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/types.AlertThresholdType"
-                        }
-                    ]
+                "array": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
-                "value": {
+                "boolean": {
+                    "type": "boolean"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "number": {
                     "type": "number"
+                },
+                "string": {
+                    "type": "string"
                 }
             }
         },
@@ -22946,6 +22603,45 @@ const docTemplate = `{
                 "WalletConfigPriceTypeFixed"
             ]
         },
+        "types.WalletFilter": {
+            "type": "object",
+            "properties": {
+                "alert_enabled": {
+                    "type": "boolean"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.WalletStatus"
+                },
+                "wallet_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "types.WalletStatus": {
             "type": "string",
             "enum": [
@@ -22959,28 +22655,109 @@ const docTemplate = `{
                 "WalletStatusClosed"
             ]
         },
+        "types.WalletTransactionFilter": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string"
+                },
+                "credits_available_gt": {
+                    "type": "number"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "expiry_date_after": {
+                    "type": "string"
+                },
+                "expiry_date_before": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.FilterCondition"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "priority": {
+                    "type": "integer"
+                },
+                "reference_id": {
+                    "type": "string"
+                },
+                "reference_type": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "transaction_reason": {
+                    "$ref": "#/definitions/types.TransactionReason"
+                },
+                "transaction_status": {
+                    "$ref": "#/definitions/types.TransactionStatus"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.TransactionType"
+                }
+            }
+        },
         "types.WalletTxReferenceType": {
             "type": "string",
             "enum": [
                 "PAYMENT",
                 "EXTERNAL",
-                "REQUEST"
+                "REQUEST",
+                "INVOICE"
             ],
             "x-enum-varnames": [
                 "WalletTxReferenceTypePayment",
                 "WalletTxReferenceTypeExternal",
-                "WalletTxReferenceTypeRequest"
+                "WalletTxReferenceTypeRequest",
+                "WalletTxReferenceTypeInvoice"
             ]
         },
         "types.WalletType": {
             "type": "string",
             "enum": [
-                "PROMOTIONAL",
-                "PRE_PAID"
+                "PRE_PAID",
+                "POST_PAID"
             ],
             "x-enum-varnames": [
-                "WalletTypePromotional",
-                "WalletTypePrePaid"
+                "WalletTypePrePaid",
+                "WalletTypePostPaid"
             ]
         },
         "types.WindowSize": {
@@ -22995,6 +22772,7 @@ const docTemplate = `{
                 "12HOUR",
                 "DAY",
                 "WEEK",
+                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
@@ -23007,8 +22785,803 @@ const docTemplate = `{
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth"
+                "WindowSizeMonth",
+                "DefaultWindowSize"
             ]
+        },
+        "types.WorkflowExecutionFilter": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "type": "string"
+                },
+                "entity": {
+                    "description": "e.g. plan, invoice, subscription",
+                    "type": "string"
+                },
+                "entity_id": {
+                    "description": "e.g. plan_01ABC123",
+                    "type": "string"
+                },
+                "expand": {
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "filters allows complex filtering based on multiple fields (same as FeatureFilter)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.FilterCondition"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "maximum": 1000,
+                    "minimum": 1
+                },
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "order": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "sort": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.SortCondition"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "task_queue": {
+                    "type": "string"
+                },
+                "workflow_id": {
+                    "description": "Workflow-specific filters",
+                    "type": "string"
+                },
+                "workflow_status": {
+                    "description": "e.g. Running, Completed, Failed",
+                    "type": "string"
+                },
+                "workflow_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "invoice.InvoiceLineItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "commitment_info": {
+                    "$ref": "#/definitions/types.CommitmentInfo"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "entity_id": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "type": "string"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invoice_id": {
+                    "type": "string"
+                },
+                "invoice_level_discount": {
+                    "description": "invoice_level_discount is the discount amount in invoice currency applied to all line items on the invoice.",
+                    "type": "string"
+                },
+                "line_item_discount": {
+                    "description": "line_item_discount is the discount amount in invoice currency applied directly to this line item.",
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
+                "meter_display_name": {
+                    "type": "string"
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "period_end": {
+                    "type": "string"
+                },
+                "period_start": {
+                    "type": "string"
+                },
+                "plan_display_name": {
+                    "type": "string"
+                },
+                "prepaid_credits_applied": {
+                    "description": "prepaid_credits_applied is the amount in invoice currency reduced from this line item due to prepaid credits application.",
+                    "type": "string"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "price_type": {
+                    "type": "string"
+                },
+                "price_unit": {
+                    "type": "string"
+                },
+                "price_unit_amount": {
+                    "type": "string"
+                },
+                "price_unit_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "subscription_id": {
+                    "type": "string"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "meter.Aggregation": {
+            "type": "object",
+            "properties": {
+                "bucket_size": {
+                    "description": "BucketSize is used only for MAX aggregation when windowed aggregation is needed\nIt defines the size of time windows to calculate max values within",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.WindowSize"
+                        }
+                    ]
+                },
+                "expression": {
+                    "description": "Expression is an optional CEL expression to compute per-event quantity from event.properties.\nWhen set, it replaces Field-based extraction. Property names are used directly (e.g., token * duration * pixel).",
+                    "type": "string"
+                },
+                "field": {
+                    "description": "Field is the key in $event.properties on which the aggregation is to be applied\nFor ex if the aggregation type is sum for API usage, the field could be \"duration_ms\"\nIgnored when Expression is set.",
+                    "type": "string"
+                },
+                "group_by": {
+                    "description": "GroupBy is the property name in event.properties to group by before aggregating.\nCurrently only supported for MAX aggregation with bucket_size.\nWhen set, aggregation is applied per unique value of this property within each bucket,\nthen the per-group results are summed to produce the bucket total.",
+                    "type": "string"
+                },
+                "multiplier": {
+                    "description": "Multiplier is the multiplier for the aggregation\nFor ex if the aggregation type is sum_with_multiplier for API usage, the multiplier could be 1000\nto scale up by a factor of 1000. If not provided, it will be null.",
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.AggregationType"
+                }
+            }
+        },
+        "meter.Filter": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "Key is the key for the filter from $event.properties\nCurrently we support only first level keys in the properties and not nested keys",
+                    "type": "string"
+                },
+                "values": {
+                    "description": "Values are the possible values for the filter to be considered for the meter\nFor ex \"model_name\" could have values \"o1-mini\", \"gpt-4o\" etc",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "meter.Meter": {
+            "type": "object",
+            "properties": {
+                "aggregation": {
+                    "description": "Aggregation defines the aggregation type and field for the meter\nIt is used to aggregate the events into a single value for calculating the usage",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/meter.Aggregation"
+                        }
+                    ]
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "environment_id": {
+                    "description": "EnvironmentID is the environment identifier for the meter",
+                    "type": "string"
+                },
+                "event_name": {
+                    "description": "EventName is the unique identifier for the event that this meter is tracking\nIt is a mandatory field in the events table and hence being used as the primary matching field\nWe can have multiple meters tracking the same event but with different filters and aggregation",
+                    "type": "string"
+                },
+                "filters": {
+                    "description": "Filters define the criteria for the meter to be applied on the events before aggregation\nIt also defines the possible values on which later the charges will be applied",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/meter.Filter"
+                    }
+                },
+                "id": {
+                    "description": "ID is the unique identifier for the meter",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the display name of the meter",
+                    "type": "string"
+                },
+                "reset_usage": {
+                    "description": "ResetUsage defines whether the usage should be reset periodically or not\nFor ex meters tracking total storage used do not get reset but meters tracking\ntotal API requests do.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ResetUsage"
+                        }
+                    ]
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TemporalWorkflowResult": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "run_id": {
+                    "type": "string"
+                },
+                "workflow_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "price.JSONBFilters": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "price.JSONBMetadata": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
+        },
+        "price.JSONBTransformQuantity": {
+            "type": "object",
+            "properties": {
+                "divide_by": {
+                    "description": "Divide quantity by this number",
+                    "type": "integer"
+                },
+                "round": {
+                    "description": "up or down",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.RoundType"
+                        }
+                    ]
+                }
+            }
+        },
+        "price.Price": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "description": "Amount stored in main currency units (e.g., dollars, not cents)\nFor USD: 12.50 means $12.50",
+                    "type": "string"
+                },
+                "billing_cadence": {
+                    "$ref": "#/definitions/types.BillingCadence"
+                },
+                "billing_model": {
+                    "$ref": "#/definitions/types.BillingModel"
+                },
+                "billing_period": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "billing_period_count": {
+                    "description": "BillingPeriodCount is the count of the billing period ex 1, 3, 6, 12",
+                    "type": "integer",
+                    "default": 1
+                },
+                "conversion_rate": {
+                    "description": "ConversionRate is the conversion rate of the price unit to the fiat currency",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "currency": {
+                    "description": "Currency 3 digit ISO currency code in lowercase ex usd, eur, gbp",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "Description of the price",
+                    "type": "string"
+                },
+                "display_amount": {
+                    "description": "DisplayAmount is the formatted amount with currency symbol\nFor USD: $12.50",
+                    "type": "string"
+                },
+                "display_name": {
+                    "description": "DisplayName is the name of the price",
+                    "type": "string"
+                },
+                "display_price_unit_amount": {
+                    "description": "DisplayPriceUnitAmount is the formatted amount of the price unit",
+                    "type": "string"
+                },
+                "end_date": {
+                    "description": "EndDate is the end date of the price",
+                    "type": "string"
+                },
+                "entity_id": {
+                    "description": "EntityID holds the value of the \"entity_id\" field.",
+                    "type": "string"
+                },
+                "entity_type": {
+                    "description": "EntityType holds the value of the \"entity_type\" field.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PriceEntityType"
+                        }
+                    ]
+                },
+                "environment_id": {
+                    "description": "EnvironmentID is the environment identifier for the price",
+                    "type": "string"
+                },
+                "group_id": {
+                    "description": "GroupID references the group this price belongs to",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID uuid identifier for the price",
+                    "type": "string"
+                },
+                "invoice_cadence": {
+                    "$ref": "#/definitions/types.InvoiceCadence"
+                },
+                "lookup_key": {
+                    "description": "LookupKey used for looking up the price in the database",
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/price.JSONBMetadata"
+                },
+                "meter_id": {
+                    "description": "MeterID is the id of the meter for usage based pricing",
+                    "type": "string"
+                },
+                "min_quantity": {
+                    "description": "MinQuantity is the minimum quantity of the price",
+                    "type": "string",
+                    "x-nullable": true
+                },
+                "parent_price_id": {
+                    "description": "ParentPriceID references the root price (always set for price lineage tracking)",
+                    "type": "string"
+                },
+                "price_unit": {
+                    "description": "PriceUnit is the code of the price unit (e.g., 'btc', 'eth')",
+                    "type": "string"
+                },
+                "price_unit_amount": {
+                    "description": "PriceUnitAmount is the amount of the price unit",
+                    "type": "string"
+                },
+                "price_unit_id": {
+                    "description": "PriceUnitID is the id of the price unit (for CUSTOM type)",
+                    "type": "string"
+                },
+                "price_unit_tiers": {
+                    "description": "PriceUnitTiers are the tiers for the price unit when BillingModel is TIERED",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/price.PriceTier"
+                    }
+                },
+                "price_unit_type": {
+                    "description": "PriceUnitType is the type of the price unit (FIAT, CUSTOM)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.PriceUnitType"
+                        }
+                    ]
+                },
+                "start_date": {
+                    "description": "StartDate is the start date of the price",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "tier_mode": {
+                    "$ref": "#/definitions/types.BillingTier"
+                },
+                "tiers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/price.PriceTier"
+                    }
+                },
+                "transform_quantity": {
+                    "$ref": "#/definitions/price.JSONBTransformQuantity"
+                },
+                "trial_period": {
+                    "description": "TrialPeriod is the number of days for the trial period\nNote: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)",
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.PriceType"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "price.PriceTier": {
+            "type": "object",
+            "properties": {
+                "flat_amount": {
+                    "description": "flat_amount is the flat amount for the given tier (optional)\nApplied on top of unit_amount*quantity. Useful for cases like \"2.7$ + 5c\"",
+                    "type": "string"
+                },
+                "unit_amount": {
+                    "description": "unit_amount is the amount per unit for the given tier",
+                    "type": "string"
+                },
+                "up_to": {
+                    "description": "up_to is the quantity up to which this tier applies. It is null for the last tier.\nIMPORTANT: Tier boundaries are INCLUSIVE.\n- If up_to is 1000, then quantity less than or equal to 1000 belongs to this tier\n- This behavior is consistent across both VOLUME and SLAB tier modes",
+                    "type": "integer"
+                }
+            }
+        },
+        "price.TransformQuantity": {
+            "type": "object",
+            "properties": {
+                "divide_by": {
+                    "description": "Divide quantity by this number",
+                    "type": "integer"
+                },
+                "round": {
+                    "description": "up or down",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.RoundType"
+                        }
+                    ]
+                }
+            }
+        },
+        "subscription.SubscriptionLineItem": {
+            "type": "object",
+            "properties": {
+                "billing_period": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "billing_period_count": {
+                    "description": "from price at create; default 1",
+                    "type": "integer"
+                },
+                "commitment_amount": {
+                    "description": "Commitment fields",
+                    "type": "string"
+                },
+                "commitment_duration": {
+                    "$ref": "#/definitions/types.BillingPeriod"
+                },
+                "commitment_overage_factor": {
+                    "type": "string"
+                },
+                "commitment_quantity": {
+                    "type": "string"
+                },
+                "commitment_true_up_enabled": {
+                    "type": "boolean"
+                },
+                "commitment_type": {
+                    "$ref": "#/definitions/types.CommitmentType"
+                },
+                "commitment_windowed": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "entity_id": {
+                    "type": "string"
+                },
+                "entity_type": {
+                    "$ref": "#/definitions/types.SubscriptionLineItemEntityType"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invoice_cadence": {
+                    "$ref": "#/definitions/types.InvoiceCadence"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "meter_display_name": {
+                    "type": "string"
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "plan_display_name": {
+                    "type": "string"
+                },
+                "price": {
+                    "$ref": "#/definitions/price.Price"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "price_type": {
+                    "$ref": "#/definitions/types.PriceType"
+                },
+                "price_unit": {
+                    "type": "string"
+                },
+                "price_unit_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "subscription_id": {
+                    "type": "string"
+                },
+                "subscription_phase_id": {
+                    "type": "string"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "trial_period": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "subscription.SubscriptionPause": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "environment_id": {
+                    "description": "EnvironmentID is the environment identifier for the pause",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID is the unique identifier for the subscription pause",
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
+                "original_period_end": {
+                    "description": "OriginalPeriodEnd is the end of the billing period when the pause was created",
+                    "type": "string"
+                },
+                "original_period_start": {
+                    "description": "OriginalPeriodStart is the start of the billing period when the pause was created",
+                    "type": "string"
+                },
+                "pause_end": {
+                    "description": "PauseEnd is when the pause will end (null for indefinite)",
+                    "type": "string"
+                },
+                "pause_mode": {
+                    "$ref": "#/definitions/types.PauseMode"
+                },
+                "pause_start": {
+                    "description": "PauseStart is when the pause actually started",
+                    "type": "string"
+                },
+                "pause_status": {
+                    "$ref": "#/definitions/types.PauseStatus"
+                },
+                "reason": {
+                    "description": "Reason is the reason for pausing",
+                    "type": "string"
+                },
+                "resume_mode": {
+                    "$ref": "#/definitions/types.ResumeMode"
+                },
+                "resumed_at": {
+                    "description": "ResumedAt is when the pause was actually ended (if manually resumed)",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "subscription_id": {
+                    "description": "SubscriptionID is the identifier for the subscription",
+                    "type": "string"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "subscription.SubscriptionPhase": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "description": "EndDate is when the phase ends (nil if phase is still active or indefinite)",
+                    "type": "string"
+                },
+                "environment_id": {
+                    "description": "EnvironmentID is the environment identifier for the phase",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID is the unique identifier for the subscription phase",
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "Metadata contains additional key-value pairs",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.Metadata"
+                        }
+                    ]
+                },
+                "start_date": {
+                    "description": "StartDate is when the phase starts",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "subscription_id": {
+                    "description": "SubscriptionID is the identifier for the subscription",
+                    "type": "string"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.ListResponse-dto_WalletResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.WalletResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "types.Metadata": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string"
+            }
         }
     },
     "securityDefinitions": {
@@ -23027,8 +23600,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/v1",
 	Schemes:          []string{"http", "https"},
-	Title:            "FlexPrice API",
-	Description:      "FlexPrice API Service",
+	Title:            "Flexprice API",
+	Description:      "Flexprice API Service",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

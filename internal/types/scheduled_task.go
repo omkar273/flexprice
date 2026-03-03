@@ -8,14 +8,16 @@ import (
 type ScheduledTaskInterval string
 
 const (
-	ScheduledTaskIntervalCustom ScheduledTaskInterval = "custom" // 10 minutes for testing
-	ScheduledTaskIntervalHourly ScheduledTaskInterval = "hourly"
-	ScheduledTaskIntervalDaily  ScheduledTaskInterval = "daily"
+	ScheduledTaskIntervalEvery15Minutes ScheduledTaskInterval = "15MIN"
+	ScheduledTaskIntervalCustom         ScheduledTaskInterval = "custom" // 10 minutes for testing
+	ScheduledTaskIntervalHourly         ScheduledTaskInterval = "hourly"
+	ScheduledTaskIntervalDaily          ScheduledTaskInterval = "daily"
 )
 
 // Validate validates the scheduled task interval
 func (s ScheduledTaskInterval) Validate() error {
 	allowedIntervals := []ScheduledTaskInterval{
+		ScheduledTaskIntervalEvery15Minutes,
 		ScheduledTaskIntervalCustom,
 		ScheduledTaskIntervalHourly,
 		ScheduledTaskIntervalDaily,
@@ -31,7 +33,7 @@ func (s ScheduledTaskInterval) Validate() error {
 		}
 	}
 	return ierr.NewError("invalid scheduled task interval").
-		WithHint("Interval must be one of: custom, hourly, daily").
+		WithHint("Interval must be one of: 15MIN, custom, hourly, daily").
 		Mark(ierr.ErrValidation)
 }
 
@@ -42,6 +44,7 @@ const (
 	ScheduledTaskEntityTypeEvents       ScheduledTaskEntityType = "events"
 	ScheduledTaskEntityTypeInvoice      ScheduledTaskEntityType = "invoice"
 	ScheduledTaskEntityTypeCreditTopups ScheduledTaskEntityType = "credit_topups"
+	ScheduledTaskEntityTypeCreditUsage  ScheduledTaskEntityType = "credit_usage"
 )
 
 // Validate validates the entity type
@@ -50,6 +53,7 @@ func (e ScheduledTaskEntityType) Validate() error {
 		ScheduledTaskEntityTypeEvents,
 		ScheduledTaskEntityTypeInvoice,
 		ScheduledTaskEntityTypeCreditTopups,
+		ScheduledTaskEntityTypeCreditUsage,
 	}
 	if e == "" {
 		return ierr.NewError("entity type is required").
@@ -125,17 +129,22 @@ func (e S3EncryptionType) Validate() error {
 // S3ExportConfig represents S3 export configuration (non-sensitive settings)
 // This goes in the sync_config column
 type S3ExportConfig struct {
-	Bucket      string            `json:"bucket"`                // S3 bucket name
-	Region      string            `json:"region"`                // AWS region (e.g., "us-west-2")
-	KeyPrefix   string            `json:"key_prefix,omitempty"`  // Optional prefix for S3 keys (e.g., "flexprice-exports/")
-	Compression S3CompressionType `json:"compression,omitempty"` // Compression type: "gzip", "none" (default: "none")
-	Encryption  S3EncryptionType  `json:"encryption,omitempty"`  // Encryption type: "AES256", "aws:kms", "aws:kms:dsse" (default: "AES256")
+	Bucket             string            `json:"bucket"`                         // S3 bucket name
+	Region             string            `json:"region"`                         // AWS region (e.g., "us-west-2")
+	KeyPrefix          string            `json:"key_prefix,omitempty"`           // Optional prefix for S3 keys (e.g., "flexprice-exports/")
+	Compression        S3CompressionType `json:"compression,omitempty"`          // Compression type: "gzip", "none" (default: "none")
+	Encryption         S3EncryptionType  `json:"encryption,omitempty"`           // Encryption type: "AES256", "aws:kms", "aws:kms:dsse" (default: "AES256")
+	IsFlexpriceManaged bool              `json:"is_flexprice_managed,omitempty"` // If true, use Flexprice-managed S3 credentials instead of user-provided
 }
 
 // Validate validates the S3 export configuration
 func (s *S3ExportConfig) Validate() error {
 	if s == nil {
 		return nil
+	}
+
+	if s.IsFlexpriceManaged {
+		return nil // No validation needed for Flexprice-managed connections
 	}
 
 	if s.Bucket == "" {
@@ -175,6 +184,9 @@ type S3JobConfig struct {
 }
 
 // Validate validates the S3 job configuration
+// This should only be called AFTER determining if the connection is Flexprice-managed
+// For Flexprice-managed: bucket/region/key_prefix should already be populated by service layer
+// For custom S3: user must provide all required fields
 func (s *S3JobConfig) Validate() error {
 	if s == nil {
 		return ierr.NewError("S3 job config is required").
@@ -182,6 +194,7 @@ func (s *S3JobConfig) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 
+	// Bucket and region are required (should be populated by now)
 	if s.Bucket == "" {
 		return ierr.NewError("bucket is required").
 			WithHint("S3 bucket name is required").
@@ -209,6 +222,28 @@ func (s *S3JobConfig) Validate() error {
 	}
 	if s.Encryption == "" {
 		s.Encryption = S3EncryptionTypeAES256
+	}
+
+	return nil
+}
+
+// ValidateForFlexpriceManaged validates only compression and encryption
+// Used before populating bucket/region from config
+// ValidateForFlexpriceManaged validates only compression and encryption for Flexprice-managed connections
+func (s *S3JobConfig) ValidateForFlexpriceManaged() error {
+	if s == nil {
+		return ierr.NewError("S3 job config is required").
+			WithHint("S3 job configuration must be provided").
+			Mark(ierr.ErrValidation)
+	}
+
+	// Only validate compression and encryption (bucket/region will be populated from config)
+	if err := s.Compression.Validate(); err != nil {
+		return err
+	}
+
+	if err := s.Encryption.Validate(); err != nil {
+		return err
 	}
 
 	return nil

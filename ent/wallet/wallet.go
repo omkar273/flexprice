@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -44,22 +45,18 @@ const (
 	FieldCreditBalance = "credit_balance"
 	// FieldWalletStatus holds the string denoting the wallet_status field in the database.
 	FieldWalletStatus = "wallet_status"
-	// FieldAutoTopupTrigger holds the string denoting the auto_topup_trigger field in the database.
-	FieldAutoTopupTrigger = "auto_topup_trigger"
-	// FieldAutoTopupMinBalance holds the string denoting the auto_topup_min_balance field in the database.
-	FieldAutoTopupMinBalance = "auto_topup_min_balance"
-	// FieldAutoTopupAmount holds the string denoting the auto_topup_amount field in the database.
-	FieldAutoTopupAmount = "auto_topup_amount"
+	// FieldAutoTopup holds the string denoting the auto_topup field in the database.
+	FieldAutoTopup = "auto_topup"
 	// FieldWalletType holds the string denoting the wallet_type field in the database.
 	FieldWalletType = "wallet_type"
 	// FieldConversionRate holds the string denoting the conversion_rate field in the database.
 	FieldConversionRate = "conversion_rate"
+	// FieldTopupConversionRate holds the string denoting the topup_conversion_rate field in the database.
+	FieldTopupConversionRate = "topup_conversion_rate"
 	// FieldConfig holds the string denoting the config field in the database.
 	FieldConfig = "config"
-	// FieldAlertConfig holds the string denoting the alert_config field in the database.
-	FieldAlertConfig = "alert_config"
-	// FieldAlertEnabled holds the string denoting the alert_enabled field in the database.
-	FieldAlertEnabled = "alert_enabled"
+	// FieldAlertSettings holds the string denoting the alert_settings field in the database.
+	FieldAlertSettings = "alert_settings"
 	// FieldAlertState holds the string denoting the alert_state field in the database.
 	FieldAlertState = "alert_state"
 	// Table holds the table name of the wallet in the database.
@@ -84,14 +81,12 @@ var Columns = []string{
 	FieldBalance,
 	FieldCreditBalance,
 	FieldWalletStatus,
-	FieldAutoTopupTrigger,
-	FieldAutoTopupMinBalance,
-	FieldAutoTopupAmount,
+	FieldAutoTopup,
 	FieldWalletType,
 	FieldConversionRate,
+	FieldTopupConversionRate,
 	FieldConfig,
-	FieldAlertConfig,
-	FieldAlertEnabled,
+	FieldAlertSettings,
 	FieldAlertState,
 }
 
@@ -125,15 +120,15 @@ var (
 	// DefaultBalance holds the default value on creation for the "balance" field.
 	DefaultBalance decimal.Decimal
 	// DefaultWalletStatus holds the default value on creation for the "wallet_status" field.
-	DefaultWalletStatus string
-	// DefaultAutoTopupTrigger holds the default value on creation for the "auto_topup_trigger" field.
-	DefaultAutoTopupTrigger string
+	DefaultWalletStatus types.WalletStatus
 	// DefaultWalletType holds the default value on creation for the "wallet_type" field.
-	DefaultWalletType string
-	// DefaultAlertEnabled holds the default value on creation for the "alert_enabled" field.
-	DefaultAlertEnabled bool
+	DefaultWalletType types.WalletType
+	// DefaultConversionRate holds the default value on creation for the "conversion_rate" field.
+	DefaultConversionRate decimal.Decimal
+	// DefaultTopupConversionRate holds the default value on creation for the "topup_conversion_rate" field.
+	DefaultTopupConversionRate decimal.Decimal
 	// DefaultAlertState holds the default value on creation for the "alert_state" field.
-	DefaultAlertState string
+	DefaultAlertState types.AlertState
 )
 
 // OrderOption defines the ordering options for the Wallet queries.
@@ -214,21 +209,6 @@ func ByWalletStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWalletStatus, opts...).ToFunc()
 }
 
-// ByAutoTopupTrigger orders the results by the auto_topup_trigger field.
-func ByAutoTopupTrigger(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAutoTopupTrigger, opts...).ToFunc()
-}
-
-// ByAutoTopupMinBalance orders the results by the auto_topup_min_balance field.
-func ByAutoTopupMinBalance(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAutoTopupMinBalance, opts...).ToFunc()
-}
-
-// ByAutoTopupAmount orders the results by the auto_topup_amount field.
-func ByAutoTopupAmount(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAutoTopupAmount, opts...).ToFunc()
-}
-
 // ByWalletType orders the results by the wallet_type field.
 func ByWalletType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldWalletType, opts...).ToFunc()
@@ -239,9 +219,9 @@ func ByConversionRate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldConversionRate, opts...).ToFunc()
 }
 
-// ByAlertEnabled orders the results by the alert_enabled field.
-func ByAlertEnabled(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAlertEnabled, opts...).ToFunc()
+// ByTopupConversionRate orders the results by the topup_conversion_rate field.
+func ByTopupConversionRate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTopupConversionRate, opts...).ToFunc()
 }
 
 // ByAlertState orders the results by the alert_state field.

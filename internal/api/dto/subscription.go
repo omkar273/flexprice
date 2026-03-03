@@ -62,6 +62,166 @@ func (r *SubscriptionPhaseCreateRequest) ToSubscriptionPhase(ctx context.Context
 	}
 }
 
+// LineItemCommitmentConfig represents commitment configuration for a line item
+type LineItemCommitmentConfig struct {
+	// CommitmentAmount is the minimum amount committed for this line item
+	CommitmentAmount *decimal.Decimal `json:"commitment_amount,omitempty"`
+
+	// CommitmentQuantity is the minimum quantity committed for this line item
+	CommitmentQuantity *decimal.Decimal `json:"commitment_quantity,omitempty"`
+
+	// CommitmentType specifies whether commitment is based on amount or quantity
+	CommitmentType types.CommitmentType `json:"commitment_type,omitempty"`
+
+	// OverageFactor is a multiplier applied to usage beyond the commitment
+	OverageFactor *decimal.Decimal `json:"overage_factor,omitempty"`
+
+	// EnableTrueUp determines if true-up fee should be applied when usage is below commitment
+	EnableTrueUp *bool `json:"enable_true_up,omitempty"`
+
+	// IsWindowCommitment determines if commitment is applied per window (e.g., per day) rather than per billing period
+	IsWindowCommitment *bool `json:"is_window_commitment,omitempty"`
+
+	// CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on MONTHLY billing)
+	CommitmentDuration *types.BillingPeriod `json:"commitment_duration,omitempty"`
+}
+
+// validateLineItemCommitments validates a map of price_id -> commitment configuration.
+func validateLineItemCommitments(commitments map[string]*LineItemCommitmentConfig) error {
+	if len(commitments) == 0 {
+		return nil
+	}
+
+	for priceID, commitmentConfig := range commitments {
+		if priceID == "" {
+			return ierr.NewError("price_id cannot be empty in line_item_commitments").
+				WithHint("Each entry in line_item_commitments must have a valid price_id as the key").
+				Mark(ierr.ErrValidation)
+		}
+
+		if commitmentConfig == nil {
+			return ierr.NewError("commitment config cannot be nil").
+				WithHint(fmt.Sprintf("Commitment configuration for price_id %s cannot be nil", priceID)).
+				WithReportableDetails(map[string]interface{}{
+					"price_id": priceID,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+
+		if err := commitmentConfig.Validate(); err != nil {
+			return ierr.NewError(fmt.Sprintf("invalid commitment config for price_id %s", priceID)).
+				WithHint("Line item commitment validation failed").
+				WithReportableDetails(map[string]interface{}{
+					"price_id": priceID,
+					"error":    err.Error(),
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	}
+
+	return nil
+}
+
+// Validate validates the line item commitment configuration
+func (c *LineItemCommitmentConfig) Validate() error {
+	hasAmountCommitment := c.CommitmentAmount != nil && c.CommitmentAmount.GreaterThan(decimal.Zero)
+	hasQuantityCommitment := c.CommitmentQuantity != nil && c.CommitmentQuantity.GreaterThan(decimal.Zero)
+	hasCommitment := hasAmountCommitment || hasQuantityCommitment
+
+	if !hasCommitment {
+		// No commitment configured, nothing to validate
+		return nil
+	}
+
+	// Rule 1: Cannot set both commitment_amount and commitment_quantity
+	if hasAmountCommitment && hasQuantityCommitment {
+		return ierr.NewError("cannot set both commitment_amount and commitment_quantity").
+			WithHint("Specify either commitment_amount or commitment_quantity, not both").
+			WithReportableDetails(map[string]interface{}{
+				"commitment_amount":   c.CommitmentAmount,
+				"commitment_quantity": c.CommitmentQuantity,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// Rule 2: Commitment type must be valid and match the provided field
+	if c.CommitmentType != "" && !c.CommitmentType.Validate() {
+		return ierr.NewError("invalid commitment_type").
+			WithHint("Commitment type must be either 'amount' or 'quantity'").
+			WithReportableDetails(map[string]interface{}{
+				"commitment_type": c.CommitmentType,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// Auto-set commitment type if not provided
+	if c.CommitmentType == "" {
+		if hasAmountCommitment {
+			c.CommitmentType = types.COMMITMENT_TYPE_AMOUNT
+		} else if hasQuantityCommitment {
+			c.CommitmentType = types.COMMITMENT_TYPE_QUANTITY
+		}
+	} else {
+		// Validate commitment type matches the provided field
+		if hasAmountCommitment && c.CommitmentType != types.COMMITMENT_TYPE_AMOUNT {
+			return ierr.NewError("commitment_type mismatch").
+				WithHint("When commitment_amount is set, commitment_type must be 'amount'").
+				WithReportableDetails(map[string]interface{}{
+					"commitment_type":   c.CommitmentType,
+					"commitment_amount": c.CommitmentAmount,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+
+		if hasQuantityCommitment && c.CommitmentType != types.COMMITMENT_TYPE_QUANTITY {
+			return ierr.NewError("commitment_type mismatch").
+				WithHint("When commitment_quantity is set, commitment_type must be 'quantity'").
+				WithReportableDetails(map[string]interface{}{
+					"commitment_type":     c.CommitmentType,
+					"commitment_quantity": c.CommitmentQuantity,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	}
+
+	// Rule 3: Overage factor is required and must be greater than 1.0 when commitment is set
+	if c.OverageFactor == nil {
+		return ierr.NewError("overage_factor is required when commitment is set").
+			WithHint("Specify an overage_factor greater than 1.0").
+			Mark(ierr.ErrValidation)
+	}
+
+	if c.OverageFactor.LessThanOrEqual(decimal.NewFromInt(1)) {
+		return ierr.NewError("overage_factor must be greater than 1.0").
+			WithHint("Overage factor determines the multiplier for usage beyond commitment").
+			WithReportableDetails(map[string]interface{}{
+				"overage_factor": c.OverageFactor,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// Rule 4: Validate commitment values are positive
+	if hasAmountCommitment && c.CommitmentAmount.IsNegative() {
+		return ierr.NewError("commitment_amount must be non-negative").
+			WithHint("Commitment amount cannot be negative").
+			WithReportableDetails(map[string]interface{}{
+				"commitment_amount": c.CommitmentAmount,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	if hasQuantityCommitment && c.CommitmentQuantity.IsNegative() {
+		return ierr.NewError("commitment_quantity must be non-negative").
+			WithHint("Commitment quantity cannot be negative").
+			WithReportableDetails(map[string]interface{}{
+				"commitment_quantity": c.CommitmentQuantity,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	return nil
+}
+
 // SubscriptionCouponRequest represents a coupon to be applied to a subscription
 // If LineItemID is provided, the coupon is applied to that specific line item
 // If LineItemID is omitted, the coupon is applied at the subscription level
@@ -100,7 +260,18 @@ type CreateSubscriptionRequest struct {
 
 	// external_customer_id is the customer id in your DB
 	// and must be same as what you provided as external_id while creating the customer in flexprice.
-	ExternalCustomerID string               `json:"external_customer_id"`
+	ExternalCustomerID string `json:"external_customer_id"`
+
+	// invoicing_customer_id is the customer ID to use for invoicing
+	// This can differ from the subscription customer (e.g., parent company invoicing for child company)
+	// This field is set internally based on InvoiceBillingConfig and is not exposed in the API
+	InvoicingCustomerID *string `json:"-"`
+
+	// invoice_billing determines which customer should receive invoices for a subscription
+	// "invoice_to_parent" - Invoices are sent to the parent customer
+	// "invoice_to_self" - Invoices are sent to the subscription's customer
+	InvoiceBilling *types.InvoiceBilling `json:"invoice_billing,omitempty"`
+
 	PlanID             string               `json:"plan_id" validate:"required"`
 	Currency           string               `json:"currency" validate:"required,len=3"`
 	LookupKey          string               `json:"lookup_key"`
@@ -126,10 +297,13 @@ type CreateSubscriptionRequest struct {
 	CreditGrants []CreateCreditGrantRequest `json:"credit_grants,omitempty"`
 
 	// CommitmentAmount is the minimum amount a customer commits to paying for a billing period
-	CommitmentAmount *decimal.Decimal `json:"commitment_amount,omitempty"`
+	CommitmentAmount *decimal.Decimal `json:"commitment_amount,omitempty" swaggertype:"string"`
+
+	// CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on MONTHLY billing)
+	CommitmentDuration *types.BillingPeriod `json:"commitment_duration,omitempty"`
 
 	// OverageFactor is a multiplier applied to usage beyond the commitment amount
-	OverageFactor *decimal.Decimal `json:"overage_factor,omitempty"`
+	OverageFactor *decimal.Decimal `json:"overage_factor,omitempty" swaggertype:"string"`
 
 	// tax_rate_overrides is the tax rate overrides	to be applied to the subscription
 	TaxRateOverrides []*TaxRateOverride `json:"tax_rate_overrides,omitempty"`
@@ -138,12 +312,18 @@ type CreateSubscriptionRequest struct {
 
 	LineItemCoupons map[string][]string `json:"line_item_coupons,omitempty"`
 
+	// LineItemCommitments allows setting commitment configuration per line item (keyed by price_id)
+	LineItemCommitments map[string]*LineItemCommitmentConfig `json:"line_item_commitments,omitempty" validate:"omitempty,dive"`
+
 	// OverrideLineItems allows customizing specific prices for this subscription
 	OverrideLineItems []OverrideLineItemRequest `json:"override_line_items,omitempty" validate:"omitempty,dive"`
 	// OverrideEntitlements allows customizing specific entitlements for this subscription
 	OverrideEntitlements []OverrideEntitlementRequest `json:"override_entitlements,omitempty" validate:"omitempty,dive"`
 	// Addons represents addons to be added to the subscription during creation
 	Addons []AddAddonToSubscriptionRequest `json:"addons,omitempty" validate:"omitempty,dive"`
+
+	// LineItems are extra line items to add at creation (each with price_id or price), in addition to plan prices
+	LineItems []CreateSubscriptionLineItemRequest `json:"line_items,omitempty" validate:"omitempty,dive"`
 
 	// Phases represents subscription phases to be created with the subscription
 	Phases []SubscriptionPhaseCreateRequest `json:"phases,omitempty" validate:"omitempty,dive"`
@@ -172,8 +352,20 @@ type CreateSubscriptionRequest struct {
 	BillingAnchor *time.Time `json:"-"`
 
 	// Workflow
-	Workflow           *types.TemporalWorkflowType `json:"-"`
-	SubscriptionStatus types.SubscriptionStatus    `json:"-,omitempty"`
+	Workflow *types.TemporalWorkflowType `json:"-"`
+
+	// SubscriptionStatus determines the initial status of the subscription
+	// If set to "draft", the subscription will be created as a draft (skips invoice creation and payment processing)
+	SubscriptionStatus types.SubscriptionStatus `json:"subscription_status,omitempty"`
+
+	// ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)
+	ParentSubscriptionID *string `json:"parent_subscription_id,omitempty"`
+
+	// PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+	PaymentTerms *types.PaymentTerms `json:"payment_terms,omitempty"`
+
+	// Enable Commitment True Up Fee
+	EnableTrueUp bool `json:"enable_true_up"`
 }
 
 // AddAddonRequest is used by body-based endpoint /subscriptions/addon
@@ -184,23 +376,14 @@ type AddAddonRequest struct {
 
 // RemoveAddonRequest is used by body-based endpoint /subscriptions/addon (DELETE)
 type RemoveAddonRequest struct {
-	AddonAssociationID string     `json:"addon_association_id" validate:"required"`
-	Reason             string     `json:"reason"`
-	EffectiveFrom      *time.Time `json:"effective_from,omitempty"`
+	AddonAssociationID string `json:"addon_association_id" validate:"required"`
+	Reason             string `json:"reason,omitempty"`
 }
 
 func (r *RemoveAddonRequest) Validate() error {
-
-	if r.EffectiveFrom != nil && r.EffectiveFrom.Before(time.Now()) {
-		return ierr.NewError("effective_from date is invalid").
-			WithHint("end date cannot be in the past").
-			WithReportableDetails(map[string]interface{}{
-				"addon_association_id": r.AddonAssociationID,
-				"effective_from":       r.EffectiveFrom,
-			}).
-			Mark(ierr.ErrValidation)
+	if err := validator.ValidateRequest(r); err != nil {
+		return err
 	}
-
 	return nil
 }
 
@@ -208,6 +391,9 @@ type UpdateSubscriptionRequest struct {
 	Status            types.SubscriptionStatus `json:"status"`
 	CancelAt          *time.Time               `json:"cancel_at,omitempty"`
 	CancelAtPeriodEnd bool                     `json:"cancel_at_period_end,omitempty"`
+
+	// ParentSubscriptionID sets or clears the parent subscription. Omit to leave unchanged; send "" to clear.
+	ParentSubscriptionID *string `json:"parent_subscription_id,omitempty"`
 }
 
 // CancelSubscriptionRequest represents the enhanced cancellation request
@@ -219,11 +405,14 @@ type CancelSubscriptionRequest struct {
 	// CancellationType determines when the cancellation takes effect
 	CancellationType types.CancellationType `json:"cancellation_type" validate:"required"`
 
+	// CancelImmediatelyInvoicePolicy controls whether to generate a final invoice on immediate cancellation. Defaults to skip.
+	CancelImmediatelyInvoicePolicy types.CancelImmediatelyInvoicePolicy `json:"cancel_immediately_inovice_policy,omitempty"`
+
 	// Reason for cancellation (for audit and business intelligence)
 	Reason string `json:"reason,omitempty"`
 
 	//SuppressWebhook is an internal flag to suppress webhook events during cancellation.
-	SuppressWebhook bool `json:"_,omitempty"`
+	SuppressWebhook bool `json:"-,omitempty"`
 }
 
 // CancelSubscriptionResponse represents the enhanced cancellation response
@@ -238,7 +427,7 @@ type CancelSubscriptionResponse struct {
 	// Proration details
 	ProrationInvoice  *InvoiceResponse  `json:"proration_invoice,omitempty"`
 	ProrationDetails  []ProrationDetail `json:"proration_details"`
-	TotalCreditAmount decimal.Decimal   `json:"total_credit_amount"`
+	TotalCreditAmount decimal.Decimal   `json:"total_credit_amount" swaggertype:"string"`
 
 	// Response metadata
 	Message     string    `json:"message"`
@@ -250,9 +439,9 @@ type ProrationDetail struct {
 	LineItemID     string          `json:"line_item_id"`
 	PriceID        string          `json:"price_id"`
 	PlanName       string          `json:"plan_name,omitempty"`
-	OriginalAmount decimal.Decimal `json:"original_amount"`
-	CreditAmount   decimal.Decimal `json:"credit_amount"`
-	ChargeAmount   decimal.Decimal `json:"charge_amount"`
+	OriginalAmount decimal.Decimal `json:"original_amount" swaggertype:"string"`
+	CreditAmount   decimal.Decimal `json:"credit_amount" swaggertype:"string"`
+	ChargeAmount   decimal.Decimal `json:"charge_amount" swaggertype:"string"`
 	ProrationDays  int             `json:"proration_days"`
 	Description    string          `json:"description,omitempty"`
 }
@@ -266,6 +455,33 @@ func (r *CancelSubscriptionRequest) Validate() error {
 	// Set default proration behavior if not provided
 	if r.ProrationBehavior == "" {
 		r.ProrationBehavior = types.ProrationBehaviorNone
+	}
+	// Set default cancel immediately invoice policy if not provided or empty (default: skip = do not generate invoice)
+	if r.CancelImmediatelyInvoicePolicy == "" {
+		r.CancelImmediatelyInvoicePolicy = types.CancelImmediatelyInvoicePolicySkip
+	} else if err := r.CancelImmediatelyInvoicePolicy.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ActivateDraftSubscriptionRequest represents the request to activate a draft subscription
+type ActivateDraftSubscriptionRequest struct {
+	// start_date is the new start date for the subscription when activating
+	StartDate *time.Time `json:"start_date" validate:"required"`
+}
+
+// Validate validates the activation request
+func (r *ActivateDraftSubscriptionRequest) Validate() error {
+	if err := validator.ValidateRequest(r); err != nil {
+		return err
+	}
+
+	if r.StartDate == nil {
+		return ierr.NewError("start_date is required").
+			WithHint("Start date is required to activate a draft subscription").
+			Mark(ierr.ErrValidation)
 	}
 
 	return nil
@@ -290,6 +506,34 @@ type SubscriptionResponse struct {
 
 // ListSubscriptionsResponse represents the response for listing subscriptions
 type ListSubscriptionsResponse = types.ListResponse[*SubscriptionResponse]
+
+// SubscriptionResponseV2 represents the V2 response for a subscription
+// with optional expanded fields based on the request expand parameter
+type SubscriptionResponseV2 struct {
+	*subscription.Subscription
+
+	// Plan is expanded only if "plan" is in expand parameter
+	Plan *PlanResponse `json:"plan,omitempty"`
+
+	// Customer is expanded only if "customer" is in expand parameter
+	Customer *CustomerResponse `json:"customer,omitempty"`
+
+	// LineItems is expanded only if "subscription_line_items" is in expand parameter
+	// Each line item can optionally include expanded price data
+	LineItems []*SubscriptionLineItemResponse `json:"line_items,omitempty"`
+
+	// CouponAssociations are included when "coupon_associations" is in expand parameter
+	CouponAssociations []*CouponAssociationResponse `json:"coupon_associations,omitempty"`
+
+	// Phases are included when "phases" is in expand parameter
+	Phases []*SubscriptionPhaseResponse `json:"phases,omitempty"`
+
+	// CreditGrants are included when "credit_grants" is in expand parameter
+	CreditGrants []*CreditGrantResponse `json:"credit_grants,omitempty"`
+
+	// Pauses are included when subscription has pause status
+	Pauses []*subscription.SubscriptionPause `json:"pauses,omitempty"`
+}
 
 func (r *CreateSubscriptionRequest) Validate() error {
 	// Case- Both are absent
@@ -349,6 +593,22 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		r.PaymentBehavior = &defaultPaymentBehavior
 	}
 
+	// Set default for invoice billing if not provided
+	if r.InvoiceBilling == nil {
+		r.InvoiceBilling = lo.ToPtr(types.InvoiceBillingInvoiceToSelf)
+	} else {
+		// Validate invoice billing if provided
+		if err := r.InvoiceBilling.Validate(); err != nil {
+			return err
+		}
+	}
+
+	if r.PaymentTerms != nil {
+		if err := (*r.PaymentTerms).Validate(); err != nil {
+			return err
+		}
+	}
+
 	// Set default value to Billing Period Count if not provided
 	if r.BillingPeriodCount == 0 {
 		r.BillingPeriodCount = 1
@@ -397,6 +657,17 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		if err := r.validateShouldAllowProrationOnStartDate(r); err != nil {
 			return err
 		}
+
+		// Validate that proration and entitlement overrides are not both enabled
+		if len(r.OverrideEntitlements) > 0 {
+			return ierr.NewError("cannot enable proration with custom entitlement overrides").
+				WithHint("Proration automatically calculates entitlements. Remove override_entitlements or disable proration.").
+				WithReportableDetails(map[string]interface{}{
+					"proration_behavior":          r.ProrationBehavior,
+					"override_entitlements_count": len(r.OverrideEntitlements),
+				}).
+				Mark(ierr.ErrValidation)
+		}
 	}
 
 	if r.BillingPeriodCount < 1 {
@@ -411,6 +682,12 @@ func (r *CreateSubscriptionRequest) Validate() error {
 	if r.PlanID == "" {
 		return ierr.NewError("plan_id is required").
 			WithHint("Plan ID is required").
+			Mark(ierr.ErrValidation)
+	}
+
+	if r.ParentSubscriptionID != nil && lo.FromPtr(r.ParentSubscriptionID) == "" {
+		return ierr.NewError("parent_subscription_id cannot be empty when provided").
+			WithHint("Omit parent_subscription_id or provide a non-empty subscription ID").
 			Mark(ierr.ErrValidation)
 	}
 
@@ -441,6 +718,15 @@ func (r *CreateSubscriptionRequest) Validate() error {
 				"trial_end":  *r.TrialEnd,
 			}).
 			Mark(ierr.ErrValidation)
+	}
+
+	// Validate draft subscription constraints
+	if r.SubscriptionStatus == types.SubscriptionStatusDraft {
+		if len(r.Phases) > 0 {
+			return ierr.NewError("phases are not allowed for draft subscriptions").
+				WithHint("Draft subscriptions cannot have phases").
+				Mark(ierr.ErrValidation)
+		}
 	}
 
 	// Validate commitment amount and overage factor
@@ -476,10 +762,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 					}).
 					Mark(ierr.ErrValidation)
 			}
-
-			if err := grant.Validate(); err != nil {
-				return err
-			}
 		}
 	}
 
@@ -498,20 +780,15 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		}
 	}
 
+	// Validate line item commitments if provided
+	if err := validateLineItemCommitments(r.LineItemCommitments); err != nil {
+		return err
+	}
+
 	// Validate override line items if provided
 	if len(r.OverrideLineItems) > 0 {
 		priceIDsSeen := make(map[string]bool)
 		for i, override := range r.OverrideLineItems {
-			if err := override.Validate(nil, nil, r.PlanID); err != nil {
-				return ierr.NewError(fmt.Sprintf("invalid override line item at index %d", i)).
-					WithHint("Override line item validation failed").
-					WithReportableDetails(map[string]interface{}{
-						"index": i,
-						"error": err.Error(),
-					}).
-					Mark(ierr.ErrValidation)
-			}
-
 			// Check for duplicate price IDs
 			if priceIDsSeen[override.PriceID] {
 				return ierr.NewError(fmt.Sprintf("duplicate price_id in override line items at index %d", i)).
@@ -523,6 +800,26 @@ func (r *CreateSubscriptionRequest) Validate() error {
 					Mark(ierr.ErrValidation)
 			}
 			priceIDsSeen[override.PriceID] = true
+		}
+	}
+
+	// Validate line_items if provided (each must have exactly one of price_id or price)
+	const maxLineItems = 100
+	if len(r.LineItems) > maxLineItems {
+		return ierr.NewError("line_items exceeds maximum allowed").
+			WithHint(fmt.Sprintf("At most %d line items can be added at subscription creation", maxLineItems)).
+			WithReportableDetails(map[string]interface{}{
+				"count": len(r.LineItems),
+				"max":   maxLineItems,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	for i, item := range r.LineItems {
+		if err := item.Validate(nil, nil); err != nil {
+			return ierr.WithError(err).
+				WithHint(fmt.Sprintf("Line item validation failed at index %d", i)).
+				WithReportableDetails(map[string]interface{}{"line_item_index": i}).
+				Mark(ierr.ErrValidation)
 		}
 	}
 
@@ -770,11 +1067,18 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 		PaymentBehavior:        string(paymentBehavior),
 		CollectionMethod:       string(collectionMethod),
 		GatewayPaymentMethodID: r.GatewayPaymentMethodID,
+		InvoicingCustomerID:    r.InvoicingCustomerID,
+		ParentSubscriptionID:   r.ParentSubscriptionID,
+		PaymentTerms:           r.PaymentTerms,
 	}
 
-	// Set commitment amount and overage factor if provided
+	// Set commitment amount, duration, and overage factor if provided
 	if r.CommitmentAmount != nil {
 		sub.CommitmentAmount = r.CommitmentAmount
+	}
+
+	if r.CommitmentDuration != nil {
+		sub.CommitmentDuration = r.CommitmentDuration
 	}
 
 	if r.OverageFactor != nil {
@@ -789,9 +1093,18 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 // SubscriptionLineItemRequest represents the request to create a subscription line item
 type SubscriptionLineItemRequest struct {
 	PriceID     string            `json:"price_id" validate:"required"`
-	Quantity    decimal.Decimal   `json:"quantity" validate:"required"`
+	Quantity    decimal.Decimal   `json:"quantity" validate:"required" swaggertype:"string"`
 	DisplayName string            `json:"display_name,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
+
+	// Commitment fields
+	CommitmentAmount        *decimal.Decimal     `json:"commitment_amount,omitempty"`
+	CommitmentQuantity      *decimal.Decimal     `json:"commitment_quantity,omitempty"`
+	CommitmentType          types.CommitmentType `json:"commitment_type,omitempty"`
+	CommitmentOverageFactor *decimal.Decimal     `json:"commitment_overage_factor,omitempty"`
+	CommitmentTrueUpEnabled bool                 `json:"commitment_true_up_enabled,omitempty"`
+	CommitmentWindowed      bool                 `json:"commitment_windowed,omitempty"`
+	CommitmentDuration      *types.BillingPeriod `json:"commitment_duration,omitempty"`
 }
 
 // SubscriptionLineItemResponse represents the response for a subscription line item
@@ -806,12 +1119,12 @@ type OverrideLineItemRequest struct {
 	PriceID string `json:"price_id" validate:"required"`
 
 	// Quantity for this line item (optional)
-	Quantity *decimal.Decimal `json:"quantity,omitempty"`
+	Quantity *decimal.Decimal `json:"quantity,omitempty" swaggertype:"string"`
 
 	BillingModel types.BillingModel `json:"billing_model,omitempty"`
 
 	// Amount is the new price amount that overrides the original price (optional)
-	Amount *decimal.Decimal `json:"amount,omitempty"`
+	Amount *decimal.Decimal `json:"amount,omitempty" swaggertype:"string"`
 
 	// TierMode determines how to calculate the price for a given quantity
 	TierMode types.BillingTier `json:"tier_mode,omitempty"`
@@ -821,6 +1134,12 @@ type OverrideLineItemRequest struct {
 
 	// TransformQuantity determines how to transform the quantity for this line item
 	TransformQuantity *price.TransformQuantity `json:"transform_quantity,omitempty"`
+
+	// PriceUnitAmount is the amount of the price unit (for CUSTOM type, FLAT_FEE/PACKAGE billing models)
+	PriceUnitAmount *decimal.Decimal `json:"price_unit_amount,omitempty" swaggertype:"string"`
+
+	// PriceUnitTiers are the tiers for the price unit (for CUSTOM type, TIERED billing model)
+	PriceUnitTiers []CreatePriceTier `json:"price_unit_tiers,omitempty"`
 }
 
 // OverrideEntitlementRequest allows overriding entitlement values for a subscription
@@ -863,16 +1182,23 @@ func (r *OverrideLineItemRequest) Validate(
 			Mark(ierr.ErrValidation)
 	}
 
-	// At least one override field (quantity, amount, billing_model, tier_mode, tiers, or transform_quantity) must be provided
-	if r.Quantity == nil && r.Amount == nil && r.BillingModel == "" && r.TierMode == "" && len(r.Tiers) == 0 && r.TransformQuantity == nil {
+	// At least one override field must be provided
+	if r.Quantity == nil && r.Amount == nil && r.BillingModel == "" && r.TierMode == "" && len(r.Tiers) == 0 && r.TransformQuantity == nil && r.PriceUnitAmount == nil && len(r.PriceUnitTiers) == 0 {
 		return ierr.NewError("at least one override field must be provided").
-			WithHint("Specify at least one of: quantity, amount, billing_model, tier_mode, tiers, or transform_quantity for price override").
+			WithHint("Specify at least one of: quantity, amount, billing_model, tier_mode, tiers, transform_quantity, price_unit_amount, or price_unit_tiers for price override").
+			Mark(ierr.ErrValidation)
+	}
+
+	// Mutual exclusivity: cannot provide both FIAT fields and custom price unit fields
+	if (r.Amount != nil || len(r.Tiers) > 0) && (r.PriceUnitAmount != nil || len(r.PriceUnitTiers) > 0) {
+		return ierr.NewError("cannot provide both FIAT fields and custom price unit fields").
+			WithHint("Cannot use both FIAT fields (amount, tiers) and custom price unit fields (price_unit_amount, price_unit_tiers) in the same override request").
 			Mark(ierr.ErrValidation)
 	}
 
 	// Validate amount if provided
 	if r.Amount != nil && r.Amount.IsNegative() {
-		return ierr.NewError("amount must be non-negative").
+		return ierr.NewError("invalid override line item: amount must be non-negative").
 			WithHint("Override amount cannot be negative").
 			WithReportableDetails(map[string]interface{}{
 				"amount": r.Amount.String(),
@@ -880,12 +1206,56 @@ func (r *OverrideLineItemRequest) Validate(
 			Mark(ierr.ErrValidation)
 	}
 
-	// Validate quantity if provided
-	if r.Quantity != nil && r.Quantity.IsNegative() {
-		return ierr.NewError("quantity must be non-negative").
-			WithHint("Override quantity cannot be negative").
+	// Validate price_unit_amount if provided
+	if r.PriceUnitAmount != nil && r.PriceUnitAmount.IsNegative() {
+		return ierr.NewError("price_unit_amount must be non-negative").
+			WithHint("Override price unit amount cannot be negative").
 			WithReportableDetails(map[string]interface{}{
-				"quantity": r.Quantity.String(),
+				"price_unit_amount": r.PriceUnitAmount.String(),
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// Validate quantity if provided
+	if r.Quantity != nil {
+		if r.Quantity.IsNegative() {
+			return ierr.NewError("quantity must be non-negative").
+				WithHint("Override quantity cannot be negative").
+				WithReportableDetails(map[string]interface{}{
+					"quantity": r.Quantity.String(),
+				}).
+				Mark(ierr.ErrValidation)
+		}
+
+	}
+
+	// Get original price - it must be available for validation
+	if priceMap == nil {
+		return ierr.NewError("price map is required for validation").
+			WithHint("Price map must be provided to validate override requests").
+			WithReportableDetails(map[string]interface{}{
+				"price_id": r.PriceID,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	originalPrice, exists := priceMap[r.PriceID]
+	if !exists || originalPrice == nil {
+		return ierr.NewError("price not found in plan").
+			WithHint("Could not find the original price for the specified price ID. The price must exist in the plan to create an override").
+			WithReportableDetails(map[string]interface{}{
+				"price_id": r.PriceID,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// Quantity can only be set for fixed prices, not usage-based prices
+	if r.Quantity != nil && originalPrice.Type == types.PRICE_TYPE_USAGE && r.Quantity.GreaterThan(decimal.Zero) {
+		return ierr.NewError("quantity cannot be set for usage-based prices").
+			WithHint("Quantity overrides are only allowed for fixed prices. Usage-based prices track quantity automatically from meter events").
+			WithReportableDetails(map[string]interface{}{
+				"price_id":   r.PriceID,
+				"price_type": originalPrice.Type,
 			}).
 			Mark(ierr.ErrValidation)
 	}
@@ -899,13 +1269,44 @@ func (r *OverrideLineItemRequest) Validate(
 		// Billing model specific validations
 		switch r.BillingModel {
 		case types.BILLING_MODEL_TIERED:
-			// Check for tiers in either tier_mode or tiers
-			hasTierMode := r.TierMode != ""
-			hasTiers := len(r.Tiers) > 0
+			// Validate tiers based on original price's price unit type
+			// Default to FIAT if PriceUnitType is empty (for backward compatibility)
+			priceUnitType := originalPrice.PriceUnitType
+			if priceUnitType == "" {
+				priceUnitType = types.PRICE_UNIT_TYPE_FIAT
+			}
 
-			if !hasTierMode && !hasTiers {
-				return ierr.NewError("tier_mode or tiers are required when billing model is TIERED").
-					WithHint("Please provide either tier_mode or tiers for tiered pricing override").
+			switch priceUnitType {
+			case types.PRICE_UNIT_TYPE_CUSTOM:
+				// For CUSTOM price unit, require price_unit_tiers
+				if len(r.PriceUnitTiers) == 0 {
+					return ierr.NewError("invalid override line item: price_unit_tiers are required when billing model is TIERED and using custom pricing unit").
+						WithHint("Price unit tiers are required to set up tiered pricing with custom pricing units").
+						WithReportableDetails(map[string]interface{}{
+							"price_id":        r.PriceID,
+							"price_unit_type": originalPrice.PriceUnitType,
+						}).
+						Mark(ierr.ErrValidation)
+				}
+			case types.PRICE_UNIT_TYPE_FIAT:
+				// For FIAT price unit, require tiers
+				if len(r.Tiers) == 0 {
+					return ierr.NewError("invalid override line item: tiers are required when billing model is TIERED").
+						WithHint("Price tiers are required to set up tiered pricing").
+						WithReportableDetails(map[string]interface{}{
+							"price_id":        r.PriceID,
+							"price_unit_type": originalPrice.PriceUnitType,
+						}).
+						Mark(ierr.ErrValidation)
+				}
+			default:
+				// Invalid or unknown price unit type (not empty, not FIAT, not CUSTOM)
+				return ierr.NewError("invalid override line item: invalid or unknown price unit type for tiered billing model").
+					WithHint("Price unit type must be either FIAT or CUSTOM for tiered billing model").
+					WithReportableDetails(map[string]interface{}{
+						"price_id":        r.PriceID,
+						"price_unit_type": originalPrice.PriceUnitType,
+					}).
 					Mark(ierr.ErrValidation)
 			}
 
@@ -916,99 +1317,123 @@ func (r *OverrideLineItemRequest) Validate(
 				}
 			}
 
-			// Validate tiers if provided
+			// Validate tiers if provided (for FIAT)
 			if len(r.Tiers) > 0 {
 				for i, tier := range r.Tiers {
-					if tier.UnitAmount == "" {
-						return ierr.NewError("unit_amount is required when tiers are provided").
-							WithHint("Please provide a valid unit amount for each tier").
-							WithReportableDetails(map[string]interface{}{
-								"tier_index": i,
-							}).
-							Mark(ierr.ErrValidation)
-					}
-
-					// Validate tier unit amount is a valid decimal
-					tierUnitAmount, err := decimal.NewFromString(tier.UnitAmount)
-					if err != nil {
-						return ierr.NewError("invalid tier unit amount format").
-							WithHint("Tier unit amount must be a valid decimal number").
-							WithReportableDetails(map[string]interface{}{
-								"tier_index":  i,
-								"unit_amount": tier.UnitAmount,
-							}).
-							Mark(ierr.ErrValidation)
-					}
-
 					// Validate tier unit amount is not negative (allows zero)
-					if tierUnitAmount.IsNegative() {
+					if tier.UnitAmount.IsNegative() {
 						return ierr.NewError("tier unit amount cannot be negative").
 							WithHint("Tier unit amount cannot be negative").
 							WithReportableDetails(map[string]interface{}{
 								"tier_index":  i,
-								"unit_amount": tier.UnitAmount,
+								"unit_amount": tier.UnitAmount.String(),
 							}).
 							Mark(ierr.ErrValidation)
 					}
 
 					// Validate flat amount if provided
-					if tier.FlatAmount != nil {
-						flatAmount, err := decimal.NewFromString(*tier.FlatAmount)
-						if err != nil {
-							return ierr.NewError("invalid tier flat amount format").
-								WithHint("Tier flat amount must be a valid decimal number").
-								WithReportableDetails(map[string]interface{}{
-									"tier_index":  i,
-									"flat_amount": tier.FlatAmount,
-								}).
-								Mark(ierr.ErrValidation)
-						}
+					if tier.FlatAmount != nil && tier.FlatAmount.IsNegative() {
+						return ierr.NewError("tier flat amount cannot be negative").
+							WithHint("Tier flat amount cannot be negative").
+							WithReportableDetails(map[string]interface{}{
+								"tier_index":  i,
+								"flat_amount": tier.FlatAmount.String(),
+							}).
+							Mark(ierr.ErrValidation)
+					}
+				}
+			}
 
-						if flatAmount.IsNegative() {
-							return ierr.NewError("tier flat amount cannot be negative").
-								WithHint("Tier flat amount cannot be negative").
-								WithReportableDetails(map[string]interface{}{
-									"tier_index":  i,
-									"flat_amount": tier.FlatAmount,
-								}).
-								Mark(ierr.ErrValidation)
-						}
+			// Validate price_unit_tiers if provided (for CUSTOM)
+			if len(r.PriceUnitTiers) > 0 {
+				for i, tier := range r.PriceUnitTiers {
+					// Validate tier unit amount is not negative (allows zero)
+					if tier.UnitAmount.IsNegative() {
+						return ierr.NewError("price unit tier unit amount cannot be negative").
+							WithHint("Price unit tier unit amount cannot be negative").
+							WithReportableDetails(map[string]interface{}{
+								"tier_index":  i,
+								"unit_amount": tier.UnitAmount.String(),
+							}).
+							Mark(ierr.ErrValidation)
+					}
+
+					// Validate flat amount if provided
+					if tier.FlatAmount != nil && tier.FlatAmount.IsNegative() {
+						return ierr.NewError("price unit tier flat amount cannot be negative").
+							WithHint("Price unit tier flat amount cannot be negative").
+							WithReportableDetails(map[string]interface{}{
+								"tier_index":  i,
+								"flat_amount": tier.FlatAmount.String(),
+							}).
+							Mark(ierr.ErrValidation)
 					}
 				}
 			}
 
 		case types.BILLING_MODEL_PACKAGE:
+			// TransformQuantity is always required for PACKAGE
 			if r.TransformQuantity == nil {
 				return ierr.NewError("transform_quantity is required when billing model is PACKAGE").
 					WithHint("Please provide the number of units to set up package pricing override").
 					Mark(ierr.ErrValidation)
 			}
 
-			if r.TransformQuantity.DivideBy <= 0 {
-				return ierr.NewError("transform_quantity.divide_by must be greater than 0 when billing model is PACKAGE").
-					WithHint("Please provide a valid number of units to set up package pricing override").
-					Mark(ierr.ErrValidation)
+			if err := r.TransformQuantity.Validate(); err != nil {
+				return err
 			}
 
-			// Validate round type
-			if r.TransformQuantity.Round == "" {
-				r.TransformQuantity.Round = types.ROUND_UP // Default to rounding up
-			} else if r.TransformQuantity.Round != types.ROUND_UP && r.TransformQuantity.Round != types.ROUND_DOWN {
-				return ierr.NewError("invalid rounding type- allowed values are up and down").
-					WithHint("Please provide a valid rounding type for package pricing override").
-					WithReportableDetails(map[string]interface{}{
-						"round":   r.TransformQuantity.Round,
-						"allowed": []string{types.ROUND_UP, types.ROUND_DOWN},
-					}).
-					Mark(ierr.ErrValidation)
+			// Validate amount based on original price's price unit type
+			switch originalPrice.PriceUnitType {
+			case types.PRICE_UNIT_TYPE_CUSTOM:
+				// For CUSTOM price unit, require price_unit_amount
+				if r.PriceUnitAmount == nil {
+					return ierr.NewError("price_unit_amount is required when billing model is PACKAGE and using custom pricing unit").
+						WithHint("Price unit amount is required to set up package pricing with custom pricing units").
+						WithReportableDetails(map[string]interface{}{
+							"price_id":        r.PriceID,
+							"price_unit_type": originalPrice.PriceUnitType,
+						}).
+						Mark(ierr.ErrValidation)
+				}
+			case types.PRICE_UNIT_TYPE_FIAT:
+				// For FIAT price unit, require amount
+				if r.Amount == nil {
+					return ierr.NewError("amount is required when billing model is PACKAGE and using fiat pricing unit").
+						WithHint("Amount is required to set up package pricing with fiat pricing units").
+						WithReportableDetails(map[string]interface{}{
+							"price_id":        r.PriceID,
+							"price_unit_type": originalPrice.PriceUnitType,
+						}).
+						Mark(ierr.ErrValidation)
+				}
 			}
 
 		case types.BILLING_MODEL_FLAT_FEE:
-			// For flat fee, amount is typically required unless quantity is being overridden
-			if r.Amount == nil && r.Quantity == nil {
-				return ierr.NewError("amount or quantity is required when billing model is FLAT_FEE").
-					WithHint("Please provide either amount or quantity for flat fee pricing override").
-					Mark(ierr.ErrValidation)
+			// Validate amount based on original price's price unit type
+			switch originalPrice.PriceUnitType {
+			case types.PRICE_UNIT_TYPE_CUSTOM:
+				// For CUSTOM price unit, require price_unit_amount
+				if r.PriceUnitAmount == nil {
+					return ierr.NewError("price_unit_amount is required when billing model is FLAT_FEE and using custom pricing unit").
+						WithHint("Price unit amount is required to set up flat fee pricing with custom pricing units").
+						WithReportableDetails(map[string]interface{}{
+							"price_id":        r.PriceID,
+							"price_unit_type": originalPrice.PriceUnitType,
+						}).
+						Mark(ierr.ErrValidation)
+				}
+			case types.PRICE_UNIT_TYPE_FIAT:
+				// For FIAT price unit, require amount
+				if r.Amount == nil {
+					return ierr.NewError("amount is required when billing model is FLAT_FEE and using fiat pricing unit").
+						WithHint("Amount is required to set up flat fee pricing with fiat pricing units").
+						WithReportableDetails(map[string]interface{}{
+							"price_id":        r.PriceID,
+							"price_unit_type": originalPrice.PriceUnitType,
+						}).
+						Mark(ierr.ErrValidation)
+				}
 			}
 		}
 	}
@@ -1022,46 +1447,46 @@ func (r *OverrideLineItemRequest) Validate(
 
 	// Validate transform quantity if provided (independent of billing model)
 	if r.TransformQuantity != nil {
-		if r.TransformQuantity.DivideBy <= 0 {
-			return ierr.NewError("transform_quantity.divide_by must be greater than 0").
-				WithHint("Transform quantity divide_by must be greater than 0").
-				Mark(ierr.ErrValidation)
-		}
-
-		if r.TransformQuantity.Round != "" && r.TransformQuantity.Round != types.ROUND_UP && r.TransformQuantity.Round != types.ROUND_DOWN {
-			return ierr.NewError("invalid rounding type- allowed values are up and down").
-				WithHint("Please provide a valid rounding type").
-				WithReportableDetails(map[string]interface{}{
-					"round":   r.TransformQuantity.Round,
-					"allowed": []string{types.ROUND_UP, types.ROUND_DOWN},
-				}).
-				Mark(ierr.ErrValidation)
+		if err := r.TransformQuantity.Validate(); err != nil {
+			return err
 		}
 	}
 
-	// If context is provided, do additional validation
-	if priceMap != nil && lineItemsByPriceID != nil && EntityId != "" {
-		// Validate that the price exists in the plan
-		_, exists := priceMap[r.PriceID]
-		if !exists {
-			return ierr.NewError("price not found in plan").
-				WithHint("Override price must be a valid price from the selected plan").
-				WithReportableDetails(map[string]interface{}{
-					"price_id": r.PriceID,
-					"plan_id":  EntityId,
-				}).
-				Mark(ierr.ErrValidation)
-		}
-
+	// Additional context validation
+	if lineItemsByPriceID != nil && EntityId != "" {
 		// Validate that the line item exists for this price
-		_, exists = lineItemsByPriceID[r.PriceID]
+		_, exists := lineItemsByPriceID[r.PriceID]
 		if !exists {
 			return ierr.NewError("line item not found for price").
 				WithHint("Could not find line item for the specified price").
 				WithReportableDetails(map[string]interface{}{
 					"price_id": r.PriceID,
 				}).
-				Mark(ierr.ErrInternal)
+				Mark(ierr.ErrNotFound)
+		}
+	}
+
+	// Validate that override fields match the original price's PriceUnitType
+	switch originalPrice.PriceUnitType {
+	case types.PRICE_UNIT_TYPE_FIAT:
+		if r.PriceUnitAmount != nil || len(r.PriceUnitTiers) > 0 {
+			return ierr.NewError("cannot use custom price unit fields on a FIAT price").
+				WithHint("Price unit type cannot be changed during override. Use FIAT fields (amount or tiers) instead.").
+				WithReportableDetails(map[string]interface{}{
+					"price_id":        r.PriceID,
+					"price_unit_type": originalPrice.PriceUnitType,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	case types.PRICE_UNIT_TYPE_CUSTOM:
+		if r.Amount != nil || len(r.Tiers) > 0 {
+			return ierr.NewError("cannot use FIAT fields on a CUSTOM price").
+				WithHint("Price unit type cannot be changed during override. Use price_unit_amount or price_unit_tiers instead.").
+				WithReportableDetails(map[string]interface{}{
+					"price_id":        r.PriceID,
+					"price_unit_type": originalPrice.PriceUnitType,
+				}).
+				Mark(ierr.ErrValidation)
 		}
 	}
 
@@ -1070,7 +1495,7 @@ func (r *OverrideLineItemRequest) Validate(
 
 // ToSubscriptionLineItem converts a request to a domain subscription line item
 func (r *SubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.Context) *subscription.SubscriptionLineItem {
-	return &subscription.SubscriptionLineItem{
+	lineItem := &subscription.SubscriptionLineItem{
 		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
 		PriceID:       r.PriceID,
 		Quantity:      r.Quantity,
@@ -1079,6 +1504,27 @@ func (r *SubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.Context
 		EnvironmentID: types.GetEnvironmentID(ctx),
 		BaseModel:     types.GetDefaultBaseModel(ctx),
 	}
+
+	// Set commitment fields if provided
+	if r.CommitmentAmount != nil {
+		lineItem.CommitmentAmount = r.CommitmentAmount
+	}
+	if r.CommitmentQuantity != nil {
+		lineItem.CommitmentQuantity = r.CommitmentQuantity
+	}
+	if r.CommitmentType != "" {
+		lineItem.CommitmentType = r.CommitmentType
+	}
+	if r.CommitmentOverageFactor != nil {
+		lineItem.CommitmentOverageFactor = r.CommitmentOverageFactor
+	}
+	lineItem.CommitmentTrueUpEnabled = r.CommitmentTrueUpEnabled
+	lineItem.CommitmentWindowed = r.CommitmentWindowed
+	if r.CommitmentDuration != nil {
+		lineItem.CommitmentDuration = r.CommitmentDuration
+	}
+
+	return lineItem
 }
 
 type GetUsageBySubscriptionRequest struct {
@@ -1086,6 +1532,9 @@ type GetUsageBySubscriptionRequest struct {
 	StartTime      time.Time `json:"start_time" example:"2024-03-13T00:00:00Z"`
 	EndTime        time.Time `json:"end_time" example:"2024-03-20T00:00:00Z"`
 	LifetimeUsage  bool      `json:"lifetime_usage" example:"false"`
+	// Source indicates the caller context. When "invoice_creation", ClickHouse queries use FINAL.
+	// Optional; omit for default (no FINAL).
+	Source string `json:"-"`
 }
 
 type GetUsageBySubscriptionResponse struct {
@@ -1103,16 +1552,17 @@ type GetUsageBySubscriptionResponse struct {
 }
 
 type SubscriptionUsageByMetersResponse struct {
-	Amount           float64            `json:"amount"`
-	Currency         string             `json:"currency"`
-	DisplayAmount    string             `json:"display_amount"`
-	Quantity         float64            `json:"quantity"`
-	FilterValues     price.JSONBFilters `json:"filter_values"`
-	MeterID          string             `json:"meter_id"`
-	MeterDisplayName string             `json:"meter_display_name"`
-	Price            *price.Price       `json:"price"`
-	IsOverage        bool               `json:"is_overage"`               // Whether this charge is at overage rate
-	OverageFactor    float64            `json:"overage_factor,omitempty"` // Factor applied to this charge if in overage
+	SubscriptionLineItemID string             `json:"subscription_line_item_id,omitempty"` // For feature_usage: direct match by sub_line_item_id
+	Amount                 float64            `json:"amount"`
+	Currency               string             `json:"currency"`
+	DisplayAmount          string             `json:"display_amount"`
+	Quantity               float64            `json:"quantity"`
+	FilterValues           price.JSONBFilters `json:"filter_values"`
+	MeterID                string             `json:"meter_id"`
+	MeterDisplayName       string             `json:"meter_display_name"`
+	Price                  *price.Price       `json:"price"`
+	IsOverage              bool               `json:"is_overage"`               // Whether this charge is at overage rate
+	OverageFactor          float64            `json:"overage_factor,omitempty"` // Factor applied to this charge if in overage
 }
 
 type SubscriptionUpdatePeriodResponse struct {
@@ -1159,4 +1609,48 @@ func (r *GetUpcomingCreditGrantApplicationsRequest) Validate() error {
 	}
 
 	return nil
+}
+
+type Period struct {
+	Start time.Time
+	End   time.Time
+}
+
+func (p *Period) Validate() error {
+	if p.Start.IsZero() {
+		return ierr.NewError("start_date is required").
+			WithHint("Please provide a start date").
+			Mark(ierr.ErrValidation)
+	}
+	if p.End.IsZero() {
+		return ierr.NewError("end_date is required").
+			WithHint("Please provide an end date").
+			Mark(ierr.ErrValidation)
+	}
+	if p.Start.After(p.End) {
+		return ierr.NewError("start_date cannot be after end_date").
+			WithHint("Ensure the period start date is on or before the end date").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
+// TriggerSubscriptionWorkflowRequest represents the request to trigger a subscription billing workflow
+type TriggerSubscriptionWorkflowRequest struct {
+	SubscriptionID string `json:"subscription_id" validate:"required"`
+}
+
+// Validate validates the TriggerSubscriptionWorkflowRequest
+func (r *TriggerSubscriptionWorkflowRequest) Validate() error {
+	if err := validator.ValidateRequest(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+// TriggerSubscriptionWorkflowResponse represents the response for triggering a subscription billing workflow
+type TriggerSubscriptionWorkflowResponse struct {
+	WorkflowID string `json:"workflow_id"`
+	RunID      string `json:"run_id"`
+	Message    string `json:"message"`
 }

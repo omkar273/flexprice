@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +16,26 @@ import (
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
+
+// validGroupByPropertyPattern matches safe property names (alphanumeric, underscores, dots).
+var validGroupByPropertyPattern = regexp.MustCompile(`^[A-Za-z0-9_.]+$`)
+
+// validateGroupByProperty checks that a GroupByProperty value is safe to interpolate into SQL.
+// It rejects any string that contains characters other than letters, digits, underscores, or dots.
+func validateGroupByProperty(prop string) error {
+	if prop == "" {
+		return nil
+	}
+	if !validGroupByPropertyPattern.MatchString(prop) {
+		return ierr.NewErrorf("invalid group_by property name: %q", prop).
+			WithHint("GroupBy property name must contain only letters, digits, underscores, or dots").
+			WithReportableDetails(map[string]interface{}{
+				"group_by_property": prop,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
 
 type FeatureUsageRepository struct {
 	store  *clickhouse.ClickHouseStore
@@ -29,7 +49,108 @@ func NewFeatureUsageRepository(store *clickhouse.ClickHouseStore, logger *logger
 	}
 }
 
+// buildConditionalAggregationColumns builds SQL aggregation columns based on the provided aggregation types.
+// If an aggregation type is in the array, it computes the actual aggregation; otherwise, it returns 0.
+func buildConditionalAggregationColumns(aggTypes []types.AggregationType) []string {
+	// Create a set for quick lookup
+	aggSet := make(map[types.AggregationType]bool)
+	for _, aggType := range aggTypes {
+		aggSet[aggType] = true
+	}
+
+	columns := []string{}
+
+	// SUM aggregation (total_usage) - returns Decimal, so fallback must also be Decimal
+	if aggSet[types.AggregationSum] {
+		columns = append(columns, "SUM(qty_total) AS total_usage")
+	} else {
+		columns = append(columns, "toDecimal128(0, 9) AS total_usage")
+	}
+
+	// MAX aggregation (max_usage) - returns Decimal, so fallback must also be Decimal
+	if aggSet[types.AggregationMax] {
+		columns = append(columns, "MAX(qty_total) AS max_usage")
+	} else {
+		columns = append(columns, "toDecimal128(0, 9) AS max_usage")
+	}
+
+	// LATEST aggregation (latest_usage) - returns Decimal, so fallback must also be Decimal
+	if aggSet[types.AggregationLatest] {
+		columns = append(columns, "argMax(qty_total, timestamp) AS latest_usage")
+	} else {
+		columns = append(columns, "toDecimal128(0, 9) AS latest_usage")
+	}
+
+	// COUNT_UNIQUE aggregation (count_unique_usage) - returns UInt64
+	if aggSet[types.AggregationCountUnique] {
+		columns = append(columns, "COUNT(DISTINCT unique_hash) AS count_unique_usage")
+	} else {
+		columns = append(columns, "toUInt64(0) AS count_unique_usage")
+	}
+
+	// event_count: for COUNT aggregation use distinct event count; otherwise use total event count
+	if aggSet[types.AggregationCount] {
+		columns = append(columns, "COUNT(DISTINCT id) AS event_count")
+	} else {
+		// adding this irrespective of the aggregation type to show the total event count
+		columns = append(columns, "COUNT(DISTINCT id) AS event_count")
+	}
+
+	return columns
+}
+
+// buildConditionalAggregationColumnsForSubscription builds SQL aggregation columns for GetFeatureUsageBySubscription.
+// Uses subscription-specific column aliases (sum_total, max_total, etc.)
+func buildConditionalAggregationColumnsForSubscription(aggTypes []types.AggregationType) []string {
+	// Create a set for quick lookup
+	aggSet := make(map[types.AggregationType]bool)
+	for _, aggType := range aggTypes {
+		aggSet[aggType] = true
+	}
+
+	columns := []string{}
+
+	// SUM aggregation (sum_total) - returns Decimal, so fallback must also be Decimal
+	if aggSet[types.AggregationSum] || aggSet[types.AggregationSumWithMultiplier] || aggSet[types.AggregationWeightedSum] {
+		columns = append(columns, "sum(qty_total) AS sum_total")
+	} else {
+		columns = append(columns, "toDecimal128(0, 9) AS sum_total")
+	}
+
+	// MAX aggregation (max_total) - returns Decimal, so fallback must also be Decimal
+	if aggSet[types.AggregationMax] {
+		columns = append(columns, "max(qty_total) AS max_total")
+	} else {
+		columns = append(columns, "toDecimal128(0, 9) AS max_total")
+	}
+
+	// COUNT aggregation (count_distinct_ids) - returns UInt64
+	if aggSet[types.AggregationCount] {
+		columns = append(columns, "COUNT(DISTINCT id) AS count_distinct_ids")
+	} else {
+		// adding this irrespective of the aggregation type to show the total event count
+		columns = append(columns, "COUNT(DISTINCT id) AS count_distinct_ids")
+	}
+
+	// COUNT_UNIQUE aggregation (count_unique_qty) - returns UInt64
+	if aggSet[types.AggregationCountUnique] {
+		columns = append(columns, "count(DISTINCT unique_hash) AS count_unique_qty")
+	} else {
+		columns = append(columns, "toUInt64(0) AS count_unique_qty")
+	}
+
+	// LATEST aggregation (latest_qty) - returns Decimal, so fallback must also be Decimal
+	if aggSet[types.AggregationLatest] {
+		columns = append(columns, "argMax(qty_total, \"timestamp\") AS latest_qty")
+	} else {
+		columns = append(columns, "toDecimal128(0, 9) AS latest_qty")
+	}
+
+	return columns
+}
+
 // InsertProcessedEvent inserts a single processed event
+
 func (r *FeatureUsageRepository) InsertProcessedEvent(ctx context.Context, event *events.FeatureUsage) error {
 	query := `
 		INSERT INTO feature_usage (
@@ -358,8 +479,49 @@ func (r *FeatureUsageRepository) IsDuplicate(ctx context.Context, subscriptionID
 	return exists == 1, nil
 }
 
+// DeleteByReprocessScopeBeforeCheckpoint cleans up old feature usage rows fenced by processed_at.
+func (r *FeatureUsageRepository) DeleteByReprocessScopeBeforeCheckpoint(ctx context.Context, params *events.DeleteFeatureUsageScopeParams) error {
+	if err := params.Validate(); err != nil {
+		return err
+	}
+
+	query := `
+		ALTER TABLE feature_usage DELETE
+		WHERE tenant_id = ?
+		AND environment_id = ?
+		AND timestamp >= ?
+		AND timestamp <= ?
+		AND processed_at < ?
+	`
+	args := []interface{}{
+		types.GetTenantID(ctx),
+		types.GetEnvironmentID(ctx),
+		params.GetEventsParams.StartTime,
+		params.GetEventsParams.EndTime,
+		params.RunStartTime,
+	}
+
+	if params.GetEventsParams.ExternalCustomerID != "" {
+		query += " AND external_customer_id = ?"
+		args = append(args, params.GetEventsParams.ExternalCustomerID)
+	}
+
+	if params.GetEventsParams.EventName != "" {
+		query += " AND event_name = ?"
+		args = append(args, params.GetEventsParams.EventName)
+	}
+
+	if err := r.store.GetConn().Exec(ctx, query, args...); err != nil {
+		return ierr.WithError(err).
+			WithHint("Failed to submit feature usage cleanup delete mutation").
+			Mark(ierr.ErrDatabase)
+	}
+
+	return nil
+}
+
 // GetDetailedUsageAnalytics provides comprehensive usage analytics with filtering, grouping, and time-series data
-func (r *FeatureUsageRepository) GetDetailedUsageAnalytics(ctx context.Context, params *events.UsageAnalyticsParams, maxBucketFeatures map[string]*events.MaxBucketFeatureInfo) ([]*events.DetailedUsageAnalytic, error) {
+func (r *FeatureUsageRepository) GetDetailedUsageAnalytics(ctx context.Context, params *events.UsageAnalyticsParams, maxBucketFeatures map[string]*events.MaxBucketFeatureInfo, sumBucketFeatures map[string]*events.SumBucketFeatureInfo) ([]*events.DetailedUsageAnalytic, error) {
 	span := StartRepositorySpan(ctx, "processed_event", "get_detailed_usage_analytics", map[string]interface{}{
 		"external_customer_id":   params.ExternalCustomerID,
 		"feature_ids_count":      len(params.FeatureIDs),
@@ -395,11 +557,12 @@ func (r *FeatureUsageRepository) GetDetailedUsageAnalytics(ctx context.Context, 
 		}
 	}
 
-	// Use the maxBucketFeatures passed from the service layer
+	// Use the maxBucketFeatures and sumBucketFeatures passed from the service layer
 
-	// Now we'll handle the two types of features separately:
+	// Now we'll handle the types of features separately:
 	// 1. MAX with bucket features - use bucket-based aggregation for totals, window-based for points
-	// 2. Other features - use standard SUM aggregation
+	// 2. SUM with bucket features - use bucket-based aggregation for totals, window-based for points
+	// 3. Other features - use standard SUM aggregation
 
 	var allResults []*events.DetailedUsageAnalytic
 
@@ -413,8 +576,18 @@ func (r *FeatureUsageRepository) GetDetailedUsageAnalytics(ctx context.Context, 
 		allResults = append(allResults, maxBucketResults...)
 	}
 
-	// Handle other features (non-MAX with bucket)
-	otherFeatureIDs := r.getOtherFeatureIDs(params.FeatureIDs, maxBucketFeatures)
+	// Handle SUM with bucket features
+	if len(sumBucketFeatures) > 0 {
+		sumBucketResults, err := r.getSumBucketAnalytics(ctx, params, sumBucketFeatures)
+		if err != nil {
+			SetSpanError(span, err)
+			return nil, err
+		}
+		allResults = append(allResults, sumBucketResults...)
+	}
+
+	// Handle other features (non-MAX/SUM with bucket)
+	otherFeatureIDs := r.getOtherFeatureIDs(params.FeatureIDs, maxBucketFeatures, sumBucketFeatures)
 
 	// Only process other features if we have some to process
 	if len(otherFeatureIDs) > 0 || len(params.FeatureIDs) == 0 {
@@ -423,14 +596,14 @@ func (r *FeatureUsageRepository) GetDetailedUsageAnalytics(ctx context.Context, 
 			// We have specific other features to process
 			otherParams.FeatureIDs = otherFeatureIDs
 		} else if len(params.FeatureIDs) == 0 {
-			// No specific features requested, but we need to exclude MAX bucket features
+			// No specific features requested, but we need to exclude MAX/SUM bucket features
 			// from the standard processing
 			// Set empty feature IDs to process all, but the standard analytics will handle
 			// the filtering internally
 			otherParams.FeatureIDs = []string{}
 		}
 
-		otherResults, err := r.getStandardAnalytics(ctx, &otherParams, maxBucketFeatures)
+		otherResults, err := r.getStandardAnalytics(ctx, &otherParams, maxBucketFeatures, sumBucketFeatures, params.AggregationTypes)
 		if err != nil {
 			SetSpanError(span, err)
 			return nil, err
@@ -442,25 +615,27 @@ func (r *FeatureUsageRepository) GetDetailedUsageAnalytics(ctx context.Context, 
 	return allResults, nil
 }
 
-// getOtherFeatureIDs returns feature IDs that are not MAX with bucket features
-func (r *FeatureUsageRepository) getOtherFeatureIDs(requestedFeatureIDs []string, maxBucketFeatures map[string]*events.MaxBucketFeatureInfo) []string {
+// getOtherFeatureIDs returns feature IDs that are not MAX/SUM with bucket features
+func (r *FeatureUsageRepository) getOtherFeatureIDs(requestedFeatureIDs []string, maxBucketFeatures map[string]*events.MaxBucketFeatureInfo, sumBucketFeatures map[string]*events.SumBucketFeatureInfo) []string {
 	// If no specific features requested, we need to handle all features
-	// We'll return empty slice to indicate "handle all features" in standard way
+	// We'll return empty slice to indicate "handle all features in standard way"
 	if len(requestedFeatureIDs) == 0 {
 		return []string{} // Empty slice means "handle all features in standard way"
 	}
 
 	otherFeatureIDs := make([]string, 0)
 	for _, featureID := range requestedFeatureIDs {
-		if _, isMaxBucket := maxBucketFeatures[featureID]; !isMaxBucket {
+		_, isMaxBucket := maxBucketFeatures[featureID]
+		_, isSumBucket := sumBucketFeatures[featureID]
+		if !isMaxBucket && !isSumBucket {
 			otherFeatureIDs = append(otherFeatureIDs, featureID)
 		}
 	}
 	return otherFeatureIDs
 }
 
-// getStandardAnalytics handles analytics for non-MAX with bucket features
-func (r *FeatureUsageRepository) getStandardAnalytics(ctx context.Context, params *events.UsageAnalyticsParams, maxBucketFeatures map[string]*events.MaxBucketFeatureInfo) ([]*events.DetailedUsageAnalytic, error) {
+// getStandardAnalytics handles analytics for non-MAX/SUM with bucket features
+func (r *FeatureUsageRepository) getStandardAnalytics(ctx context.Context, params *events.UsageAnalyticsParams, maxBucketFeatures map[string]*events.MaxBucketFeatureInfo, sumBucketFeatures map[string]*events.SumBucketFeatureInfo, aggTypes []types.AggregationType) ([]*events.DetailedUsageAnalytic, error) {
 	// Initialize query parameters with the standard parameters that will be added later
 	// This ensures they're always in the right order
 	queryParams := []interface{}{
@@ -480,6 +655,15 @@ func (r *FeatureUsageRepository) getStandardAnalytics(ctx context.Context, param
 	groupByFieldMapping["price_id"] = "price_id"
 	groupByFieldMapping["meter_id"] = "meter_id"
 	groupByFieldMapping["sub_line_item_id"] = "sub_line_item_id"
+
+	// Check if source is in group_by
+	sourceInGroupBy := false
+	for _, groupBy := range params.GroupBy {
+		if groupBy == "source" {
+			sourceInGroupBy = true
+			break
+		}
+	}
 
 	// Add the requested grouping dimensions
 	for _, groupBy := range params.GroupBy {
@@ -504,18 +688,18 @@ func (r *FeatureUsageRepository) getStandardAnalytics(ctx context.Context, param
 		}
 	}
 
-	// Base query for aggregates - fetch all aggregation types for each feature
+	// Base query for aggregates - build conditional aggregation columns based on aggTypes
 	selectColumns := []string{}
 	if len(groupByColumnAliases) > 0 {
 		selectColumns = append(selectColumns, strings.Join(groupByColumnAliases, ", ")) // group by columns with aliases
 	}
-	selectColumns = append(selectColumns,
-		"SUM(qty_total * sign) AS total_usage",
-		"MAX(qty_total * sign) AS max_usage",
-		"argMax(qty_total, timestamp) AS latest_usage",
-		"COUNT(DISTINCT unique_hash) AS count_unique_usage",
-		"COUNT(DISTINCT id) AS event_count", // Count distinct event IDs, not rows
-	)
+	// Add conditional aggregation columns based on aggTypes
+	aggColumns := buildConditionalAggregationColumns(aggTypes)
+	selectColumns = append(selectColumns, aggColumns...)
+	// Add sources array when source is not in group_by
+	if !sourceInGroupBy {
+		selectColumns = append(selectColumns, "groupUniqArray(source) AS sources")
+	}
 
 	aggregateQuery := fmt.Sprintf(`
 		SELECT 
@@ -632,6 +816,9 @@ func (r *FeatureUsageRepository) getStandardAnalytics(ctx context.Context, param
 		// which includes feature_id + all requested grouping dimensions
 		totalGroupByColumns := len(groupByColumns) // This matches the actual GROUP BY columns in the query
 		expectedColumns := totalGroupByColumns + 5 // +5 for sum_usage, max_usage, latest_usage, count_unique_usage, event_count
+		if !sourceInGroupBy {
+			expectedColumns++ // +1 for sources array
+		}
 		scanArgs := make([]interface{}, expectedColumns)
 
 		// Prepare scan targets: all group by columns
@@ -646,6 +833,11 @@ func (r *FeatureUsageRepository) getStandardAnalytics(ctx context.Context, param
 		scanArgs[totalGroupByColumns+2] = &analytics.LatestUsage
 		scanArgs[totalGroupByColumns+3] = &analytics.CountUniqueUsage
 		scanArgs[totalGroupByColumns+4] = &analytics.EventCount
+		// Add sources array scan target when source is not in group_by
+		if !sourceInGroupBy {
+			analytics.Sources = []string{}
+			scanArgs[totalGroupByColumns+5] = &analytics.Sources
+		}
 
 		if err := rows.Scan(scanArgs...); err != nil {
 			return nil, ierr.WithError(err).
@@ -759,18 +951,42 @@ func (r *FeatureUsageRepository) getMaxBucketTotals(ctx context.Context, params 
 	// Build bucket window expression based on meter's bucket size
 	bucketWindowExpr := r.formatWindowSize(featureInfo.BucketSize, nil)
 
+	// Check if source is in group_by
+	sourceInGroupBy := false
+	for _, groupBy := range params.GroupBy {
+		if groupBy == "source" {
+			sourceInGroupBy = true
+			break
+		}
+	}
+
 	// Build group by columns based on request parameters
-	groupByColumns := []string{"bucket_start", "feature_id", "price_id", "meter_id", "sub_line_item_id"}
-	innerSelectColumns := []string{"feature_id", "price_id", "meter_id", "sub_line_item_id"} // For inner query (has access to properties column)
-	outerSelectColumns := []string{"feature_id", "price_id", "meter_id", "sub_line_item_id"} // For outer query (only has aliased columns)
+	// Always include source in inner query's GROUP BY to enable groupArrayDistinct in outer query
+	groupByColumns := []string{"bucket_start", "feature_id", "price_id", "meter_id", "sub_line_item_id", "source"}
+	innerSelectColumns := []string{"feature_id", "price_id", "meter_id", "sub_line_item_id", "source"} // For inner query (has access to properties column)
+	outerSelectColumns := []string{"feature_id", "price_id", "meter_id", "sub_line_item_id"}           // For outer query (only has aliased columns)
+
+	// Add source to outer select columns only if grouping by source
+	if sourceInGroupBy {
+		outerSelectColumns = append(outerSelectColumns, "source")
+	}
+
+	// Add meter-level group_by property to inner query GROUP BY
+	// This ensures aggregation is applied per unique value of the group_by property within each bucket
+	if featureInfo.GroupByProperty != "" {
+		if err := validateGroupByProperty(featureInfo.GroupByProperty); err != nil {
+			return nil, err
+		}
+		groupByExpr := fmt.Sprintf("JSONExtractString(properties, '%s')", featureInfo.GroupByProperty)
+		groupByColumns = append(groupByColumns, groupByExpr)
+		innerSelectColumns = append(innerSelectColumns, fmt.Sprintf("%s as meter_group_by", groupByExpr))
+	}
 
 	// Add grouping columns
 	for _, groupBy := range params.GroupBy {
 		switch groupBy {
 		case "source":
-			groupByColumns = append(groupByColumns, "source")
-			innerSelectColumns = append(innerSelectColumns, "source")
-			outerSelectColumns = append(outerSelectColumns, "source")
+			// Already handled above
 		case "feature_id":
 			// Already included
 		default:
@@ -793,7 +1009,7 @@ func (r *FeatureUsageRepository) getMaxBucketTotals(ctx context.Context, params 
 		SELECT
 			%s as bucket_start,
 			%s,
-			max(qty_total * sign) as bucket_max,
+			max(qty_total) as bucket_max,
 			argMax(qty_total, timestamp) as bucket_latest,
 			count(DISTINCT unique_hash) as bucket_count_unique,
 			count(DISTINCT id) as event_count
@@ -854,6 +1070,11 @@ func (r *FeatureUsageRepository) getMaxBucketTotals(ctx context.Context, params 
 	innerQuery += fmt.Sprintf(" GROUP BY %s", strings.Join(groupByColumns, ", "))
 
 	// Build the complete query with CTE
+	// Add groupArrayDistinct(source) AS sources when source is not in group_by
+	sourcesColumn := ""
+	if !sourceInGroupBy {
+		sourcesColumn = ",\n\t\t\tgroupArrayDistinct(source) AS sources"
+	}
 	query := fmt.Sprintf(`
 		WITH bucket_maxes AS (
 			%s
@@ -864,9 +1085,9 @@ func (r *FeatureUsageRepository) getMaxBucketTotals(ctx context.Context, params 
 			max(bucket_max) as max_usage,
 			argMax(bucket_latest, bucket_start) as latest_usage,
 			sum(bucket_count_unique) as count_unique_usage,
-			sum(event_count) as event_count
+			sum(event_count) as event_count%s
 		FROM bucket_maxes
-	`, innerQuery, strings.Join(outerSelectColumns, ", "))
+	`, innerQuery, strings.Join(outerSelectColumns, ", "), sourcesColumn)
 
 	// Add GROUP BY clause
 	query += " GROUP BY " + strings.Join(outerSelectColumns, ", ")
@@ -895,8 +1116,11 @@ func (r *FeatureUsageRepository) getMaxBucketTotals(ctx context.Context, params 
 		}
 
 		// Build scan targets dynamically based on outerSelectColumns structure
-		// The query selects: outerSelectColumns + total_usage + max_usage + latest_usage + count_unique_usage + event_count
+		// The query selects: outerSelectColumns + total_usage + max_usage + latest_usage + count_unique_usage + event_count + (optional sources)
 		totalSelectColumns := len(outerSelectColumns) + 5 // +5 for total_usage, max_usage, latest_usage, count_unique_usage, event_count
+		if !sourceInGroupBy {
+			totalSelectColumns++ // +1 for sources array
+		}
 		scanTargets := make([]interface{}, totalSelectColumns)
 
 		// Create string targets for all select columns
@@ -911,6 +1135,11 @@ func (r *FeatureUsageRepository) getMaxBucketTotals(ctx context.Context, params 
 		scanTargets[len(outerSelectColumns)+2] = &analytics.LatestUsage
 		scanTargets[len(outerSelectColumns)+3] = &analytics.CountUniqueUsage
 		scanTargets[len(outerSelectColumns)+4] = &analytics.EventCount
+		// Add sources array scan target when source is not in group_by
+		if !sourceInGroupBy {
+			analytics.Sources = []string{}
+			scanTargets[len(outerSelectColumns)+5] = &analytics.Sources
+		}
 
 		err := rows.Scan(scanTargets...)
 		if err != nil {
@@ -949,11 +1178,17 @@ func (r *FeatureUsageRepository) getMaxBucketTotals(ctx context.Context, params 
 
 // getMaxBucketPointsForGroup calculates time series points for a specific group
 func (r *FeatureUsageRepository) getMaxBucketPointsForGroup(ctx context.Context, params *events.UsageAnalyticsParams, featureInfo *events.MaxBucketFeatureInfo, group *events.DetailedUsageAnalytic) ([]events.UsageAnalyticPoint, error) {
-	// Build window expression based on request window size
-	windowExpr := r.formatWindowSize(featureInfo.BucketSize, params.BillingAnchor)
+	// Build window expressions: bucket size for inner aggregation, request window size for outer aggregation
+	bucketWindowExpr := r.formatWindowSize(featureInfo.BucketSize, nil)
 
-	// For MAX with bucket features, we need to first get max within each bucket,
-	// then aggregate those maxes within the request window
+	// For bucketed features, use the larger of params.WindowSize or bucket_size
+	// This ensures we don't generate points at a granularity smaller than the bucket size
+	effectiveWindowSize := params.WindowSize.Max(featureInfo.BucketSize)
+	requestWindowExpr := r.formatWindowSize(effectiveWindowSize, params.BillingAnchor)
+
+	// For MAX with bucket features, we need to:
+	// 1. First get max within each bucket (feature's bucket_size)
+	// 2. Then aggregate those bucket maxes within the request window (params.WindowSize)
 	// This version filters by the specific group's attributes (source, properties, etc.)
 
 	// Build inner query with filters
@@ -961,7 +1196,7 @@ func (r *FeatureUsageRepository) getMaxBucketPointsForGroup(ctx context.Context,
 		SELECT
 			%s as bucket_start,
 			%s as window_start,
-			max(qty_total * sign) as bucket_max,
+			max(qty_total) as bucket_max,
 			argMax(qty_total, timestamp) as bucket_latest,
 			count(DISTINCT unique_hash) as bucket_count_unique,
 			count(DISTINCT id) as event_count
@@ -972,7 +1207,7 @@ func (r *FeatureUsageRepository) getMaxBucketPointsForGroup(ctx context.Context,
 		AND feature_id = ?
 		AND timestamp >= ?
 		AND timestamp < ?
-		AND sign != 0`, r.formatWindowSize(featureInfo.BucketSize, nil), windowExpr)
+		AND sign != 0`, bucketWindowExpr, requestWindowExpr)
 
 	queryParams := []interface{}{
 		params.TenantID,
@@ -1040,28 +1275,35 @@ func (r *FeatureUsageRepository) getMaxBucketPointsForGroup(ctx context.Context,
 		}
 	}
 
-	// Complete the inner query with GROUP BY
-	innerQuery += " GROUP BY bucket_start, window_start"
+	// Complete the query with GROUP BY and ORDER BY
+	// Return bucket-level points with window metadata for service-layer merging
+	if featureInfo.GroupByProperty != "" {
+		// When group_by is set, add property to GROUP BY and wrap with a SUM across groups
+		if err := validateGroupByProperty(featureInfo.GroupByProperty); err != nil {
+			return nil, err
+		}
+		groupByExpr := fmt.Sprintf("JSONExtractString(properties, '%s')", featureInfo.GroupByProperty)
+		innerQuery += fmt.Sprintf(" GROUP BY bucket_start, window_start, %s ORDER BY bucket_start", groupByExpr)
 
-	// Build the complete query with CTE
-	query := fmt.Sprintf(`
-		WITH bucket_maxes AS (
-			%s
-		)
-		SELECT
-			window_start as timestamp,
-			sum(bucket_max) as usage,
-			max(bucket_max) as max_usage,
-			argMax(bucket_latest, window_start) as latest_usage,
-			sum(bucket_count_unique) as count_unique_usage,
-			sum(event_count) as event_count
-		FROM bucket_maxes
-	`, innerQuery)
+		// Wrap the inner query to sum across groups per bucket
+		innerQuery = fmt.Sprintf(`
+			WITH per_group_points AS (%s)
+			SELECT
+				bucket_start,
+				window_start,
+				sum(bucket_max) as bucket_max,
+				max(bucket_latest) as bucket_latest,
+				sum(bucket_count_unique) as bucket_count_unique,
+				sum(event_count) as event_count
+			FROM per_group_points
+			GROUP BY bucket_start, window_start
+			ORDER BY bucket_start
+		`, innerQuery)
+	} else {
+		innerQuery += " GROUP BY bucket_start, window_start ORDER BY bucket_start"
+	}
 
-	// Add GROUP BY and ORDER BY clauses
-	query += " GROUP BY window_start ORDER BY window_start"
-
-	rows, err := r.store.GetConn().Query(ctx, query, queryParams...)
+	rows, err := r.store.GetConn().Query(ctx, innerQuery, queryParams...)
 	if err != nil {
 		return nil, ierr.WithError(err).
 			WithHint("Failed to execute MAX bucket points query").
@@ -1077,15 +1319,17 @@ func (r *FeatureUsageRepository) getMaxBucketPointsForGroup(ctx context.Context,
 	var points []events.UsageAnalyticPoint
 	for rows.Next() {
 		var point events.UsageAnalyticPoint
-		var timestamp time.Time
+		var bucketStart time.Time
+		var windowStart time.Time
 
+		// MAX bucket query returns: bucket_start, window_start, bucket_max, bucket_latest, bucket_count_unique, event_count
 		err := rows.Scan(
-			&timestamp,
-			&point.Usage,
-			&point.MaxUsage,
-			&point.LatestUsage,
-			&point.CountUniqueUsage,
-			&point.EventCount,
+			&bucketStart,
+			&windowStart,
+			&point.MaxUsage,         // bucket_max
+			&point.LatestUsage,      // bucket_latest
+			&point.CountUniqueUsage, // bucket_count_unique
+			&point.EventCount,       // event_count
 		)
 		if err != nil {
 			return nil, ierr.WithError(err).
@@ -1093,8 +1337,415 @@ func (r *FeatureUsageRepository) getMaxBucketPointsForGroup(ctx context.Context,
 				Mark(ierr.ErrDatabase)
 		}
 
-		point.Timestamp = timestamp
-		point.Cost = decimal.Zero // Will be calculated in enrichment
+		point.Timestamp = bucketStart   // Actual bucket timestamp
+		point.WindowStart = windowStart // Request window this bucket belongs to
+		point.Usage = point.MaxUsage    // For MAX, usage equals the max value
+		point.Cost = decimal.Zero       // Will be calculated in service layer
+		points = append(points, point)
+	}
+
+	return points, nil
+}
+
+// getSumBucketAnalytics handles analytics for SUM with bucket features
+func (r *FeatureUsageRepository) getSumBucketAnalytics(ctx context.Context, params *events.UsageAnalyticsParams, sumBucketFeatures map[string]*events.SumBucketFeatureInfo) ([]*events.DetailedUsageAnalytic, error) {
+	// For SUM with bucket features, we need to:
+	// 1. Calculate totals using bucket-based aggregation (meter's bucket size)
+	// 2. Calculate time series points using request window size
+
+	var allResults []*events.DetailedUsageAnalytic
+
+	// Process each SUM with bucket feature separately since they may have different bucket sizes
+	for featureID, featureInfo := range sumBucketFeatures {
+		// Create a copy of params for this specific feature
+		featureParams := *params
+		featureParams.FeatureIDs = []string{featureID}
+
+		// Get bucket-based totals
+		totals, err := r.getSumBucketTotals(ctx, &featureParams, featureInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get window-based time series points for each group
+		if featureInfo.BucketSize != "" {
+			// Need to get points per group to match totals
+			for _, total := range totals {
+				points, err := r.getSumBucketPointsForGroup(ctx, &featureParams, featureInfo, total)
+				if err != nil {
+					return nil, err
+				}
+				total.Points = points
+				allResults = append(allResults, total)
+			}
+		} else {
+			allResults = append(allResults, totals...)
+		}
+	}
+
+	return allResults, nil
+}
+
+// getSumBucketTotals calculates totals using bucket-based aggregation for SUM features
+func (r *FeatureUsageRepository) getSumBucketTotals(ctx context.Context, params *events.UsageAnalyticsParams, featureInfo *events.SumBucketFeatureInfo) ([]*events.DetailedUsageAnalytic, error) {
+	// Build bucket window expression based on meter's bucket size
+	bucketWindowExpr := r.formatWindowSize(featureInfo.BucketSize, nil)
+
+	// Check if source is in group_by
+	sourceInGroupBy := false
+	for _, groupBy := range params.GroupBy {
+		if groupBy == "source" {
+			sourceInGroupBy = true
+			break
+		}
+	}
+
+	// Build group by columns based on request parameters
+	// Always include source in inner query's GROUP BY to enable groupArrayDistinct in outer query
+	groupByColumns := []string{"bucket_start", "feature_id", "price_id", "meter_id", "sub_line_item_id", "source"}
+	innerSelectColumns := []string{"feature_id", "price_id", "meter_id", "sub_line_item_id", "source"} // For inner query (has access to properties column)
+	outerSelectColumns := []string{"feature_id", "price_id", "meter_id", "sub_line_item_id"}           // For outer query (only has aliased columns)
+
+	// Add source to outer select columns only if grouping by source
+	if sourceInGroupBy {
+		outerSelectColumns = append(outerSelectColumns, "source")
+	}
+
+	// Add grouping columns
+	for _, groupBy := range params.GroupBy {
+		switch groupBy {
+		case "source":
+			// Already handled above
+		case "feature_id":
+			// Already included
+		default:
+			if strings.HasPrefix(groupBy, "properties.") {
+				propertyName := strings.TrimPrefix(groupBy, "properties.")
+				groupByColumns = append(groupByColumns, fmt.Sprintf("JSONExtractString(properties, '%s')", propertyName))
+				innerSelectColumns = append(innerSelectColumns, fmt.Sprintf("JSONExtractString(properties, '%s') as %s", propertyName, propertyName))
+				outerSelectColumns = append(outerSelectColumns, propertyName) // Just the alias
+			}
+		}
+	}
+
+	// Build the query for bucket-based SUM aggregation
+	// For SUM with bucket, we need to:
+	// 1. Sum values within each bucket (grouped by requested fields)
+	// 2. Aggregate across all buckets to get totals
+
+	// Build inner query with filters
+	innerQuery := fmt.Sprintf(`
+		SELECT
+			%s as bucket_start,
+			%s,
+			sum(qty_total) as bucket_sum,
+			argMax(qty_total, timestamp) as bucket_latest,
+			count(DISTINCT unique_hash) as bucket_count_unique,
+			count(DISTINCT id) as event_count
+		FROM feature_usage
+		WHERE tenant_id = ?
+		AND environment_id = ?
+		AND customer_id = ?
+		AND feature_id = ?
+		AND timestamp >= ?
+		AND timestamp < ?
+		AND sign != 0`, bucketWindowExpr, strings.Join(innerSelectColumns, ", "))
+
+	queryParams := []interface{}{
+		params.TenantID,
+		params.EnvironmentID,
+		params.CustomerID,
+		featureInfo.FeatureID,
+		params.StartTime,
+		params.EndTime,
+	}
+
+	// Add filters for sources to inner query
+	if len(params.Sources) > 0 {
+		placeholders := make([]string, len(params.Sources))
+		for i := range params.Sources {
+			placeholders[i] = "?"
+		}
+		innerQuery += " AND source IN (" + strings.Join(placeholders, ", ") + ")"
+		for _, source := range params.Sources {
+			queryParams = append(queryParams, source)
+		}
+	}
+
+	// Add property filters to inner query
+	if len(params.PropertyFilters) > 0 {
+		for property, values := range params.PropertyFilters {
+			if len(values) > 0 {
+				if len(values) == 1 {
+					innerQuery += " AND JSONExtractString(properties, ?) = ?"
+					queryParams = append(queryParams, property, values[0])
+				} else {
+					placeholders := make([]string, len(values))
+					for i := range values {
+						placeholders[i] = "?"
+					}
+					innerQuery += " AND JSONExtractString(properties, ?) IN (" + strings.Join(placeholders, ",") + ")"
+					queryParams = append(queryParams, property)
+					// Now append all values after the property
+					for _, v := range values {
+						queryParams = append(queryParams, v)
+					}
+				}
+			}
+		}
+	}
+
+	// Complete the inner query with GROUP BY
+	innerQuery += fmt.Sprintf(" GROUP BY %s", strings.Join(groupByColumns, ", "))
+
+	// Build the complete query with CTE
+	// Add groupArrayDistinct(source) AS sources when source is not in group_by
+	sourcesColumn := ""
+	if !sourceInGroupBy {
+		sourcesColumn = ",\n\t\t\tgroupArrayDistinct(source) AS sources"
+	}
+	query := fmt.Sprintf(`
+		WITH bucket_sums AS (
+			%s
+		)
+		SELECT
+			%s,
+			sum(bucket_sum) as total_usage,
+			max(bucket_sum) as max_usage,
+			argMax(bucket_latest, bucket_start) as latest_usage,
+			sum(bucket_count_unique) as count_unique_usage,
+			sum(event_count) as event_count%s
+		FROM bucket_sums
+	`, innerQuery, strings.Join(outerSelectColumns, ", "), sourcesColumn)
+
+	// Add GROUP BY clause
+	query += " GROUP BY " + strings.Join(outerSelectColumns, ", ")
+
+	rows, err := r.store.GetConn().Query(ctx, query, queryParams...)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to execute SUM bucket totals query").
+			WithReportableDetails(map[string]interface{}{
+				"feature_id":  featureInfo.FeatureID,
+				"bucket_size": featureInfo.BucketSize,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	var results []*events.DetailedUsageAnalytic
+	for rows.Next() {
+		analytics := &events.DetailedUsageAnalytic{
+			FeatureID:       featureInfo.FeatureID,
+			MeterID:         featureInfo.MeterID,
+			EventName:       featureInfo.EventName,
+			AggregationType: types.AggregationSum,
+			Points:          []events.UsageAnalyticPoint{},
+			Properties:      make(map[string]string),
+		}
+
+		// Build scan targets dynamically based on outerSelectColumns structure
+		// The query selects: outerSelectColumns + total_usage + max_usage + latest_usage + count_unique_usage + event_count + (optional sources)
+		totalSelectColumns := len(outerSelectColumns) + 5 // +5 for total_usage, max_usage, latest_usage, count_unique_usage, event_count
+		if !sourceInGroupBy {
+			totalSelectColumns++ // +1 for sources array
+		}
+		scanTargets := make([]interface{}, totalSelectColumns)
+
+		// Create string targets for all select columns
+		selectValues := make([]string, len(outerSelectColumns))
+		for i := range selectValues {
+			scanTargets[i] = &selectValues[i]
+		}
+
+		// Add usage metrics targets
+		scanTargets[len(outerSelectColumns)] = &analytics.TotalUsage
+		scanTargets[len(outerSelectColumns)+1] = &analytics.MaxUsage
+		scanTargets[len(outerSelectColumns)+2] = &analytics.LatestUsage
+		scanTargets[len(outerSelectColumns)+3] = &analytics.CountUniqueUsage
+		scanTargets[len(outerSelectColumns)+4] = &analytics.EventCount
+		// Add sources array scan target when source is not in group_by
+		if !sourceInGroupBy {
+			analytics.Sources = []string{}
+			scanTargets[len(outerSelectColumns)+5] = &analytics.Sources
+		}
+
+		err := rows.Scan(scanTargets...)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Failed to scan SUM bucket totals row").
+				Mark(ierr.ErrDatabase)
+		}
+
+		// Populate fields based on outerSelectColumns order
+		for i, selectCol := range outerSelectColumns {
+			value := selectValues[i]
+			switch selectCol {
+			case "feature_id":
+				analytics.FeatureID = value
+			case "price_id":
+				analytics.PriceID = value
+			case "meter_id":
+				analytics.MeterID = value
+			case "sub_line_item_id":
+				analytics.SubLineItemID = value
+			case "source":
+				analytics.Source = value
+			default:
+				// For property columns, the selectCol is just the property name (alias)
+				if value != "" {
+					analytics.Properties[selectCol] = value
+				}
+			}
+		}
+
+		results = append(results, analytics)
+	}
+
+	return results, nil
+}
+
+// getSumBucketPointsForGroup calculates time series points for a specific SUM bucket group
+func (r *FeatureUsageRepository) getSumBucketPointsForGroup(ctx context.Context, params *events.UsageAnalyticsParams, featureInfo *events.SumBucketFeatureInfo, group *events.DetailedUsageAnalytic) ([]events.UsageAnalyticPoint, error) {
+	// Build window expressions: bucket size for inner aggregation, request window size for outer aggregation
+	bucketWindowExpr := r.formatWindowSize(featureInfo.BucketSize, nil)
+
+	// For bucketed features, use the larger of params.WindowSize or bucket_size
+	// This ensures we don't generate points at a granularity smaller than the bucket size
+	effectiveWindowSize := params.WindowSize.Max(featureInfo.BucketSize)
+	requestWindowExpr := r.formatWindowSize(effectiveWindowSize, params.BillingAnchor)
+
+	// For SUM with bucket features, we need to:
+	// 1. First sum values within each bucket (feature's bucket_size)
+	// 2. Then aggregate those bucket sums within the request window (params.WindowSize)
+	// This version filters by the specific group's attributes (source, properties, etc.)
+
+	// Build inner query with filters
+	innerQuery := fmt.Sprintf(`
+		SELECT
+			%s as bucket_start,
+			%s as window_start,
+			sum(qty_total) as bucket_sum,
+			argMax(qty_total, timestamp) as bucket_latest,
+			count(DISTINCT unique_hash) as bucket_count_unique,
+			count(DISTINCT id) as event_count
+		FROM feature_usage
+		WHERE tenant_id = ?
+		AND environment_id = ?
+		AND customer_id = ?
+		AND feature_id = ?
+		AND timestamp >= ?
+		AND timestamp < ?
+		AND sign != 0`, bucketWindowExpr, requestWindowExpr)
+
+	queryParams := []interface{}{
+		params.TenantID,
+		params.EnvironmentID,
+		params.CustomerID,
+		featureInfo.FeatureID,
+		params.StartTime,
+		params.EndTime,
+	}
+
+	// Add filter for this specific group's source
+	if group.Source != "" {
+		innerQuery += " AND source = ?"
+		queryParams = append(queryParams, group.Source)
+	}
+
+	// Add filter for this specific group's price_id
+	if group.PriceID != "" {
+		innerQuery += " AND price_id = ?"
+		queryParams = append(queryParams, group.PriceID)
+	}
+
+	// Add filter for this specific group's meter_id
+	if group.MeterID != "" {
+		innerQuery += " AND meter_id = ?"
+		queryParams = append(queryParams, group.MeterID)
+	}
+
+	// Add filter for this specific group's sub_line_item_id
+	if group.SubLineItemID != "" {
+		innerQuery += " AND sub_line_item_id = ?"
+		queryParams = append(queryParams, group.SubLineItemID)
+	}
+
+	// Add filters for this specific group's properties
+	if len(group.Properties) > 0 {
+		for propertyName, propertyValue := range group.Properties {
+			if propertyValue != "" {
+				innerQuery += " AND JSONExtractString(properties, ?) = ?"
+				queryParams = append(queryParams, propertyName, propertyValue)
+			}
+		}
+	}
+
+	// Add general property filters from params
+	if len(params.PropertyFilters) > 0 {
+		for property, values := range params.PropertyFilters {
+			if len(values) > 0 {
+				if len(values) == 1 {
+					innerQuery += " AND JSONExtractString(properties, ?) = ?"
+					queryParams = append(queryParams, property, values[0])
+				} else {
+					placeholders := make([]string, len(values))
+					for i := range values {
+						placeholders[i] = "?"
+					}
+					innerQuery += " AND JSONExtractString(properties, ?) IN (" + strings.Join(placeholders, ",") + ")"
+					queryParams = append(queryParams, property)
+					// Now append all values after the property
+					for _, v := range values {
+						queryParams = append(queryParams, v)
+					}
+				}
+			}
+		}
+	}
+
+	// Complete the query with GROUP BY and ORDER BY
+	// Return bucket-level points with window metadata for service-layer merging
+	innerQuery += " GROUP BY bucket_start, window_start ORDER BY bucket_start"
+
+	rows, err := r.store.GetConn().Query(ctx, innerQuery, queryParams...)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to execute SUM bucket points query").
+			WithReportableDetails(map[string]interface{}{
+				"feature_id":  featureInfo.FeatureID,
+				"bucket_size": featureInfo.BucketSize,
+				"window_size": params.WindowSize,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	var points []events.UsageAnalyticPoint
+	for rows.Next() {
+		var point events.UsageAnalyticPoint
+		var bucketStart time.Time
+		var windowStart time.Time
+
+		// SUM bucket query returns: bucket_start, window_start, bucket_sum, bucket_latest, bucket_count_unique, event_count
+		err := rows.Scan(
+			&bucketStart,
+			&windowStart,
+			&point.Usage,            // bucket_sum
+			&point.LatestUsage,      // bucket_latest
+			&point.CountUniqueUsage, // bucket_count_unique
+			&point.EventCount,       // event_count
+		)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Failed to scan SUM bucket points row").
+				Mark(ierr.ErrDatabase)
+		}
+
+		point.Timestamp = bucketStart   // Actual bucket timestamp
+		point.WindowStart = windowStart // Request window this bucket belongs to
+		point.MaxUsage = point.Usage    // For SUM, max equals the sum value
+		point.Cost = decimal.Zero       // Will be calculated in service layer
 		points = append(points, point)
 	}
 
@@ -1188,15 +1839,12 @@ func (r *FeatureUsageRepository) getAnalyticsPoints(
 		timeWindowExpr = "toStartOfHour(timestamp)"
 	}
 
-	// Build the select columns for time-series query - fetch all aggregation types
+	// Build the select columns for time-series query - use conditional aggregation based on params.AggregationTypes
+	aggColumns := buildConditionalAggregationColumns(params.AggregationTypes)
 	selectColumns := []string{
 		fmt.Sprintf("%s AS window_time", timeWindowExpr),
-		"SUM(qty_total * sign) AS total_usage",
-		"MAX(qty_total * sign) AS max_usage",
-		"argMax(qty_total, timestamp) AS latest_usage",
-		"COUNT(DISTINCT unique_hash) AS count_unique_usage",
-		"COUNT(DISTINCT id) AS event_count", // Count distinct event IDs, not rows
 	}
+	selectColumns = append(selectColumns, aggColumns...)
 
 	// Build the query
 	query := fmt.Sprintf(`
@@ -1345,57 +1993,71 @@ func (r *FeatureUsageRepository) getAnalyticsPoints(
 	return points, nil
 }
 
-// GetFeatureUsageBySubscription gets usage data for a subscription using a single optimized query
-func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Context, subscriptionID, externalCustomerID string, startTime, endTime time.Time) (map[string]*events.UsageByFeatureResult, error) {
+// GetFeatureUsageBySubscription gets usage data for a subscription using a single optimized query.
+// When opts.Source is InvoiceCreation, the query uses FINAL for correct ReplacingMergeTree deduplication.
+func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Context, subscriptionID, customerID string, startTime, endTime time.Time, aggTypes []types.AggregationType, opts *events.GetFeatureUsageBySubscriptionOpts) (map[string]*events.UsageByFeatureResult, error) {
 	// Extract tenantID and environmentID from context
 	tenantID := types.GetTenantID(ctx)
 	environmentID := types.GetEnvironmentID(ctx)
 
 	// Start a span for this repository operation
 	span := StartRepositorySpan(ctx, "feature_usage", "get_usage_by_subscription_v2", map[string]interface{}{
-		"subscription_id":      subscriptionID,
-		"external_customer_id": externalCustomerID,
-		"environment_id":       environmentID,
-		"tenant_id":            tenantID,
-		"start_time":           startTime,
-		"end_time":             endTime,
+		"subscription_id": subscriptionID,
+		"customer_id":     customerID,
+		"environment_id":  environmentID,
+		"tenant_id":       tenantID,
+		"start_time":      startTime,
+		"end_time":        endTime,
 	})
 	defer FinishSpan(span)
 
-	query := `
+	// Build conditional aggregation columns
+	aggColumns := buildConditionalAggregationColumnsForSubscription(aggTypes)
+
+	tableRef := "feature_usage"
+	if opts != nil && opts.Source.UseFinal() {
+		tableRef = "feature_usage FINAL"
+	}
+
+	r.logger.Debugw("subscription usage query", "aggColumns", aggColumns, "tableRef", tableRef, "opts", opts)
+
+	query := fmt.Sprintf(`
 		SELECT 
 			sub_line_item_id,
 			feature_id,
 			meter_id,
 			price_id,
-			sum(qty_total * sign)              AS sum_total,
-			max(qty_total * sign)              AS max_total,
-			count(DISTINCT id)                 AS count_distinct_ids,
-			count(DISTINCT unique_hash)        AS count_unique_qty,
-			argMax(qty_total * sign, "timestamp") AS latest_qty
-		FROM feature_usage
+			%s
+		FROM %s
 		WHERE 
 			subscription_id = ?
-			AND external_customer_id = ?
+			AND customer_id = ?
 			AND environment_id = ?
 			AND tenant_id = ?
 			AND "timestamp" >= ?
 			AND "timestamp" < ?
 			AND sign != 0
 		GROUP BY sub_line_item_id, feature_id, meter_id, price_id
-	`
+	`, strings.Join(aggColumns, ",\n\t\t\t"), tableRef)
 
-	log.Printf("Executing query: %s", query)
-	log.Printf("Params: %v", []interface{}{subscriptionID, externalCustomerID, environmentID, tenantID, startTime, endTime})
+	r.logger.Debugw("executing subscription usage query",
+		"subscription_id", subscriptionID,
+		"customer_id", customerID,
+		"environment_id", environmentID,
+		"start_time", startTime,
+		"end_time", endTime,
+	)
 
-	rows, err := r.store.GetConn().Query(ctx, query, subscriptionID, externalCustomerID, environmentID, tenantID, startTime, endTime)
+	r.logger.Debugw("subscription usage query", "query", query, "params", []interface{}{subscriptionID, customerID, environmentID, tenantID, startTime, endTime})
+
+	rows, err := r.store.GetConn().Query(ctx, query, subscriptionID, customerID, environmentID, tenantID, startTime, endTime)
 	if err != nil {
 		SetSpanError(span, err)
 		return nil, ierr.WithError(err).
 			WithHint("Failed to execute optimized subscription usage query").
 			WithReportableDetails(map[string]interface{}{
-				"subscription_id":      subscriptionID,
-				"external_customer_id": externalCustomerID,
+				"subscription_id": subscriptionID,
+				"customer_id":     customerID,
 			}).
 			Mark(ierr.ErrDatabase)
 	}
@@ -1567,7 +2229,15 @@ func (r *FeatureUsageRepository) GetFeatureUsageForExport(ctx context.Context, s
 	return results, nil
 }
 
-func (r *FeatureUsageRepository) GetUsageForMaxMetersWithBuckets(ctx context.Context, params *events.FeatureUsageParams) (*events.AggregationResult, error) {
+// GetUsageForBucketedMeters queries the feature_usage table for bucketed aggregations.
+// Despite its name (kept for backward compatibility), this method supports both MAX and SUM aggregations.
+// The aggregation type is determined by params.UsageParams.AggregationType.
+//
+// For MAX aggregation: Calculates the maximum value within each bucket (window), then sums all bucket maxes
+// For SUM aggregation: Calculates the sum of values within each bucket (window), then sums all bucket sums
+//
+// This method queries the optimized feature_usage table (pre-aggregated data) rather than raw events.
+func (r *FeatureUsageRepository) GetUsageForBucketedMeters(ctx context.Context, params *events.FeatureUsageParams) (*events.AggregationResult, error) {
 	// Start a span for this repository operation
 	span := StartRepositorySpan(ctx, "event", "get_usage", map[string]interface{}{
 		"price_id":    params.PriceID,
@@ -1577,7 +2247,10 @@ func (r *FeatureUsageRepository) GetUsageForMaxMetersWithBuckets(ctx context.Con
 	defer FinishSpan(span)
 
 	query := r.getWindowedQuery(ctx, params)
-	log.Printf("Executing query: %s", query)
+	r.logger.Debugw("executing windowed usage query",
+		"meter_id", params.MeterID,
+		"window_size", params.WindowSize,
+	)
 
 	rows, err := r.store.GetConn().Query(ctx, query)
 	if err != nil {
@@ -1656,15 +2329,96 @@ func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *e
 	filterConditions := buildFilterConditions(params.Filters)
 	timeConditions := buildTimeConditions(params.UsageParams)
 
-	// First get max values per bucket, then get the max across all buckets
+	// Determine aggregation function and naming based on aggregation type
+	// Default to MAX for backward compatibility (if AggregationType is not set)
+	aggFunc := "max"
+	bucketTableName := "bucket_maxes"
+	bucketColumnName := "bucket_max"
+
+	if params.UsageParams.AggregationType == types.AggregationSum {
+		aggFunc = "sum"
+		bucketTableName = "bucket_sums"
+		bucketColumnName = "bucket_sum"
+	}
+
+	// Use FINAL only for invoice generation so ReplacingMergeTree deduplication is correct; other callers (analytics, preview) do not.
+	tableRef := "feature_usage"
+	if params.Source.UseFinal() {
+		tableRef = "feature_usage FINAL"
+	}
+
+	// When group_by is specified, we need a 3-level aggregation:
+	// 1. Inner CTE: aggregate per group per bucket (e.g., MAX per krn per hour)
+	// 2. Middle CTE: SUM across groups per bucket (e.g., SUM of group maxes per hour)
+	// 3. Outer query: return per-bucket values and overall total
+	if params.UsageParams.GroupByProperty != "" && validateGroupByProperty(params.UsageParams.GroupByProperty) == nil {
+		groupByExpr := fmt.Sprintf("JSONExtractString(properties, '%s')", params.UsageParams.GroupByProperty)
+
+		return fmt.Sprintf(`
+			WITH per_group AS (
+				SELECT
+					%s as bucket_start,
+					%s as group_key,
+					%s(qty_total) as group_value
+				FROM %s
+				PREWHERE tenant_id = '%s'
+					AND environment_id = '%s'
+					AND sign != 0
+					%s
+					%s
+					%s
+					%s
+					%s
+					%s
+					%s
+				GROUP BY bucket_start, group_key
+			),
+			%s AS (
+				SELECT
+					bucket_start,
+					sum(group_value) as %s
+				FROM per_group
+				GROUP BY bucket_start
+				ORDER BY bucket_start
+			)
+			SELECT
+				(SELECT sum(%s) FROM %s) as total,
+				bucket_start as timestamp,
+				%s as value
+			FROM %s
+			ORDER BY bucket_start
+		`,
+			bucketWindow,
+			groupByExpr,
+			aggFunc,
+			tableRef,
+			types.GetTenantID(ctx),
+			types.GetEnvironmentID(ctx),
+			externalCustomerFilter,
+			featureFilter,
+			priceFilter,
+			meterFilter,
+			subLineItemFilter,
+			filterConditions,
+			timeConditions,
+			bucketTableName,
+			bucketColumnName,
+			bucketColumnName, bucketTableName,
+			bucketColumnName,
+			bucketTableName)
+	}
+
+	// First aggregate values per bucket using the appropriate function,
+	// then sum all bucket values to get the total
 	return fmt.Sprintf(`
-		WITH bucket_maxes AS (
+		WITH %s AS (
 			SELECT
 				%s as bucket_start,
-				max(qty_total * sign) as bucket_max
-			FROM feature_usage
+				%s(qty_total) as %s
+			FROM %s
 			PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
+				AND sign != 0
 				%s
 				%s
 				%s
@@ -1676,13 +2430,16 @@ func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *e
 			ORDER BY bucket_start
 		)
 		SELECT
-			(SELECT sum(bucket_max) FROM bucket_maxes) as total,
+			(SELECT sum(%s) FROM %s) as total,
 			bucket_start as timestamp,
-			bucket_max as value
-		FROM bucket_maxes
+			%s as value
+		FROM %s
 		ORDER BY bucket_start
 	`,
+		bucketTableName,
 		bucketWindow,
+		aggFunc, bucketColumnName,
+		tableRef,
 		types.GetTenantID(ctx),
 		types.GetEnvironmentID(ctx),
 		externalCustomerFilter,
@@ -1691,5 +2448,104 @@ func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *e
 		meterFilter,
 		subLineItemFilter,
 		filterConditions,
-		timeConditions)
+		timeConditions,
+		bucketColumnName, bucketTableName,
+		bucketColumnName,
+		bucketTableName)
+}
+
+// GetFeatureUsageByEventIDs queries the feature_usage table for events by their IDs
+func (r *FeatureUsageRepository) GetFeatureUsageByEventIDs(ctx context.Context, eventIDs []string) ([]*events.FeatureUsage, error) {
+	if len(eventIDs) == 0 {
+		return nil, nil
+	}
+
+	tenantID := types.GetTenantID(ctx)
+	environmentID := types.GetEnvironmentID(ctx)
+
+	// Build query with IN clause for event IDs
+	query := `
+		SELECT 
+			id, tenant_id, external_customer_id, customer_id, event_name, source, 
+			timestamp, ingested_at, properties, processed_at, environment_id,
+			subscription_id, sub_line_item_id, price_id, meter_id, feature_id, period_id,
+			unique_hash, qty_total, version, sign
+		FROM feature_usage FINAL
+		WHERE tenant_id = ?
+		AND environment_id = ?
+		AND id IN (?)
+	`
+
+	// ClickHouse requires special handling for IN clause with arrays
+	// Build placeholders for the IN clause
+	placeholders := make([]string, len(eventIDs))
+	args := make([]interface{}, 0, 3+len(eventIDs))
+	args = append(args, tenantID, environmentID)
+
+	for i, eventID := range eventIDs {
+		placeholders[i] = "?"
+		args = append(args, eventID)
+	}
+
+	query = strings.Replace(query, "IN (?)", "IN ("+strings.Join(placeholders, ",")+")", 1)
+
+	rows, err := r.store.GetConn().Query(ctx, query, args...)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to query feature_usage by event IDs").
+			Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	var records []*events.FeatureUsage
+	for rows.Next() {
+		var record events.FeatureUsage
+		var propertiesJSON string
+
+		err := rows.Scan(
+			&record.ID,
+			&record.TenantID,
+			&record.ExternalCustomerID,
+			&record.CustomerID,
+			&record.EventName,
+			&record.Source,
+			&record.Timestamp,
+			&record.IngestedAt,
+			&propertiesJSON,
+			&record.ProcessedAt,
+			&record.EnvironmentID,
+			&record.SubscriptionID,
+			&record.SubLineItemID,
+			&record.PriceID,
+			&record.MeterID,
+			&record.FeatureID,
+			&record.PeriodID,
+			&record.UniqueHash,
+			&record.QtyTotal,
+			&record.Version,
+			&record.Sign,
+		)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Failed to scan feature_usage record").
+				Mark(ierr.ErrDatabase)
+		}
+
+		// Parse properties
+		if propertiesJSON != "" {
+			if err := json.Unmarshal([]byte(propertiesJSON), &record.Properties); err != nil {
+				r.logger.Warnw("failed to unmarshal properties",
+					"event_id", record.ID,
+					"error", err,
+				)
+				record.Properties = make(map[string]interface{})
+			}
+		} else {
+			record.Properties = make(map[string]interface{})
+		}
+
+		records = append(records, &record)
+	}
+
+	return records, nil
 }

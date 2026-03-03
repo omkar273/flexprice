@@ -3,6 +3,9 @@ package clickhouse
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math"
+
 	"log"
 	"strings"
 	"time"
@@ -24,6 +27,15 @@ type EventRepository struct {
 
 func NewEventRepository(store *clickhouse.ClickHouseStore, logger *logger.Logger) events.Repository {
 	return &EventRepository{store: store, logger: logger}
+}
+
+// safeDecimalFromFloat safely converts a float64 to decimal.Decimal.
+// It returns zero for NaN and Inf values to avoid panics from decimal.NewFromFloat.
+func safeDecimalFromFloat(f float64) decimal.Decimal {
+	if math.IsNaN(f) || math.IsInf(f, 0) {
+		return decimal.Zero
+	}
+	return decimal.NewFromFloat(f)
 }
 
 func (r *EventRepository) InsertEvent(ctx context.Context, event *events.Event) error {
@@ -245,7 +257,7 @@ func (r *EventRepository) GetUsage(ctx context.Context, params *events.UsagePara
 	result.EventName = params.EventName
 
 	// For windowed queries, we need to process all rows
-	if params.WindowSize != "" || (params.AggregationType == types.AggregationMax && params.BucketSize != "") {
+	if params.WindowSize != "" || ((params.AggregationType == types.AggregationMax || params.AggregationType == types.AggregationSum) && params.BucketSize != "") {
 		for rows.Next() {
 			var windowSize time.Time
 			var value decimal.Decimal
@@ -265,7 +277,7 @@ func (r *EventRepository) GetUsage(ctx context.Context, params *events.UsagePara
 						Mark(ierr.ErrDatabase)
 				}
 				value = decimal.NewFromUint64(countValue)
-			case types.AggregationMax:
+			case types.AggregationMax, types.AggregationSum:
 				if params.BucketSize != "" {
 					var totalFloat, valueFloat float64
 					if err := rows.Scan(&totalFloat, &windowSize, &valueFloat); err != nil {
@@ -279,9 +291,16 @@ func (r *EventRepository) GetUsage(ctx context.Context, params *events.UsagePara
 							}).
 							Mark(ierr.ErrDatabase)
 					}
-					total = decimal.NewFromFloat(totalFloat)
-					value = decimal.NewFromFloat(valueFloat)
-					// Set the overall maximum as the result value
+					total = safeDecimalFromFloat(totalFloat)
+					value = safeDecimalFromFloat(valueFloat)
+					// Ensure negative values are treated as zero
+					if total.LessThan(decimal.Zero) {
+						total = decimal.Zero
+					}
+					if value.LessThan(decimal.Zero) {
+						value = decimal.Zero
+					}
+					// Set the overall max/sum as the result value
 					result.Value = total
 				} else {
 					var floatValue float64
@@ -295,9 +314,13 @@ func (r *EventRepository) GetUsage(ctx context.Context, params *events.UsagePara
 							}).
 							Mark(ierr.ErrDatabase)
 					}
-					value = decimal.NewFromFloat(floatValue)
+					value = safeDecimalFromFloat(floatValue)
+					// Ensure negative values are treated as zero
+					if value.LessThan(decimal.Zero) {
+						value = decimal.Zero
+					}
 				}
-			case types.AggregationSum, types.AggregationAvg, types.AggregationLatest, types.AggregationSumWithMultiplier, types.AggregationWeightedSum:
+			case types.AggregationAvg, types.AggregationLatest, types.AggregationSumWithMultiplier, types.AggregationWeightedSum:
 				var floatValue float64
 				if err := rows.Scan(&windowSize, &floatValue); err != nil {
 					SetSpanError(span, err)
@@ -309,10 +332,10 @@ func (r *EventRepository) GetUsage(ctx context.Context, params *events.UsagePara
 						}).
 						Mark(ierr.ErrDatabase)
 				}
-				value = decimal.NewFromFloat(floatValue)
+				value = safeDecimalFromFloat(floatValue)
 
-				// For Latest aggregation, return 0 if negative
-				if params.AggregationType == types.AggregationLatest && value.LessThan(decimal.Zero) {
+				// Ensure negative values are treated as zero for all aggregation types
+				if value.LessThan(decimal.Zero) {
 					value = decimal.Zero
 				}
 			default:
@@ -357,10 +380,10 @@ func (r *EventRepository) GetUsage(ctx context.Context, params *events.UsagePara
 						}).
 						Mark(ierr.ErrDatabase)
 				}
-				result.Value = decimal.NewFromFloat(value)
+				result.Value = safeDecimalFromFloat(value)
 
-				// For Latest aggregation, return 0 if negative
-				if params.AggregationType == types.AggregationLatest && result.Value.LessThan(decimal.Zero) {
+				// Ensure negative values are treated as zero for all aggregation types
+				if result.Value.LessThan(decimal.Zero) {
 					result.Value = decimal.Zero
 				}
 			default:
@@ -463,7 +486,7 @@ func (r *EventRepository) GetUsageWithFilters(ctx context.Context, params *event
 					}).
 					Mark(ierr.ErrDatabase)
 			}
-			result.Value = decimal.NewFromFloat(value)
+			result.Value = safeDecimalFromFloat(value)
 		default:
 			err := ierr.NewError("unsupported aggregation type").
 				WithHint("The specified aggregation type is not supported").
@@ -963,7 +986,7 @@ func (r *EventRepository) GetDistinctEventNames(ctx context.Context, externalCus
 
 	query := `
 		SELECT DISTINCT event_name 
-		FROM events 
+		FROM events
 		WHERE tenant_id = ?
 		AND environment_id = ?
 		AND external_customer_id = ?
@@ -1035,47 +1058,201 @@ func (r *EventRepository) GetDistinctEventNames(ctx context.Context, externalCus
 	return eventNames, nil
 }
 
-// GetTotalEventCount returns the total count of events in a given time range
-func (r *EventRepository) GetTotalEventCount(ctx context.Context, startTime, endTime time.Time) uint64 {
+// GetTotalEventCount returns the total count of events in a given time range with optional windowed time-series data
+func (r *EventRepository) GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) (*events.EventCountResult, error) {
 	span := StartRepositorySpan(ctx, "event", "get_total_event_count", map[string]interface{}{
-		"start_time": startTime,
-		"end_time":   endTime,
+		"start_time":  startTime,
+		"end_time":    endTime,
+		"window_size": windowSize,
+	})
+	defer FinishSpan(span)
+
+	result := &events.EventCountResult{
+		TotalCount: 0,
+		Points:     []events.EventCountPoint{},
+	}
+
+	// Build the time window expression based on window size
+	timeWindowExpr := formatWindowSize(windowSize)
+
+	// Query for windowed counts if window size is provided
+	if windowSize != "" {
+		windowedQuery := fmt.Sprintf(`
+			SELECT 
+				%s AS window_time,
+				COUNT(DISTINCT(id)) as event_count
+			FROM events FINAL
+			WHERE tenant_id = ?
+			AND environment_id = ?
+			AND timestamp >= ?
+			AND timestamp < ?
+			GROUP BY window_time
+			ORDER BY window_time
+		`, timeWindowExpr)
+
+		args := []interface{}{
+			types.GetTenantID(ctx),
+			types.GetEnvironmentID(ctx),
+			startTime,
+			endTime,
+		}
+
+		rows, err := r.store.GetConn().Query(ctx, windowedQuery, args...)
+		if err != nil {
+			r.logger.Errorw("failed to get windowed event count",
+				"error", err,
+				"start_time", startTime,
+				"end_time", endTime,
+				"window_size", windowSize)
+			SetSpanError(span, err)
+			return nil, ierr.WithError(err).
+				WithHint("Failed to execute windowed event count query").
+				Mark(ierr.ErrDatabase)
+		}
+		defer rows.Close()
+
+		var totalCount uint64
+		for rows.Next() {
+			var point events.EventCountPoint
+			if err := rows.Scan(&point.Timestamp, &point.EventCount); err != nil {
+				r.logger.Errorw("failed to scan windowed event count",
+					"error", err)
+				SetSpanError(span, err)
+				return nil, ierr.WithError(err).
+					WithHint("Failed to scan windowed event count row").
+					Mark(ierr.ErrDatabase)
+			}
+			totalCount += point.EventCount
+			result.Points = append(result.Points, point)
+		}
+
+		if err := rows.Err(); err != nil {
+			SetSpanError(span, err)
+			return nil, ierr.WithError(err).
+				WithHint("Error iterating windowed event count rows").
+				Mark(ierr.ErrDatabase)
+		}
+
+		result.TotalCount = totalCount
+	} else {
+		// No window size, just get total count
+		query := `
+			SELECT COUNT(DISTINCT(id)) as total_count
+			FROM events FINAL
+			WHERE tenant_id = ?
+			AND environment_id = ?
+		`
+
+		args := []interface{}{
+			types.GetTenantID(ctx),
+			types.GetEnvironmentID(ctx),
+		}
+
+		if !startTime.IsZero() {
+			query += " AND timestamp >= ?"
+			args = append(args, startTime)
+		}
+
+		if !endTime.IsZero() {
+			query += " AND timestamp < ?"
+			args = append(args, endTime)
+		}
+
+		var totalCount uint64
+		err := r.store.GetConn().QueryRow(ctx, query, args...).Scan(&totalCount)
+		if err != nil {
+			r.logger.Errorw("failed to get total event count",
+				"error", err,
+				"start_time", startTime,
+				"end_time", endTime)
+			SetSpanError(span, err)
+			return nil, ierr.WithError(err).
+				WithHint("Failed to execute total event count query").
+				Mark(ierr.ErrDatabase)
+		}
+
+		result.TotalCount = totalCount
+	}
+
+	SetSpanSuccess(span)
+	return result, nil
+}
+
+func (r *EventRepository) GetEventByID(ctx context.Context, eventID string) (*events.Event, error) {
+	span := StartRepositorySpan(ctx, "event", "get_event_by_id", map[string]interface{}{
+		"event_id": eventID,
 	})
 	defer FinishSpan(span)
 
 	query := `
-		SELECT COUNT(DISTINCT(id)) as total_count
-		FROM events
+		SELECT 
+			id,
+			external_customer_id,
+			customer_id,
+			tenant_id,
+			event_name,
+			timestamp,
+			source,
+			properties,
+			environment_id,
+			ingested_at
+		FROM events FINAL
 		WHERE tenant_id = ?
 		AND environment_id = ?
+		AND id = ?
+		LIMIT 1
 	`
-
 	args := []interface{}{
 		types.GetTenantID(ctx),
 		types.GetEnvironmentID(ctx),
+		eventID,
 	}
 
-	if !startTime.IsZero() {
-		query += " AND timestamp >= ?"
-		args = append(args, startTime)
-	}
+	var event events.Event
+	var propertiesJSON string
 
-	if !endTime.IsZero() {
-		query += " AND timestamp <= ?"
-		args = append(args, endTime)
-	}
+	err := r.store.GetConn().QueryRow(ctx, query, args...).Scan(
+		&event.ID,
+		&event.ExternalCustomerID,
+		&event.CustomerID,
+		&event.TenantID,
+		&event.EventName,
+		&event.Timestamp,
+		&event.Source,
+		&propertiesJSON,
+		&event.EnvironmentID,
+		&event.IngestedAt,
+	)
 
-	var totalCount uint64
-	err := r.store.GetConn().QueryRow(ctx, query, args...).Scan(&totalCount)
 	if err != nil {
-		r.logger.Errorw("failed to get total event count",
-			"error", err,
-			"start_time", startTime,
-			"end_time", endTime)
 		SetSpanError(span, err)
-		return 0
+		if err.Error() == "sql: no rows in result set" {
+			return nil, ierr.WithError(err).
+				WithHint("Event not found in events table").
+				WithReportableDetails(map[string]interface{}{
+					"event_id": eventID,
+				}).
+				Mark(ierr.ErrNotFound)
+		}
+		return nil, ierr.WithError(err).
+			WithHint("Failed to get event").
+			WithReportableDetails(map[string]interface{}{
+				"event_id": eventID,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+
+	if err := json.Unmarshal([]byte(propertiesJSON), &event.Properties); err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to unmarshal event properties").
+			WithReportableDetails(map[string]interface{}{
+				"event_id":   eventID,
+				"properties": propertiesJSON,
+			}).
+			Mark(ierr.ErrValidation)
 	}
 
 	SetSpanSuccess(span)
-	return totalCount
+	return &event, nil
 }

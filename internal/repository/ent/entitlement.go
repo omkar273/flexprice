@@ -52,16 +52,18 @@ func (r *entitlementRepository) Create(ctx context.Context, e *domainEntitlement
 
 	result, err := client.Entitlement.Create().
 		SetID(e.ID).
-		SetEntityType(string(e.EntityType)).
+		SetEntityType(e.EntityType).
 		SetEntityID(e.EntityID).
 		SetFeatureID(e.FeatureID).
-		SetFeatureType(string(e.FeatureType)).
+		SetFeatureType(e.FeatureType).
 		SetIsEnabled(e.IsEnabled).
 		SetNillableUsageLimit(e.UsageLimit).
-		SetUsageResetPeriod(string(e.UsageResetPeriod)).
+		SetUsageResetPeriod(e.UsageResetPeriod).
 		SetIsSoftLimit(e.IsSoftLimit).
 		SetStaticValue(e.StaticValue).
 		SetNillableParentEntitlementID(e.ParentEntitlementID).
+		SetNillableStartDate(e.StartDate).
+		SetNillableEndDate(e.EndDate).
 		SetTenantID(e.TenantID).
 		SetStatus(string(e.Status)).
 		SetCreatedAt(e.CreatedAt).
@@ -281,14 +283,14 @@ func (r *entitlementRepository) Update(ctx context.Context, e *domainEntitlement
 			entitlement.TenantID(e.TenantID),
 			entitlement.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
-		SetEntityType(string(e.EntityType)).
+		SetEntityType(e.EntityType).
 		SetEntityID(e.EntityID).
 		SetFeatureID(e.FeatureID).
-		SetFeatureType(string(e.FeatureType)).
+		SetFeatureType(e.FeatureType).
 		SetIsEnabled(e.IsEnabled).
 		SetIsSoftLimit(e.IsSoftLimit).
 		SetNillableUsageLimit(e.UsageLimit).
-		SetUsageResetPeriod(string(e.UsageResetPeriod)).
+		SetUsageResetPeriod(e.UsageResetPeriod).
 		SetStaticValue(e.StaticValue).
 		SetNillableParentEntitlementID(e.ParentEntitlementID).
 		SetStatus(string(e.Status)).
@@ -381,15 +383,19 @@ func (r *entitlementRepository) CreateBulk(ctx context.Context, entitlements []*
 
 		builders[i] = client.Entitlement.Create().
 			SetID(e.ID).
-			SetEntityType(string(e.EntityType)).
+			SetEntityType(e.EntityType).
 			SetEntityID(e.EntityID).
 			SetFeatureID(e.FeatureID).
-			SetFeatureType(string(e.FeatureType)).
+			SetFeatureType(e.FeatureType).
 			SetIsEnabled(e.IsEnabled).
 			SetNillableUsageLimit(e.UsageLimit).
-			SetUsageResetPeriod(string(e.UsageResetPeriod)).
+			SetUsageResetPeriod(e.UsageResetPeriod).
 			SetIsSoftLimit(e.IsSoftLimit).
 			SetStaticValue(e.StaticValue).
+			SetNillableParentEntitlementID(e.ParentEntitlementID).
+			SetNillableStartDate(e.StartDate).
+			SetNillableEndDate(e.EndDate).
+			SetDisplayOrder(e.DisplayOrder).
 			SetTenantID(e.TenantID).
 			SetStatus(string(e.Status)).
 			SetCreatedAt(e.CreatedAt).
@@ -401,6 +407,15 @@ func (r *entitlementRepository) CreateBulk(ctx context.Context, entitlements []*
 
 	results, err := client.Entitlement.CreateBulk(builders...).Save(ctx)
 	if err != nil {
+		SetSpanError(span, err)
+		if ent.IsConstraintError(err) {
+			return nil, ierr.WithError(err).
+				WithHint("An entitlement with the same entity and feature already exists; duplicate (entity_id, feature_id) in request or in database").
+				WithReportableDetails(map[string]interface{}{
+					"count": len(entitlements),
+				}).
+				Mark(ierr.ErrAlreadyExists)
+		}
 		return nil, ierr.WithError(err).
 			WithHint("Failed to create entitlements in bulk").
 			WithReportableDetails(map[string]interface{}{
@@ -613,7 +628,7 @@ func (o EntitlementQueryOptions) applyEntityQueryOptions(_ context.Context, f *t
 
 	// Apply feature type filter if specified
 	if f.FeatureType != nil {
-		query = query.Where(entitlement.FeatureType(string(*f.FeatureType)))
+		query = query.Where(entitlement.FeatureType(*f.FeatureType))
 	}
 
 	// Apply is_enabled filter if specified

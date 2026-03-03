@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/flexprice/flexprice/ent/entitlement"
 	"github.com/flexprice/flexprice/ent/predicate"
+	"github.com/flexprice/flexprice/internal/types"
 )
 
 // EntitlementUpdate is the builder for updating Entitlement entities.
@@ -69,15 +70,15 @@ func (eu *EntitlementUpdate) ClearUpdatedBy() *EntitlementUpdate {
 }
 
 // SetEntityType sets the "entity_type" field.
-func (eu *EntitlementUpdate) SetEntityType(s string) *EntitlementUpdate {
-	eu.mutation.SetEntityType(s)
+func (eu *EntitlementUpdate) SetEntityType(tet types.EntitlementEntityType) *EntitlementUpdate {
+	eu.mutation.SetEntityType(tet)
 	return eu
 }
 
 // SetNillableEntityType sets the "entity_type" field if the given value is not nil.
-func (eu *EntitlementUpdate) SetNillableEntityType(s *string) *EntitlementUpdate {
-	if s != nil {
-		eu.SetEntityType(*s)
+func (eu *EntitlementUpdate) SetNillableEntityType(tet *types.EntitlementEntityType) *EntitlementUpdate {
+	if tet != nil {
+		eu.SetEntityType(*tet)
 	}
 	return eu
 }
@@ -123,15 +124,15 @@ func (eu *EntitlementUpdate) SetNillableFeatureID(s *string) *EntitlementUpdate 
 }
 
 // SetFeatureType sets the "feature_type" field.
-func (eu *EntitlementUpdate) SetFeatureType(s string) *EntitlementUpdate {
-	eu.mutation.SetFeatureType(s)
+func (eu *EntitlementUpdate) SetFeatureType(tt types.FeatureType) *EntitlementUpdate {
+	eu.mutation.SetFeatureType(tt)
 	return eu
 }
 
 // SetNillableFeatureType sets the "feature_type" field if the given value is not nil.
-func (eu *EntitlementUpdate) SetNillableFeatureType(s *string) *EntitlementUpdate {
-	if s != nil {
-		eu.SetFeatureType(*s)
+func (eu *EntitlementUpdate) SetNillableFeatureType(tt *types.FeatureType) *EntitlementUpdate {
+	if tt != nil {
+		eu.SetFeatureType(*tt)
 	}
 	return eu
 }
@@ -178,15 +179,15 @@ func (eu *EntitlementUpdate) ClearUsageLimit() *EntitlementUpdate {
 }
 
 // SetUsageResetPeriod sets the "usage_reset_period" field.
-func (eu *EntitlementUpdate) SetUsageResetPeriod(s string) *EntitlementUpdate {
-	eu.mutation.SetUsageResetPeriod(s)
+func (eu *EntitlementUpdate) SetUsageResetPeriod(turp types.EntitlementUsageResetPeriod) *EntitlementUpdate {
+	eu.mutation.SetUsageResetPeriod(turp)
 	return eu
 }
 
 // SetNillableUsageResetPeriod sets the "usage_reset_period" field if the given value is not nil.
-func (eu *EntitlementUpdate) SetNillableUsageResetPeriod(s *string) *EntitlementUpdate {
-	if s != nil {
-		eu.SetUsageResetPeriod(*s)
+func (eu *EntitlementUpdate) SetNillableUsageResetPeriod(turp *types.EntitlementUsageResetPeriod) *EntitlementUpdate {
+	if turp != nil {
+		eu.SetUsageResetPeriod(*turp)
 	}
 	return eu
 }
@@ -272,6 +273,46 @@ func (eu *EntitlementUpdate) ClearParentEntitlementID() *EntitlementUpdate {
 	return eu
 }
 
+// SetStartDate sets the "start_date" field.
+func (eu *EntitlementUpdate) SetStartDate(t time.Time) *EntitlementUpdate {
+	eu.mutation.SetStartDate(t)
+	return eu
+}
+
+// SetNillableStartDate sets the "start_date" field if the given value is not nil.
+func (eu *EntitlementUpdate) SetNillableStartDate(t *time.Time) *EntitlementUpdate {
+	if t != nil {
+		eu.SetStartDate(*t)
+	}
+	return eu
+}
+
+// ClearStartDate clears the value of the "start_date" field.
+func (eu *EntitlementUpdate) ClearStartDate() *EntitlementUpdate {
+	eu.mutation.ClearStartDate()
+	return eu
+}
+
+// SetEndDate sets the "end_date" field.
+func (eu *EntitlementUpdate) SetEndDate(t time.Time) *EntitlementUpdate {
+	eu.mutation.SetEndDate(t)
+	return eu
+}
+
+// SetNillableEndDate sets the "end_date" field if the given value is not nil.
+func (eu *EntitlementUpdate) SetNillableEndDate(t *time.Time) *EntitlementUpdate {
+	if t != nil {
+		eu.SetEndDate(*t)
+	}
+	return eu
+}
+
+// ClearEndDate clears the value of the "end_date" field.
+func (eu *EntitlementUpdate) ClearEndDate() *EntitlementUpdate {
+	eu.mutation.ClearEndDate()
+	return eu
+}
+
 // Mutation returns the EntitlementMutation object of the builder.
 func (eu *EntitlementUpdate) Mutation() *EntitlementMutation {
 	return eu.mutation
@@ -315,14 +356,24 @@ func (eu *EntitlementUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (eu *EntitlementUpdate) check() error {
+	if v, ok := eu.mutation.EntityType(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "entity_type", err: fmt.Errorf(`ent: validator failed for field "Entitlement.entity_type": %w`, err)}
+		}
+	}
 	if v, ok := eu.mutation.FeatureID(); ok {
 		if err := entitlement.FeatureIDValidator(v); err != nil {
 			return &ValidationError{Name: "feature_id", err: fmt.Errorf(`ent: validator failed for field "Entitlement.feature_id": %w`, err)}
 		}
 	}
 	if v, ok := eu.mutation.FeatureType(); ok {
-		if err := entitlement.FeatureTypeValidator(v); err != nil {
+		if err := entitlement.FeatureTypeValidator(string(v)); err != nil {
 			return &ValidationError{Name: "feature_type", err: fmt.Errorf(`ent: validator failed for field "Entitlement.feature_type": %w`, err)}
+		}
+	}
+	if v, ok := eu.mutation.UsageResetPeriod(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "usage_reset_period", err: fmt.Errorf(`ent: validator failed for field "Entitlement.usage_reset_period": %w`, err)}
 		}
 	}
 	return nil
@@ -415,6 +466,18 @@ func (eu *EntitlementUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if eu.mutation.ParentEntitlementIDCleared() {
 		_spec.ClearField(entitlement.FieldParentEntitlementID, field.TypeString)
 	}
+	if value, ok := eu.mutation.StartDate(); ok {
+		_spec.SetField(entitlement.FieldStartDate, field.TypeTime, value)
+	}
+	if eu.mutation.StartDateCleared() {
+		_spec.ClearField(entitlement.FieldStartDate, field.TypeTime)
+	}
+	if value, ok := eu.mutation.EndDate(); ok {
+		_spec.SetField(entitlement.FieldEndDate, field.TypeTime, value)
+	}
+	if eu.mutation.EndDateCleared() {
+		_spec.ClearField(entitlement.FieldEndDate, field.TypeTime)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, eu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{entitlement.Label}
@@ -476,15 +539,15 @@ func (euo *EntitlementUpdateOne) ClearUpdatedBy() *EntitlementUpdateOne {
 }
 
 // SetEntityType sets the "entity_type" field.
-func (euo *EntitlementUpdateOne) SetEntityType(s string) *EntitlementUpdateOne {
-	euo.mutation.SetEntityType(s)
+func (euo *EntitlementUpdateOne) SetEntityType(tet types.EntitlementEntityType) *EntitlementUpdateOne {
+	euo.mutation.SetEntityType(tet)
 	return euo
 }
 
 // SetNillableEntityType sets the "entity_type" field if the given value is not nil.
-func (euo *EntitlementUpdateOne) SetNillableEntityType(s *string) *EntitlementUpdateOne {
-	if s != nil {
-		euo.SetEntityType(*s)
+func (euo *EntitlementUpdateOne) SetNillableEntityType(tet *types.EntitlementEntityType) *EntitlementUpdateOne {
+	if tet != nil {
+		euo.SetEntityType(*tet)
 	}
 	return euo
 }
@@ -530,15 +593,15 @@ func (euo *EntitlementUpdateOne) SetNillableFeatureID(s *string) *EntitlementUpd
 }
 
 // SetFeatureType sets the "feature_type" field.
-func (euo *EntitlementUpdateOne) SetFeatureType(s string) *EntitlementUpdateOne {
-	euo.mutation.SetFeatureType(s)
+func (euo *EntitlementUpdateOne) SetFeatureType(tt types.FeatureType) *EntitlementUpdateOne {
+	euo.mutation.SetFeatureType(tt)
 	return euo
 }
 
 // SetNillableFeatureType sets the "feature_type" field if the given value is not nil.
-func (euo *EntitlementUpdateOne) SetNillableFeatureType(s *string) *EntitlementUpdateOne {
-	if s != nil {
-		euo.SetFeatureType(*s)
+func (euo *EntitlementUpdateOne) SetNillableFeatureType(tt *types.FeatureType) *EntitlementUpdateOne {
+	if tt != nil {
+		euo.SetFeatureType(*tt)
 	}
 	return euo
 }
@@ -585,15 +648,15 @@ func (euo *EntitlementUpdateOne) ClearUsageLimit() *EntitlementUpdateOne {
 }
 
 // SetUsageResetPeriod sets the "usage_reset_period" field.
-func (euo *EntitlementUpdateOne) SetUsageResetPeriod(s string) *EntitlementUpdateOne {
-	euo.mutation.SetUsageResetPeriod(s)
+func (euo *EntitlementUpdateOne) SetUsageResetPeriod(turp types.EntitlementUsageResetPeriod) *EntitlementUpdateOne {
+	euo.mutation.SetUsageResetPeriod(turp)
 	return euo
 }
 
 // SetNillableUsageResetPeriod sets the "usage_reset_period" field if the given value is not nil.
-func (euo *EntitlementUpdateOne) SetNillableUsageResetPeriod(s *string) *EntitlementUpdateOne {
-	if s != nil {
-		euo.SetUsageResetPeriod(*s)
+func (euo *EntitlementUpdateOne) SetNillableUsageResetPeriod(turp *types.EntitlementUsageResetPeriod) *EntitlementUpdateOne {
+	if turp != nil {
+		euo.SetUsageResetPeriod(*turp)
 	}
 	return euo
 }
@@ -679,6 +742,46 @@ func (euo *EntitlementUpdateOne) ClearParentEntitlementID() *EntitlementUpdateOn
 	return euo
 }
 
+// SetStartDate sets the "start_date" field.
+func (euo *EntitlementUpdateOne) SetStartDate(t time.Time) *EntitlementUpdateOne {
+	euo.mutation.SetStartDate(t)
+	return euo
+}
+
+// SetNillableStartDate sets the "start_date" field if the given value is not nil.
+func (euo *EntitlementUpdateOne) SetNillableStartDate(t *time.Time) *EntitlementUpdateOne {
+	if t != nil {
+		euo.SetStartDate(*t)
+	}
+	return euo
+}
+
+// ClearStartDate clears the value of the "start_date" field.
+func (euo *EntitlementUpdateOne) ClearStartDate() *EntitlementUpdateOne {
+	euo.mutation.ClearStartDate()
+	return euo
+}
+
+// SetEndDate sets the "end_date" field.
+func (euo *EntitlementUpdateOne) SetEndDate(t time.Time) *EntitlementUpdateOne {
+	euo.mutation.SetEndDate(t)
+	return euo
+}
+
+// SetNillableEndDate sets the "end_date" field if the given value is not nil.
+func (euo *EntitlementUpdateOne) SetNillableEndDate(t *time.Time) *EntitlementUpdateOne {
+	if t != nil {
+		euo.SetEndDate(*t)
+	}
+	return euo
+}
+
+// ClearEndDate clears the value of the "end_date" field.
+func (euo *EntitlementUpdateOne) ClearEndDate() *EntitlementUpdateOne {
+	euo.mutation.ClearEndDate()
+	return euo
+}
+
 // Mutation returns the EntitlementMutation object of the builder.
 func (euo *EntitlementUpdateOne) Mutation() *EntitlementMutation {
 	return euo.mutation
@@ -735,14 +838,24 @@ func (euo *EntitlementUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (euo *EntitlementUpdateOne) check() error {
+	if v, ok := euo.mutation.EntityType(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "entity_type", err: fmt.Errorf(`ent: validator failed for field "Entitlement.entity_type": %w`, err)}
+		}
+	}
 	if v, ok := euo.mutation.FeatureID(); ok {
 		if err := entitlement.FeatureIDValidator(v); err != nil {
 			return &ValidationError{Name: "feature_id", err: fmt.Errorf(`ent: validator failed for field "Entitlement.feature_id": %w`, err)}
 		}
 	}
 	if v, ok := euo.mutation.FeatureType(); ok {
-		if err := entitlement.FeatureTypeValidator(v); err != nil {
+		if err := entitlement.FeatureTypeValidator(string(v)); err != nil {
 			return &ValidationError{Name: "feature_type", err: fmt.Errorf(`ent: validator failed for field "Entitlement.feature_type": %w`, err)}
+		}
+	}
+	if v, ok := euo.mutation.UsageResetPeriod(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "usage_reset_period", err: fmt.Errorf(`ent: validator failed for field "Entitlement.usage_reset_period": %w`, err)}
 		}
 	}
 	return nil
@@ -851,6 +964,18 @@ func (euo *EntitlementUpdateOne) sqlSave(ctx context.Context) (_node *Entitlemen
 	}
 	if euo.mutation.ParentEntitlementIDCleared() {
 		_spec.ClearField(entitlement.FieldParentEntitlementID, field.TypeString)
+	}
+	if value, ok := euo.mutation.StartDate(); ok {
+		_spec.SetField(entitlement.FieldStartDate, field.TypeTime, value)
+	}
+	if euo.mutation.StartDateCleared() {
+		_spec.ClearField(entitlement.FieldStartDate, field.TypeTime)
+	}
+	if value, ok := euo.mutation.EndDate(); ok {
+		_spec.SetField(entitlement.FieldEndDate, field.TypeTime, value)
+	}
+	if euo.mutation.EndDateCleared() {
+		_spec.ClearField(entitlement.FieldEndDate, field.TypeTime)
 	}
 	_node = &Entitlement{config: euo.config}
 	_spec.Assign = _node.assignValues

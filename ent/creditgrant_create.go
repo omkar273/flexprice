@@ -168,6 +168,34 @@ func (cgc *CreditGrantCreate) SetNillableCredits(d *decimal.Decimal) *CreditGran
 	return cgc
 }
 
+// SetConversionRate sets the "conversion_rate" field.
+func (cgc *CreditGrantCreate) SetConversionRate(d decimal.Decimal) *CreditGrantCreate {
+	cgc.mutation.SetConversionRate(d)
+	return cgc
+}
+
+// SetNillableConversionRate sets the "conversion_rate" field if the given value is not nil.
+func (cgc *CreditGrantCreate) SetNillableConversionRate(d *decimal.Decimal) *CreditGrantCreate {
+	if d != nil {
+		cgc.SetConversionRate(*d)
+	}
+	return cgc
+}
+
+// SetTopupConversionRate sets the "topup_conversion_rate" field.
+func (cgc *CreditGrantCreate) SetTopupConversionRate(d decimal.Decimal) *CreditGrantCreate {
+	cgc.mutation.SetTopupConversionRate(d)
+	return cgc
+}
+
+// SetNillableTopupConversionRate sets the "topup_conversion_rate" field if the given value is not nil.
+func (cgc *CreditGrantCreate) SetNillableTopupConversionRate(d *decimal.Decimal) *CreditGrantCreate {
+	if d != nil {
+		cgc.SetTopupConversionRate(*d)
+	}
+	return cgc
+}
+
 // SetCadence sets the "cadence" field.
 func (cgc *CreditGrantCreate) SetCadence(tgc types.CreditGrantCadence) *CreditGrantCreate {
 	cgc.mutation.SetCadence(tgc)
@@ -205,14 +233,6 @@ func (cgc *CreditGrantCreate) SetNillablePeriodCount(i *int) *CreditGrantCreate 
 // SetExpirationType sets the "expiration_type" field.
 func (cgc *CreditGrantCreate) SetExpirationType(tget types.CreditGrantExpiryType) *CreditGrantCreate {
 	cgc.mutation.SetExpirationType(tget)
-	return cgc
-}
-
-// SetNillableExpirationType sets the "expiration_type" field if the given value is not nil.
-func (cgc *CreditGrantCreate) SetNillableExpirationType(tget *types.CreditGrantExpiryType) *CreditGrantCreate {
-	if tget != nil {
-		cgc.SetExpirationType(*tget)
-	}
 	return cgc
 }
 
@@ -261,6 +281,48 @@ func (cgc *CreditGrantCreate) SetNillablePriority(i *int) *CreditGrantCreate {
 // SetMetadata sets the "metadata" field.
 func (cgc *CreditGrantCreate) SetMetadata(m map[string]string) *CreditGrantCreate {
 	cgc.mutation.SetMetadata(m)
+	return cgc
+}
+
+// SetStartDate sets the "start_date" field.
+func (cgc *CreditGrantCreate) SetStartDate(t time.Time) *CreditGrantCreate {
+	cgc.mutation.SetStartDate(t)
+	return cgc
+}
+
+// SetNillableStartDate sets the "start_date" field if the given value is not nil.
+func (cgc *CreditGrantCreate) SetNillableStartDate(t *time.Time) *CreditGrantCreate {
+	if t != nil {
+		cgc.SetStartDate(*t)
+	}
+	return cgc
+}
+
+// SetEndDate sets the "end_date" field.
+func (cgc *CreditGrantCreate) SetEndDate(t time.Time) *CreditGrantCreate {
+	cgc.mutation.SetEndDate(t)
+	return cgc
+}
+
+// SetNillableEndDate sets the "end_date" field if the given value is not nil.
+func (cgc *CreditGrantCreate) SetNillableEndDate(t *time.Time) *CreditGrantCreate {
+	if t != nil {
+		cgc.SetEndDate(*t)
+	}
+	return cgc
+}
+
+// SetCreditGrantAnchor sets the "credit_grant_anchor" field.
+func (cgc *CreditGrantCreate) SetCreditGrantAnchor(t time.Time) *CreditGrantCreate {
+	cgc.mutation.SetCreditGrantAnchor(t)
+	return cgc
+}
+
+// SetNillableCreditGrantAnchor sets the "credit_grant_anchor" field if the given value is not nil.
+func (cgc *CreditGrantCreate) SetNillableCreditGrantAnchor(t *time.Time) *CreditGrantCreate {
+	if t != nil {
+		cgc.SetCreditGrantAnchor(*t)
+	}
 	return cgc
 }
 
@@ -334,10 +396,6 @@ func (cgc *CreditGrantCreate) defaults() {
 	if _, ok := cgc.mutation.Credits(); !ok {
 		v := creditgrant.DefaultCredits
 		cgc.mutation.SetCredits(v)
-	}
-	if _, ok := cgc.mutation.ExpirationType(); !ok {
-		v := creditgrant.DefaultExpirationType
-		cgc.mutation.SetExpirationType(v)
 	}
 	if _, ok := cgc.mutation.Metadata(); !ok {
 		v := creditgrant.DefaultMetadata
@@ -484,6 +542,14 @@ func (cgc *CreditGrantCreate) createSpec() (*CreditGrant, *sqlgraph.CreateSpec) 
 		_spec.SetField(creditgrant.FieldCredits, field.TypeOther, value)
 		_node.Credits = value
 	}
+	if value, ok := cgc.mutation.ConversionRate(); ok {
+		_spec.SetField(creditgrant.FieldConversionRate, field.TypeOther, value)
+		_node.ConversionRate = &value
+	}
+	if value, ok := cgc.mutation.TopupConversionRate(); ok {
+		_spec.SetField(creditgrant.FieldTopupConversionRate, field.TypeOther, value)
+		_node.TopupConversionRate = &value
+	}
 	if value, ok := cgc.mutation.Cadence(); ok {
 		_spec.SetField(creditgrant.FieldCadence, field.TypeString, value)
 		_node.Cadence = value
@@ -515,6 +581,18 @@ func (cgc *CreditGrantCreate) createSpec() (*CreditGrant, *sqlgraph.CreateSpec) 
 	if value, ok := cgc.mutation.Metadata(); ok {
 		_spec.SetField(creditgrant.FieldMetadata, field.TypeJSON, value)
 		_node.Metadata = value
+	}
+	if value, ok := cgc.mutation.StartDate(); ok {
+		_spec.SetField(creditgrant.FieldStartDate, field.TypeTime, value)
+		_node.StartDate = &value
+	}
+	if value, ok := cgc.mutation.EndDate(); ok {
+		_spec.SetField(creditgrant.FieldEndDate, field.TypeTime, value)
+		_node.EndDate = &value
+	}
+	if value, ok := cgc.mutation.CreditGrantAnchor(); ok {
+		_spec.SetField(creditgrant.FieldCreditGrantAnchor, field.TypeTime, value)
+		_node.CreditGrantAnchor = &value
 	}
 	if nodes := cgc.mutation.PlanIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

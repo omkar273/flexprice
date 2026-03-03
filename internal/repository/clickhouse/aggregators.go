@@ -205,6 +205,15 @@ func parseTimeConditions(params *events.UsageParams) []string {
 type SumAggregator struct{}
 
 func (a *SumAggregator) GetQuery(ctx context.Context, params *events.UsageParams) string {
+	// If bucket_size is specified, use windowed aggregation
+	if params.BucketSize != "" {
+		return a.getWindowedQuery(ctx, params)
+	}
+	// Otherwise use simple SUM aggregation
+	return a.getNonWindowedQuery(ctx, params)
+}
+
+func (a *SumAggregator) getNonWindowedQuery(ctx context.Context, params *events.UsageParams) string {
 	windowSize := formatWindowSizeWithBillingAnchor(params.WindowSize, params.BillingAnchor)
 	selectClause := ""
 	windowClause := ""
@@ -237,7 +246,7 @@ func (a *SumAggregator) GetQuery(ctx context.Context, params *events.UsageParams
         FROM (
             SELECT
                 %s anyLast(JSONExtractFloat(assumeNotNull(properties), '%s')) as value
-            FROM events
+            FROM events FINAL
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -262,6 +271,57 @@ func (a *SumAggregator) GetQuery(ctx context.Context, params *events.UsageParams
 		getDeduplicationKey(),
 		windowGroupBy,
 		groupByClause)
+}
+
+func (a *SumAggregator) getWindowedQuery(ctx context.Context, params *events.UsageParams) string {
+	bucketWindow := formatWindowSizeWithBillingAnchor(params.BucketSize, params.BillingAnchor)
+
+	externalCustomerFilter := ""
+	if params.ExternalCustomerID != "" {
+		externalCustomerFilter = fmt.Sprintf("AND external_customer_id = '%s'", params.ExternalCustomerID)
+	}
+
+	customerFilter := ""
+	if params.CustomerID != "" {
+		customerFilter = fmt.Sprintf("AND customer_id = '%s'", params.CustomerID)
+	}
+
+	filterConditions := buildFilterConditions(params.Filters)
+	timeConditions := buildTimeConditions(params)
+
+	// Get sum values per bucket, return each bucket's sum separately
+	return fmt.Sprintf(`
+		WITH bucket_sums AS (
+			SELECT
+				%s as bucket_start,
+				sum(JSONExtractFloat(assumeNotNull(properties), '%s')) as bucket_sum
+			FROM events FINAL
+			PREWHERE tenant_id = '%s'
+				AND environment_id = '%s'
+				AND event_name = '%s'
+				%s
+				%s
+				%s
+				%s
+			GROUP BY bucket_start
+			ORDER BY bucket_start
+		)
+		SELECT
+			(SELECT sum(bucket_sum) FROM bucket_sums) as total,
+			bucket_start as timestamp,
+			bucket_sum as value
+		FROM bucket_sums
+		ORDER BY bucket_start
+	`,
+		bucketWindow,
+		params.PropertyName,
+		types.GetTenantID(ctx),
+		types.GetEnvironmentID(ctx),
+		params.EventName,
+		externalCustomerFilter,
+		customerFilter,
+		filterConditions,
+		timeConditions)
 }
 
 func (a *SumAggregator) GetType() types.AggregationType {
@@ -297,7 +357,7 @@ func (a *CountAggregator) GetQuery(ctx context.Context, params *events.UsagePara
 	return fmt.Sprintf(`
         SELECT 
             %s count(DISTINCT %s) as total
-        FROM events
+        FROM events FINAL
         PREWHERE tenant_id = '%s'
 			AND environment_id = '%s'
 			AND event_name = '%s'
@@ -359,7 +419,7 @@ func (a *CountUniqueAggregator) GetQuery(ctx context.Context, params *events.Usa
         FROM (
             SELECT
                 %s JSONExtractString(assumeNotNull(properties), '%s') as property_value
-            FROM events
+            FROM events FINAL
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -426,7 +486,7 @@ func (a *AvgAggregator) GetQuery(ctx context.Context, params *events.UsageParams
         FROM (
             SELECT
                 %s anyLast(JSONExtractFloat(assumeNotNull(properties), '%s')) as value
-            FROM events
+            FROM events FINAL
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s' 
@@ -487,7 +547,8 @@ func (a *LatestAggregator) GetQuery(ctx context.Context, params *events.UsagePar
         SELECT 
             %s argMax(JSONExtractFloat(assumeNotNull(properties), '%s'), timestamp) as total
         FROM 
-			events	PREWHERE tenant_id = '%s'
+			events FINAL
+			PREWHERE tenant_id = '%s'
                 AND environment_id = '%s'
                 AND event_name = '%s'
                 %s
@@ -553,7 +614,7 @@ func (a *SumWithMultiAggregator) GetQuery(ctx context.Context, params *events.Us
         FROM (
             SELECT
                 %s anyLast(JSONExtractFloat(assumeNotNull(properties), '%s')) as value
-            FROM events
+            FROM events FINAL
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -630,7 +691,7 @@ func (a *MaxAggregator) getNonWindowedQuery(ctx context.Context, params *events.
 		FROM (
 			SELECT
 				%s anyLast(JSONExtractFloat(assumeNotNull(properties), '%s')) as value
-			FROM events
+			FROM events FINAL
 			PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -673,13 +734,63 @@ func (a *MaxAggregator) getWindowedQuery(ctx context.Context, params *events.Usa
 	filterConditions := buildFilterConditions(params.Filters)
 	timeConditions := buildTimeConditions(params)
 
-	// First get max values per bucket, then get the max across all buckets
+	// When GroupByProperty is set, use 3-level aggregation:
+	// 1. Inner CTE (per_group): max per group per bucket (e.g., MAX per krn per hour)
+	// 2. Middle CTE (bucket_maxes): SUM across groups per bucket (e.g., SUM of group maxes per hour)
+	// 3. Outer query: return per-bucket values and overall total
+	if params.GroupByProperty != "" && validateGroupByProperty(params.GroupByProperty) == nil {
+		groupByExpr := fmt.Sprintf("JSONExtractString(assumeNotNull(properties), '%s')", params.GroupByProperty)
+
+		return fmt.Sprintf(`
+			WITH per_group AS (
+				SELECT
+					%s as bucket_start,
+					%s as group_key,
+					max(JSONExtractFloat(assumeNotNull(properties), '%s')) as group_value
+				FROM events FINAL
+				PREWHERE tenant_id = '%s'
+					AND environment_id = '%s'
+					AND event_name = '%s'
+					%s
+					%s
+					%s
+					%s
+				GROUP BY bucket_start, group_key
+			),
+			bucket_maxes AS (
+				SELECT
+					bucket_start,
+					sum(group_value) as bucket_max
+				FROM per_group
+				GROUP BY bucket_start
+				ORDER BY bucket_start
+			)
+			SELECT
+				(SELECT sum(bucket_max) FROM bucket_maxes) as total,
+				bucket_start as timestamp,
+				bucket_max as value
+			FROM bucket_maxes
+			ORDER BY bucket_start
+		`,
+			bucketWindow,
+			groupByExpr,
+			params.PropertyName,
+			types.GetTenantID(ctx),
+			types.GetEnvironmentID(ctx),
+			params.EventName,
+			externalCustomerFilter,
+			customerFilter,
+			filterConditions,
+			timeConditions)
+	}
+
+	// First get max values per bucket, then sum across all buckets
 	return fmt.Sprintf(`
 		WITH bucket_maxes AS (
 			SELECT
 				%s as bucket_start,
 				max(JSONExtractFloat(assumeNotNull(properties), '%s')) as bucket_max
-			FROM events
+			FROM events FINAL
 			PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -754,7 +865,7 @@ func (a *WeightedSumAggregator) GetQuery(ctx context.Context, params *events.Usa
             SELECT
                 %s timestamp,
                 properties
-            FROM events
+            FROM events FINAL
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'

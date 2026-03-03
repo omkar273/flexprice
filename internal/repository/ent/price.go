@@ -2,12 +2,15 @@ package ent
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/ent"
+	"github.com/flexprice/flexprice/ent/predicate"
 	"github.com/flexprice/flexprice/ent/price"
 	"github.com/flexprice/flexprice/internal/cache"
 	domainPrice "github.com/flexprice/flexprice/internal/domain/price"
+	"github.com/flexprice/flexprice/internal/dsl"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/postgres"
@@ -58,27 +61,29 @@ func (r *priceRepository) Create(ctx context.Context, p *domainPrice.Price) erro
 	priceBuilder := client.Price.Create().
 		SetID(p.ID).
 		SetTenantID(p.TenantID).
-		SetAmount(p.Amount.InexactFloat64()).
-		SetCurrency(p.Currency).
+		SetAmount(p.Amount).
+		SetCurrency(strings.ToLower(p.Currency)).
 		SetDisplayAmount(p.DisplayAmount).
-		SetPriceUnitType(string(p.PriceUnitType)).
-		SetType(string(p.Type)).
-		SetBillingPeriod(string(p.BillingPeriod)).
+		SetPriceUnitType(p.PriceUnitType).
+		SetType(p.Type).
+		SetBillingPeriod(p.BillingPeriod).
 		SetBillingPeriodCount(p.BillingPeriodCount).
-		SetBillingModel(string(p.BillingModel)).
-		SetBillingCadence(string(p.BillingCadence)).
+		SetBillingModel(p.BillingModel).
+		SetDisplayName(p.DisplayName).
+		SetBillingCadence(p.BillingCadence).
 		SetNillableStartDate(p.StartDate).
 		SetNillableEndDate(p.EndDate).
 		SetNillableMeterID(lo.ToPtr(p.MeterID)).
-		SetInvoiceCadence(string(p.InvoiceCadence)).
+		SetInvoiceCadence(p.InvoiceCadence).
 		SetTrialPeriod(p.TrialPeriod).
-		SetNillableTierMode(lo.ToPtr(string(p.TierMode))).
+		SetNillableTierMode(lo.ToPtr(p.TierMode)).
 		SetTiers(p.ToEntTiers()).
-		SetPriceUnitTiers(p.ToPriceUnitTiers()).
-		SetTransformQuantity(types.TransformQuantity(p.TransformQuantity)).
+		SetPriceUnitTiers(domainPrice.ToEntTiersFromJSONB(p.PriceUnitTiers)).
+		SetNillableTransformQuantity(lo.ToPtr(types.TransformQuantity(p.TransformQuantity))).
 		SetLookupKey(p.LookupKey).
 		SetDescription(p.Description).
 		SetMetadata(map[string]string(p.Metadata)).
+		SetNillableMinQuantity(p.MinQuantity).
 		SetStatus(string(p.Status)).
 		SetCreatedAt(p.CreatedAt).
 		SetUpdatedAt(p.UpdatedAt).
@@ -86,24 +91,13 @@ func (r *priceRepository) Create(ctx context.Context, p *domainPrice.Price) erro
 		SetUpdatedBy(p.UpdatedBy).
 		SetEnvironmentID(p.EnvironmentID).
 		SetNillableParentPriceID(lo.ToPtr(p.ParentPriceID)).
-		SetEntityType(string(p.EntityType)).
-		SetEntityID(p.EntityID)
-
-	if p.PriceUnitID != "" {
-		priceBuilder.SetPriceUnitID(p.PriceUnitID)
-	}
-	if p.PriceUnit != "" {
-		priceBuilder.SetPriceUnit(p.PriceUnit)
-	}
-	if !p.PriceUnitAmount.IsZero() {
-		priceBuilder.SetPriceUnitAmount(p.PriceUnitAmount.InexactFloat64())
-	}
-	if p.DisplayPriceUnitAmount != "" {
-		priceBuilder.SetDisplayPriceUnitAmount(p.DisplayPriceUnitAmount)
-	}
-	if !p.ConversionRate.IsZero() {
-		priceBuilder.SetConversionRate(p.ConversionRate.InexactFloat64())
-	}
+		SetEntityType(p.EntityType).
+		SetEntityID(p.EntityID).
+		SetNillablePriceUnitID(p.PriceUnitID).
+		SetNillablePriceUnit(p.PriceUnit).
+		SetNillablePriceUnitAmount(p.PriceUnitAmount).
+		SetDisplayPriceUnitAmount(p.DisplayPriceUnitAmount).
+		SetNillableConversionRate(p.ConversionRate)
 
 	price, err := priceBuilder.Save(ctx)
 
@@ -196,7 +190,13 @@ func (r *priceRepository) List(ctx context.Context, filter *types.PriceFilter) (
 	query := client.Price.Query()
 
 	// Apply entity-specific filters
-	query = r.queryOpts.applyEntityQueryOptions(ctx, filter, query)
+	query, err := r.queryOpts.applyEntityQueryOptions(ctx, filter, query)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to apply price filters").
+			Mark(ierr.ErrValidation)
+	}
 
 	// Apply common query options
 	query = ApplyQueryOptions(ctx, query, filter, r.queryOpts)
@@ -225,8 +225,14 @@ func (r *priceRepository) Count(ctx context.Context, filter *types.PriceFilter) 
 
 	query := client.Price.Query()
 
+	query, err := r.queryOpts.applyEntityQueryOptions(ctx, filter, query)
+	if err != nil {
+		SetSpanError(span, err)
+		return 0, ierr.WithError(err).
+			WithHint("Failed to apply price filters").
+			Mark(ierr.ErrValidation)
+	}
 	query = ApplyBaseFilters(ctx, query, filter, r.queryOpts)
-	query = r.queryOpts.applyEntityQueryOptions(ctx, filter, query)
 
 	count, err := query.Count(ctx)
 	if err != nil {
@@ -279,19 +285,7 @@ func (r *priceRepository) Update(ctx context.Context, p *domainPrice.Price) erro
 			price.TenantID(p.TenantID),
 			price.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
-		SetAmount(p.Amount.InexactFloat64()).
-		SetDisplayAmount(p.DisplayAmount).
-		SetPriceUnitType(string(p.PriceUnitType)).
-		SetType(string(p.Type)).
-		SetBillingPeriod(string(p.BillingPeriod)).
-		SetBillingPeriodCount(p.BillingPeriodCount).
-		SetBillingModel(string(p.BillingModel)).
-		SetBillingCadence(string(p.BillingCadence)).
-		SetNillableMeterID(lo.ToPtr(p.MeterID)).
-		SetNillableTierMode(lo.ToPtr(string(p.TierMode))).
-		SetTiers(p.ToEntTiers()).
-		SetPriceUnitTiers(p.ToPriceUnitTiers()).
-		SetTransformQuantity(types.TransformQuantity(p.TransformQuantity)).
+		SetDisplayName(p.DisplayName).
 		SetLookupKey(p.LookupKey).
 		SetNillableEndDate(p.EndDate).
 		SetDescription(p.Description).
@@ -393,44 +387,50 @@ func (r *priceRepository) CreateBulk(ctx context.Context, prices []*domainPrice.
 
 	builders := make([]*ent.PriceCreate, len(prices))
 	for i, p := range prices {
-
-		// Set environment ID from context if not already set
-		if p.EnvironmentID == "" {
-			p.EnvironmentID = types.GetEnvironmentID(ctx)
-		}
-
 		builders[i] = client.Price.Create().
 			SetID(p.ID).
 			SetTenantID(p.TenantID).
-			SetAmount(p.Amount.InexactFloat64()).
-			SetCurrency(p.Currency).
+			SetAmount(p.Amount).
+			SetCurrency(strings.ToLower(p.Currency)).
 			SetDisplayAmount(p.DisplayAmount).
 			SetEntityID(p.EntityID).
-			SetEntityType(string(p.EntityType)).
-			SetType(string(p.Type)).
-			SetBillingPeriod(string(p.BillingPeriod)).
+			SetEntityType(p.EntityType).
+			SetNillableParentPriceID(lo.ToPtr(p.ParentPriceID)).
+			SetType(p.Type).
+			SetBillingPeriod(p.BillingPeriod).
 			SetBillingPeriodCount(p.BillingPeriodCount).
-			SetBillingModel(string(p.BillingModel)).
-			SetBillingCadence(string(p.BillingCadence)).
-			SetInvoiceCadence(string(p.InvoiceCadence)).
+			SetBillingModel(p.BillingModel).
+			SetDisplayName(p.DisplayName).
+			SetBillingCadence(p.BillingCadence).
+			SetInvoiceCadence(p.InvoiceCadence).
 			SetNillableStartDate(p.StartDate).
 			SetNillableEndDate(p.EndDate).
 			SetTrialPeriod(p.TrialPeriod).
 			SetNillableMeterID(lo.ToPtr(p.MeterID)).
-			SetNillableTierMode(lo.ToPtr(string(p.TierMode))).
+			SetNillableTierMode(lo.ToPtr(p.TierMode)).
 			SetTiers(p.ToEntTiers()).
-			SetPriceUnitTiers(p.ToPriceUnitTiers()).
 			SetTransformQuantity(types.TransformQuantity(p.TransformQuantity)).
 			SetLookupKey(p.LookupKey).
 			SetDescription(p.Description).
 			SetMetadata(map[string]string(p.Metadata)).
 			SetEnvironmentID(p.EnvironmentID).
-			SetStatus(string(p.Status)).
+			SetStatus(string(p.Status))
+		if p.MinQuantity != nil {
+			builders[i] = builders[i].SetMinQuantity(*p.MinQuantity)
+		}
+		builders[i] = builders[i].
 			SetCreatedAt(p.CreatedAt).
 			SetUpdatedAt(p.UpdatedAt).
 			SetCreatedBy(p.CreatedBy).
 			SetUpdatedBy(p.UpdatedBy).
-			SetNillableGroupID(lo.ToPtr(p.GroupID))
+			SetNillableGroupID(lo.ToPtr(p.GroupID)).
+			SetPriceUnitType(p.PriceUnitType).
+			SetNillablePriceUnitID(p.PriceUnitID).
+			SetNillablePriceUnit(p.PriceUnit).
+			SetNillablePriceUnitAmount(p.PriceUnitAmount).
+			SetDisplayPriceUnitAmount(p.DisplayPriceUnitAmount).
+			SetNillableConversionRate(p.ConversionRate).
+			SetPriceUnitTiers(domainPrice.ToEntTiersFromJSONB(p.PriceUnitTiers))
 	}
 
 	_, err := client.Price.CreateBulk(builders...).Save(ctx)
@@ -532,17 +532,22 @@ func (o PriceQueryOptions) GetFieldName(field string) string {
 		return price.FieldUpdatedAt
 	case "lookup_key":
 		return price.FieldLookupKey
-	case "amount":
+	case "amount", "value":
 		return price.FieldAmount
+	case "display_name":
+		return price.FieldDisplayName
 	default:
-		return field
+		// unknown field
+		return ""
 	}
 }
 
-func (o PriceQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.PriceFilter, query PriceQuery) PriceQuery {
+func (o PriceQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.PriceFilter, query PriceQuery) (PriceQuery, error) {
 	if f == nil {
-		return query
+		return query, nil
 	}
+
+	var err error
 
 	// Apply price IDs filter if specified
 	if len(f.PriceIDs) > 0 {
@@ -551,7 +556,7 @@ func (o PriceQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.P
 
 	// entity type filter
 	if f.EntityType != nil {
-		query = query.Where(price.EntityType(string(*f.EntityType)))
+		query = query.Where(price.EntityType(*f.EntityType))
 	}
 
 	// entity id filter
@@ -593,7 +598,28 @@ func (o PriceQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.P
 		query = query.Where(price.StartDateLT(*f.StartDateLT))
 	}
 
-	return query
+	if f.Filters != nil {
+		query, err = dsl.ApplyFilters[PriceQuery, predicate.Price](
+			query,
+			f.Filters,
+			o.GetFieldResolver,
+			func(p dsl.Predicate) predicate.Price { return predicate.Price(p) },
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return query, nil
+}
+
+func (o PriceQueryOptions) GetFieldResolver(field string) (string, error) {
+	fieldName := o.GetFieldName(field)
+	if fieldName == "" {
+		return "", ierr.NewErrorf("unknown field name '%s' in price query", field).
+			Mark(ierr.ErrValidation)
+	}
+	return fieldName, nil
 }
 
 func (r *priceRepository) GetByPlanID(ctx context.Context, planID string) ([]*domainPrice.Price, error) {
@@ -693,4 +719,26 @@ func (r *priceRepository) ClearByGroupID(ctx context.Context, groupID string) er
 			Mark(ierr.ErrDatabase)
 	}
 	return nil
+}
+
+func (r *priceRepository) GetByLookupKey(ctx context.Context, lookupKey string) (*domainPrice.Price, error) {
+	client := r.client.Reader(ctx)
+
+	price, err := client.Price.Query().
+		Where(price.LookupKey(lookupKey)).
+		Where(price.TenantID(types.GetTenantID(ctx)),
+			price.EnvironmentID(types.GetEnvironmentID(ctx)),
+			price.Status(string(types.StatusPublished)),
+			price.EndDateIsNil(),
+		).
+		Only(ctx)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to get price by lookup key").
+			WithReportableDetails(map[string]interface{}{
+				"lookup_key": lookupKey,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+	return domainPrice.FromEnt(price), nil
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/flexprice/flexprice/internal/types"
 )
 
 const (
@@ -49,6 +50,10 @@ const (
 	FieldDisplayOrder = "display_order"
 	// FieldParentEntitlementID holds the string denoting the parent_entitlement_id field in the database.
 	FieldParentEntitlementID = "parent_entitlement_id"
+	// FieldStartDate holds the string denoting the start_date field in the database.
+	FieldStartDate = "start_date"
+	// FieldEndDate holds the string denoting the end_date field in the database.
+	FieldEndDate = "end_date"
 	// Table holds the table name of the entitlement in the database.
 	Table = "entitlements"
 )
@@ -74,6 +79,8 @@ var Columns = []string{
 	FieldStaticValue,
 	FieldDisplayOrder,
 	FieldParentEntitlementID,
+	FieldStartDate,
+	FieldEndDate,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "entitlements"
@@ -111,7 +118,7 @@ var (
 	// DefaultEnvironmentID holds the default value on creation for the "environment_id" field.
 	DefaultEnvironmentID string
 	// DefaultEntityType holds the default value on creation for the "entity_type" field.
-	DefaultEntityType string
+	DefaultEntityType types.EntitlementEntityType
 	// FeatureIDValidator is a validator for the "feature_id" field. It is called by the builders before save.
 	FeatureIDValidator func(string) error
 	// FeatureTypeValidator is a validator for the "feature_type" field. It is called by the builders before save.
@@ -222,4 +229,14 @@ func ByDisplayOrder(opts ...sql.OrderTermOption) OrderOption {
 // ByParentEntitlementID orders the results by the parent_entitlement_id field.
 func ByParentEntitlementID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldParentEntitlementID, opts...).ToFunc()
+}
+
+// ByStartDate orders the results by the start_date field.
+func ByStartDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStartDate, opts...).ToFunc()
+}
+
+// ByEndDate orders the results by the end_date field.
+func ByEndDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEndDate, opts...).ToFunc()
 }

@@ -112,6 +112,12 @@ func (puc *PriceUnitCreate) SetNillableEnvironmentID(s *string) *PriceUnitCreate
 	return puc
 }
 
+// SetMetadata sets the "metadata" field.
+func (puc *PriceUnitCreate) SetMetadata(m map[string]string) *PriceUnitCreate {
+	puc.mutation.SetMetadata(m)
+	return puc
+}
+
 // SetName sets the "name" field.
 func (puc *PriceUnitCreate) SetName(s string) *PriceUnitCreate {
 	puc.mutation.SetName(s)
@@ -146,20 +152,6 @@ func (puc *PriceUnitCreate) SetConversionRate(d decimal.Decimal) *PriceUnitCreat
 func (puc *PriceUnitCreate) SetNillableConversionRate(d *decimal.Decimal) *PriceUnitCreate {
 	if d != nil {
 		puc.SetConversionRate(*d)
-	}
-	return puc
-}
-
-// SetPrecision sets the "precision" field.
-func (puc *PriceUnitCreate) SetPrecision(i int) *PriceUnitCreate {
-	puc.mutation.SetPrecision(i)
-	return puc
-}
-
-// SetNillablePrecision sets the "precision" field if the given value is not nil.
-func (puc *PriceUnitCreate) SetNillablePrecision(i *int) *PriceUnitCreate {
-	if i != nil {
-		puc.SetPrecision(*i)
 	}
 	return puc
 }
@@ -240,10 +232,6 @@ func (puc *PriceUnitCreate) defaults() {
 		v := priceunit.DefaultConversionRate
 		puc.mutation.SetConversionRate(v)
 	}
-	if _, ok := puc.mutation.Precision(); !ok {
-		v := priceunit.DefaultPrecision
-		puc.mutation.SetPrecision(v)
-	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -299,14 +287,6 @@ func (puc *PriceUnitCreate) check() error {
 	}
 	if _, ok := puc.mutation.ConversionRate(); !ok {
 		return &ValidationError{Name: "conversion_rate", err: errors.New(`ent: missing required field "PriceUnit.conversion_rate"`)}
-	}
-	if _, ok := puc.mutation.Precision(); !ok {
-		return &ValidationError{Name: "precision", err: errors.New(`ent: missing required field "PriceUnit.precision"`)}
-	}
-	if v, ok := puc.mutation.Precision(); ok {
-		if err := priceunit.PrecisionValidator(v); err != nil {
-			return &ValidationError{Name: "precision", err: fmt.Errorf(`ent: validator failed for field "PriceUnit.precision": %w`, err)}
-		}
 	}
 	return nil
 }
@@ -371,6 +351,10 @@ func (puc *PriceUnitCreate) createSpec() (*PriceUnit, *sqlgraph.CreateSpec) {
 		_spec.SetField(priceunit.FieldEnvironmentID, field.TypeString, value)
 		_node.EnvironmentID = value
 	}
+	if value, ok := puc.mutation.Metadata(); ok {
+		_spec.SetField(priceunit.FieldMetadata, field.TypeJSON, value)
+		_node.Metadata = value
+	}
 	if value, ok := puc.mutation.Name(); ok {
 		_spec.SetField(priceunit.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -390,10 +374,6 @@ func (puc *PriceUnitCreate) createSpec() (*PriceUnit, *sqlgraph.CreateSpec) {
 	if value, ok := puc.mutation.ConversionRate(); ok {
 		_spec.SetField(priceunit.FieldConversionRate, field.TypeOther, value)
 		_node.ConversionRate = value
-	}
-	if value, ok := puc.mutation.Precision(); ok {
-		_spec.SetField(priceunit.FieldPrecision, field.TypeInt, value)
-		_node.Precision = value
 	}
 	if nodes := puc.mutation.PricesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -54,17 +54,20 @@ func (Invoice) Fields() []ent.Field {
 				"postgres": "varchar(50)",
 			}).
 			NotEmpty().
-			Immutable(),
+			Immutable().
+			GoType(types.InvoiceType("")),
 		field.String("invoice_status").
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
-			Default(string(types.InvoiceStatusDraft)),
+			Default(string(types.InvoiceStatusDraft)).
+			GoType(types.InvoiceStatus("")),
 		field.String("payment_status").
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
-			Default(string(types.PaymentStatusPending)),
+			Default(string(types.PaymentStatusPending)).
+			GoType(types.PaymentStatus("")),
 		field.String("currency").
 			SchemaType(map[string]string{
 				"postgres": "varchar(10)",
@@ -147,7 +150,8 @@ func (Invoice) Fields() []ent.Field {
 		field.String("billing_period").
 			Optional().
 			Nillable().
-			Immutable(),
+			Immutable().
+			GoType(types.BillingPeriod("")),
 		field.Time("period_start").
 			Optional().
 			Nillable().
@@ -182,6 +186,17 @@ func (Invoice) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Comment("Sequence number for subscription billing periods"),
+
+		field.Other("total_prepaid_credits_applied", decimal.Decimal{}).
+			SchemaType(map[string]string{
+				"postgres": "numeric(20,8)",
+			}).
+			// TODO: remove optional and nillable after migration
+			Optional().
+			Nillable().
+			Default(decimal.Zero).
+			Comment("Total prepaid credits applied to this invoice"),
+
 		field.String("idempotency_key").
 			SchemaType(map[string]string{
 				"postgres": "varchar(100)",

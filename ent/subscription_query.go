@@ -15,11 +15,13 @@ import (
 	"github.com/flexprice/flexprice/ent/couponapplication"
 	"github.com/flexprice/flexprice/ent/couponassociation"
 	"github.com/flexprice/flexprice/ent/creditgrant"
+	"github.com/flexprice/flexprice/ent/customer"
 	"github.com/flexprice/flexprice/ent/predicate"
 	"github.com/flexprice/flexprice/ent/subscription"
 	"github.com/flexprice/flexprice/ent/subscriptionlineitem"
 	"github.com/flexprice/flexprice/ent/subscriptionpause"
 	"github.com/flexprice/flexprice/ent/subscriptionphase"
+	"github.com/flexprice/flexprice/ent/subscriptionschedule"
 )
 
 // SubscriptionQuery is the builder for querying Subscription entities.
@@ -32,9 +34,11 @@ type SubscriptionQuery struct {
 	withLineItems          *SubscriptionLineItemQuery
 	withPauses             *SubscriptionPauseQuery
 	withPhases             *SubscriptionPhaseQuery
+	withSchedules          *SubscriptionScheduleQuery
 	withCreditGrants       *CreditGrantQuery
 	withCouponAssociations *CouponAssociationQuery
 	withCouponApplications *CouponApplicationQuery
+	withInvoicingCustomer  *CustomerQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -137,6 +141,28 @@ func (sq *SubscriptionQuery) QueryPhases() *SubscriptionPhaseQuery {
 	return query
 }
 
+// QuerySchedules chains the current query on the "schedules" edge.
+func (sq *SubscriptionQuery) QuerySchedules() *SubscriptionScheduleQuery {
+	query := (&SubscriptionScheduleClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subscription.Table, subscription.FieldID, selector),
+			sqlgraph.To(subscriptionschedule.Table, subscriptionschedule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, subscription.SchedulesTable, subscription.SchedulesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryCreditGrants chains the current query on the "credit_grants" edge.
 func (sq *SubscriptionQuery) QueryCreditGrants() *CreditGrantQuery {
 	query := (&CreditGrantClient{config: sq.config}).Query()
@@ -196,6 +222,28 @@ func (sq *SubscriptionQuery) QueryCouponApplications() *CouponApplicationQuery {
 			sqlgraph.From(subscription.Table, subscription.FieldID, selector),
 			sqlgraph.To(couponapplication.Table, couponapplication.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, subscription.CouponApplicationsTable, subscription.CouponApplicationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryInvoicingCustomer chains the current query on the "invoicing_customer" edge.
+func (sq *SubscriptionQuery) QueryInvoicingCustomer() *CustomerQuery {
+	query := (&CustomerClient{config: sq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := sq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(subscription.Table, subscription.FieldID, selector),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, subscription.InvoicingCustomerTable, subscription.InvoicingCustomerColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -398,9 +446,11 @@ func (sq *SubscriptionQuery) Clone() *SubscriptionQuery {
 		withLineItems:          sq.withLineItems.Clone(),
 		withPauses:             sq.withPauses.Clone(),
 		withPhases:             sq.withPhases.Clone(),
+		withSchedules:          sq.withSchedules.Clone(),
 		withCreditGrants:       sq.withCreditGrants.Clone(),
 		withCouponAssociations: sq.withCouponAssociations.Clone(),
 		withCouponApplications: sq.withCouponApplications.Clone(),
+		withInvoicingCustomer:  sq.withInvoicingCustomer.Clone(),
 		// clone intermediate query.
 		sql:  sq.sql.Clone(),
 		path: sq.path,
@@ -440,6 +490,17 @@ func (sq *SubscriptionQuery) WithPhases(opts ...func(*SubscriptionPhaseQuery)) *
 	return sq
 }
 
+// WithSchedules tells the query-builder to eager-load the nodes that are connected to
+// the "schedules" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubscriptionQuery) WithSchedules(opts ...func(*SubscriptionScheduleQuery)) *SubscriptionQuery {
+	query := (&SubscriptionScheduleClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withSchedules = query
+	return sq
+}
+
 // WithCreditGrants tells the query-builder to eager-load the nodes that are connected to
 // the "credit_grants" edge. The optional arguments are used to configure the query builder of the edge.
 func (sq *SubscriptionQuery) WithCreditGrants(opts ...func(*CreditGrantQuery)) *SubscriptionQuery {
@@ -470,6 +531,17 @@ func (sq *SubscriptionQuery) WithCouponApplications(opts ...func(*CouponApplicat
 		opt(query)
 	}
 	sq.withCouponApplications = query
+	return sq
+}
+
+// WithInvoicingCustomer tells the query-builder to eager-load the nodes that are connected to
+// the "invoicing_customer" edge. The optional arguments are used to configure the query builder of the edge.
+func (sq *SubscriptionQuery) WithInvoicingCustomer(opts ...func(*CustomerQuery)) *SubscriptionQuery {
+	query := (&CustomerClient{config: sq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withInvoicingCustomer = query
 	return sq
 }
 
@@ -551,13 +623,15 @@ func (sq *SubscriptionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*Subscription{}
 		_spec       = sq.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [8]bool{
 			sq.withLineItems != nil,
 			sq.withPauses != nil,
 			sq.withPhases != nil,
+			sq.withSchedules != nil,
 			sq.withCreditGrants != nil,
 			sq.withCouponAssociations != nil,
 			sq.withCouponApplications != nil,
+			sq.withInvoicingCustomer != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -599,6 +673,13 @@ func (sq *SubscriptionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 			return nil, err
 		}
 	}
+	if query := sq.withSchedules; query != nil {
+		if err := sq.loadSchedules(ctx, query, nodes,
+			func(n *Subscription) { n.Edges.Schedules = []*SubscriptionSchedule{} },
+			func(n *Subscription, e *SubscriptionSchedule) { n.Edges.Schedules = append(n.Edges.Schedules, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := sq.withCreditGrants; query != nil {
 		if err := sq.loadCreditGrants(ctx, query, nodes,
 			func(n *Subscription) { n.Edges.CreditGrants = []*CreditGrant{} },
@@ -621,6 +702,12 @@ func (sq *SubscriptionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 			func(n *Subscription, e *CouponApplication) {
 				n.Edges.CouponApplications = append(n.Edges.CouponApplications, e)
 			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := sq.withInvoicingCustomer; query != nil {
+		if err := sq.loadInvoicingCustomer(ctx, query, nodes, nil,
+			func(n *Subscription, e *Customer) { n.Edges.InvoicingCustomer = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -702,6 +789,36 @@ func (sq *SubscriptionQuery) loadPhases(ctx context.Context, query *Subscription
 	}
 	query.Where(predicate.SubscriptionPhase(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(subscription.PhasesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.SubscriptionID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "subscription_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (sq *SubscriptionQuery) loadSchedules(ctx context.Context, query *SubscriptionScheduleQuery, nodes []*Subscription, init func(*Subscription), assign func(*Subscription, *SubscriptionSchedule)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Subscription)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(subscriptionschedule.FieldSubscriptionID)
+	}
+	query.Where(predicate.SubscriptionSchedule(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(subscription.SchedulesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -813,6 +930,38 @@ func (sq *SubscriptionQuery) loadCouponApplications(ctx context.Context, query *
 	}
 	return nil
 }
+func (sq *SubscriptionQuery) loadInvoicingCustomer(ctx context.Context, query *CustomerQuery, nodes []*Subscription, init func(*Subscription), assign func(*Subscription, *Customer)) error {
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*Subscription)
+	for i := range nodes {
+		if nodes[i].InvoicingCustomerID == nil {
+			continue
+		}
+		fk := *nodes[i].InvoicingCustomerID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(customer.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "invoicing_customer_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (sq *SubscriptionQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := sq.querySpec()
@@ -838,6 +987,9 @@ func (sq *SubscriptionQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != subscription.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if sq.withInvoicingCustomer != nil {
+			_spec.Node.AddColumnOnce(subscription.FieldInvoicingCustomerID)
 		}
 	}
 	if ps := sq.predicates; len(ps) > 0 {

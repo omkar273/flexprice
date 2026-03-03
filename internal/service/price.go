@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/price"
+	"github.com/flexprice/flexprice/internal/domain/priceunit"
 	ierr "github.com/flexprice/flexprice/internal/errors"
+	temporalService "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
@@ -37,6 +38,8 @@ type PriceService interface {
 	// CalculateCostSheetPrice calculates the cost for a given price and quantity
 	// specifically for costsheet calculations
 	CalculateCostSheetPrice(ctx context.Context, price *price.Price, quantity decimal.Decimal) decimal.Decimal
+
+	GetByLookupKey(ctx context.Context, lookupKey string) (*dto.PriceResponse, error)
 }
 
 type priceService struct {
@@ -52,47 +55,38 @@ func (s *priceService) CreatePrice(ctx context.Context, req dto.CreatePriceReque
 		return nil, err
 	}
 
-	// Handle entity type validation
-	if req.EntityType != "" {
-		if err := req.EntityType.Validate(); err != nil {
+	// Validate that the entity exists based on entity type
+	if !req.SkipEntityValidation {
+		if err := s.validateEntityExists(ctx, req.EntityType, req.EntityID); err != nil {
 			return nil, err
 		}
 
-		if req.EntityID == "" {
-			return nil, ierr.NewError("entity_id is required when entity_type is provided").
-				WithHint("Please provide an entity id").
+		// Validate that the entity has less than 1000 active prices
+		filter := types.NewNoLimitPriceFilter().
+			WithEntityIDs([]string{req.EntityID}).
+			WithStatus(types.StatusPublished).
+			WithEntityType(req.EntityType)
+
+		count, err := s.PriceRepo.Count(ctx, filter)
+		if err != nil {
+			return nil, err
+		}
+		if count >= price.MAX_ACTIVE_PRICES {
+			return nil, ierr.NewError("entity has too many active prices").
+				WithHint("The specified entity has too many active prices").
+				WithReportableDetails(map[string]interface{}{
+					"entity_id":   req.EntityID,
+					"entity_type": req.EntityType,
+					"count":       count,
+				}).
 				Mark(ierr.ErrValidation)
 		}
-
-		// Validate that the entity exists based on entity type
-		if !req.SkipEntityValidation {
-			if err := s.validateEntityExists(ctx, req.EntityType, req.EntityID); err != nil {
-				return nil, err
-			}
-		}
-	} else {
-		// Legacy support for plan_id
-		if req.PlanID == "" {
-			return nil, ierr.NewError("either entity_type/entity_id or plan_id is required").
-				WithHint("Please provide entity_type and entity_id, or plan_id for backward compatibility").
-				Mark(ierr.ErrValidation)
-		}
-		// Set entity type and ID from plan_id for backward compatibility
-		req.EntityType = types.PRICE_ENTITY_TYPE_PLAN
-		req.EntityID = req.PlanID
 	}
 
-	// Handle price unit config case
-	if req.PriceUnitConfig != nil {
-		return s.createPriceWithUnitConfig(ctx, req)
-	}
-
-	// Handle regular price case
-	p, err := req.ToPrice(ctx)
+	// Prepare price for creation (sets display name, converts to Price, applies custom price unit conversion)
+	p, err := s.preparePriceForCreation(ctx, &req)
 	if err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("Failed to parse price data").
-			Mark(ierr.ErrValidation)
+		return nil, err
 	}
 
 	// Validate group if provided
@@ -108,17 +102,105 @@ func (s *priceService) CreatePrice(ctx context.Context, req dto.CreatePriceReque
 
 	response := &dto.PriceResponse{Price: p}
 
-	// TODO: !REMOVE after migration
-	if p.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
-		response.PlanID = p.EntityID
-	}
-
 	// Sync new price to Chargebee if it belongs to a plan
 	if p.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
 		s.syncPriceToChargebeeIfEnabled(ctx, p.ID, p.EntityID)
 	}
 
+	// Sync new price to QuickBooks if it belongs to a plan
+	if p.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
+		s.syncPriceToQuickBooksIfEnabled(ctx, p.ID, p.EntityID)
+	}
 	return response, nil
+}
+
+// preparePriceForCreation prepares a price for creation by setting display name,
+// converting the request to a Price domain object, and applying custom price unit conversion if needed.
+// This encapsulates the common price preparation logic used by both CreatePrice and CreateBulkPrice.
+func (s *priceService) preparePriceForCreation(ctx context.Context, req *dto.CreatePriceRequest) (*price.Price, error) {
+	// Get display name if needed (before price creation)
+	s.setDisplayName(ctx, req)
+
+	// Convert request to Price domain object
+	p, err := req.ToPrice(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate meter for USAGE prices: must be set and must exist
+	if p.Type == types.PRICE_TYPE_USAGE {
+		if p.MeterID == "" {
+			return nil, ierr.NewError("meter_id is required when type is USAGE").
+				WithHint("Please select a metered feature to set up usage pricing").
+				WithReportableDetails(map[string]interface{}{
+					"type": p.Type,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+
+		if _, err := s.MeterRepo.GetMeter(ctx, p.MeterID); err != nil {
+			return nil, err
+		}
+
+	}
+
+	// Apply price unit conversion if price type is CUSTOM
+	// This converts amounts/tiers and updates the Price object
+	if p.PriceUnitType == types.PRICE_UNIT_TYPE_CUSTOM {
+		if err := s.applyPriceUnitConversionToPrice(ctx, p); err != nil {
+			return nil, err
+		}
+	}
+
+	return p, nil
+}
+
+// setDisplayName extracts the display name from the entity (plan/addon) or meter
+// if SkipEntityValidation is false and DisplayName is empty.
+// If SkipEntityValidation is true, it sets default names: "Recurring" for FIXED and "Usage" for USAGE.
+// This should be called before price creation repository operations.
+func (s *priceService) setDisplayName(ctx context.Context, req *dto.CreatePriceRequest) {
+	// If display name is already set, don't override it
+	if req.DisplayName != "" {
+		return
+	}
+
+	// If validation is skipped, use default names
+	if req.SkipEntityValidation {
+		switch req.Type {
+		case types.PRICE_TYPE_FIXED:
+			req.DisplayName = "Recurring"
+		case types.PRICE_TYPE_USAGE:
+			req.DisplayName = "Usage"
+		}
+		return
+	}
+
+	// Extract from entity when validation is enabled
+	switch req.Type {
+	case types.PRICE_TYPE_FIXED:
+		// For FIXED prices, extract plan/addon name
+		if req.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
+			plan, err := s.PlanRepo.Get(ctx, req.EntityID)
+			if err == nil && plan != nil {
+				req.DisplayName = plan.Name
+			}
+		} else if req.EntityType == types.PRICE_ENTITY_TYPE_ADDON {
+			addon, err := s.AddonRepo.GetByID(ctx, req.EntityID)
+			if err == nil && addon != nil {
+				req.DisplayName = addon.Name
+			}
+		}
+	case types.PRICE_TYPE_USAGE:
+		// For USAGE prices, extract meter name
+		if req.MeterID != "" {
+			meterService := NewMeterService(s.MeterRepo)
+			meter, err := meterService.GetMeter(ctx, req.MeterID)
+			if err == nil && meter != nil {
+				req.DisplayName = meter.Name
+			}
+		}
+	}
 }
 
 // validateEntityExists validates that the entity exists based on the entity type
@@ -175,317 +257,149 @@ func (s *priceService) validateEntityExists(ctx context.Context, entityType type
 	return nil
 }
 
+// validateBulkPriceEntityLimits validates that entities don't exceed the maximum number of active prices
+// when creating bulk prices. It checks each unique entity and ensures that the total count of existing
+// plus new prices doesn't exceed MAX_ACTIVE_PRICES.
+func (s *priceService) validateBulkPriceEntityLimits(ctx context.Context, items []dto.CreatePriceRequest) error {
+	// Create a map of entityID -> entityType using lo
+	entityIDToType := lo.SliceToMap(items, func(priceReq dto.CreatePriceRequest) (string, types.PriceEntityType) {
+		return priceReq.EntityID, priceReq.EntityType
+	})
+
+	// Group prices by entityID to count how many prices are being added for each entity
+	entityGroups := lo.GroupBy(items, func(priceReq dto.CreatePriceRequest) string {
+		return priceReq.EntityID
+	})
+
+	// Validate price limit for each unique entity
+	for entityID, entityType := range entityIDToType {
+		// Check if we should skip validation (check first item with this entityID)
+		itemsForEntity := entityGroups[entityID]
+
+		firstItem := itemsForEntity[0]
+		if firstItem.SkipEntityValidation {
+			continue
+		}
+
+		// Count existing active prices for this entity
+		filter := types.NewNoLimitPriceFilter().
+			WithEntityIDs([]string{entityID}).
+			WithStatus(types.StatusPublished).
+			WithEntityType(entityType)
+
+		existingCount, err := s.PriceRepo.Count(ctx, filter)
+		if err != nil {
+			return err
+		}
+
+		// Count how many new prices are being added for this entity
+		newPricesCount := len(entityGroups[entityID])
+
+		// Check if adding these prices would exceed the limit
+		// If existingCount + newPricesCount > MAX_ACTIVE_PRICES, reject
+		// This allows exactly MAX_ACTIVE_PRICES total (e.g., 999 existing + 1 new = 1000, which is allowed)
+		if existingCount+newPricesCount > price.MAX_ACTIVE_PRICES {
+			return ierr.NewError("entity has too many active prices").
+				WithHint("The specified entity has too many active prices").
+				WithReportableDetails(map[string]interface{}{
+					"entity_id":        entityID,
+					"entity_type":      entityType,
+					"existing_count":   existingCount,
+					"new_prices_count": newPricesCount,
+					"total_count":      existingCount + newPricesCount,
+					"max_allowed":      price.MAX_ACTIVE_PRICES,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	}
+
+	return nil
+}
+
 func (s *priceService) CreateBulkPrice(ctx context.Context, req dto.CreateBulkPriceRequest) (*dto.CreateBulkPriceResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
 
-	var response *dto.CreateBulkPriceResponse
+	// Validate price limit for each unique entity
+	if err := s.validateBulkPriceEntityLimits(ctx, req.Items); err != nil {
+		return nil, err
+	}
 
-	// Use transaction to ensure all prices are created or none
-	err := s.DB.WithTx(ctx, func(txCtx context.Context) error {
-		response = &dto.CreateBulkPriceResponse{
-			Items: make([]*dto.PriceResponse, 0),
-		}
+	response := &dto.CreateBulkPriceResponse{
+		Items: make([]*dto.PriceResponse, 0),
+	}
 
-		// Separate prices that need price unit config handling from regular prices
-		var regularPrices []*price.Price
-		var priceUnitConfigPrices []dto.CreatePriceRequest
+	if err := s.DB.WithTx(ctx, func(txCtx context.Context) error {
+
+		prices := make([]*price.Price, 0, len(req.Items))
 
 		for _, priceReq := range req.Items {
-			if priceReq.PriceUnitConfig != nil {
-				priceUnitConfigPrices = append(priceUnitConfigPrices, priceReq)
-			} else {
-				// Handle regular prices
-				price, err := priceReq.ToPrice(txCtx)
-				if err != nil {
-					return ierr.WithError(err).
-						WithHint("Failed to create price").
-						Mark(ierr.ErrValidation)
-				}
-				regularPrices = append(regularPrices, price)
-			}
-		}
-
-		// Create regular prices in bulk if any exist
-		if len(regularPrices) > 0 {
-			// Validate groups if provided
-			if err := s.validateGroup(txCtx, regularPrices); err != nil {
+			// Prepare price for creation (sets display name, converts to Price, applies custom price unit conversion)
+			p, err := s.preparePriceForCreation(txCtx, &priceReq)
+			if err != nil {
 				return err
 			}
-			if err := s.PriceRepo.CreateBulk(txCtx, regularPrices); err != nil {
-				return ierr.WithError(err).
-					WithHint("Failed to create prices in bulk").
-					Mark(ierr.ErrDatabase)
-			}
 
-			// Add successful regular prices to response
-			for _, p := range regularPrices {
-				priceResp := &dto.PriceResponse{Price: p}
-				if p.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
-					priceResp.PlanID = p.EntityID
-				}
-				response.Items = append(response.Items, priceResp)
-			}
+			prices = append(prices, p)
 		}
 
-		// Handle price unit config prices individually (they need special processing)
-		for _, priceReq := range priceUnitConfigPrices {
-			priceResp, err := s.createPriceWithUnitConfig(txCtx, priceReq)
-			if err != nil {
-				return ierr.WithError(err).
-					WithHint("Failed to create price with unit config").
-					Mark(ierr.ErrValidation)
-			}
+		// Validate groups if provided
+		if err := s.validateGroup(txCtx, prices); err != nil {
+			return err
+		}
+
+		// Create prices in bulk
+		if err := s.PriceRepo.CreateBulk(txCtx, prices); err != nil {
+			return err
+		}
+
+		// Add successful prices to response
+		for _, p := range prices {
+			priceResp := &dto.PriceResponse{Price: p}
 			response.Items = append(response.Items, priceResp)
 		}
 
 		return nil
-	})
-
-	if err != nil {
+	}); err != nil {
 		return nil, err
 	}
 
-	// Sync prices to Chargebee if integration is available and prices are for a plan
-	// Use the centralized sync function for each price
+	// Sync prices to integrations if available and prices are for a plan
+	s.Logger.Debugw("Bulk price sync check",
+		"response_nil", response == nil,
+		"response_items_count", func() int {
+			if response == nil {
+				return -1
+			}
+			return len(response.Items)
+		}())
+
 	if response != nil && len(response.Items) > 0 {
+		// Use background context for sync operations to prevent request context cancellation
+		// from affecting the sync process. Each sync is independent and should complete
+		// regardless of whether the HTTP request times out.
+		// However, we need to preserve tenant/environment context values for database queries.
+		syncCtx := context.Background()
+		syncCtx = context.WithValue(syncCtx, types.CtxTenantID, types.GetTenantID(ctx))
+		syncCtx = context.WithValue(syncCtx, types.CtxUserID, types.GetUserID(ctx))
+		syncCtx = context.WithValue(syncCtx, types.CtxEnvironmentID, types.GetEnvironmentID(ctx))
+		if roles := ctx.Value(types.CtxRoles); roles != nil {
+			syncCtx = context.WithValue(syncCtx, types.CtxRoles, roles)
+		}
+
 		for _, priceResp := range response.Items {
 			if priceResp.Price.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
-				s.syncPriceToChargebeeIfEnabled(ctx, priceResp.Price.ID, priceResp.Price.EntityID)
+				// Sync to Chargebee with background context
+				s.syncPriceToChargebeeIfEnabled(syncCtx, priceResp.Price.ID, priceResp.Price.EntityID)
+
+				// Sync to QuickBooks via Temporal workflow (async, non-blocking)
+				s.syncPriceToQuickBooksIfEnabled(syncCtx, priceResp.Price.ID, priceResp.Price.EntityID)
 			}
 		}
 	}
 
 	return response, nil
-}
-
-// createPriceWithUnitConfig- a private helper method to create a price with a price unit config
-func (s *priceService) createPriceWithUnitConfig(ctx context.Context, req dto.CreatePriceRequest) (*dto.PriceResponse, error) {
-
-	if err := req.Validate(); err != nil {
-		return nil, err
-	}
-
-	// Parse price unit amount - this is the amount in the price unit currency
-	priceUnitAmount := decimal.Zero
-	if req.BillingModel != types.BILLING_MODEL_TIERED {
-		if req.PriceUnitConfig.Amount == "" {
-			return nil, ierr.NewError("price_unit_config.amount is required when billing model is not TIERED").
-				WithHint("Amount in price unit currency is required for price unit config").
-				Mark(ierr.ErrValidation)
-		}
-
-		var err error
-		priceUnitAmount, err = decimal.NewFromString(req.PriceUnitConfig.Amount)
-		if err != nil {
-			return nil, ierr.WithError(err).
-				WithHint("Price unit amount must be a valid decimal number").
-				WithReportableDetails(map[string]interface{}{"amount": req.PriceUnitConfig.Amount}).
-				Mark(ierr.ErrValidation)
-		}
-	}
-
-	// Fetch the price unit by code, tenant, and environment
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-	priceUnit, err := s.PriceUnitRepo.GetByCode(ctx, req.PriceUnitConfig.PriceUnit, tenantID, envID, string(types.StatusPublished))
-	if err != nil || priceUnit == nil {
-		return nil, ierr.NewError("invalid or unpublished price unit").
-			WithHint("Price unit must exist and be published").
-			Mark(ierr.ErrValidation)
-	}
-
-	// Convert FROM price unit TO base currency
-	baseAmount, err := s.PriceUnitRepo.ConvertToBaseCurrency(ctx, req.PriceUnitConfig.PriceUnit, tenantID, envID, priceUnitAmount)
-	if err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("Failed to convert price unit amount to base currency").
-			Mark(ierr.ErrInternal)
-	}
-
-	// Round to the price unit's precision
-	priceUnitAmount = priceUnitAmount.Round(int32(priceUnit.Precision))
-
-	// Format display price unit amount
-	displayPriceUnitAmount := formatDisplayPriceUnitAmount(priceUnitAmount, priceUnit.Precision, priceUnit.Symbol)
-
-	// Build the price model
-	metadata := make(map[string]string)
-	if req.Metadata != nil {
-		metadata = req.Metadata
-	}
-
-	var transformQuantity price.JSONBTransformQuantity
-	if req.TransformQuantity != nil {
-		transformQuantity = price.JSONBTransformQuantity(*req.TransformQuantity)
-	}
-
-	var tiers price.JSONBTiers
-	var priceUnitTiers price.JSONBTiers
-	if req.PriceUnitConfig != nil && req.PriceUnitConfig.PriceUnitTiers != nil {
-		// Process price unit tiers - convert amounts from price unit to base currency
-		priceTiers := make([]price.PriceTier, len(req.PriceUnitConfig.PriceUnitTiers))
-		priceUnitTiers = make(price.JSONBTiers, len(req.PriceUnitConfig.PriceUnitTiers))
-		for i, tier := range req.PriceUnitConfig.PriceUnitTiers {
-			// Parse the tier unit amount (in price unit currency)
-			unitAmount, err := decimal.NewFromString(tier.UnitAmount)
-			if err != nil {
-				return nil, ierr.WithError(err).
-					WithHint("Tier unit amount must be a valid decimal number").
-					WithReportableDetails(map[string]interface{}{"unit_amount": tier.UnitAmount}).
-					Mark(ierr.ErrValidation)
-			}
-
-			// Store original price unit tier
-			priceUnitTiers[i] = price.PriceTier{
-				UpTo:       tier.UpTo,
-				UnitAmount: unitAmount,
-			}
-
-			// Convert tier unit amount from price unit to base currency
-			convertedUnitAmount, err := s.PriceUnitRepo.ConvertToBaseCurrency(ctx, req.PriceUnitConfig.PriceUnit, tenantID, envID, unitAmount)
-			if err != nil {
-				return nil, ierr.WithError(err).
-					WithHint("Failed to convert tier unit amount to base currency").
-					WithReportableDetails(map[string]interface{}{
-						"tier_index":  i,
-						"unit_amount": tier.UnitAmount,
-						"price_unit":  req.PriceUnitConfig.PriceUnit,
-					}).
-					Mark(ierr.ErrInternal)
-			}
-
-			var flatAmount *decimal.Decimal
-			var priceUnitFlatAmount *decimal.Decimal
-			if tier.FlatAmount != nil {
-				// Parse the tier flat amount (in price unit currency)
-				parsed, err := decimal.NewFromString(*tier.FlatAmount)
-				if err != nil {
-					return nil, ierr.WithError(err).
-						WithHint("Tier flat amount must be a valid decimal number").
-						WithReportableDetails(map[string]interface{}{"flat_amount": tier.FlatAmount}).
-						Mark(ierr.ErrValidation)
-				}
-
-				// Store original price unit flat amount
-				priceUnitFlatAmount = &parsed
-				priceUnitTiers[i].FlatAmount = priceUnitFlatAmount
-
-				// Convert tier flat amount from price unit to base currency
-				convertedFlatAmount, err := s.PriceUnitRepo.ConvertToBaseCurrency(ctx, req.PriceUnitConfig.PriceUnit, tenantID, envID, parsed)
-				if err != nil {
-					return nil, ierr.WithError(err).
-						WithHint("Failed to convert tier flat amount to base currency").
-						WithReportableDetails(map[string]interface{}{
-							"tier_index":  i,
-							"flat_amount": tier.FlatAmount,
-							"price_unit":  req.PriceUnitConfig.PriceUnit,
-						}).
-						Mark(ierr.ErrInternal)
-				}
-				flatAmount = &convertedFlatAmount
-			}
-
-			priceTiers[i] = price.PriceTier{
-				UpTo:       tier.UpTo,
-				UnitAmount: convertedUnitAmount, // Store converted amount
-				FlatAmount: flatAmount,          // Store converted flat amount
-			}
-		}
-		tiers = price.JSONBTiers(priceTiers)
-	} else if req.Tiers != nil {
-		// Process regular tiers (when not using price unit config)
-		priceTiers := make([]price.PriceTier, len(req.Tiers))
-		for i, tier := range req.Tiers {
-			unitAmount, err := decimal.NewFromString(tier.UnitAmount)
-			if err != nil {
-				return nil, ierr.WithError(err).
-					WithHint("Unit amount must be a valid decimal number").
-					WithReportableDetails(map[string]interface{}{"unit_amount": tier.UnitAmount}).
-					Mark(ierr.ErrValidation)
-			}
-			var flatAmount *decimal.Decimal
-			if tier.FlatAmount != nil {
-				parsed, err := decimal.NewFromString(*tier.FlatAmount)
-				if err != nil {
-					return nil, ierr.WithError(err).
-						WithHint("Flat amount must be a valid decimal number").
-						WithReportableDetails(map[string]interface{}{"flat_amount": tier.FlatAmount}).
-						Mark(ierr.ErrValidation)
-				}
-				flatAmount = &parsed
-			}
-			priceTiers[i] = price.PriceTier{
-				UpTo:       tier.UpTo,
-				UnitAmount: unitAmount,
-				FlatAmount: flatAmount,
-			}
-		}
-		tiers = price.JSONBTiers(priceTiers)
-	}
-
-	p := &price.Price{
-		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE),
-		Amount:             baseAmount,
-		Currency:           req.Currency,
-		PriceUnitType:      req.PriceUnitType,
-		EntityType:         req.EntityType,
-		EntityID:           req.EntityID,
-		Type:               req.Type,
-		BillingPeriod:      req.BillingPeriod,
-		BillingPeriodCount: req.BillingPeriodCount,
-		BillingModel:       req.BillingModel,
-		BillingCadence:     req.BillingCadence,
-		InvoiceCadence:     req.InvoiceCadence,
-		TrialPeriod:        req.TrialPeriod,
-		MeterID:            req.MeterID,
-		LookupKey:          req.LookupKey,
-		Description:        req.Description,
-		Metadata:           metadata,
-		TierMode:           req.TierMode,
-		Tiers:              tiers,
-		PriceUnitTiers:     priceUnitTiers,
-		TransformQuantity:  transformQuantity,
-		ParentPriceID:      req.ParentPriceID,
-		EnvironmentID:      envID,
-		BaseModel:          types.GetDefaultBaseModel(ctx),
-		// Price unit fields - set all from the fetched price unit
-		PriceUnit:              priceUnit.Code,
-		PriceUnitID:            priceUnit.ID,
-		PriceUnitAmount:        priceUnitAmount,
-		DisplayPriceUnitAmount: displayPriceUnitAmount,
-		ConversionRate:         priceUnit.ConversionRate,
-	}
-
-	p.DisplayAmount = p.GetDisplayAmount()
-
-	if err := s.PriceRepo.Create(ctx, p); err != nil {
-		return nil, err
-	}
-
-	response := &dto.PriceResponse{Price: p}
-
-	// TODO: !REMOVE after migration
-	if p.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
-		response.PlanID = p.EntityID
-	}
-
-	// Sync new price to Chargebee if it belongs to a plan
-	if p.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
-		s.syncPriceToChargebeeIfEnabled(ctx, p.ID, p.EntityID)
-	}
-
-	return response, nil
-}
-
-// Helper to format display price unit amount
-func formatDisplayPriceUnitAmount(amount decimal.Decimal, precision int, symbol string) string {
-	// Round the amount to the specified precision
-	roundedAmount := amount.Round(int32(precision))
-	// Convert to float64 for proper formatting
-	amountFloat := roundedAmount.InexactFloat64()
-	return fmt.Sprintf("%s%.*f", symbol, precision, amountFloat)
 }
 
 func (s *priceService) GetPrice(ctx context.Context, id string) (*dto.PriceResponse, error) {
@@ -506,11 +420,6 @@ func (s *priceService) GetPrice(ctx context.Context, id string) (*dto.PriceRespo
 	response.EntityType = price.EntityType
 	response.EntityID = price.EntityID
 
-	// TODO: !REMOVE after migration
-	if price.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
-		response.PlanID = price.EntityID
-	}
-
 	if price.MeterID != "" {
 		meterService := NewMeterService(s.MeterRepo)
 		meter, err := meterService.GetMeter(ctx, price.MeterID)
@@ -521,15 +430,6 @@ func (s *priceService) GetPrice(ctx context.Context, id string) (*dto.PriceRespo
 		response.Meter = dto.ToMeterResponse(meter)
 	}
 
-	if price.PriceUnitID != "" {
-		priceUnit, err := s.PriceUnitRepo.GetByID(ctx, price.PriceUnitID)
-		if err != nil {
-			s.Logger.Warnw("failed to fetch price unit", "price_unit_id", price.PriceUnitID, "error", err)
-			return nil, err
-		}
-		response.PricingUnit = &dto.PriceUnitResponse{PriceUnit: priceUnit}
-	}
-
 	if price.GroupID != "" {
 		groupService := NewGroupService(s.ServiceParams)
 		group, err := groupService.GetGroup(ctx, price.GroupID)
@@ -538,6 +438,16 @@ func (s *priceService) GetPrice(ctx context.Context, id string) (*dto.PriceRespo
 			// Don't fail the request if group fetch fails, just continue
 		} else {
 			response.Group = group
+		}
+	}
+
+	if price.PriceUnitType == types.PRICE_UNIT_TYPE_CUSTOM && lo.FromPtr(price.PriceUnitID) != "" {
+		priceUnitService := NewPriceUnitService(s.ServiceParams)
+		priceUnit, err := priceUnitService.GetPriceUnit(ctx, lo.FromPtr(price.PriceUnitID))
+		if err != nil {
+			s.Logger.Warnw("failed to fetch price unit", "price_unit", *price.PriceUnit, "error", err)
+		} else {
+			response.PricingUnit = priceUnit
 		}
 	}
 
@@ -554,7 +464,7 @@ func (s *priceService) GetPricesByPlanID(ctx context.Context, req dto.GetPricesB
 		WithStatus(types.StatusPublished).
 		WithEntityType(types.PRICE_ENTITY_TYPE_PLAN).
 		WithAllowExpiredPrices(req.AllowExpired).
-		WithExpand(string(types.ExpandMeters) + "," + string(types.ExpandPriceUnit) + "," + string(types.ExpandGroups))
+		WithExpand(string(types.ExpandMeters) + "," + string(types.ExpandGroups) + "," + string(types.ExpandPriceUnit))
 
 	response, err := s.GetPrices(ctx, priceFilter)
 	if err != nil {
@@ -577,7 +487,7 @@ func (s *priceService) GetPricesBySubscriptionID(ctx context.Context, subscripti
 		WithSubscriptionID(subscriptionID).
 		WithEntityType(types.PRICE_ENTITY_TYPE_SUBSCRIPTION).
 		WithStatus(types.StatusPublished).
-		WithExpand(string(types.ExpandMeters) + "," + string(types.ExpandPriceUnit))
+		WithExpand(string(types.ExpandMeters))
 
 	response, err := s.GetPrices(ctx, priceFilter)
 	if err != nil {
@@ -599,7 +509,7 @@ func (s *priceService) GetPricesByAddonID(ctx context.Context, addonID string) (
 		WithEntityIDs([]string{addonID}).
 		WithEntityType(types.PRICE_ENTITY_TYPE_ADDON).
 		WithStatus(types.StatusPublished).
-		WithExpand(string(types.ExpandMeters) + "," + string(types.ExpandPriceUnit))
+		WithExpand(string(types.ExpandMeters))
 
 	response, err := s.GetPrices(ctx, priceFilter)
 	if err != nil {
@@ -620,7 +530,7 @@ func (s *priceService) GetPricesByCostsheetID(ctx context.Context, costsheetID s
 		WithEntityIDs([]string{costsheetID}).
 		WithStatus(types.StatusPublished).
 		WithEntityType(types.PRICE_ENTITY_TYPE_COSTSHEET).
-		WithExpand(string(types.ExpandMeters) + "," + string(types.ExpandPriceUnit))
+		WithExpand(string(types.ExpandMeters))
 
 	response, err := s.GetPrices(ctx, priceFilter)
 	if err != nil {
@@ -681,34 +591,11 @@ func (s *priceService) GetPrices(ctx context.Context, filter *types.PriceFilter)
 		s.Logger.Debugw("fetched meters for prices", "count", len(metersResponse.Items))
 	}
 
-	// If price units are requested to be expanded, fetch all price units in one query
-	var priceUnitsByID map[string]*dto.PriceUnitResponse
-	if filter.GetExpand().Has(types.ExpandPriceUnit) && len(prices) > 0 {
-		// Collect unique price unit IDs
-		priceUnitIDs := make(map[string]bool)
-		for _, p := range prices {
-			if p.PriceUnitID != "" {
-				priceUnitIDs[p.PriceUnitID] = true
-			}
-		}
-
-		priceUnitsByID = make(map[string]*dto.PriceUnitResponse)
-		for priceUnitID := range priceUnitIDs {
-			priceUnit, err := s.PriceUnitRepo.GetByID(ctx, priceUnitID)
-			if err != nil {
-				s.Logger.Warnw("failed to fetch price unit", "price_unit_id", priceUnitID, "error", err)
-				continue
-			}
-			priceUnitsByID[priceUnitID] = &dto.PriceUnitResponse{PriceUnit: priceUnit}
-		}
-
-		s.Logger.Debugw("fetched price units for prices", "count", len(priceUnitsByID))
-	}
-
 	// Collect entity IDs based on entity type for efficient bulk fetching
 	var planIDs []string
 	var addonIDs []string
 	var groupIDs []string
+	var priceUnitIDs []string
 
 	// Separate prices by entity type to collect IDs
 	for _, p := range prices {
@@ -719,6 +606,10 @@ func (s *priceService) GetPrices(ctx context.Context, filter *types.PriceFilter)
 		}
 		if p.GroupID != "" {
 			groupIDs = append(groupIDs, p.GroupID)
+		}
+		// Collect price unit IDs for prices with custom price units
+		if p.PriceUnitType == types.PRICE_UNIT_TYPE_CUSTOM && lo.FromPtr(p.PriceUnitID) != "" {
+			priceUnitIDs = append(priceUnitIDs, lo.FromPtr(p.PriceUnitID))
 		}
 	}
 
@@ -793,6 +684,30 @@ func (s *priceService) GetPrices(ctx context.Context, filter *types.PriceFilter)
 		}
 	}
 
+	// If price units are requested to be expanded, fetch price units in bulk
+	var priceUnitsByID map[string]*dto.PriceUnitResponse
+	if filter.GetExpand().Has(types.ExpandPriceUnit) && len(priceUnitIDs) > 0 {
+		// Remove duplicates
+		priceUnitIDs = lo.Uniq(priceUnitIDs)
+
+		priceUnitService := NewPriceUnitService(s.ServiceParams)
+		priceUnitFilter := types.NewNoLimitPriceUnitFilter()
+		priceUnitFilter.PriceUnitIDs = priceUnitIDs
+
+		priceUnitsResponse, err := priceUnitService.ListPriceUnits(ctx, priceUnitFilter)
+		if err != nil {
+			s.Logger.Warnw("failed to fetch price units in bulk", "error", err)
+			// Don't fail the request, just continue without price units
+			priceUnitsByID = make(map[string]*dto.PriceUnitResponse)
+		} else {
+			// Create a map for price unit lookup
+			priceUnitsByID = make(map[string]*dto.PriceUnitResponse, len(priceUnitsResponse.Items))
+			for _, pu := range priceUnitsResponse.Items {
+				priceUnitsByID[pu.PriceUnit.ID] = pu
+			}
+		}
+	}
+
 	// Build response with expanded fields
 	for i, p := range prices {
 		response.Items[i] = &dto.PriceResponse{Price: p}
@@ -801,13 +716,6 @@ func (s *priceService) GetPrices(ctx context.Context, filter *types.PriceFilter)
 		if filter.GetExpand().Has(types.ExpandMeters) && p.MeterID != "" {
 			if m, ok := metersByID[p.MeterID]; ok {
 				response.Items[i].Meter = m
-			}
-		}
-
-		// Add price unit if requested and available
-		if filter.GetExpand().Has(types.ExpandPriceUnit) && p.PriceUnitID != "" {
-			if pu, ok := priceUnitsByID[p.PriceUnitID]; ok {
-				response.Items[i].PricingUnit = pu
 			}
 		}
 
@@ -831,6 +739,13 @@ func (s *priceService) GetPrices(ctx context.Context, filter *types.PriceFilter)
 				response.Items[i].Group = group
 			}
 		}
+
+		// Add price unit if requested and available
+		if filter.GetExpand().Has(types.ExpandPriceUnit) && p.PriceUnitType == types.PRICE_UNIT_TYPE_CUSTOM && lo.FromPtr(p.PriceUnitID) != "" {
+			if priceUnit, ok := priceUnitsByID[lo.FromPtr(p.PriceUnitID)]; ok {
+				response.Items[i].PricingUnit = priceUnit
+			}
+		}
 	}
 
 	return response, nil
@@ -846,6 +761,35 @@ func (s *priceService) UpdatePrice(ctx context.Context, id string, req dto.Updat
 	existingPrice, err := s.PriceRepo.Get(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	// Validate price unit type cannot be changed
+	hasFIATFields := req.Amount != nil || len(req.Tiers) > 0
+	hasCUSTOMFields := req.PriceUnitAmount != nil || len(req.PriceUnitTiers) > 0
+
+	switch existingPrice.PriceUnitType {
+	case types.PRICE_UNIT_TYPE_FIAT:
+		if hasCUSTOMFields {
+			return nil, ierr.NewError("cannot use custom price unit fields on a FIAT price").
+				WithHint("Price unit type cannot be changed during update. Cannot use price_unit_amount or price_unit_tiers on a FIAT price.").
+				WithReportableDetails(map[string]interface{}{
+					"existing_price_unit_type": existingPrice.PriceUnitType,
+					"has_price_unit_amount":    req.PriceUnitAmount != nil,
+					"has_price_unit_tiers":     len(req.PriceUnitTiers) > 0,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	case types.PRICE_UNIT_TYPE_CUSTOM:
+		if hasFIATFields {
+			return nil, ierr.NewError("cannot use FIAT fields on a CUSTOM price").
+				WithHint("Price unit type cannot be changed during update. Cannot use amount or tiers on a CUSTOM price. Use price_unit_amount or price_unit_tiers instead.").
+				WithReportableDetails(map[string]interface{}{
+					"existing_price_unit_type": existingPrice.PriceUnitType,
+					"has_amount":               req.Amount != nil,
+					"has_tiers":                len(req.Tiers) > 0,
+				}).
+				Mark(ierr.ErrValidation)
+		}
 	}
 
 	// Check if the request has critical fields
@@ -865,6 +809,18 @@ func (s *priceService) UpdatePrice(ctx context.Context, id string, req dto.Updat
 		terminationEndDate := time.Now().UTC()
 		if req.EffectiveFrom != nil {
 			terminationEndDate = *req.EffectiveFrom
+		}
+
+		// Effective date must not be before the price's start date (avoids end_date < start_date)
+		if existingPrice.StartDate != nil && terminationEndDate.Before(lo.FromPtr(existingPrice.StartDate)) {
+			return nil, ierr.NewError("effective date must be on or after price start date").
+				WithHint("The effective date for terminating this price cannot be before the price's start date").
+				WithReportableDetails(map[string]interface{}{
+					"price_id":         id,
+					"price_start_date": existingPrice.StartDate,
+					"effective_from":   terminationEndDate,
+				}).
+				Mark(ierr.ErrValidation)
 		}
 
 		if err := s.DB.WithTx(ctx, func(ctx context.Context) error {
@@ -894,6 +850,7 @@ func (s *priceService) UpdatePrice(ctx context.Context, id string, req dto.Updat
 
 			// Create the new price - this will use all existing validation logic
 			newPriceResp, err = s.CreatePrice(ctx, createReq)
+
 			return err
 
 		}); err != nil {
@@ -913,6 +870,11 @@ func (s *priceService) UpdatePrice(ctx context.Context, id string, req dto.Updat
 			s.syncPriceToChargebeeIfEnabled(ctx, newPriceResp.Price.ID, newPriceResp.Price.EntityID)
 		}
 
+		// Sync new price to QuickBooks if it belongs to a plan
+		if newPriceResp.Price.EntityType == types.PRICE_ENTITY_TYPE_PLAN {
+			s.syncPriceToQuickBooksIfEnabled(ctx, newPriceResp.Price.ID, newPriceResp.Price.EntityID)
+		}
+
 		return newPriceResp, nil
 	} else {
 		// No critical fields - simple update
@@ -923,6 +885,9 @@ func (s *priceService) UpdatePrice(ctx context.Context, id string, req dto.Updat
 		}
 		if req.Description != "" {
 			existingPrice.Description = req.Description
+		}
+		if req.DisplayName != "" {
+			existingPrice.DisplayName = req.DisplayName
 		}
 		if req.Metadata != nil {
 			existingPrice.Metadata = req.Metadata
@@ -982,10 +947,10 @@ func (s *priceService) DeletePrice(ctx context.Context, id string, req dto.Delet
 		endDate = time.Now().UTC()
 	}
 
-	// Validate end date is after start date
+	// Validate end date is on or after start date
 	if price.StartDate != nil && price.StartDate.After(endDate) {
-		return ierr.NewError("end date must be after start date").
-			WithHint("The termination date must be after the price's start date").
+		return ierr.NewError("end date must be on or after start date").
+			WithHint("The termination date must be on or after the price's start date").
 			WithReportableDetails(map[string]interface{}{
 				"price_id":   id,
 				"start_date": price.StartDate,
@@ -1439,4 +1404,192 @@ func (s *priceService) syncPriceToChargebeeIfEnabled(ctx context.Context, priceI
 			"price_id", priceID,
 			"plan_id", planID)
 	}
+}
+
+// applyPriceUnitConversionToPrice applies price unit conversion to an existing Price object
+// This method handles:
+// 1. Fetching and validating the price unit entity
+// 2. Converting price unit amounts to base currency amounts and updating p.Amount
+// 3. Converting price unit tiers to base currency tiers and updating p.Tiers
+// 4. Setting price unit metadata (PriceUnitID, ConversionRate) on the Price object
+func (s *priceService) applyPriceUnitConversionToPrice(ctx context.Context, p *price.Price) error {
+	// 1. Fetch the price unit by code
+	priceUnit, err := s.PriceUnitRepo.GetByCode(ctx, lo.FromPtr(p.PriceUnit))
+	if err != nil {
+		return err
+	}
+
+	// 2. Validate price unit is published
+	if priceUnit.Status != types.StatusPublished {
+		return ierr.NewError("price unit must be published").
+			WithHint("The specified price unit is not published").
+			WithReportableDetails(map[string]interface{}{
+				"price_unit_code": lo.FromPtr(p.PriceUnit),
+				"status":          priceUnit.Status,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// 3. Validate base currency matches the price currency
+	if priceUnit.BaseCurrency != p.Currency {
+		return ierr.NewError("price unit base currency must match price currency").
+			WithHint("The price unit's base currency must match the price's currency").
+			WithReportableDetails(map[string]interface{}{
+				"price_unit_base_currency": priceUnit.BaseCurrency,
+				"price_currency":           p.Currency,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// 4. Convert amount if provided (for FLAT_FEE and PACKAGE billing models)
+	if p.PriceUnitAmount != nil {
+		// Convert price unit amount to fiat currency
+		fiatAmount, err := priceunit.ConvertToFiatCurrencyAmount(
+			ctx,
+			lo.FromPtrOr(p.PriceUnitAmount, decimal.Zero),
+			priceUnit.ConversionRate,
+		)
+		if err != nil {
+			return err
+		}
+
+		// Update the price amount with converted value
+		p.Amount = fiatAmount
+	}
+
+	// 5. Convert tiers if provided (for TIERED billing model)
+	if len(p.PriceUnitTiers) > 0 {
+		convertedTiers := make([]price.PriceTier, len(p.PriceUnitTiers))
+
+		for i, tier := range p.PriceUnitTiers {
+			// Convert unit amount
+			convertedUnitAmount, err := priceunit.ConvertToFiatCurrencyAmount(
+				ctx,
+				tier.UnitAmount,
+				priceUnit.ConversionRate,
+			)
+			if err != nil {
+				return err
+			}
+
+			convertedTier := price.PriceTier{
+				UpTo:       tier.UpTo,
+				UnitAmount: convertedUnitAmount,
+			}
+
+			// Convert flat amount if provided
+			if tier.FlatAmount != nil {
+				convertedFlatAmount, err := priceunit.ConvertToFiatCurrencyAmount(
+					ctx,
+					lo.FromPtrOr(tier.FlatAmount, decimal.Zero),
+					priceUnit.ConversionRate,
+				)
+				if err != nil {
+					return err
+				}
+				convertedTier.FlatAmount = lo.ToPtr(convertedFlatAmount)
+			}
+
+			convertedTiers[i] = convertedTier
+		}
+
+		// Update the price tiers with converted values
+		p.Tiers = price.JSONBTiers(convertedTiers)
+	}
+
+	// 6. Set price unit metadata
+	p.PriceUnitID = lo.ToPtr(priceUnit.ID)
+	p.ConversionRate = &priceUnit.ConversionRate
+
+	// 7. Update display amounts after conversion
+	p.DisplayAmount = p.GetDisplayAmount()
+	if p.PriceUnitAmount != nil {
+		p.DisplayPriceUnitAmount = p.GetDisplayPriceUnitAmount(priceUnit.Symbol)
+	}
+
+	s.Logger.Infow("applied price unit conversion to price object",
+		"price_unit_id", priceUnit.ID,
+		"price_unit_code", priceUnit.Code,
+		"conversion_rate", priceUnit.ConversionRate.String(),
+		"base_currency", priceUnit.BaseCurrency,
+		"converted_amount", p.Amount.String(),
+		"has_tiers", len(p.Tiers) > 0,
+	)
+
+	return nil
+}
+
+// syncPriceToQuickBooksIfEnabled syncs a price to QuickBooks via Temporal workflow if the integration is enabled.
+// This is a non-blocking operation that offloads the sync to Temporal, preventing blocking and duplicate entity mappings.
+// All QuickBooks syncs go through Temporal for reliability, retries, and proper async handling.
+func (s *priceService) syncPriceToQuickBooksIfEnabled(ctx context.Context, priceID, planID string) {
+	// Get global Temporal service
+	temporalSvc := temporalService.GetGlobalTemporalService()
+	if temporalSvc == nil {
+		s.Logger.Debugw("Temporal service not available, skipping QuickBooks sync",
+			"price_id", priceID)
+		return
+	}
+
+	// Check if QuickBooks integration is available
+	if s.IntegrationFactory == nil {
+		return
+	}
+
+	// Quick check: does QuickBooks connection exist?
+	_, err := s.IntegrationFactory.GetQuickBooksIntegration(ctx)
+	if err != nil {
+		if ierr.IsNotFound(err) {
+			// Connection not configured - skip silently
+			s.Logger.Debugw("QB TEMPORAL SYNC - connection not found, skipping",
+				"price_id", priceID)
+			return
+		}
+		// Actual error - log but don't fail
+		s.Logger.Errorw("error checking QuickBooks connection",
+			"price_id", priceID,
+			"plan_id", planID,
+			"error", err)
+		return
+	}
+
+	// Trigger Temporal workflow for QuickBooks price sync
+	workflowInput := map[string]interface{}{
+		"price_id": priceID,
+		"plan_id":  planID,
+	}
+
+	workflowRun, err := temporalSvc.ExecuteWorkflow(
+		ctx,
+		types.TemporalQuickBooksPriceSyncWorkflow,
+		workflowInput,
+	)
+	if err != nil {
+		s.Logger.Errorw("failed to start QuickBooks sync workflow",
+			"price_id", priceID,
+			"plan_id", planID,
+			"error", err)
+		return
+	}
+
+	s.Logger.Debugw("QuickBooks sync workflow started",
+		"price_id", priceID,
+		"plan_id", planID,
+		"workflow_id", workflowRun.GetID(),
+		"run_id", workflowRun.GetRunID())
+}
+
+func (s *priceService) GetByLookupKey(ctx context.Context, lookupKey string) (*dto.PriceResponse, error) {
+	if lookupKey == "" {
+		return nil, ierr.NewError("lookup key is required").
+			WithHint("Lookup key is required").
+			Mark(ierr.ErrValidation)
+	}
+
+	price, err := s.PriceRepo.GetByLookupKey(ctx, lookupKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.PriceResponse{Price: price}, nil
 }

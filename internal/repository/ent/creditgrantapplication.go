@@ -60,7 +60,7 @@ func (r *creditGrantApplicationRepository) Create(ctx context.Context, a *domain
 		SetCreditGrantID(a.CreditGrantID).
 		SetSubscriptionID(a.SubscriptionID).
 		SetScheduledFor(a.ScheduledFor).
-		SetNillablePeriodStart(a.PeriodStart).
+		SetPeriodStart(a.PeriodStart).
 		SetNillablePeriodEnd(a.PeriodEnd).
 		SetApplicationStatus(a.ApplicationStatus).
 		SetCredits(a.Credits).
@@ -536,6 +536,10 @@ func (o CreditGrantApplicationQueryOptions) applyEntityQueryOptions(_ context.Co
 
 	if f.ScheduledFor != nil {
 		query = query.Where(cga.ScheduledFor(*f.ScheduledFor))
+	}
+
+	if f.ScheduledAfter != nil {
+		query = query.Where(cga.ScheduledForGT(lo.FromPtr(f.ScheduledAfter)))
 	}
 
 	if f.AppliedAt != nil {

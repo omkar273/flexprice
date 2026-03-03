@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -59,6 +60,8 @@ const (
 	FieldCurrency = "currency"
 	// FieldBillingPeriod holds the string denoting the billing_period field in the database.
 	FieldBillingPeriod = "billing_period"
+	// FieldBillingPeriodCount holds the string denoting the billing_period_count field in the database.
+	FieldBillingPeriodCount = "billing_period_count"
 	// FieldInvoiceCadence holds the string denoting the invoice_cadence field in the database.
 	FieldInvoiceCadence = "invoice_cadence"
 	// FieldTrialPeriod holds the string denoting the trial_period field in the database.
@@ -71,6 +74,20 @@ const (
 	FieldSubscriptionPhaseID = "subscription_phase_id"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
+	// FieldCommitmentAmount holds the string denoting the commitment_amount field in the database.
+	FieldCommitmentAmount = "commitment_amount"
+	// FieldCommitmentQuantity holds the string denoting the commitment_quantity field in the database.
+	FieldCommitmentQuantity = "commitment_quantity"
+	// FieldCommitmentType holds the string denoting the commitment_type field in the database.
+	FieldCommitmentType = "commitment_type"
+	// FieldCommitmentOverageFactor holds the string denoting the commitment_overage_factor field in the database.
+	FieldCommitmentOverageFactor = "commitment_overage_factor"
+	// FieldCommitmentTrueUpEnabled holds the string denoting the commitment_true_up_enabled field in the database.
+	FieldCommitmentTrueUpEnabled = "commitment_true_up_enabled"
+	// FieldCommitmentWindowed holds the string denoting the commitment_windowed field in the database.
+	FieldCommitmentWindowed = "commitment_windowed"
+	// FieldCommitmentDuration holds the string denoting the commitment_duration field in the database.
+	FieldCommitmentDuration = "commitment_duration"
 	// EdgeSubscription holds the string denoting the subscription edge name in mutations.
 	EdgeSubscription = "subscription"
 	// EdgeCouponAssociations holds the string denoting the coupon_associations edge name in mutations.
@@ -118,12 +135,20 @@ var Columns = []string{
 	FieldQuantity,
 	FieldCurrency,
 	FieldBillingPeriod,
+	FieldBillingPeriodCount,
 	FieldInvoiceCadence,
 	FieldTrialPeriod,
 	FieldStartDate,
 	FieldEndDate,
 	FieldSubscriptionPhaseID,
 	FieldMetadata,
+	FieldCommitmentAmount,
+	FieldCommitmentQuantity,
+	FieldCommitmentType,
+	FieldCommitmentOverageFactor,
+	FieldCommitmentTrueUpEnabled,
+	FieldCommitmentWindowed,
+	FieldCommitmentDuration,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -154,7 +179,7 @@ var (
 	// CustomerIDValidator is a validator for the "customer_id" field. It is called by the builders before save.
 	CustomerIDValidator func(string) error
 	// DefaultEntityType holds the default value on creation for the "entity_type" field.
-	DefaultEntityType string
+	DefaultEntityType types.InvoiceLineItemEntityType
 	// PriceIDValidator is a validator for the "price_id" field. It is called by the builders before save.
 	PriceIDValidator func(string) error
 	// DefaultQuantity holds the default value on creation for the "quantity" field.
@@ -163,8 +188,14 @@ var (
 	CurrencyValidator func(string) error
 	// BillingPeriodValidator is a validator for the "billing_period" field. It is called by the builders before save.
 	BillingPeriodValidator func(string) error
+	// DefaultBillingPeriodCount holds the default value on creation for the "billing_period_count" field.
+	DefaultBillingPeriodCount int
 	// DefaultTrialPeriod holds the default value on creation for the "trial_period" field.
 	DefaultTrialPeriod int
+	// DefaultCommitmentTrueUpEnabled holds the default value on creation for the "commitment_true_up_enabled" field.
+	DefaultCommitmentTrueUpEnabled bool
+	// DefaultCommitmentWindowed holds the default value on creation for the "commitment_windowed" field.
+	DefaultCommitmentWindowed bool
 )
 
 // OrderOption defines the ordering options for the SubscriptionLineItem queries.
@@ -285,6 +316,11 @@ func ByBillingPeriod(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBillingPeriod, opts...).ToFunc()
 }
 
+// ByBillingPeriodCount orders the results by the billing_period_count field.
+func ByBillingPeriodCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBillingPeriodCount, opts...).ToFunc()
+}
+
 // ByInvoiceCadence orders the results by the invoice_cadence field.
 func ByInvoiceCadence(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInvoiceCadence, opts...).ToFunc()
@@ -308,6 +344,41 @@ func ByEndDate(opts ...sql.OrderTermOption) OrderOption {
 // BySubscriptionPhaseID orders the results by the subscription_phase_id field.
 func BySubscriptionPhaseID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscriptionPhaseID, opts...).ToFunc()
+}
+
+// ByCommitmentAmount orders the results by the commitment_amount field.
+func ByCommitmentAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommitmentAmount, opts...).ToFunc()
+}
+
+// ByCommitmentQuantity orders the results by the commitment_quantity field.
+func ByCommitmentQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommitmentQuantity, opts...).ToFunc()
+}
+
+// ByCommitmentType orders the results by the commitment_type field.
+func ByCommitmentType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommitmentType, opts...).ToFunc()
+}
+
+// ByCommitmentOverageFactor orders the results by the commitment_overage_factor field.
+func ByCommitmentOverageFactor(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommitmentOverageFactor, opts...).ToFunc()
+}
+
+// ByCommitmentTrueUpEnabled orders the results by the commitment_true_up_enabled field.
+func ByCommitmentTrueUpEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommitmentTrueUpEnabled, opts...).ToFunc()
+}
+
+// ByCommitmentWindowed orders the results by the commitment_windowed field.
+func ByCommitmentWindowed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommitmentWindowed, opts...).ToFunc()
+}
+
+// ByCommitmentDuration orders the results by the commitment_duration field.
+func ByCommitmentDuration(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommitmentDuration, opts...).ToFunc()
 }
 
 // BySubscriptionField orders the results by subscription field.

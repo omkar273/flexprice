@@ -86,6 +86,8 @@ type Tx struct {
 	SubscriptionPause *SubscriptionPauseClient
 	// SubscriptionPhase is the client for interacting with the SubscriptionPhase builders.
 	SubscriptionPhase *SubscriptionPhaseClient
+	// SubscriptionSchedule is the client for interacting with the SubscriptionSchedule builders.
+	SubscriptionSchedule *SubscriptionScheduleClient
 	// Task is the client for interacting with the Task builders.
 	Task *TaskClient
 	// TaxApplied is the client for interacting with the TaxApplied builders.
@@ -102,6 +104,8 @@ type Tx struct {
 	Wallet *WalletClient
 	// WalletTransaction is the client for interacting with the WalletTransaction builders.
 	WalletTransaction *WalletTransactionClient
+	// WorkflowExecution is the client for interacting with the WorkflowExecution builders.
+	WorkflowExecution *WorkflowExecutionClient
 
 	// lazily loaded.
 	client     *Client
@@ -269,6 +273,7 @@ func (tx *Tx) init() {
 	tx.SubscriptionLineItem = NewSubscriptionLineItemClient(tx.config)
 	tx.SubscriptionPause = NewSubscriptionPauseClient(tx.config)
 	tx.SubscriptionPhase = NewSubscriptionPhaseClient(tx.config)
+	tx.SubscriptionSchedule = NewSubscriptionScheduleClient(tx.config)
 	tx.Task = NewTaskClient(tx.config)
 	tx.TaxApplied = NewTaxAppliedClient(tx.config)
 	tx.TaxAssociation = NewTaxAssociationClient(tx.config)
@@ -277,6 +282,7 @@ func (tx *Tx) init() {
 	tx.User = NewUserClient(tx.config)
 	tx.Wallet = NewWalletClient(tx.config)
 	tx.WalletTransaction = NewWalletTransactionClient(tx.config)
+	tx.WorkflowExecution = NewWorkflowExecutionClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

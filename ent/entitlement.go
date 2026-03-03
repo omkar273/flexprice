@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/flexprice/flexprice/ent/entitlement"
+	"github.com/flexprice/flexprice/internal/types"
 )
 
 // Entitlement is the model entity for the Entitlement schema.
@@ -32,19 +33,19 @@ type Entitlement struct {
 	// EnvironmentID holds the value of the "environment_id" field.
 	EnvironmentID string `json:"environment_id,omitempty"`
 	// EntityType holds the value of the "entity_type" field.
-	EntityType string `json:"entity_type,omitempty"`
+	EntityType types.EntitlementEntityType `json:"entity_type,omitempty"`
 	// EntityID holds the value of the "entity_id" field.
 	EntityID string `json:"entity_id,omitempty"`
 	// FeatureID holds the value of the "feature_id" field.
 	FeatureID string `json:"feature_id,omitempty"`
 	// FeatureType holds the value of the "feature_type" field.
-	FeatureType string `json:"feature_type,omitempty"`
+	FeatureType types.FeatureType `json:"feature_type,omitempty"`
 	// IsEnabled holds the value of the "is_enabled" field.
 	IsEnabled bool `json:"is_enabled,omitempty"`
 	// UsageLimit holds the value of the "usage_limit" field.
 	UsageLimit *int64 `json:"usage_limit,omitempty"`
 	// UsageResetPeriod holds the value of the "usage_reset_period" field.
-	UsageResetPeriod string `json:"usage_reset_period,omitempty"`
+	UsageResetPeriod types.EntitlementUsageResetPeriod `json:"usage_reset_period,omitempty"`
 	// IsSoftLimit holds the value of the "is_soft_limit" field.
 	IsSoftLimit bool `json:"is_soft_limit,omitempty"`
 	// StaticValue holds the value of the "static_value" field.
@@ -53,8 +54,12 @@ type Entitlement struct {
 	DisplayOrder int `json:"display_order,omitempty"`
 	// References the parent entitlement (for subscription-scoped entitlements)
 	ParentEntitlementID *string `json:"parent_entitlement_id,omitempty"`
-	addon_entitlements  *string
-	selectValues        sql.SelectValues
+	// Start date for time-bound entitlements (subscription-scoped only)
+	StartDate *time.Time `json:"start_date,omitempty"`
+	// End date for time-bound entitlements (subscription-scoped only)
+	EndDate            *time.Time `json:"end_date,omitempty"`
+	addon_entitlements *string
+	selectValues       sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -68,7 +73,7 @@ func (*Entitlement) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case entitlement.FieldID, entitlement.FieldTenantID, entitlement.FieldStatus, entitlement.FieldCreatedBy, entitlement.FieldUpdatedBy, entitlement.FieldEnvironmentID, entitlement.FieldEntityType, entitlement.FieldEntityID, entitlement.FieldFeatureID, entitlement.FieldFeatureType, entitlement.FieldUsageResetPeriod, entitlement.FieldStaticValue, entitlement.FieldParentEntitlementID:
 			values[i] = new(sql.NullString)
-		case entitlement.FieldCreatedAt, entitlement.FieldUpdatedAt:
+		case entitlement.FieldCreatedAt, entitlement.FieldUpdatedAt, entitlement.FieldStartDate, entitlement.FieldEndDate:
 			values[i] = new(sql.NullTime)
 		case entitlement.ForeignKeys[0]: // addon_entitlements
 			values[i] = new(sql.NullString)
@@ -139,7 +144,7 @@ func (e *Entitlement) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field entity_type", values[i])
 			} else if value.Valid {
-				e.EntityType = value.String
+				e.EntityType = types.EntitlementEntityType(value.String)
 			}
 		case entitlement.FieldEntityID:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -157,7 +162,7 @@ func (e *Entitlement) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field feature_type", values[i])
 			} else if value.Valid {
-				e.FeatureType = value.String
+				e.FeatureType = types.FeatureType(value.String)
 			}
 		case entitlement.FieldIsEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -176,7 +181,7 @@ func (e *Entitlement) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field usage_reset_period", values[i])
 			} else if value.Valid {
-				e.UsageResetPeriod = value.String
+				e.UsageResetPeriod = types.EntitlementUsageResetPeriod(value.String)
 			}
 		case entitlement.FieldIsSoftLimit:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -202,6 +207,20 @@ func (e *Entitlement) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				e.ParentEntitlementID = new(string)
 				*e.ParentEntitlementID = value.String
+			}
+		case entitlement.FieldStartDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field start_date", values[i])
+			} else if value.Valid {
+				e.StartDate = new(time.Time)
+				*e.StartDate = value.Time
+			}
+		case entitlement.FieldEndDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field end_date", values[i])
+			} else if value.Valid {
+				e.EndDate = new(time.Time)
+				*e.EndDate = value.Time
 			}
 		case entitlement.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -268,7 +287,7 @@ func (e *Entitlement) String() string {
 	builder.WriteString(e.EnvironmentID)
 	builder.WriteString(", ")
 	builder.WriteString("entity_type=")
-	builder.WriteString(e.EntityType)
+	builder.WriteString(fmt.Sprintf("%v", e.EntityType))
 	builder.WriteString(", ")
 	builder.WriteString("entity_id=")
 	builder.WriteString(e.EntityID)
@@ -277,7 +296,7 @@ func (e *Entitlement) String() string {
 	builder.WriteString(e.FeatureID)
 	builder.WriteString(", ")
 	builder.WriteString("feature_type=")
-	builder.WriteString(e.FeatureType)
+	builder.WriteString(fmt.Sprintf("%v", e.FeatureType))
 	builder.WriteString(", ")
 	builder.WriteString("is_enabled=")
 	builder.WriteString(fmt.Sprintf("%v", e.IsEnabled))
@@ -288,7 +307,7 @@ func (e *Entitlement) String() string {
 	}
 	builder.WriteString(", ")
 	builder.WriteString("usage_reset_period=")
-	builder.WriteString(e.UsageResetPeriod)
+	builder.WriteString(fmt.Sprintf("%v", e.UsageResetPeriod))
 	builder.WriteString(", ")
 	builder.WriteString("is_soft_limit=")
 	builder.WriteString(fmt.Sprintf("%v", e.IsSoftLimit))
@@ -302,6 +321,16 @@ func (e *Entitlement) String() string {
 	if v := e.ParentEntitlementID; v != nil {
 		builder.WriteString("parent_entitlement_id=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := e.StartDate; v != nil {
+		builder.WriteString("start_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := e.EndDate; v != nil {
+		builder.WriteString("end_date=")
+		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')
 	return builder.String()

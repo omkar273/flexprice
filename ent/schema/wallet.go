@@ -71,57 +71,51 @@ func (Wallet) Fields() []ent.Field {
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
-			Default(string(types.WalletStatusActive)),
-		field.String("auto_topup_trigger").
+			Default(string(types.WalletStatusActive)).
+			GoType(types.WalletStatus("")),
+		field.JSON("auto_topup", &types.AutoTopup{}).
 			SchemaType(map[string]string{
-				"postgres": "varchar(50)",
+				"postgres": "jsonb",
 			}).
-			Optional().
-			Nillable().
-			Default(string(types.AutoTopupTriggerDisabled)),
-		field.Other("auto_topup_min_balance", decimal.Decimal{}).
-			SchemaType(map[string]string{
-				"postgres": "numeric(20,9)",
-			}).
-			Optional().
-			Nillable(),
-		field.Other("auto_topup_amount", decimal.Decimal{}).
-			SchemaType(map[string]string{
-				"postgres": "numeric(20,9)",
-			}).
-			Optional().
-			Nillable(),
+			Optional(),
 		field.String("wallet_type").
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
 			Immutable().
-			Default(string(types.WalletTypePrePaid)),
+			Default(string(types.WalletTypePrePaid)).
+			GoType(types.WalletType("")),
+
+		// conversion_rate is used for converting the wallet credits to the currency during consumption
 		field.Other("conversion_rate", decimal.Decimal{}).
 			SchemaType(map[string]string{
 				"postgres": "numeric(10,5)",
 			}).
 			Immutable().
-			Annotations(
-				entsql.Default("1"),
-			),
+			Default(decimal.NewFromInt(1)),
+
+		// topup_conversion_rate is the conversion rate for the topup to the currency
+		field.Other("topup_conversion_rate", decimal.Decimal{}).
+			SchemaType(map[string]string{
+				"postgres": "numeric(10,5)",
+			}).
+			// TODO: remove this after migration
+			Optional().
+			Nillable().
+			Immutable().
+			Default(decimal.NewFromInt(1)),
+
 		field.JSON("config", types.WalletConfig{}).
 			Optional(),
-		field.JSON("alert_config", &types.AlertConfig{}).
-			SchemaType(map[string]string{
-				"postgres": "jsonb",
-			}).
+		field.JSON("alert_settings", types.AlertSettings{}).
 			Optional(),
-
-		field.Bool("alert_enabled").
-			Optional().
-			Default(true),
 		field.String("alert_state").
 			SchemaType(map[string]string{
 				"postgres": "varchar(50)",
 			}).
 			Optional().
-			Default(string(types.AlertStateOk)),
+			Default(string(types.AlertStateOk)).
+			GoType(types.AlertState("")),
 	}
 }
 

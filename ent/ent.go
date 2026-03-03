@@ -48,6 +48,7 @@ import (
 	"github.com/flexprice/flexprice/ent/subscriptionlineitem"
 	"github.com/flexprice/flexprice/ent/subscriptionpause"
 	"github.com/flexprice/flexprice/ent/subscriptionphase"
+	"github.com/flexprice/flexprice/ent/subscriptionschedule"
 	"github.com/flexprice/flexprice/ent/task"
 	"github.com/flexprice/flexprice/ent/taxapplied"
 	"github.com/flexprice/flexprice/ent/taxassociation"
@@ -56,6 +57,7 @@ import (
 	"github.com/flexprice/flexprice/ent/user"
 	"github.com/flexprice/flexprice/ent/wallet"
 	"github.com/flexprice/flexprice/ent/wallettransaction"
+	"github.com/flexprice/flexprice/ent/workflowexecution"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -152,6 +154,7 @@ func checkColumn(table, column string) error {
 			subscriptionlineitem.Table:     subscriptionlineitem.ValidColumn,
 			subscriptionpause.Table:        subscriptionpause.ValidColumn,
 			subscriptionphase.Table:        subscriptionphase.ValidColumn,
+			subscriptionschedule.Table:     subscriptionschedule.ValidColumn,
 			task.Table:                     task.ValidColumn,
 			taxapplied.Table:               taxapplied.ValidColumn,
 			taxassociation.Table:           taxassociation.ValidColumn,
@@ -160,6 +163,7 @@ func checkColumn(table, column string) error {
 			user.Table:                     user.ValidColumn,
 			wallet.Table:                   wallet.ValidColumn,
 			wallettransaction.Table:        wallettransaction.ValidColumn,
+			workflowexecution.Table:        workflowexecution.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

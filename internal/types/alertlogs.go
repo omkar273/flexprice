@@ -8,6 +8,9 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// Default threshold for wallet alerts
+// const WalletBalanceAlertThreshold = 0.5
+
 // AlertState represents the current state of a wallet alert
 type AlertState string
 
@@ -47,25 +50,6 @@ func (aet AlertEntityType) Validate() error {
 	return nil
 }
 
-// AlertThresholdType represents the type of threshold for alerts
-type AlertThresholdType string
-
-const (
-	AlertThresholdTypeAmount AlertThresholdType = "amount"
-)
-
-func (att AlertThresholdType) Validate() error {
-	allowedTypes := []AlertThresholdType{
-		AlertThresholdTypeAmount,
-	}
-	if !lo.Contains(allowedTypes, att) {
-		return ierr.NewError("invalid alert threshold type").
-			WithHint("Please provide a valid alert threshold type").
-			Mark(ierr.ErrValidation)
-	}
-	return nil
-}
-
 func (at AlertType) Validate() error {
 	allowedTypes := []AlertType{
 		AlertTypeLowOngoingBalance,
@@ -84,17 +68,6 @@ type AlertInfo struct {
 	AlertSettings *AlertSettings  `json:"alert_settings,omitempty"`
 	ValueAtTime   decimal.Decimal `json:"value_at_time"`
 	Timestamp     time.Time       `json:"timestamp"`
-}
-
-// AlertConfig represents the configuration for wallet alerts
-type AlertConfig struct {
-	Threshold *WalletAlertThreshold `json:"threshold,omitempty"`
-}
-
-// WalletAlertThreshold represents the threshold configuration for wallet alerts
-type WalletAlertThreshold struct {
-	Type  AlertThresholdType `json:"type"` // amount
-	Value decimal.Decimal    `json:"value"`
 }
 
 // AlertLogFilter represents filters for alert log queries

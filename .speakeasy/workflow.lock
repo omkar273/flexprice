@@ -1,0 +1,89 @@
+speakeasyVersion: 1.731.4
+sources:
+    swagger-json:
+        sourceNamespace: swagger-json
+        sourceRevisionDigest: sha256:ac48d1904d682a68bba12deca076d5802de7206c2efd1c4cac3c901c2bcd0f19
+        sourceBlobDigest: sha256:4c1bd8d25d1525c77ae24e99932207289d6af4affa21853eb9c26454401f0a8c
+        tags:
+            - latest
+            - "1.0"
+targets:
+    flexprice-go:
+        source: swagger-json
+        sourceNamespace: swagger-json
+        sourceRevisionDigest: sha256:ac48d1904d682a68bba12deca076d5802de7206c2efd1c4cac3c901c2bcd0f19
+        sourceBlobDigest: sha256:4c1bd8d25d1525c77ae24e99932207289d6af4affa21853eb9c26454401f0a8c
+        codeSamplesNamespace: swagger-json-go-code-samples
+        codeSamplesRevisionDigest: sha256:672ce41940ddcc02d2519e4962c960be08caf839304bdb6d17a4e46e9d679a70
+    flexprice-mcp:
+        source: swagger-json-mcp
+    flexprice-python:
+        source: swagger-json
+        sourceNamespace: swagger-json
+        sourceRevisionDigest: sha256:ac48d1904d682a68bba12deca076d5802de7206c2efd1c4cac3c901c2bcd0f19
+        sourceBlobDigest: sha256:4c1bd8d25d1525c77ae24e99932207289d6af4affa21853eb9c26454401f0a8c
+        codeSamplesNamespace: swagger-json-python-code-samples
+        codeSamplesRevisionDigest: sha256:84edd365e3d5c343d79cd6fcfec66638c9923fb4463ce51494bb8dfae21d13fc
+    flexprice-typescript:
+        source: swagger-json
+        sourceNamespace: swagger-json
+        sourceRevisionDigest: sha256:ac48d1904d682a68bba12deca076d5802de7206c2efd1c4cac3c901c2bcd0f19
+        sourceBlobDigest: sha256:4c1bd8d25d1525c77ae24e99932207289d6af4affa21853eb9c26454401f0a8c
+        codeSamplesNamespace: swagger-json-typescript-code-samples
+        codeSamplesRevisionDigest: sha256:12ece34bcd063e556b8f07920bec688c3dfb9c9d88f91f49880448c315a0e4f3
+workflow:
+    workflowVersion: 1.0.0
+    speakeasyVersion: latest
+    sources:
+        swagger-json:
+            inputs:
+                - location: docs/swagger/swagger-3-0.json
+            registry:
+                location: registry.speakeasyapi.dev/flexprice/prod/swagger-json
+        swagger-json-mcp:
+            inputs:
+                - location: docs/swagger/swagger-3-0-mcp.json
+    targets:
+        flexprice-go:
+            target: go
+            source: swagger-json
+            output: ./api/go
+            codeSamples:
+                registry:
+                    location: registry.speakeasyapi.dev/flexprice/prod/swagger-json-go-code-samples
+                labelOverride:
+                    fixedValue: Go (SDK)
+                blocking: false
+        flexprice-mcp:
+            target: mcp-typescript
+            source: swagger-json-mcp
+            output: ./api/mcp
+            publish:
+                npm:
+                    token: $npm_token
+        flexprice-python:
+            target: python
+            source: swagger-json
+            output: ./api/python
+            publish:
+                pypi:
+                    token: $pypi_token
+            codeSamples:
+                registry:
+                    location: registry.speakeasyapi.dev/flexprice/prod/swagger-json-python-code-samples
+                labelOverride:
+                    fixedValue: Python (SDK)
+                blocking: false
+        flexprice-typescript:
+            target: typescript
+            source: swagger-json
+            output: ./api/typescript
+            publish:
+                npm:
+                    token: $npm_token
+            codeSamples:
+                registry:
+                    location: registry.speakeasyapi.dev/flexprice/prod/swagger-json-typescript-code-samples
+                labelOverride:
+                    fixedValue: Typescript (SDK)
+                blocking: false

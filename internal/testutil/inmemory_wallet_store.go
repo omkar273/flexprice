@@ -55,7 +55,7 @@ func walletFilterFn(ctx context.Context, w *wallet.Wallet, filter interface{}) b
 		}
 
 		// Filter by alert enabled
-		if f.AlertEnabled != nil && w.AlertEnabled != *f.AlertEnabled {
+		if f.AlertEnabled != nil && w.IsAlertEnabled() != *f.AlertEnabled {
 			return false
 		}
 
@@ -239,7 +239,7 @@ func (s *InMemoryWalletStore) UpdateWalletStatus(ctx context.Context, id string,
 }
 
 // FindEligibleCredits finds eligible credits for a wallet
-func (s *InMemoryWalletStore) FindEligibleCredits(ctx context.Context, walletID string, requiredAmount decimal.Decimal, pageSize int) ([]*wallet.Transaction, error) {
+func (s *InMemoryWalletStore) FindEligibleCredits(ctx context.Context, walletID string, requiredAmount decimal.Decimal, pageSize int, timeReference time.Time) ([]*wallet.Transaction, error) {
 	var allCredits []*wallet.Transaction
 
 	// Get all eligible credits first
@@ -368,6 +368,11 @@ func (s *InMemoryWalletStore) CreateTransaction(ctx context.Context, tx *wallet.
 	}
 
 	return nil
+}
+
+// CreateWalletTransaction is an alias for CreateTransaction for backwards compatibility
+func (s *InMemoryWalletStore) CreateWalletTransaction(ctx context.Context, tx *wallet.Transaction) error {
+	return s.CreateTransaction(ctx, tx)
 }
 
 // UpdateWalletBalance updates the wallet's balance and credit balance
@@ -585,14 +590,8 @@ func (s *InMemoryWalletStore) UpdateWallet(ctx context.Context, id string, w *wa
 	if w.Metadata != nil {
 		existing.Metadata = w.Metadata
 	}
-	if w.AutoTopupTrigger != "" {
-		existing.AutoTopupTrigger = w.AutoTopupTrigger
-	}
-	if !w.AutoTopupMinBalance.IsZero() {
-		existing.AutoTopupMinBalance = w.AutoTopupMinBalance
-	}
-	if !w.AutoTopupAmount.IsZero() {
-		existing.AutoTopupAmount = w.AutoTopupAmount
+	if w.AutoTopup != nil {
+		existing.AutoTopup = w.AutoTopup
 	}
 	// Update config if provided (WalletConfig is a struct type, so we always update it)
 	existing.Config = w.Config
@@ -707,4 +706,44 @@ func (s *InMemoryWalletStore) GetCreditTopupsForExport(ctx context.Context, tena
 	}
 
 	return results[start:end], nil
+}
+
+// GetCreditsAvailableBreakdown retrieves the breakdown of available credits by type
+func (s *InMemoryWalletStore) GetCreditsAvailableBreakdown(ctx context.Context, walletID string) (*types.CreditBreakdown, error) {
+	// Get all completed credit transactions for this wallet
+	transactions, err := s.transactions.List(ctx, nil, func(ctx context.Context, t *wallet.Transaction, filter interface{}) bool {
+		if t == nil {
+			return false
+		}
+
+		return t.WalletID == walletID &&
+			t.Type == types.TransactionTypeCredit &&
+			t.TxStatus == types.TransactionStatusCompleted
+	}, nil)
+
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to retrieve credits breakdown").
+			WithReportableDetails(map[string]interface{}{
+				"wallet_id": walletID,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+
+	breakdown := &types.CreditBreakdown{
+		Purchased: decimal.Zero,
+		Free:      decimal.Zero,
+	}
+
+	// Sum up the credits_available by type
+	for _, tx := range transactions {
+		switch tx.TransactionReason {
+		case types.TransactionReasonPurchasedCreditInvoiced, types.TransactionReasonPurchasedCreditDirect:
+			breakdown.Purchased = breakdown.Purchased.Add(tx.CreditsAvailable)
+		case types.TransactionReasonFreeCredit, types.TransactionReasonSubscriptionCredit:
+			breakdown.Free = breakdown.Free.Add(tx.CreditsAvailable)
+		}
+	}
+
+	return breakdown, nil
 }

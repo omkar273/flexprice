@@ -1,9 +1,13 @@
 package creditgrant
 
 import (
+	"context"
+	"time"
+
 	"github.com/flexprice/flexprice/ent"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
 
@@ -14,7 +18,7 @@ type CreditGrant struct {
 	Scope                  types.CreditGrantScope               `json:"scope"`
 	PlanID                 *string                              `json:"plan_id,omitempty"`
 	SubscriptionID         *string                              `json:"subscription_id,omitempty"`
-	Credits                decimal.Decimal                      `json:"credits"`
+	Credits                decimal.Decimal                      `json:"credits" swaggertype:"string"`
 	Cadence                types.CreditGrantCadence             `json:"cadence"`
 	Period                 *types.CreditGrantPeriod             `json:"period,omitempty"`
 	PeriodCount            *int                                 `json:"period_count,omitempty"`
@@ -23,8 +27,60 @@ type CreditGrant struct {
 	ExpirationDurationUnit *types.CreditGrantExpiryDurationUnit `json:"expiration_duration_unit,omitempty"`
 	Priority               *int                                 `json:"priority,omitempty"`
 	Metadata               types.Metadata                       `json:"metadata,omitempty"`
-	EnvironmentID          string                               `json:"environment_id"`
+	StartDate              *time.Time                           `json:"start_date,omitempty"`
+	EndDate                *time.Time                           `json:"end_date,omitempty"`
+	CreditGrantAnchor      *time.Time                           `json:"credit_grant_anchor,omitempty"`
+
+	// amount in the currency =  number of credits * conversion_rate
+	// ex if conversion_rate is 1, then 1 USD = 1 credit
+	// ex if conversion_rate is 2, then 1 USD = 0.5 credits
+	// ex if conversion_rate is 0.5, then 1 USD = 2 credits
+	ConversionRate *decimal.Decimal `db:"conversion_rate" json:"conversion_rate,omitempty" swaggertype:"string"`
+
+	// topup_conversion_rate is the conversion rate for the topup to the currency
+	// ex if topup_conversion_rate is 1, then 1 USD = 1 credit
+	// ex if topup_conversion_rate is 2, then 1 USD = 0.5 credits
+	// ex if topup_conversion_rate is 0.5, then 1 USD = 2 credits
+	TopupConversionRate *decimal.Decimal `db:"topup_conversion_rate" json:"topup_conversion_rate,omitempty" swaggertype:"string"`
+
+	EnvironmentID string `json:"environment_id"`
 	types.BaseModel
+}
+
+// CreditGrantCloneOverrides holds optional overrides for CopyWith. Nil fields mean "keep existing value".
+type CreditGrantCloneOverrides struct {
+	ID        *string
+	Scope     *types.CreditGrantScope
+	PlanID    *string
+	BaseModel *types.BaseModel
+}
+
+// CopyWith returns a shallow copy of the credit grant with optional overrides applied.
+// Pointer fields on the original (PlanID, SubscriptionID, Period, StartDate, EndDate, etc.) are shallow-copied.
+// If BaseModel is not in overrides, uses types.GetDefaultBaseModel(ctx).
+func (c *CreditGrant) CopyWith(ctx context.Context, overrides *CreditGrantCloneOverrides) *CreditGrant {
+	if c == nil {
+		return nil
+	}
+	out := lo.FromPtr(c)
+	if overrides == nil {
+		return lo.ToPtr(out)
+	}
+	if overrides.ID != nil {
+		out.ID = lo.FromPtr(overrides.ID)
+	}
+	if overrides.Scope != nil {
+		out.Scope = lo.FromPtr(overrides.Scope)
+	}
+	if overrides.PlanID != nil {
+		out.PlanID = overrides.PlanID
+	}
+	if overrides.BaseModel != nil {
+		out.BaseModel = lo.FromPtr(overrides.BaseModel)
+	} else {
+		out.BaseModel = types.GetDefaultBaseModel(ctx)
+	}
+	return lo.ToPtr(out)
 }
 
 // Validate performs validation on the credit grant
@@ -98,6 +154,24 @@ func (c *CreditGrant) Validate() error {
 		}
 	}
 
+	if c.Scope == types.CreditGrantScopeSubscription && c.StartDate == nil {
+		return ierr.NewError("start_date is required for subscription-scoped grants").
+			WithHint("Please provide a start date for the credit grant").
+			Mark(ierr.ErrValidation)
+	}
+
+	if c.CreditGrantAnchor != nil && c.StartDate != nil {
+		if c.CreditGrantAnchor.Before(*c.StartDate) {
+			return ierr.NewError("credit_grant_anchor cannot be before start_date").
+				WithHint("The anchor date must be on or after the start date").
+				WithReportableDetails(map[string]interface{}{
+					"start_date":          c.StartDate,
+					"credit_grant_anchor": c.CreditGrantAnchor,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	}
+
 	return nil
 }
 
@@ -128,6 +202,11 @@ func FromEnt(c *ent.CreditGrant) *CreditGrant {
 		ExpirationDuration:     c.ExpirationDuration,
 		ExpirationDurationUnit: c.ExpirationDurationUnit,
 		Metadata:               c.Metadata,
+		StartDate:              c.StartDate,
+		EndDate:                c.EndDate,
+		CreditGrantAnchor:      c.CreditGrantAnchor,
+		ConversionRate:         c.ConversionRate,
+		TopupConversionRate:    c.TopupConversionRate,
 		EnvironmentID:          c.EnvironmentID,
 		BaseModel: types.BaseModel{
 			TenantID:  c.TenantID,

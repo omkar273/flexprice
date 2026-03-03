@@ -10,6 +10,9 @@ import (
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/integration"
 	chargebeewebhook "github.com/flexprice/flexprice/internal/integration/chargebee/webhook"
+	moyasarwebhook "github.com/flexprice/flexprice/internal/integration/moyasar/webhook"
+	nomodwebhook "github.com/flexprice/flexprice/internal/integration/nomod/webhook"
+	quickbookswebhook "github.com/flexprice/flexprice/internal/integration/quickbooks/webhook"
 	razorpaywebhook "github.com/flexprice/flexprice/internal/integration/razorpay/webhook"
 	"github.com/flexprice/flexprice/internal/integration/stripe/webhook"
 	"github.com/flexprice/flexprice/internal/interfaces"
@@ -109,7 +112,8 @@ func (h *WebhookHandler) GetDashboardURL(c *gin.Context) {
 }
 
 // @Summary Handle Stripe webhook events
-// @Description Process incoming Stripe webhook events for payment status updates and customer creation
+// @ID handleStripeWebhook
+// @Description Use as the Stripe webhook endpoint URL. Receives payment and customer events from Stripe to keep FlexPrice in sync (e.g. payment succeeded, customer created).
 // @Tags Webhooks
 // @Accept json
 // @Produce json
@@ -235,7 +239,8 @@ func (h *WebhookHandler) HandleStripeWebhook(c *gin.Context) {
 }
 
 // @Summary Handle HubSpot webhook events
-// @Description Process incoming HubSpot webhook events for deal closed won and customer creation
+// @ID handleHubspotWebhook
+// @Description Use as the HubSpot webhook endpoint URL. Receives deal and customer events (e.g. deal closed won) to create or update customers in FlexPrice.
 // @Tags Webhooks
 // @Accept json
 // @Produce json
@@ -404,7 +409,8 @@ func (h *WebhookHandler) HandleHubSpotWebhook(c *gin.Context) {
 }
 
 // @Summary Handle Razorpay webhook events
-// @Description Process incoming Razorpay webhook events for payment capture and failure
+// @ID handleRazorpayWebhook
+// @Description Use as the Razorpay webhook endpoint URL. Receives payment capture and failure events to update invoice or payment status in FlexPrice.
 // @Tags Webhooks
 // @Accept json
 // @Produce json
@@ -515,7 +521,8 @@ func (h *WebhookHandler) HandleRazorpayWebhook(c *gin.Context) {
 }
 
 // @Summary Handle Chargebee webhook events
-// @Description Process incoming Chargebee webhook events for payment status updates
+// @ID handleChargebeeWebhook
+// @Description Use as the Chargebee webhook endpoint URL. Receives payment and subscription events from Chargebee to sync status into FlexPrice.
 // @Tags Webhooks
 // @Accept json
 // @Produce json
@@ -651,4 +658,405 @@ func (h *WebhookHandler) HandleChargebeeWebhook(c *gin.Context) {
 		"environment_id", environmentID,
 		"event_id", event.ID,
 		"event_type", event.EventType)
+}
+
+// @Summary Handle QuickBooks webhook events
+// @ID handleQuickbooksWebhook
+// @Description Use as the QuickBooks webhook endpoint URL. Receives payment events from QuickBooks to sync payment status into FlexPrice.
+// @Tags Webhooks
+// @Accept json
+// @Produce json
+// @Param tenant_id path string true "Tenant ID"
+// @Param environment_id path string true "Environment ID"
+// @Param intuit-signature header string false "QuickBooks webhook signature"
+// @Success 200 {object} map[string]interface{} "Webhook processed successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - invalid signature"
+// @Failure 400 {object} map[string]interface{} "Bad request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /webhooks/quickbooks/{tenant_id}/{environment_id} [post]
+func (h *WebhookHandler) HandleQuickBooksWebhook(c *gin.Context) {
+	// Always return 200 OK to QuickBooks to prevent retries
+	// We log errors internally but don't expose them to QuickBooks
+	defer func() {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Webhook received",
+		})
+	}()
+
+	tenantID := c.Param("tenant_id")
+	environmentID := c.Param("environment_id")
+
+	if tenantID == "" || environmentID == "" {
+		h.logger.Errorw("missing tenant_id or environment_id in webhook URL",
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+		return
+	}
+
+	// Read the raw request body
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.logger.Errorw("failed to read request body", "error", err)
+		return
+	}
+
+	// Get QuickBooks signature from headers
+	signature := c.GetHeader("intuit-signature")
+
+	// Log webhook receipt (without sensitive data)
+	h.logger.Debugw("received QuickBooks webhook",
+		"tenant_id", tenantID,
+		"environment_id", environmentID,
+		"has_signature", signature != "",
+		"body_length", len(body))
+
+	// Set context with tenant and environment IDs
+	ctx := types.SetTenantID(c.Request.Context(), tenantID)
+	ctx = types.SetEnvironmentID(ctx, environmentID)
+	c.Request = c.Request.WithContext(ctx)
+
+	// Get QuickBooks integration
+	qbIntegration, err := h.integrationFactory.GetQuickBooksIntegration(ctx)
+	if err != nil {
+		h.logger.Errorw("failed to get QuickBooks integration", "error", err)
+		return
+	}
+
+	// Verify webhook signature (if signature provided)
+	if signature != "" {
+		err = qbIntegration.WebhookHandler.VerifyWebhookSignature(ctx, body, signature)
+		if err != nil {
+			h.logger.Errorw("failed to verify QuickBooks webhook signature",
+				"error", err,
+				"tenant_id", tenantID,
+				"environment_id", environmentID)
+			// Don't return 401 - QuickBooks expects 200
+			return
+		}
+		h.logger.Debugw("QuickBooks webhook signature verified",
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+	} else {
+		h.logger.Warnw("QuickBooks webhook received without signature",
+			"tenant_id", tenantID,
+			"environment_id", environmentID,
+			"note", "Consider configuring webhook verifier token for security")
+	}
+
+	// Create service dependencies for webhook handler
+	serviceDeps := &quickbookswebhook.ServiceDependencies{
+		PaymentService: h.paymentService,
+		InvoiceService: h.invoiceService,
+	}
+
+	// Handle the webhook event
+	err = qbIntegration.WebhookHandler.HandleWebhook(ctx, body, serviceDeps)
+	if err != nil {
+		h.logger.Errorw("failed to handle QuickBooks webhook event",
+			"error", err,
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+		return
+	}
+
+	h.logger.Infow("successfully processed QuickBooks webhook",
+		"tenant_id", tenantID,
+		"environment_id", environmentID)
+}
+
+// @Summary Handle Nomod webhook events
+// @ID handleNomodWebhook
+// @Description Use as the Nomod webhook endpoint URL. Receives payment and invoice events from Nomod to keep FlexPrice in sync.
+// @Tags Webhooks
+// @Accept json
+// @Produce json
+// @Param tenant_id path string true "Tenant ID"
+// @Param environment_id path string true "Environment ID"
+// @Param X-API-KEY header string false "Nomod webhook secret (if configured)"
+// @Success 200 {object} map[string]interface{} "Webhook processed successfully"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - invalid or missing X-API-KEY"
+// @Router /webhooks/nomod/{tenant_id}/{environment_id} [post]
+func (h *WebhookHandler) HandleNomodWebhook(c *gin.Context) {
+	tenantID := c.Param("tenant_id")
+	environmentID := c.Param("environment_id")
+
+	if tenantID == "" || environmentID == "" {
+		h.logger.Errorw("missing tenant_id or environment_id in webhook URL",
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Webhook received",
+		})
+		return
+	}
+
+	// Read the raw request body
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.logger.Errorw("failed to read request body", "error", err)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Webhook received",
+		})
+		return
+	}
+
+	// Get X-API-KEY from headers for authentication
+	providedAPIKey := c.GetHeader("X-API-KEY")
+
+	// Set context with tenant and environment IDs
+	ctx := types.SetTenantID(c.Request.Context(), tenantID)
+	ctx = types.SetEnvironmentID(ctx, environmentID)
+	c.Request = c.Request.WithContext(ctx)
+
+	// Get Nomod integration
+	nomodIntegration, err := h.integrationFactory.GetNomodIntegration(ctx)
+	if err != nil {
+		h.logger.Errorw("failed to get Nomod integration", "error", err)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Webhook received",
+		})
+		return
+	}
+
+	// Get connection to check if webhook secret is configured
+	conn, err := nomodIntegration.Client.GetConnection(ctx)
+	if err != nil {
+		h.logger.Errorw("failed to get Nomod connection", "error", err)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Webhook received",
+		})
+		return
+	}
+
+	// Check if webhook secret is configured
+	hasWebhookSecretConfigured := conn.EncryptedSecretData.Nomod != nil &&
+		conn.EncryptedSecretData.Nomod.WebhookSecret != ""
+
+	hasAPIKey := providedAPIKey != ""
+
+	// Verify webhook authentication if webhook secret is configured
+	if hasWebhookSecretConfigured {
+		if !hasAPIKey {
+			h.logger.Errorw("webhook secret configured but X-API-KEY header not provided",
+				"remote_addr", c.ClientIP(),
+				"tenant_id", tenantID,
+				"environment_id", environmentID)
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "X-API-KEY header required for webhook authentication",
+			})
+			return
+		}
+
+		// Verify the API key
+		err = nomodIntegration.Client.VerifyWebhookAuth(ctx, providedAPIKey)
+		if err != nil {
+			h.logger.Errorw("Nomod webhook authentication failed",
+				"error", err,
+				"remote_addr", c.ClientIP())
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid webhook authentication",
+			})
+			return
+		}
+		h.logger.Debugw("Nomod webhook authentication successful",
+			"remote_addr", c.ClientIP())
+	} else {
+		h.logger.Debugw("Nomod webhook processing without authentication",
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+	}
+
+	// Log webhook processing (without sensitive data)
+	h.logger.Infow("processing Nomod webhook",
+		"environment_id", environmentID,
+		"tenant_id", tenantID)
+
+	// Parse webhook payload
+	var payload nomodwebhook.NomodWebhookPayload
+	if err := json.Unmarshal(body, &payload); err != nil {
+		h.logger.Errorw("failed to parse Nomod webhook payload", "error", err)
+		return
+	}
+
+	h.logger.Infow("parsed Nomod webhook payload",
+		"charge_id", payload.ID,
+		"has_invoice_id", payload.InvoiceID != nil,
+		"has_payment_link_id", payload.PaymentLinkID != nil)
+
+	// Create service dependencies for webhook handler
+	serviceDeps := &nomodwebhook.ServiceDependencies{
+		CustomerService: h.customerService,
+		PaymentService:  h.paymentService,
+		InvoiceService:  h.invoiceService,
+		PlanService:     h.planService,
+	}
+
+	// Handle the event
+	err = nomodIntegration.WebhookHandler.HandleWebhookEvent(ctx, &payload, serviceDeps)
+	if err != nil {
+		h.logger.Errorw("failed to handle Nomod webhook event",
+			"error", err,
+			"charge_id", payload.ID,
+			"environment_id", environmentID)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Webhook received",
+		})
+		return
+	}
+
+	h.logger.Infow("successfully processed Nomod webhook",
+		"charge_id", payload.ID,
+		"environment_id", environmentID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Webhook processed successfully",
+	})
+}
+
+// @Summary Handle Moyasar webhook events
+// @ID handleMoyasarWebhook
+// @Description Use as the Moyasar webhook endpoint URL. Receives payment events from Moyasar to update payment status in FlexPrice.
+// @Tags Webhooks
+// @Accept json
+// @Produce json
+// @Param tenant_id path string true "Tenant ID"
+// @Param environment_id path string true "Environment ID"
+// @Param X-Moyasar-Signature header string false "Moyasar webhook signature"
+// @Success 200 {object} map[string]interface{} "Webhook received (always returns 200)"
+// @Router /webhooks/moyasar/{tenant_id}/{environment_id} [post]
+func (h *WebhookHandler) HandleMoyasarWebhook(c *gin.Context) {
+	// Always return 200 OK to Moyasar to prevent retries
+	// We log errors internally but don't expose them to Moyasar
+	defer func() {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Webhook received",
+		})
+	}()
+
+	tenantID := c.Param("tenant_id")
+	environmentID := c.Param("environment_id")
+
+	if tenantID == "" || environmentID == "" {
+		h.logger.Errorw("missing tenant_id or environment_id in webhook URL",
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+		return
+	}
+
+	// Read the raw request body
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.logger.Errorw("failed to read request body", "error", err)
+		return
+	}
+
+	// Set context with tenant and environment IDs
+	ctx := types.SetTenantID(c.Request.Context(), tenantID)
+	ctx = types.SetEnvironmentID(ctx, environmentID)
+	c.Request = c.Request.WithContext(ctx)
+
+	// Parse webhook payload first to get the secret_token
+	var event moyasarwebhook.MoyasarWebhookEvent
+	err = json.Unmarshal(body, &event)
+	if err != nil {
+		h.logger.Errorw("failed to parse Moyasar webhook payload", "error", err)
+		return
+	}
+
+	// Get Moyasar integration
+	moyasarIntegration, err := h.integrationFactory.GetMoyasarIntegration(ctx)
+	if err != nil {
+		h.logger.Errorw("failed to get Moyasar integration", "error", err)
+		return
+	}
+
+	// Get connection to check if webhook secret is configured
+	conn, err := moyasarIntegration.Client.GetConnection(ctx)
+	if err != nil {
+		h.logger.Errorw("failed to get Moyasar connection", "error", err)
+		return
+	}
+
+	// Check if webhook secret is configured in FlexPrice
+	hasWebhookSecretConfigured := conn.EncryptedSecretData.Moyasar != nil &&
+		conn.EncryptedSecretData.Moyasar.WebhookSecret != ""
+
+	// Verify webhook secret_token from payload if configured
+	// According to Moyasar docs, the secret is sent in the payload as "secret_token", not as HTTP header
+	if hasWebhookSecretConfigured {
+		// Webhook secret is configured - verification is REQUIRED
+		if event.SecretToken == "" {
+			h.logger.Errorw("Moyasar webhook secret configured but secret_token missing in payload - rejecting request",
+				"tenant_id", tenantID,
+				"environment_id", environmentID,
+				"event_id", event.ID,
+				"note", "Moyasar must send shared_secret as secret_token in webhook payload when configured")
+			return
+		}
+		
+		// Get the decrypted Moyasar config to access the webhook secret
+		moyasarConfig, err := moyasarIntegration.Client.GetDecryptedMoyasarConfig(conn)
+		if err != nil {
+			h.logger.Errorw("failed to get decrypted Moyasar config",
+				"error", err,
+				"tenant_id", tenantID,
+				"environment_id", environmentID)
+			return
+		}
+		
+		// Verify the secret_token matches our configured (decrypted) webhook_secret
+		if event.SecretToken != moyasarConfig.WebhookSecret {
+			h.logger.Errorw("Moyasar webhook secret_token verification failed - rejecting request",
+				"tenant_id", tenantID,
+				"environment_id", environmentID,
+				"event_id", event.ID,
+				"note", "secret_token in payload does not match configured webhook_secret")
+			return
+		}
+		
+		h.logger.Infow("Moyasar webhook secret_token verified successfully",
+			"tenant_id", tenantID,
+			"environment_id", environmentID,
+			"event_id", event.ID)
+	} else {
+		// No webhook secret configured - allow with warning
+		h.logger.Warnw("Moyasar webhook received without secret verification",
+			"tenant_id", tenantID,
+			"environment_id", environmentID,
+			"event_id", event.ID,
+			"note", "Configure webhook_secret in Moyasar connection for enhanced security")
+	}
+
+	// Log webhook processing (without sensitive data)
+	h.logger.Infow("processing Moyasar webhook",
+		"environment_id", environmentID,
+		"tenant_id", tenantID,
+		"event_type", event.Type,
+		"event_id", event.ID,
+		"payload_length", len(body))
+
+	// Create service dependencies for webhook handler
+	serviceDeps := &moyasarwebhook.ServiceDependencies{
+		CustomerService:                 h.customerService,
+		PaymentService:                  h.paymentService,
+		InvoiceService:                  h.invoiceService,
+		PlanService:                     h.planService,
+		SubscriptionService:             h.subscriptionService,
+		EntityIntegrationMappingService: h.entityIntegrationMappingService,
+		DB:                              h.db,
+	}
+
+	// Handle the webhook event
+	err = moyasarIntegration.WebhookHandler.HandleWebhookEvent(ctx, &event, environmentID, serviceDeps)
+	if err != nil {
+		h.logger.Errorw("failed to handle Moyasar webhook event",
+			"error", err,
+			"event_type", event.Type,
+			"environment_id", environmentID)
+		return
+	}
+
+	h.logger.Infow("successfully processed Moyasar webhook",
+		"environment_id", environmentID,
+		"event_type", event.Type)
 }

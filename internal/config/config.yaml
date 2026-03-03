@@ -25,6 +25,7 @@ kafka:
   consumer_group: "flexprice-consumer-local"
   topic: "events"
   topic_lazy: "events_lazy"
+  topic_dlq: "events_dlq"
   tls: false
   use_sasl: false
   sasl_mechanism: ""
@@ -82,6 +83,12 @@ dynamodb:
 
 logging:
   level: "debug"
+  db_level: "error"
+  # Fluentd configuration for centralized logging
+  # When enabled, logs will be sent to Fluentd in addition to stdout
+  fluentd_enabled: false # Set to true to enable Fluentd logging
+  fluentd_host: "" # e.g., "fluentd-forward.kube-system.svc.cluster.local" or "X.X.X.X"
+  fluentd_port: 0 # e.g., 24224
 
 webhook:
   enabled: true
@@ -94,7 +101,7 @@ webhook:
   multiplier: 2.0
   max_elapsed_time: 2m
   tenants:
-    "00000000-0000-0000-0000-000000000000":
+    "tenant_01JJ20ZF9M5GQQXJG2AQSMZCVM":
       enabled: true
       endpoint: "http://localhost:8080/health"
       headers:
@@ -143,21 +150,39 @@ s3:
     presign_expiry_duration: "1h"
     key_prefix: ""
 
+flexprice_s3_exports:
+  bucket: "" # Set via FLEXPRICE_FLEXPRICE_S3_EXPORTS_BUCKET env var
+  region: "ap-south-1"
+  aws_access_key_id: "" # Set via FLEXPRICE_FLEXPRICE_S3_EXPORTS_ACCESS_KEY_ID env var
+  aws_secret_access_key: "" # Set via FLEXPRICE_FLEXPRICE_S3_EXPORTS_SECRET_ACCESS_KEY env var
+  aws_session_token: "" # Set via FLEXPRICE_FLEXPRICE_S3_EXPORTS_SESSION_TOKEN env var
+  
+
 cache:
   enabled: false
+  type: "inmemory"
 
 event_processing:
+  enabled: true
   topic: "events"
   rate_limit: 12
   consumer_group: "flexprice-consumer-local"
 
 event_processing_lazy:
+  enabled: true
   topic: "events_lazy"
   rate_limit: 12
   consumer_group: "v1_event_processing_lazy"
 
+event_processing_replay:
+  enabled: true
+  topic: "events_backfill"
+  rate_limit: 1
+  consumer_group: "v1_event_processing_replay"
+
 
 event_post_processing:
+  enabled: true
   topic: "events_post_processing"
   rate_limit: 12
   consumer_group: "v1_events_post_processing"
@@ -166,17 +191,45 @@ event_post_processing:
   consumer_group_backfill: "v1_events_post_processing_backfill"
 
 feature_usage_tracking:
+  enabled: true
   topic: "events"
   rate_limit: 1
   consumer_group: "v1_feature_tracking_service"
+  backfill_enabled: true
+  wallet_alert_push_enabled: true
   topic_backfill: "events_post_processing_backfill"
   rate_limit_backfill: 1
   consumer_group_backfill: "v1_feature_tracking_service_backfill"
 
 feature_usage_tracking_lazy:
+  enabled: true
   topic: "events_lazy"
   rate_limit: 1
   consumer_group: "v1_feature_tracking_service_lazy"
+
+feature_usage_tracking_replay:
+  enabled: true
+  topic: "events_backfill"
+  rate_limit: 1
+  consumer_group: "v1_feature_tracking_service_replay"
+
+costsheet_usage_tracking:
+  enabled: true
+  topic: "events"
+  rate_limit: 1
+  consumer_group: "v1_costsheet_usage_tracking_service"
+
+costsheet_usage_tracking_lazy:
+  enabled: true
+  topic: "events_lazy"
+  rate_limit: 1
+  consumer_group: "v1_costsheet_usage_tracking_service_lazy"
+  
+wallet_balance_alert:
+  enabled: true
+  topic: "wallet_alert"
+  rate_limit: 1
+  consumer_group: "v1_wallet_alert_service"
 
 feature_flag:
   # This flag is used to enable/disable feature usage for analytics
@@ -193,3 +246,40 @@ email:
 
 rbac:
   roles_config_path: "internal/config/rbac/roles.json" # Path to the roles.json file
+
+# Generic OAuth configuration for multiple integration providers
+oauth:
+  # Base redirect URI - MUST be registered in each OAuth provider's app settings
+  # Development: http://localhost:3000/tools/integrations/oauth/callback
+  # Staging: https://admin-dev.flexprice.io/tools/integrations/oauth/callback
+  # Production: https://admin.flexprice.io/tools/integrations/oauth/callback
+  redirect_uri: "http://localhost:3000/tools/integrations/oauth/callback"
+
+# Customer portal configuration
+customer_portal:
+  url: "http://localhost:3000"
+  token_timeout_hours: 1
+
+# Redis configuration
+redis:
+  host: "localhost" # Redis server hostname
+  port: 6379 # Redis server port
+  password: "" # Redis password (optional)
+  db: 0 # Redis database number
+  use_tls: false # Use TLS for Redis connection
+  pool_size: 10 # Maximum number of connections in the pool
+  timeout: 5s # Timeout for Redis operations
+  key_prefix: "flexprice:local"
+
+# Raw events reprocessing configuration
+raw_events_reprocessing:
+  enabled: true
+  output_topic: "prod_events_v4"
+
+# Raw event consumption configuration (batch processing from Bento)
+raw_event_consumption:
+  enabled: true
+  topic: "staging_events_backfill"      # INPUT: Reads batches from here
+  output_topic: "staging_events"                 # OUTPUT: Publishes transformed events to here
+  rate_limit: 10
+  consumer_group: "v1_raw_event_processing_v4"

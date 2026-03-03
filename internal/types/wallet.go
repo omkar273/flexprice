@@ -21,8 +21,15 @@ const (
 type WalletType string
 
 const (
-	WalletTypePromotional WalletType = "PROMOTIONAL"
-	WalletTypePrePaid     WalletType = "PRE_PAID"
+	// WalletTypePrePaid stores credits that reduce invoice amounts during invoice creation/finalization.
+	// Used for credit adjustments, credit note refunds, and purchased credits that adjust invoices.
+	// These wallets are automatically filtered for credit adjustment operations only.
+	WalletTypePrePaid WalletType = "PRE_PAID"
+
+	// WalletTypePostPaid stores credits used to pay invoices during payment processing.
+	// Used for invoice payments via payment method type "credits" and customer-initiated payments.
+	// These wallets are automatically filtered for payment processing operations only.
+	WalletTypePostPaid WalletType = "POST_PAID"
 )
 
 func (t WalletType) Validate() error {
@@ -31,8 +38,8 @@ func (t WalletType) Validate() error {
 	}
 
 	allowedValues := []string{
-		string(WalletTypePromotional),
 		string(WalletTypePrePaid),
+		string(WalletTypePostPaid),
 	}
 	if !lo.Contains(allowedValues, string(t)) {
 		return ierr.NewError("invalid wallet type").
@@ -59,6 +66,7 @@ const (
 	TransactionReasonCreditExpired           TransactionReason = "CREDIT_EXPIRED"
 	TransactionReasonWalletTermination       TransactionReason = "WALLET_TERMINATION"
 	TransactionReasonManualBalanceDebit      TransactionReason = "MANUAL_BALANCE_DEBIT"
+	TransactionReasonCreditAdjustment        TransactionReason = "CREDIT_ADJUSTMENT"
 )
 
 func (t TransactionReason) Validate() error {
@@ -76,6 +84,7 @@ func (t TransactionReason) Validate() error {
 		string(TransactionReasonCreditExpired),
 		string(TransactionReasonWalletTermination),
 		string(TransactionReasonManualBalanceDebit),
+		string(TransactionReasonCreditAdjustment),
 	}
 	if !lo.Contains(allowedValues, string(t)) {
 		return ierr.NewError("invalid transaction reason").
@@ -99,13 +108,20 @@ const (
 	WalletTxReferenceTypeExternal WalletTxReferenceType = "EXTERNAL"
 	// WalletTxReferenceTypeRequest is used for auto generated reference IDs
 	WalletTxReferenceTypeRequest WalletTxReferenceType = "REQUEST"
+
+	// WalletTxReferenceTypeInvoice is used for invoice reference IDs
+	WalletTxReferenceTypeInvoice WalletTxReferenceType = "INVOICE"
 )
 
 func (t WalletTxReferenceType) Validate() error {
+	if t == "" {
+		return nil
+	}
 	allowedValues := []string{
 		string(WalletTxReferenceTypePayment),
 		string(WalletTxReferenceTypeExternal),
 		string(WalletTxReferenceTypeRequest),
+		string(WalletTxReferenceTypeInvoice),
 	}
 	if !lo.Contains(allowedValues, string(t)) {
 		return ierr.NewError("invalid wallet transaction reference type").
@@ -119,46 +135,15 @@ func (t WalletTxReferenceType) Validate() error {
 	return nil
 }
 
-// AutoTopupTrigger represents the type of trigger for auto top-up
-type AutoTopupTrigger string
-
-const (
-	// AutoTopupTriggerDisabled represents disabled auto top-up
-	AutoTopupTriggerDisabled AutoTopupTrigger = "disabled"
-	// AutoTopupTriggerBalanceBelowThreshold represents auto top-up when balance goes below threshold
-	AutoTopupTriggerBalanceBelowThreshold AutoTopupTrigger = "balance_below_threshold"
-)
-
-func (t AutoTopupTrigger) Validate() error {
-	allowedValues := []string{
-		string(AutoTopupTriggerDisabled),
-		string(AutoTopupTriggerBalanceBelowThreshold),
-	}
-	if t == "" {
-		return nil
-	}
-
-	if !lo.Contains(allowedValues, string(t)) {
-		return ierr.NewError("invalid auto top-up trigger").
-			WithHint("Invalid auto top-up trigger").
-			WithReportableDetails(map[string]any{
-				"allowed": allowedValues,
-				"type":    t,
-			}).
-			Mark(ierr.ErrValidation)
-	}
-	return nil
-}
-
-// String returns the string representation of AutoTopupTrigger
-func (t AutoTopupTrigger) String() string {
-	return string(t)
-}
-
 // WalletTransactionFilter represents the filter options for wallet transactions
 type WalletTransactionFilter struct {
 	*QueryFilter
 	*TimeRangeFilter
+
+	// filters allows complex filtering based on multiple fields
+	Filters []*FilterCondition `json:"filters,omitempty" form:"filters" validate:"omitempty"`
+	Sort    []*SortCondition   `json:"sort,omitempty" form:"sort" validate:"omitempty"`
+
 	WalletID           *string            `json:"id,omitempty" form:"id"`
 	Type               *TransactionType   `json:"type,omitempty" form:"type"`
 	TransactionStatus  *TransactionStatus `json:"transaction_status,omitempty" form:"transaction_status"`
@@ -169,6 +154,7 @@ type WalletTransactionFilter struct {
 	CreditsAvailableGT *decimal.Decimal   `json:"credits_available_gt,omitempty" form:"credits_available_gt"`
 	TransactionReason  *TransactionReason `json:"transaction_reason,omitempty" form:"transaction_reason"`
 	Priority           *int               `json:"priority,omitempty" form:"priority"`
+	CreatedBy          *string            `json:"created_by,omitempty" form:"created_by"`
 }
 
 func NewWalletTransactionFilter() *WalletTransactionFilter {
@@ -221,8 +207,6 @@ func (f WalletTransactionFilter) Validate() error {
 				Mark(ierr.ErrValidation)
 		}
 	}
-
-	// TODO: Add validation for transaction reason if needed
 
 	return nil
 }
@@ -326,11 +310,21 @@ func (c WalletConfig) Validate() error {
 	return nil
 }
 
-type CheckAlertsRequest struct {
-	TenantIDs []string              `json:"tenant_ids"`
-	EnvIDs    []string              `json:"env_ids"`
-	WalletIDs []string              `json:"wallet_ids"`
-	Threshold *WalletAlertThreshold `json:"threshold,omitempty"`
+// CreditExpirySkipReason is the reason a credit grant was skipped during expiry.
+type CreditExpirySkipReason string
+
+const (
+	CreditExpirySkipReasonNone               CreditExpirySkipReason = ""
+	CreditExpirySkipReasonActiveSubscription CreditExpirySkipReason = "active_subscription"
+	CreditExpirySkipReasonActiveInvoice      CreditExpirySkipReason = "active_invoice"
+)
+
+// ExpireCreditsResult is the result of attempting to expire a single credit transaction.
+type ExpireCreditsResult struct {
+	// Expired is true if the credits were expired.
+	Expired bool `json:"expired"`
+	// SkipReason is set when expiry was skipped (e.g. active_subscription, active_invoice).
+	SkipReason CreditExpirySkipReason `json:"skip_reason,omitempty"`
 }
 
 // WalletFilter represents the filter options for wallets
@@ -352,4 +346,37 @@ func (f *WalletFilter) Validate() error {
 		f.QueryFilter = NewDefaultQueryFilter()
 	}
 	return f.QueryFilter.Validate()
+}
+
+// AutoTopup represents the auto top-up configuration for a wallet
+type AutoTopup struct {
+	Enabled   *bool            `json:"enabled"`
+	Threshold *decimal.Decimal `json:"threshold"`
+	Amount    *decimal.Decimal `json:"amount"`
+	Invoicing *bool            `json:"invoicing"`
+}
+
+func (a *AutoTopup) Validate() error {
+	if a.Threshold == nil {
+		return ierr.NewError("threshold is required").
+			WithHint("Threshold is required").
+			Mark(ierr.ErrValidation)
+	}
+	if a.Amount == nil {
+		return ierr.NewError("amount is required").
+			WithHint("Amount is required").
+			Mark(ierr.ErrValidation)
+	}
+	if a.Invoicing == nil {
+		return ierr.NewError("invoicing boolean is required").
+			WithHint("Invoicing boolean is required").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
+// CreditBreakdown represents the breakdown of credits available by type
+type CreditBreakdown struct {
+	Purchased decimal.Decimal `json:"purchased" swaggertype:"string"`
+	Free      decimal.Decimal `json:"free" swaggertype:"string"`
 }

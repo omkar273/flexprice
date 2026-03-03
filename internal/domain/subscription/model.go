@@ -93,10 +93,13 @@ type Subscription struct {
 	ActivePauseID *string `db:"active_pause_id" json:"active_pause_id,omitempty"`
 
 	// CommitmentAmount is the minimum amount a customer commits to paying for a billing period
-	CommitmentAmount *decimal.Decimal `db:"commitment_amount" json:"commitment_amount,omitempty"`
+	CommitmentAmount *decimal.Decimal `db:"commitment_amount" json:"commitment_amount,omitempty" swaggertype:"string"`
+
+	// CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on a MONTHLY subscription)
+	CommitmentDuration *types.BillingPeriod `db:"commitment_duration" json:"commitment_duration,omitempty"`
 
 	// OverageFactor is a multiplier applied to usage beyond the commitment amount
-	OverageFactor *decimal.Decimal `db:"overage_factor" json:"overage_factor,omitempty"`
+	OverageFactor *decimal.Decimal `db:"overage_factor" json:"overage_factor,omitempty" swaggertype:"string"`
 
 	// PaymentBehavior determines how subscription payments are handled
 	PaymentBehavior string `db:"payment_behavior" json:"payment_behavior"`
@@ -119,7 +122,36 @@ type Subscription struct {
 
 	ProrationBehavior types.ProrationBehavior `json:"proration_behavior"`
 
+	EnableTrueUp bool `json:"enable_true_up"`
+	// InvoicingCustomerID is the customer ID to use for invoicing
+	// This can differ from the subscription customer (e.g., parent company invoicing for child company)
+	InvoicingCustomerID *string `db:"invoicing_customer_id" json:"invoicing_customer_id,omitempty"`
+
+	// ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)
+	ParentSubscriptionID *string `db:"parent_subscription_id" json:"parent_subscription_id,omitempty"`
+
+	// PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
+	PaymentTerms *types.PaymentTerms `db:"payment_terms" json:"payment_terms,omitempty"`
+
 	types.BaseModel
+}
+
+// GetInvoicingCustomerID returns the invoicing customer ID if available, otherwise falls back to the subscription customer ID.
+// This provides backward compatibility for subscriptions that don't have an invoicing customer ID set.
+func (s *Subscription) GetInvoicingCustomerID() string {
+	if s.InvoicingCustomerID != nil && *s.InvoicingCustomerID != "" {
+		return *s.InvoicingCustomerID
+	}
+	return s.CustomerID
+}
+
+// HasCommitment returns true if the subscription has subscription-level commitment configured
+// (commitment amount and overage factor both set and greater than zero/one).
+func (s *Subscription) HasCommitment() bool {
+	return s.CommitmentAmount != nil &&
+		s.CommitmentAmount.GreaterThan(decimal.Zero) &&
+		s.OverageFactor != nil &&
+		s.OverageFactor.GreaterThan(decimal.NewFromInt(1))
 }
 
 func FromEntList(subs []*ent.Subscription) []*Subscription {
@@ -179,17 +211,22 @@ func GetSubscriptionFromEnt(sub *ent.Subscription) *Subscription {
 		PauseStatus:            types.PauseStatus(sub.PauseStatus),
 		ActivePauseID:          sub.ActivePauseID,
 		CommitmentAmount:       sub.CommitmentAmount,
+		CommitmentDuration:     sub.CommitmentDuration,
 		OverageFactor:          sub.OverageFactor,
 		PaymentBehavior:        string(sub.PaymentBehavior),
 		CollectionMethod:       string(sub.CollectionMethod),
 		GatewayPaymentMethodID: lo.ToPtr(sub.GatewayPaymentMethodID),
 
-		LineItems:          lineItems,
-		CouponAssociations: couponAssociations,
-		Pauses:             pauses,
-		Phases:             phases,
-		CustomerTimezone:   sub.CustomerTimezone,
-		ProrationBehavior:  types.ProrationBehavior(sub.ProrationBehavior),
+		LineItems:           lineItems,
+		CouponAssociations:  couponAssociations,
+		Pauses:              pauses,
+		Phases:              phases,
+		CustomerTimezone:    sub.CustomerTimezone,
+		ProrationBehavior:     types.ProrationBehavior(sub.ProrationBehavior),
+		EnableTrueUp:          sub.EnableTrueUp,
+		InvoicingCustomerID:   sub.InvoicingCustomerID,
+		ParentSubscriptionID: sub.ParentSubscriptionID,
+		PaymentTerms:         sub.PaymentTerms,
 		BaseModel: types.BaseModel{
 			TenantID:  sub.TenantID,
 			Status:    types.Status(sub.Status),

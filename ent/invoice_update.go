@@ -15,6 +15,7 @@ import (
 	"github.com/flexprice/flexprice/ent/invoice"
 	"github.com/flexprice/flexprice/ent/invoicelineitem"
 	"github.com/flexprice/flexprice/ent/predicate"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -92,29 +93,29 @@ func (iu *InvoiceUpdate) ClearSubscriptionID() *InvoiceUpdate {
 }
 
 // SetInvoiceStatus sets the "invoice_status" field.
-func (iu *InvoiceUpdate) SetInvoiceStatus(s string) *InvoiceUpdate {
-	iu.mutation.SetInvoiceStatus(s)
+func (iu *InvoiceUpdate) SetInvoiceStatus(ts types.InvoiceStatus) *InvoiceUpdate {
+	iu.mutation.SetInvoiceStatus(ts)
 	return iu
 }
 
 // SetNillableInvoiceStatus sets the "invoice_status" field if the given value is not nil.
-func (iu *InvoiceUpdate) SetNillableInvoiceStatus(s *string) *InvoiceUpdate {
-	if s != nil {
-		iu.SetInvoiceStatus(*s)
+func (iu *InvoiceUpdate) SetNillableInvoiceStatus(ts *types.InvoiceStatus) *InvoiceUpdate {
+	if ts != nil {
+		iu.SetInvoiceStatus(*ts)
 	}
 	return iu
 }
 
 // SetPaymentStatus sets the "payment_status" field.
-func (iu *InvoiceUpdate) SetPaymentStatus(s string) *InvoiceUpdate {
-	iu.mutation.SetPaymentStatus(s)
+func (iu *InvoiceUpdate) SetPaymentStatus(ts types.PaymentStatus) *InvoiceUpdate {
+	iu.mutation.SetPaymentStatus(ts)
 	return iu
 }
 
 // SetNillablePaymentStatus sets the "payment_status" field if the given value is not nil.
-func (iu *InvoiceUpdate) SetNillablePaymentStatus(s *string) *InvoiceUpdate {
-	if s != nil {
-		iu.SetPaymentStatus(*s)
+func (iu *InvoiceUpdate) SetNillablePaymentStatus(ts *types.PaymentStatus) *InvoiceUpdate {
+	if ts != nil {
+		iu.SetPaymentStatus(*ts)
 	}
 	return iu
 }
@@ -501,6 +502,26 @@ func (iu *InvoiceUpdate) ClearBillingSequence() *InvoiceUpdate {
 	return iu
 }
 
+// SetTotalPrepaidCreditsApplied sets the "total_prepaid_credits_applied" field.
+func (iu *InvoiceUpdate) SetTotalPrepaidCreditsApplied(d decimal.Decimal) *InvoiceUpdate {
+	iu.mutation.SetTotalPrepaidCreditsApplied(d)
+	return iu
+}
+
+// SetNillableTotalPrepaidCreditsApplied sets the "total_prepaid_credits_applied" field if the given value is not nil.
+func (iu *InvoiceUpdate) SetNillableTotalPrepaidCreditsApplied(d *decimal.Decimal) *InvoiceUpdate {
+	if d != nil {
+		iu.SetTotalPrepaidCreditsApplied(*d)
+	}
+	return iu
+}
+
+// ClearTotalPrepaidCreditsApplied clears the value of the "total_prepaid_credits_applied" field.
+func (iu *InvoiceUpdate) ClearTotalPrepaidCreditsApplied() *InvoiceUpdate {
+	iu.mutation.ClearTotalPrepaidCreditsApplied()
+	return iu
+}
+
 // SetIdempotencyKey sets the "idempotency_key" field.
 func (iu *InvoiceUpdate) SetIdempotencyKey(s string) *InvoiceUpdate {
 	iu.mutation.SetIdempotencyKey(s)
@@ -796,6 +817,12 @@ func (iu *InvoiceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if iu.mutation.BillingSequenceCleared() {
 		_spec.ClearField(invoice.FieldBillingSequence, field.TypeInt)
 	}
+	if value, ok := iu.mutation.TotalPrepaidCreditsApplied(); ok {
+		_spec.SetField(invoice.FieldTotalPrepaidCreditsApplied, field.TypeOther, value)
+	}
+	if iu.mutation.TotalPrepaidCreditsAppliedCleared() {
+		_spec.ClearField(invoice.FieldTotalPrepaidCreditsApplied, field.TypeOther)
+	}
 	if value, ok := iu.mutation.IdempotencyKey(); ok {
 		_spec.SetField(invoice.FieldIdempotencyKey, field.TypeString, value)
 	}
@@ -973,29 +1000,29 @@ func (iuo *InvoiceUpdateOne) ClearSubscriptionID() *InvoiceUpdateOne {
 }
 
 // SetInvoiceStatus sets the "invoice_status" field.
-func (iuo *InvoiceUpdateOne) SetInvoiceStatus(s string) *InvoiceUpdateOne {
-	iuo.mutation.SetInvoiceStatus(s)
+func (iuo *InvoiceUpdateOne) SetInvoiceStatus(ts types.InvoiceStatus) *InvoiceUpdateOne {
+	iuo.mutation.SetInvoiceStatus(ts)
 	return iuo
 }
 
 // SetNillableInvoiceStatus sets the "invoice_status" field if the given value is not nil.
-func (iuo *InvoiceUpdateOne) SetNillableInvoiceStatus(s *string) *InvoiceUpdateOne {
-	if s != nil {
-		iuo.SetInvoiceStatus(*s)
+func (iuo *InvoiceUpdateOne) SetNillableInvoiceStatus(ts *types.InvoiceStatus) *InvoiceUpdateOne {
+	if ts != nil {
+		iuo.SetInvoiceStatus(*ts)
 	}
 	return iuo
 }
 
 // SetPaymentStatus sets the "payment_status" field.
-func (iuo *InvoiceUpdateOne) SetPaymentStatus(s string) *InvoiceUpdateOne {
-	iuo.mutation.SetPaymentStatus(s)
+func (iuo *InvoiceUpdateOne) SetPaymentStatus(ts types.PaymentStatus) *InvoiceUpdateOne {
+	iuo.mutation.SetPaymentStatus(ts)
 	return iuo
 }
 
 // SetNillablePaymentStatus sets the "payment_status" field if the given value is not nil.
-func (iuo *InvoiceUpdateOne) SetNillablePaymentStatus(s *string) *InvoiceUpdateOne {
-	if s != nil {
-		iuo.SetPaymentStatus(*s)
+func (iuo *InvoiceUpdateOne) SetNillablePaymentStatus(ts *types.PaymentStatus) *InvoiceUpdateOne {
+	if ts != nil {
+		iuo.SetPaymentStatus(*ts)
 	}
 	return iuo
 }
@@ -1382,6 +1409,26 @@ func (iuo *InvoiceUpdateOne) ClearBillingSequence() *InvoiceUpdateOne {
 	return iuo
 }
 
+// SetTotalPrepaidCreditsApplied sets the "total_prepaid_credits_applied" field.
+func (iuo *InvoiceUpdateOne) SetTotalPrepaidCreditsApplied(d decimal.Decimal) *InvoiceUpdateOne {
+	iuo.mutation.SetTotalPrepaidCreditsApplied(d)
+	return iuo
+}
+
+// SetNillableTotalPrepaidCreditsApplied sets the "total_prepaid_credits_applied" field if the given value is not nil.
+func (iuo *InvoiceUpdateOne) SetNillableTotalPrepaidCreditsApplied(d *decimal.Decimal) *InvoiceUpdateOne {
+	if d != nil {
+		iuo.SetTotalPrepaidCreditsApplied(*d)
+	}
+	return iuo
+}
+
+// ClearTotalPrepaidCreditsApplied clears the value of the "total_prepaid_credits_applied" field.
+func (iuo *InvoiceUpdateOne) ClearTotalPrepaidCreditsApplied() *InvoiceUpdateOne {
+	iuo.mutation.ClearTotalPrepaidCreditsApplied()
+	return iuo
+}
+
 // SetIdempotencyKey sets the "idempotency_key" field.
 func (iuo *InvoiceUpdateOne) SetIdempotencyKey(s string) *InvoiceUpdateOne {
 	iuo.mutation.SetIdempotencyKey(s)
@@ -1706,6 +1753,12 @@ func (iuo *InvoiceUpdateOne) sqlSave(ctx context.Context) (_node *Invoice, err e
 	}
 	if iuo.mutation.BillingSequenceCleared() {
 		_spec.ClearField(invoice.FieldBillingSequence, field.TypeInt)
+	}
+	if value, ok := iuo.mutation.TotalPrepaidCreditsApplied(); ok {
+		_spec.SetField(invoice.FieldTotalPrepaidCreditsApplied, field.TypeOther, value)
+	}
+	if iuo.mutation.TotalPrepaidCreditsAppliedCleared() {
+		_spec.ClearField(invoice.FieldTotalPrepaidCreditsApplied, field.TypeOther)
 	}
 	if value, ok := iuo.mutation.IdempotencyKey(); ok {
 		_spec.SetField(invoice.FieldIdempotencyKey, field.TypeString, value)

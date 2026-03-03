@@ -35,22 +35,22 @@ type Invoice struct {
 	Currency string `json:"currency"`
 
 	// amount_due is the total amount that needs to be paid for this invoice
-	AmountDue decimal.Decimal `json:"amount_due"`
+	AmountDue decimal.Decimal `json:"amount_due" swaggertype:"string"`
 
 	// amount_paid is the amount that has already been paid towards this invoice
-	AmountPaid decimal.Decimal `json:"amount_paid"`
+	AmountPaid decimal.Decimal `json:"amount_paid" swaggertype:"string"`
 
 	// subtotal is the sum of all line items before any taxes, discounts, or additional fees
-	Subtotal decimal.Decimal `json:"subtotal"`
+	Subtotal decimal.Decimal `json:"subtotal" swaggertype:"string"`
 
 	// total is the final amount including taxes, fees, and discounts
-	Total decimal.Decimal `json:"total"`
+	Total decimal.Decimal `json:"total" swaggertype:"string"`
 
 	// total_discount is the sum of all coupon discounts applied to the invoice
-	TotalDiscount decimal.Decimal `json:"total_discount"`
+	TotalDiscount decimal.Decimal `json:"total_discount" swaggertype:"string"`
 
 	// amount_remaining is the outstanding amount still owed on this invoice (calculated as amount_due minus amount_paid)
-	AmountRemaining decimal.Decimal `json:"amount_remaining"`
+	AmountRemaining decimal.Decimal `json:"amount_remaining" swaggertype:"string"`
 
 	// invoice_number is the human-readable invoice number displayed to customers (e.g., INV-2024-001)
 	InvoiceNumber *string `json:"invoice_number"`
@@ -108,14 +108,17 @@ type Invoice struct {
 
 	// adjustment_amount is the total sum of credit notes of type "adjustment".
 	// These are non-cash reductions applied to the invoice (e.g. goodwill credit, billing correction).
-	AdjustmentAmount decimal.Decimal `json:"adjustment_amount"`
+	AdjustmentAmount decimal.Decimal `json:"adjustment_amount" swaggertype:"string"`
 
 	// refunded_amount is the total sum of credit notes of type "refund".
 	// These are actual refunds issued to the customer.
-	RefundedAmount decimal.Decimal `json:"refunded_amount"`
+	RefundedAmount decimal.Decimal `json:"refunded_amount" swaggertype:"string"`
 
 	// total_tax is the sum of all taxes combined at the invoice level.
-	TotalTax decimal.Decimal `json:"total_tax"`
+	TotalTax decimal.Decimal `json:"total_tax" swaggertype:"string"`
+
+	// total_prepaid_credits_applied is the total amount of prepaid credits applied to this invoice.
+	TotalPrepaidCreditsApplied decimal.Decimal `json:"total_prepaid_credits_applied" swaggertype:"string"`
 
 	// common fields including tenant information, creation/update timestamps, and status
 	types.BaseModel
@@ -141,40 +144,42 @@ func FromEnt(e *ent.Invoice) *Invoice {
 		couponApplications = coupon_application.FromEntList(e.Edges.CouponApplications)
 	}
 	return &Invoice{
-		ID:                 e.ID,
-		CustomerID:         e.CustomerID,
-		SubscriptionID:     e.SubscriptionID,
-		InvoiceType:        types.InvoiceType(e.InvoiceType),
-		InvoiceStatus:      types.InvoiceStatus(e.InvoiceStatus),
-		PaymentStatus:      types.PaymentStatus(e.PaymentStatus),
-		Currency:           e.Currency,
-		AmountDue:          e.AmountDue,
-		AmountPaid:         e.AmountPaid,
-		Subtotal:           e.Subtotal,
-		Total:              e.Total,
-		TotalDiscount:      lo.FromPtrOr(e.TotalDiscount, decimal.Zero),
-		TotalTax:           lo.FromPtrOr(e.TotalTax, decimal.Zero),
-		AmountRemaining:    e.AmountRemaining,
-		AdjustmentAmount:   e.AdjustmentAmount,
-		RefundedAmount:     e.RefundedAmount,
-		InvoiceNumber:      e.InvoiceNumber,
-		IdempotencyKey:     e.IdempotencyKey,
-		BillingSequence:    e.BillingSequence,
-		Description:        e.Description,
-		DueDate:            e.DueDate,
-		PaidAt:             e.PaidAt,
-		VoidedAt:           e.VoidedAt,
-		FinalizedAt:        e.FinalizedAt,
-		BillingPeriod:      e.BillingPeriod,
-		PeriodStart:        e.PeriodStart,
-		PeriodEnd:          e.PeriodEnd,
-		InvoicePDFURL:      e.InvoicePdfURL,
-		BillingReason:      e.BillingReason,
-		Metadata:           e.Metadata,
-		LineItems:          lineItems,
-		CouponApplications: couponApplications,
-		Version:            e.Version,
-		EnvironmentID:      e.EnvironmentID,
+		ID:               e.ID,
+		CustomerID:       e.CustomerID,
+		SubscriptionID:   e.SubscriptionID,
+		InvoiceType:      types.InvoiceType(e.InvoiceType),
+		InvoiceStatus:    types.InvoiceStatus(e.InvoiceStatus),
+		PaymentStatus:    types.PaymentStatus(e.PaymentStatus),
+		Currency:         e.Currency,
+		AmountDue:        e.AmountDue,
+		AmountPaid:       e.AmountPaid,
+		Subtotal:         e.Subtotal,
+		Total:            e.Total,
+		TotalDiscount:    lo.FromPtrOr(e.TotalDiscount, decimal.Zero),
+		TotalTax:         lo.FromPtrOr(e.TotalTax, decimal.Zero),
+		AmountRemaining:  e.AmountRemaining,
+		AdjustmentAmount: e.AdjustmentAmount,
+		RefundedAmount:   e.RefundedAmount,
+		// TODO: remove optional and nillable after migration
+		TotalPrepaidCreditsApplied: lo.FromPtrOr(e.TotalPrepaidCreditsApplied, decimal.Zero),
+		InvoiceNumber:              e.InvoiceNumber,
+		IdempotencyKey:             e.IdempotencyKey,
+		BillingSequence:            e.BillingSequence,
+		Description:                e.Description,
+		DueDate:                    e.DueDate,
+		PaidAt:                     e.PaidAt,
+		VoidedAt:                   e.VoidedAt,
+		FinalizedAt:                e.FinalizedAt,
+		BillingPeriod:              lo.ToPtr(string(lo.FromPtr(e.BillingPeriod))),
+		PeriodStart:                e.PeriodStart,
+		PeriodEnd:                  e.PeriodEnd,
+		InvoicePDFURL:              e.InvoicePdfURL,
+		BillingReason:              e.BillingReason,
+		Metadata:                   e.Metadata,
+		LineItems:                  lineItems,
+		CouponApplications:         couponApplications,
+		Version:                    e.Version,
+		EnvironmentID:              e.EnvironmentID,
 		BaseModel: types.BaseModel{
 			TenantID:  e.TenantID,
 			Status:    types.Status(e.Status),

@@ -5,6 +5,7 @@ import (
 
 	"github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
 
@@ -17,8 +18,8 @@ type Coupon struct {
 	MaxRedemptions    *int                    `json:"max_redemptions" db:"max_redemptions"`
 	TotalRedemptions  int                     `json:"total_redemptions" db:"total_redemptions"`
 	Rules             *map[string]interface{} `json:"rules" db:"rules"`
-	AmountOff         *decimal.Decimal        `json:"amount_off" db:"amount_off"`
-	PercentageOff     *decimal.Decimal        `json:"percentage_off" db:"percentage_off"`
+	AmountOff         *decimal.Decimal        `json:"amount_off" db:"amount_off" swaggertype:"string"`
+	PercentageOff     *decimal.Decimal        `json:"percentage_off" db:"percentage_off" swaggertype:"string"`
 	Type              types.CouponType        `json:"type" db:"type"`
 	Cadence           types.CouponCadence     `json:"cadence" db:"cadence"`
 	DurationInPeriods *int                    `json:"duration_in_periods" db:"duration_in_periods"`
@@ -62,7 +63,9 @@ type DiscountResult struct {
 
 // ApplyDiscount calculates and applies the discount in a single operation,
 // returning both the discount amount and final price. This is more efficient than
-func (c *Coupon) ApplyDiscount(originalPrice decimal.Decimal) DiscountResult {
+// separate calculations. The discount is rounded to currency precision immediately
+// to ensure all monetary values respect currency precision at their source.
+func (c *Coupon) ApplyDiscount(originalPrice decimal.Decimal, currency string) DiscountResult {
 	var discount decimal.Decimal
 
 	switch c.Type {
@@ -73,6 +76,9 @@ func (c *Coupon) ApplyDiscount(originalPrice decimal.Decimal) DiscountResult {
 	default:
 		discount = decimal.Zero
 	}
+
+	// Round discount immediately at source to ensure currency precision
+	discount = types.RoundToCurrencyPrecision(discount, currency)
 
 	finalPrice := originalPrice.Sub(discount)
 
@@ -107,7 +113,7 @@ func FromEnt(e *ent.Coupon) *Coupon {
 		Type:              types.CouponType(e.Type),
 		Cadence:           types.CouponCadence(e.Cadence),
 		DurationInPeriods: e.DurationInPeriods,
-		Currency:          *e.Currency,
+		Currency:          lo.FromPtrOr(e.Currency, ""),
 		EnvironmentID:     e.EnvironmentID,
 		Metadata:          &e.Metadata,
 		BaseModel: types.BaseModel{

@@ -103,7 +103,14 @@
   applied-discounts: (),        // Applied discounts breakdown
   subtotal: 0,                  // Subtotal before discounts and tax
   discount: 0,                  // Total discounts
+  total-prepaid-credits-applied: 0,  // Total prepaid credits applied
   tax: 0,                       // Total tax
+  billing-period: "",           // Billing period (e.g., "monthly", "yearly")
+  description: "",             // Invoice description
+  amount-paid: 0,               // Amount already paid
+  amount-remaining: 0,          // Amount remaining to be paid
+  payment-status: "",           // Payment status (pending, succeeded, etc.)
+  invoice-type: "",             // Invoice type (subscription, one_time, etc.)
   doc,
 ) = {
   // Set styling defaults
@@ -364,11 +371,27 @@
       // Show discount row only if there's a discount
       ..if discount > 0 { ([Discount], [−#currency#format-currency(discount, precision: precision)]) } else { () },
       
+      // Show prepaid credits applied row only if there's prepaid credits applied
+      ..if total-prepaid-credits-applied > 0 { ([Prepaid Credits Applied], [−#currency#format-currency(total-prepaid-credits-applied, precision: precision)]) } else { () },
+      
       // Show tax row only if there's tax
       ..if tax > 0 { ([Tax], [#currency#format-currency(tax, precision: precision)]) } else { () },
       
       table.hline(stroke: 0.5pt + black),
-      [*Net Payable*], [*#currency#format-currency(subtotal - discount + tax, precision: precision)*],
+      [*Net Payable*], [*#currency#format-currency(amount-remaining, precision: precision)*],
+      
+      // Show payment information if payment status is not pending or if amount paid > 0
+      ..if payment-status != "" and payment-status != "pending" and amount-paid > 0 {
+        (
+          table.hline(stroke: 0.5pt + rgb("#e0e0e0")),
+          [Amount Paid], [#currency#format-currency(amount-paid, precision: precision)],
+        )
+      } else { () },
+      
+      // Show amount remaining if there's a remaining amount
+      ..if amount-remaining > 0 {
+        ([Amount Remaining], [#currency#format-currency(amount-remaining, precision: precision)])
+      } else { () },
     )
   )
 
@@ -471,12 +494,25 @@
     }
   }
 
-  // Notes
-  if notes != "" {
+  // Notes and Description
+  let has-notes = notes != ""
+  let has-description = description != ""
+  
+  if has-notes or has-description {
     v(1em)
     text(weight: "medium", size: 1.1em)[Notes]
     v(0.5em)
-    notes
+    
+    if has-description {
+      description
+      if has-notes {
+        v(0.5em)
+      }
+    }
+    
+    if has-notes {
+      notes
+    }
   }
 
   // Footer

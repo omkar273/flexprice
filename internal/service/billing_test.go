@@ -1,3 +1,4 @@
+
 package service
 
 import (
@@ -36,6 +37,7 @@ type BillingServiceSuite struct {
 		}
 		prices struct {
 			fixed          *price.Price
+			fixedDaily     *price.Price
 			apiCalls       *price.Price
 			storageArchive *price.Price
 		}
@@ -227,6 +229,23 @@ func (s *BillingServiceSuite) setupTestData() {
 	}
 	s.NoError(s.GetStores().PriceRepo.Create(s.GetContext(), s.testData.prices.fixed))
 
+	// Fixed Daily - for testing daily line item quantity (e.g. Feb 22–Mar 22 = 28 days)
+	s.testData.prices.fixedDaily = &price.Price{
+		ID:                 "price_fixed_daily",
+		Amount:             decimal.NewFromInt(1), // 1 per day
+		Currency:           "usd",
+		EntityType:         types.PRICE_ENTITY_TYPE_PLAN,
+		EntityID:           s.testData.plan.ID,
+		Type:               types.PRICE_TYPE_FIXED,
+		BillingPeriod:      types.BILLING_PERIOD_DAILY,
+		BillingPeriodCount: 1,
+		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
+		BillingCadence:     types.BILLING_CADENCE_RECURRING,
+		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
+	}
+	s.NoError(s.GetStores().PriceRepo.Create(s.GetContext(), s.testData.prices.fixedDaily))
+
 	// Archive Storage - Fixed fee with ARREAR invoice cadence (for testing fixed arrear)
 	s.testData.prices.storageArchive = &price.Price{
 		ID:                 "price_storage_archive",
@@ -246,13 +265,18 @@ func (s *BillingServiceSuite) setupTestData() {
 	s.NoError(s.GetStores().PriceRepo.Create(s.GetContext(), s.testData.prices.storageArchive))
 
 	s.testData.now = time.Now().UTC()
+	// Use CurrentPeriodEnd as BillingAnchor so the next period is a full month (same day-of-month),
+	// ensuring next-period advance charges (e.g. fixed price) are included when billing at period end.
+	currentPeriodStart := s.testData.now.Add(-48 * time.Hour)
+	currentPeriodEnd := s.testData.now.Add(6 * 24 * time.Hour)
 	s.testData.subscription = &subscription.Subscription{
 		ID:                 "sub_123",
 		PlanID:             s.testData.plan.ID,
 		CustomerID:         s.testData.customer.ID,
 		StartDate:          s.testData.now.Add(-30 * 24 * time.Hour),
-		CurrentPeriodStart: s.testData.now.Add(-48 * time.Hour),
-		CurrentPeriodEnd:   s.testData.now.Add(6 * 24 * time.Hour),
+		BillingAnchor:      currentPeriodEnd,
+		CurrentPeriodStart: currentPeriodStart,
+		CurrentPeriodEnd:   currentPeriodEnd,
 		Currency:           "usd",
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
@@ -323,6 +347,27 @@ func (s *BillingServiceSuite) setupTestData() {
 
 	// Update the subscription object to include the line items
 	s.testData.subscription.LineItems = lineItems
+
+	// Populate feature_usage for tests that use GetFeatureUsageBySubscription (final invoice, preview).
+	// This mirrors what the feature_usage pipeline would produce from the raw events.
+	featureUsageStore := s.GetStores().FeatureUsageRepo.(*testutil.InMemoryFeatureUsageStore)
+	apiCallsLineItem := lineItems[1] // Usage-based arrear line item
+	s.NoError(featureUsageStore.InsertProcessedEvent(s.GetContext(), &events.FeatureUsage{
+		Event: events.Event{
+			ID:                 s.GetUUID(),
+			TenantID:           s.testData.subscription.TenantID,
+			EnvironmentID:      s.testData.subscription.EnvironmentID,
+			EventName:          s.testData.meters.apiCalls.EventName,
+			ExternalCustomerID: s.testData.customer.ExternalID,
+			Timestamp:          s.testData.now.Add(-1 * time.Hour),
+		},
+		SubscriptionID: s.testData.subscription.ID,
+		SubLineItemID:  apiCallsLineItem.ID,
+		PriceID:        s.testData.prices.apiCalls.ID,
+		FeatureID:      "feat_api_calls",
+		MeterID:        s.testData.meters.apiCalls.ID,
+		QtyTotal:       decimal.NewFromInt(500), // 500 API calls to produce $10 (500 * $0.02 tier)
+	}))
 
 	// Create test events
 	for i := 0; i < 500; i++ {
@@ -1706,6 +1751,87 @@ func (s *BillingServiceSuite) TestCalculateUsageChargesWithBucketedMaxAggregatio
 	}
 }
 
+func (s *BillingServiceSuite) TestCalculateFeatureUsageCharges_SkipsInactiveLineItemWithSamePriceID() {
+	// When two subscription line items share the same price_id (one active, one inactive),
+	// feature_usage may have data for the inactive line item. CalculateFeatureUsageCharges
+	// must match by SubscriptionLineItemID and skip charges for inactive line items.
+	ctx := s.GetContext()
+	s.setupTestData()
+
+	// Subscription has one active usage line item (API calls)
+	apiCallsLineItem := s.testData.subscription.LineItems[1]
+	s.Require().Equal(s.testData.prices.apiCalls.ID, apiCallsLineItem.PriceID)
+
+	// Simulate usage from feature_usage for an INACTIVE line item (same price_id, different sub_line_item_id)
+	// That inactive line item is NOT in sub.LineItems, so the charge should be skipped
+	inactiveLineItemID := "sub_li_inactive_999" // Not in sub.LineItems
+
+	usage := &dto.GetUsageBySubscriptionResponse{
+		StartTime: s.testData.subscription.CurrentPeriodStart,
+		EndTime:   s.testData.subscription.CurrentPeriodEnd,
+		Currency:  s.testData.subscription.Currency,
+		Charges: []*dto.SubscriptionUsageByMetersResponse{
+			{
+				SubscriptionLineItemID: inactiveLineItemID,
+				Price:                  s.testData.prices.apiCalls,
+				Quantity:               500,
+				Amount:                 10,
+				IsOverage:              false,
+			},
+		},
+	}
+
+	lineItems, totalAmount, err := s.service.CalculateFeatureUsageCharges(
+		ctx,
+		s.testData.subscription,
+		usage,
+		s.testData.subscription.CurrentPeriodStart,
+		s.testData.subscription.CurrentPeriodEnd,
+		nil,
+	)
+
+	s.NoError(err)
+	s.Empty(lineItems, "Should have no invoice line items: charge was for inactive line item, not in invoiced set")
+	s.True(totalAmount.IsZero(), "Total should be zero: no charges should be attributed to active line items")
+}
+
+func (s *BillingServiceSuite) TestCalculateFeatureUsageCharges_MatchesActiveLineItemBySubscriptionLineItemID() {
+	// When SubscriptionLineItemID is set and matches an active line item, the charge should be processed.
+	ctx := s.GetContext()
+	s.setupTestData()
+
+	apiCallsLineItem := s.testData.subscription.LineItems[1]
+
+	usage := &dto.GetUsageBySubscriptionResponse{
+		StartTime: s.testData.subscription.CurrentPeriodStart,
+		EndTime:   s.testData.subscription.CurrentPeriodEnd,
+		Currency:  s.testData.subscription.Currency,
+		Charges: []*dto.SubscriptionUsageByMetersResponse{
+			{
+				SubscriptionLineItemID: apiCallsLineItem.ID,
+				Price:                  s.testData.prices.apiCalls,
+				Quantity:               500,
+				Amount:                 10,
+				IsOverage:              false,
+			},
+		},
+	}
+
+	lineItems, totalAmount, err := s.service.CalculateFeatureUsageCharges(
+		ctx,
+		s.testData.subscription,
+		usage,
+		s.testData.subscription.CurrentPeriodStart,
+		s.testData.subscription.CurrentPeriodEnd,
+		nil,
+	)
+
+	s.NoError(err)
+	s.Len(lineItems, 1, "Should have one invoice line item for active line item")
+	s.Equal(s.testData.prices.apiCalls.ID, *lineItems[0].PriceID, "Line item should be for API calls price")
+	s.True(totalAmount.GreaterThan(decimal.Zero), "Total should be positive")
+}
+
 func (s *BillingServiceSuite) TestCalculateNeverResetUsage() {
 	ctx := s.GetContext()
 
@@ -1957,16 +2083,7 @@ func (s *BillingServiceSuite) TestCalculateNeverResetUsage() {
 
 			s.T().Logf("DEBUG: Event service returned - Total: %s, Previous: %s", actualTotalUsage, actualPreviousUsage)
 
-			result, err := s.service.(*billingService).calculateNeverResetUsage(
-				ctx,
-				testSubscription,
-				lineItem,
-				s.testData.customer,
-				eventService,
-				tt.periodStart,
-				tt.periodEnd,
-				tt.usageAllowed,
-			)
+			var result decimal.Decimal
 
 			if tt.shouldSkip {
 				s.NoError(err)
