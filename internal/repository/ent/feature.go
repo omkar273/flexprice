@@ -73,7 +73,7 @@ func (r *featureRepository) Create(ctx context.Context, f *domainFeature.Feature
 		SetUpdatedBy(f.UpdatedBy).
 		SetEnvironmentID(f.EnvironmentID)
 
-	if f.ReportingUnit != nil {
+	if f.ReportingUnit != nil && f.ReportingUnit.ConversionRate != nil {
 		ru := f.ReportingUnit
 		createQuery = createQuery.
 			SetReportingUnitSingular(ru.UnitSingular).
@@ -282,8 +282,8 @@ func (r *featureRepository) Update(ctx context.Context, f *domainFeature.Feature
 		SetUpdatedAt(time.Now().UTC()).
 		SetUpdatedBy(types.GetUserID(ctx))
 
-	// Partial update: only set reporting unit columns when present (from request); never clear.
-	if f.ReportingUnit != nil {
+	// Partial update: only set reporting unit columns when present (from request); never clear. Guard ConversionRate to avoid nil dereference.
+	if f.ReportingUnit != nil && f.ReportingUnit.ConversionRate != nil {
 		ru := f.ReportingUnit
 		updateQuery = updateQuery.
 			SetReportingUnitSingular(ru.UnitSingular).

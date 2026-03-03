@@ -85,7 +85,7 @@ func FromEntList(features []*ent.Feature) []*Feature {
 // Formula: reporting_value = unit_value * conversion_rate.
 // Returns error if reporting unit is nil or conversion_rate is not set; otherwise returns the converted value.
 func (r *Feature) ToReportingValue(unitValue decimal.Decimal) (*decimal.Decimal, error) {
-	if r == nil {
+	if r == nil || r.ReportingUnit == nil {
 		return nil, ierr.NewError("reporting_unit is required").
 			WithHint("Feature has no reporting unit; set reporting_unit with conversion_rate to convert values").
 			Mark(ierr.ErrValidation)

@@ -73,6 +73,7 @@ func (Feature) Fields() []ent.Field {
 			}).
 			Optional().
 			Nillable(),
+		// Reporting unit: application invariant is either all three null or all three set (validated at API layer).
 		field.String("reporting_unit_singular").
 			SchemaType(map[string]string{
 				"postgres": "varchar(255)",
