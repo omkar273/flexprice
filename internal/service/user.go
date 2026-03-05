@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
@@ -10,25 +11,34 @@ import (
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/rbac"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/nedpals/supabase-go"
+	"github.com/samber/lo"
 )
 
 type UserService interface {
 	GetUserInfo(ctx context.Context) (*dto.UserResponse, error)
-	CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*dto.UserResponse, error)
+	CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*dto.CreateUserResponse, error)
 	ListUsersByFilter(ctx context.Context, filter *types.UserFilter) (*dto.ListUsersResponse, error)
 }
 
 type userService struct {
-	userRepo    user.Repository
-	tenantRepo  tenant.Repository
-	rbacService *rbac.RBACService
+	userRepo     user.Repository
+	tenantRepo   tenant.Repository
+	rbacService  *rbac.RBACService
+	supabaseAuth *supabase.Client
 }
 
-func NewUserService(userRepo user.Repository, tenantRepo tenant.Repository, rbacService *rbac.RBACService) UserService {
+func NewUserService(
+	userRepo user.Repository,
+	tenantRepo tenant.Repository,
+	rbacService *rbac.RBACService,
+	supabaseAuth *supabase.Client,
+) UserService {
 	return &userService{
-		userRepo:    userRepo,
-		tenantRepo:  tenantRepo,
-		rbacService: rbacService,
+		userRepo:     userRepo,
+		tenantRepo:   tenantRepo,
+		rbacService:  rbacService,
+		supabaseAuth: supabaseAuth,
 	}
 }
 
@@ -60,24 +70,11 @@ func (s *userService) GetUserInfo(ctx context.Context) (*dto.UserResponse, error
 	return dto.NewUserResponse(user, tenant), nil
 }
 
-func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*dto.UserResponse, error) {
+func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*dto.CreateUserResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
 
-	// Validate roles (required for service accounts)
-	for _, role := range req.Roles {
-		if !s.rbacService.ValidateRole(role) {
-			return nil, ierr.NewError("invalid role").
-				WithHint("Role '" + role + "' does not exist").
-				WithReportableDetails(map[string]interface{}{
-					"role": role,
-				}).
-				Mark(ierr.ErrValidation)
-		}
-	}
-
-	// Get tenant ID from context
 	tenantID := types.GetTenantID(ctx)
 	if tenantID == "" {
 		return nil, ierr.NewError("tenant ID is required").
@@ -97,32 +94,129 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 		currentUserID = "system"
 	}
 
-	// Create service account with RBAC roles
-	newUser := &user.User{
-		ID:    types.GenerateUUIDWithPrefix(types.UUID_PREFIX_USER),
-		Email: "",                           // Service accounts have no email
-		Type:  types.UserTypeServiceAccount, // Always service_account
-		Roles: req.Roles,                    // Required roles
-		BaseModel: types.BaseModel{
-			TenantID:  tenantID,
-			Status:    types.StatusPublished,
-			CreatedBy: currentUserID,
-			UpdatedBy: currentUserID,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
+	var newUser *user.User
+	var password string
+
+	switch req.Type {
+	case types.UserTypeUser:
+		existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
+		if err != nil && !ierr.IsNotFound(err) {
+			return nil, err
+		}
+		if existingUser != nil {
+			return nil, ierr.NewError("email already in use").
+				WithHint("A user with this email already exists in this tenant").
+				WithReportableDetails(map[string]interface{}{"email": req.Email}).
+				Mark(ierr.ErrAlreadyExists)
+		}
+		plainPassword, err := generateSecurePassword()
+		if err != nil {
+			return nil, ierr.WithError(err).WithHint("Failed to generate password").Mark(ierr.ErrSystem)
+		}
+		password = plainPassword
+
+		// Create Supabase user first when client is available; use its ID as our user ID for consistency
+		if s.supabaseAuth != nil {
+			supabaseUser, err := s.supabaseAuth.Admin.CreateUser(ctx, supabase.AdminUserParams{
+				Email:        req.Email,
+				Password:     lo.ToPtr(plainPassword),
+				EmailConfirm: true,
+				AppMetadata: map[string]interface{}{
+					"tenant_id": tenantID,
+				},
+			})
+			if err != nil {
+				return nil, ierr.WithError(err).WithHint("Failed to create user in auth provider").Mark(ierr.ErrSystem)
+			}
+			newUser = &user.User{
+				ID:    supabaseUser.ID,
+				Email: req.Email,
+				Type:  types.UserTypeUser,
+				Roles: []string{},
+				BaseModel: types.BaseModel{
+					TenantID:  tenantID,
+					Status:    types.StatusPublished,
+					CreatedBy: currentUserID,
+					UpdatedBy: currentUserID,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+			}
+		} else {
+			newUser = &user.User{
+				ID:    types.GenerateUUIDWithPrefix(types.UUID_PREFIX_USER),
+				Email: req.Email,
+				Type:  types.UserTypeUser,
+				Roles: []string{},
+				BaseModel: types.BaseModel{
+					TenantID:  tenantID,
+					Status:    types.StatusPublished,
+					CreatedBy: currentUserID,
+					UpdatedBy: currentUserID,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				},
+			}
+		}
+		if err := newUser.Validate(); err != nil {
+			return nil, err
+		}
+		if err := s.userRepo.Create(ctx, newUser); err != nil {
+			return nil, err
+		}
+	case types.UserTypeServiceAccount:
+		for _, role := range req.Roles {
+			if !s.rbacService.ValidateRole(role) {
+				return nil, ierr.NewError("invalid role").
+					WithHint("Role '" + role + "' does not exist").
+					WithReportableDetails(map[string]interface{}{"role": role}).
+					Mark(ierr.ErrValidation)
+			}
+		}
+		newUser = &user.User{
+			ID:    types.GenerateUUIDWithPrefix(types.UUID_PREFIX_USER),
+			Email: "",
+			Type:  types.UserTypeServiceAccount,
+			Roles: req.Roles,
+			BaseModel: types.BaseModel{
+				TenantID:  tenantID,
+				Status:    types.StatusPublished,
+				CreatedBy: currentUserID,
+				UpdatedBy: currentUserID,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+		}
+		if err := newUser.Validate(); err != nil {
+			return nil, err
+		}
+		if err := s.userRepo.Create(ctx, newUser); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, ierr.NewError("invalid user type").WithHint("Type must be 'user' or 'service_account'").Mark(ierr.ErrValidation)
 	}
 
-	// Validate user before creating
-	if err := newUser.Validate(); err != nil {
-		return nil, err
-	}
+	return &dto.CreateUserResponse{
+		UserResponse: dto.NewUserResponse(newUser, tenant),
+		Password:     password,
+	}, nil
+}
 
-	if err := s.userRepo.Create(ctx, newUser); err != nil {
-		return nil, err
-	}
+// charset for password: alphanumeric (no ambiguous chars)
+const passwordChars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
-	return dto.NewUserResponse(newUser, tenant), nil
+// generateSecurePassword returns a 16-char alphanumeric password (crypto/rand, ~95 bits entropy).
+func generateSecurePassword() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	out := make([]byte, 16)
+	for i := range out {
+		out[i] = passwordChars[int(b[i])%len(passwordChars)]
+	}
+	return string(out), nil
 }
 
 func (s *userService) ListUsersByFilter(ctx context.Context, filter *types.UserFilter) (*dto.ListUsersResponse, error) {
