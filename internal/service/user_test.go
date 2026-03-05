@@ -28,10 +28,11 @@ func (s *UserServiceSuite) SetupTest() {
 	s.ctx = testutil.SetupContext()
 	s.userRepo = testutil.NewInMemoryUserStore()
 	s.tenantRepo = testutil.NewInMemoryTenantStore()
-	// Create the userService with the repository
 	s.userService = &userService{
-		userRepo:   s.userRepo,
-		tenantRepo: s.tenantRepo,
+		userRepo:     s.userRepo,
+		tenantRepo:   s.tenantRepo,
+		rbacService:  nil,
+		supabaseAuth: nil,
 	}
 
 	s.tenantRepo.Create(s.ctx, &tenant.Tenant{
@@ -74,8 +75,10 @@ func (s *UserServiceSuite) TestGetUserInfo() {
 			// Reset repositories and service for each test
 			s.userRepo = testutil.NewInMemoryUserStore()
 			s.userService = &userService{
-				userRepo:   s.userRepo,
-				tenantRepo: s.tenantRepo,
+				userRepo:     s.userRepo,
+				tenantRepo:   s.tenantRepo,
+				rbacService:  nil,
+				supabaseAuth: nil,
 			}
 
 			// Create a context with the test's user ID
