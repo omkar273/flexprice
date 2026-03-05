@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
@@ -13,6 +12,7 @@ import (
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/nedpals/supabase-go"
 	"github.com/samber/lo"
+	"github.com/sethvargo/go-password/password"
 )
 
 type UserService interface {
@@ -203,20 +203,10 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 	}, nil
 }
 
-// charset for password: alphanumeric (no ambiguous chars)
-const passwordChars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
-
-// generateSecurePassword returns a 16-char alphanumeric password (crypto/rand, ~95 bits entropy).
+// generateSecurePassword returns a cryptographically secure random password via sethvargo/go-password (crypto/rand).
 func generateSecurePassword() (string, error) {
-	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	out := make([]byte, 16)
-	for i := range out {
-		out[i] = passwordChars[int(b[i])%len(passwordChars)]
-	}
-	return string(out), nil
+	// 16 chars, 4 digits, 2 symbols, allow upper, no repeat (strong, copyable)
+	return password.Generate(16, 4, 2, false, false)
 }
 
 func (s *userService) ListUsersByFilter(ctx context.Context, filter *types.UserFilter) (*dto.ListUsersResponse, error) {
