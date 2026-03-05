@@ -259,6 +259,11 @@ oauth:
 customer_portal:
   url: "http://localhost:3000"
   token_timeout_hours: 1
+  # Fallback tenant/env used when a tenant has no customer_portal_config saved.
+  # Set via env vars: FLEXPRICE_CUSTOMER_PORTAL_DEFAULT_TENANT_ID and
+  # FLEXPRICE_CUSTOMER_PORTAL_DEFAULT_ENVIRONMENT_ID
+  default_tenant_id: ""
+  default_environment_id: ""
 
 # Redis configuration
 redis:

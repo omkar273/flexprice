@@ -27,6 +27,7 @@ const (
 	SettingKeyWalletBalanceAlertConfig SettingKey = "wallet_balance_alert_config"
 	SettingKeyPrepareProcessedEvents   SettingKey = "prepare_processed_events_config"
 	SettingKeyCustomAnalytics          SettingKey = "custom_analytics_config"
+	SettingKeyCustomerPortalConfig     SettingKey = "customer_portal_config"
 )
 
 func (s *SettingKey) Validate() error {
@@ -40,6 +41,7 @@ func (s *SettingKey) Validate() error {
 		SettingKeyWalletBalanceAlertConfig,
 		SettingKeyPrepareProcessedEvents,
 		SettingKeyCustomAnalytics,
+		SettingKeyCustomerPortalConfig,
 	}
 
 	if !lo.Contains(allowedKeys, *s) {
@@ -271,6 +273,57 @@ func (c CustomAnalyticsConfig) Validate() error {
 	return validator.ValidateRequest(c)
 }
 
+// CustomerPortalConfig is the top-level configuration for the customer self-service portal.
+// It controls branding, section layout, and per-tab behaviour.
+type CustomerPortalConfig struct {
+	// Version is a user-managed schema version string (e.g. "1.0")
+	Version string `json:"version,omitempty"`
+
+	// Theme holds the visual branding colours for the portal
+	Theme CustomerPortalTheme `json:"theme,omitempty"`
+
+	// Sections defines the ordered list of navigation sections shown in the portal
+	Sections []CustomerPortalSection `json:"sections,omitempty" validate:"omitempty,dive"`
+}
+
+// Validate implements SettingConfig interface
+func (c CustomerPortalConfig) Validate() error {
+	return validator.ValidateRequest(c)
+}
+
+// CustomerPortalTheme holds brand colour tokens used by the portal UI
+type CustomerPortalTheme struct {
+	PrimaryColor   string `json:"primary_color,omitempty"`
+	SecondaryColor string `json:"secondary_color,omitempty"`
+	TertiaryColor  string `json:"tertiary_color,omitempty"`
+}
+
+// CustomerPortalSection represents a top-level navigation section in the portal
+type CustomerPortalSection struct {
+	ID      string                `json:"id" validate:"required"`
+	Label   string                `json:"label,omitempty"`
+	Enabled bool                  `json:"enabled"`
+	Order   int                   `json:"order,omitempty"`
+	Tabs    []CustomerPortalTab   `json:"tabs,omitempty" validate:"omitempty,dive"`
+}
+
+// CustomerPortalTab represents a single tab within a portal section
+type CustomerPortalTab struct {
+	ID         string                       `json:"id" validate:"required"`
+	Type       string                       `json:"type" validate:"required"`
+	Enabled    bool                         `json:"enabled"`
+	Order      int                          `json:"order,omitempty"`
+	UsageGraph *CustomerPortalUsageGraph    `json:"usage_graph,omitempty"`
+}
+
+// CustomerPortalUsageGraph holds configuration for usage_graph tab types
+type CustomerPortalUsageGraph struct {
+	DatePresets          []string `json:"date_presets,omitempty"`
+	DefaultPreset        string   `json:"default_preset,omitempty"`
+	AllowCustomDateRange bool     `json:"allow_custom_date_range"`
+	FeatureFilterMode    string   `json:"feature_filter_mode,omitempty"`
+}
+
 // GetDefaultSettings returns the default settings configuration for all setting keys
 // Uses typed structs and converts them to maps using ToMap utility from conversion.go
 func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
@@ -351,6 +404,16 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 	// Already a map, no conversion needed
 	defaultPrepareProcessedEventsConfigMap := defaultPrepareProcessedEventsConfig
 
+	defaultCustomerPortalConfig := CustomerPortalConfig{
+		Version:  "1.0",
+		Theme:    CustomerPortalTheme{},
+		Sections: []CustomerPortalSection{},
+	}
+	defaultCustomerPortalConfigMap, err := utils.ToMap(defaultCustomerPortalConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	return map[SettingKey]DefaultSettingValue{
 		SettingKeyInvoiceConfig: {
 			Key:          SettingKeyInvoiceConfig,
@@ -393,6 +456,11 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 				"rules": []interface{}{},
 			},
 			Description: "Configuration for custom analytics calculations (e.g., revenue per minute)",
+		},
+		SettingKeyCustomerPortalConfig: {
+			Key:          SettingKeyCustomerPortalConfig,
+			DefaultValue: defaultCustomerPortalConfigMap,
+			Description:  "Configuration for the customer self-service portal (branding, allowed sections, permissions)",
 		},
 	}, nil
 }
@@ -481,6 +549,13 @@ func ValidateSettingValue(key SettingKey, value map[string]interface{}) error {
 
 	case SettingKeyCustomAnalytics:
 		config, err := utils.ToStruct[CustomAnalyticsConfig](value)
+		if err != nil {
+			return err
+		}
+		return config.Validate()
+
+	case SettingKeyCustomerPortalConfig:
+		config, err := utils.ToStruct[CustomerPortalConfig](value)
 		if err != nil {
 			return err
 		}
