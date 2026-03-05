@@ -114,12 +114,13 @@ func (s *UserServiceSuite) TestCreateUser_TableDriven() {
 	ctx = context.WithValue(ctx, types.CtxTenantID, types.DefaultTenantID)
 	ctx = context.WithValue(ctx, types.CtxUserID, "test-actor")
 
+	// Path from module root; fallback when CWD is internal/service
 	rbacSvc, _ := rbac.NewRBACService(&config.Configuration{
 		RBAC: config.RBACConfig{RolesConfigPath: "internal/config/rbac/roles.json"},
 	})
 	if rbacSvc == nil {
 		rbacSvc, _ = rbac.NewRBACService(&config.Configuration{
-			RBAC: config.RBACConfig{RolesConfigPath: "../config/rbac/roles.json"},
+			RBAC: config.RBACConfig{RolesConfigPath: "../internal/config/rbac/roles.json"},
 		})
 	}
 
