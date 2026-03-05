@@ -60,7 +60,7 @@ type UserResponse struct {
 	Tenant *TenantResponse `json:"tenant"`
 }
 
-// CreateUserResponse is the response for POST /users: same shape for both types; password and auth_user_id only when type=user.
+// CreateUserResponse is the response for POST /users: same shape for both types; password only when type=user.
 type CreateUserResponse struct {
 	*UserResponse
 	Password string `json:"password,omitempty"`

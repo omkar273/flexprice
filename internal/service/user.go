@@ -99,6 +99,11 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 
 	switch req.Type {
 	case types.UserTypeUser:
+		if s.supabaseAuth == nil {
+			return nil, ierr.NewError("auth provider not configured").
+				WithHint("User accounts require Supabase auth to be configured; create user (type=user) only when Supabase is available.").
+				Mark(ierr.ErrValidation)
+		}
 		existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 		if err != nil && !ierr.IsNotFound(err) {
 			return nil, err
@@ -115,48 +120,32 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 		}
 		password = plainPassword
 
-		// Create Supabase user first when client is available; use its ID as our user ID for consistency
-		if s.supabaseAuth != nil {
-			supabaseUser, err := s.supabaseAuth.Admin.CreateUser(ctx, supabase.AdminUserParams{
-				Email:        req.Email,
-				Password:     lo.ToPtr(plainPassword),
-				EmailConfirm: true,
-				AppMetadata: map[string]interface{}{
-					"tenant_id": tenantID,
-				},
-			})
-			if err != nil {
-				return nil, ierr.WithError(err).WithHint("Failed to create user in auth provider").Mark(ierr.ErrSystem)
-			}
-			newUser = &user.User{
-				ID:    supabaseUser.ID,
-				Email: req.Email,
-				Type:  types.UserTypeUser,
-				Roles: []string{},
-				BaseModel: types.BaseModel{
-					TenantID:  tenantID,
-					Status:    types.StatusPublished,
-					CreatedBy: currentUserID,
-					UpdatedBy: currentUserID,
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
-		} else {
-			newUser = &user.User{
-				ID:    types.GenerateUUIDWithPrefix(types.UUID_PREFIX_USER),
-				Email: req.Email,
-				Type:  types.UserTypeUser,
-				Roles: []string{},
-				BaseModel: types.BaseModel{
-					TenantID:  tenantID,
-					Status:    types.StatusPublished,
-					CreatedBy: currentUserID,
-					UpdatedBy: currentUserID,
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				},
-			}
+		// Create in Supabase first; only on success create in DB. We cannot rollback either side
+		// This ordering ensures we never persist in DB without auth; if DB create fails after Supabase succeeds, caller sees the error.
+		supabaseUser, err := s.supabaseAuth.Admin.CreateUser(ctx, supabase.AdminUserParams{
+			Email:        req.Email,
+			Password:     lo.ToPtr(plainPassword),
+			EmailConfirm: true,
+			AppMetadata: map[string]interface{}{
+				"tenant_id": tenantID,
+			},
+		})
+		if err != nil {
+			return nil, ierr.WithError(err).WithHint("Failed to create user in auth provider").Mark(ierr.ErrSystem)
+		}
+		newUser = &user.User{
+			ID:    supabaseUser.ID,
+			Email: req.Email,
+			Type:  types.UserTypeUser,
+			Roles: []string{},
+			BaseModel: types.BaseModel{
+				TenantID:  tenantID,
+				Status:    types.StatusPublished,
+				CreatedBy: currentUserID,
+				UpdatedBy: currentUserID,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
 		}
 		if err := newUser.Validate(); err != nil {
 			return nil, err
@@ -165,6 +154,11 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 			return nil, err
 		}
 	case types.UserTypeServiceAccount:
+		if s.rbacService == nil {
+			return nil, ierr.NewError("RBAC not configured").
+				WithHint("Service accounts require RBAC for role validation; provide a non-nil RBAC service.").
+				Mark(ierr.ErrValidation)
+		}
 		for _, role := range req.Roles {
 			if !s.rbacService.ValidateRole(role) {
 				return nil, ierr.NewError("invalid role").

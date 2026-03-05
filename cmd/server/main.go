@@ -401,7 +401,7 @@ func provideRouter(handlers api.Handlers, cfg *config.Configuration, logger *log
 }
 
 func provideSupabaseClient(cfg *config.Configuration) *supabase.Client {
-	if cfg == nil || cfg.Auth.Supabase.BaseURL == "" {
+	if cfg == nil || cfg.Auth.Supabase.BaseURL == "" || cfg.Auth.Supabase.ServiceKey == "" {
 		return nil
 	}
 	return supabase.CreateClient(cfg.Auth.Supabase.BaseURL, cfg.Auth.Supabase.ServiceKey)
