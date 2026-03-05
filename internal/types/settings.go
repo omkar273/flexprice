@@ -27,6 +27,7 @@ const (
 	SettingKeyWalletBalanceAlertConfig SettingKey = "wallet_balance_alert_config"
 	SettingKeyPrepareProcessedEvents   SettingKey = "prepare_processed_events_config"
 	SettingKeyCustomAnalytics          SettingKey = "custom_analytics_config"
+	SettingKeyAddUserConfig            SettingKey = "add_user_config"
 )
 
 func (s *SettingKey) Validate() error {
@@ -40,6 +41,7 @@ func (s *SettingKey) Validate() error {
 		SettingKeyWalletBalanceAlertConfig,
 		SettingKeyPrepareProcessedEvents,
 		SettingKeyCustomAnalytics,
+		SettingKeyAddUserConfig,
 	}
 
 	if !lo.Contains(allowedKeys, *s) {
@@ -90,6 +92,16 @@ func (c InvoicePDFConfig) Validate() error {
 type EnvConfig struct {
 	Production  int `json:"production" validate:"required,min=0"`
 	Development int `json:"development" validate:"required,min=0"`
+}
+
+// AddUserConfig represents the maximum number of users allowed per tenant
+type AddUserConfig struct {
+	MaxUsers int `json:"max_users" validate:"required,min=1"`
+}
+
+// Validate implements SettingConfig interface
+func (c AddUserConfig) Validate() error {
+	return validator.ValidateRequest(c)
 }
 
 // Validate implements SettingConfig interface
@@ -394,6 +406,13 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 			},
 			Description: "Configuration for custom analytics calculations (e.g., revenue per minute)",
 		},
+		SettingKeyAddUserConfig: {
+			Key: SettingKeyAddUserConfig,
+			DefaultValue: map[string]interface{}{
+				"max_users": 10,
+			},
+			Description: "Maximum number of users allowed per tenant (default 10)",
+		},
 	}, nil
 }
 
@@ -481,6 +500,13 @@ func ValidateSettingValue(key SettingKey, value map[string]interface{}) error {
 
 	case SettingKeyCustomAnalytics:
 		config, err := utils.ToStruct[CustomAnalyticsConfig](value)
+		if err != nil {
+			return err
+		}
+		return config.Validate()
+
+	case SettingKeyAddUserConfig:
+		config, err := utils.ToStruct[AddUserConfig](value)
 		if err != nil {
 			return err
 		}

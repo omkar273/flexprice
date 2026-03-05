@@ -22,10 +22,11 @@ type UserService interface {
 }
 
 type userService struct {
-	userRepo     user.Repository
-	tenantRepo   tenant.Repository
-	rbacService  *rbac.RBACService
-	supabaseAuth *supabase.Client
+	userRepo        user.Repository
+	tenantRepo      tenant.Repository
+	rbacService     *rbac.RBACService
+	supabaseAuth    *supabase.Client
+	settingsService SettingsService
 }
 
 func NewUserService(
@@ -33,12 +34,14 @@ func NewUserService(
 	tenantRepo tenant.Repository,
 	rbacService *rbac.RBACService,
 	supabaseAuth *supabase.Client,
+	settingsService SettingsService,
 ) UserService {
 	return &userService{
-		userRepo:     userRepo,
-		tenantRepo:   tenantRepo,
-		rbacService:  rbacService,
-		supabaseAuth: supabaseAuth,
+		userRepo:        userRepo,
+		tenantRepo:      tenantRepo,
+		rbacService:     rbacService,
+		supabaseAuth:    supabaseAuth,
+		settingsService: settingsService,
 	}
 }
 
@@ -99,11 +102,6 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 
 	switch req.Type {
 	case types.UserTypeUser:
-		if s.supabaseAuth == nil {
-			return nil, ierr.NewError("auth provider not configured").
-				WithHint("User accounts require Supabase auth to be configured; create user (type=user) only when Supabase is available.").
-				Mark(ierr.ErrValidation)
-		}
 		existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
 		if err != nil && !ierr.IsNotFound(err) {
 			return nil, err
@@ -113,6 +111,39 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 				WithHint("A user with this email already exists in this tenant").
 				WithReportableDetails(map[string]interface{}{"email": req.Email}).
 				Mark(ierr.ErrAlreadyExists)
+		}
+		// Enforce per-tenant user limit from add_user_config (GetSetting returns default when not set)
+		svc, ok := s.settingsService.(*settingsService)
+		if !ok || svc == nil {
+			return nil, ierr.NewError("settings service not configured").
+				WithHint("User creation requires settings service for add_user_config.").
+				Mark(ierr.ErrValidation)
+		}
+		addUserConfig, err := GetSetting[types.AddUserConfig](svc, ctx, types.SettingKeyAddUserConfig)
+		if err != nil {
+			return nil, err
+		}
+		// ListByFilter uses tenant from context and repo filters by StatusPublished
+		_, totalActiveUsers, err := s.userRepo.ListByFilter(ctx, &types.UserFilter{
+			QueryFilter: &types.QueryFilter{
+				Limit:  lo.ToPtr(1),
+				Offset: lo.ToPtr(0),
+				Status: lo.ToPtr(types.StatusPublished),
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if totalActiveUsers >= int64(addUserConfig.MaxUsers) {
+			return nil, ierr.NewError("user limit reached: you cannot add any more users").
+				WithHintf("Maximum %d user(s) allowed for this tenant. Limit reached.", addUserConfig.MaxUsers).
+				WithReportableDetails(map[string]interface{}{"max_users": addUserConfig.MaxUsers, "current_active_users": totalActiveUsers}).
+				Mark(ierr.ErrValidation)
+		}
+		if s.supabaseAuth == nil {
+			return nil, ierr.NewError("auth provider not configured").
+				WithHint("User accounts require Supabase auth to be configured; create user (type=user) only when Supabase is available.").
+				Mark(ierr.ErrValidation)
 		}
 		plainPassword, err := generateSecurePassword()
 		if err != nil {
