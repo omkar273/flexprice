@@ -38,7 +38,7 @@ func NewSettingsService(params ServiceParams) SettingsService {
 // isTenantLevelSetting checks if a setting is tenant-level (no environment_id)
 // Tenant-level settings apply across all environments for a tenant
 func isTenantLevelSetting(key types.SettingKey) bool {
-	return key == types.SettingKeyEnvConfig || key == types.SettingKeyAddUserConfig
+	return key == types.SettingKeyEnvConfig
 }
 
 // fetchSetting fetches a setting from the repository
@@ -209,8 +209,6 @@ func (s *settingsService) GetSettingByKey(ctx context.Context, key types.Setting
 		return getSettingByKey[types.CustomAnalyticsConfig](s, ctx, key)
 	case types.SettingKeyWalletBalanceAlertConfig:
 		return getSettingByKey[types.AlertSettings](s, ctx, key)
-	case types.SettingKeyAddUserConfig:
-		return getSettingByKey[types.AddUserConfig](s, ctx, key)
 	default:
 		return nil, ierr.NewErrorf("unknown setting key: %s", key).
 			WithHintf("Unknown setting key: %s", key).
@@ -251,8 +249,6 @@ func (s *settingsService) UpdateSettingByKey(ctx context.Context, key types.Sett
 		return updateSettingByKey[types.CustomAnalyticsConfig](s, ctx, key, req)
 	case types.SettingKeyWalletBalanceAlertConfig:
 		return updateSettingByKey[*types.AlertSettings](s, ctx, key, req)
-	case types.SettingKeyAddUserConfig:
-		return updateSettingByKey[types.AddUserConfig](s, ctx, key, req)
 	default:
 		return nil, ierr.NewErrorf("unknown setting key: %s", key).
 			WithHintf("Unknown setting key: %s", key).

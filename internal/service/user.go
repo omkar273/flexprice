@@ -119,7 +119,7 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 				WithHint("User creation requires settings service for add_user_config.").
 				Mark(ierr.ErrValidation)
 		}
-		addUserConfig, err := GetSetting[types.AddUserConfig](svc, ctx, types.SettingKeyAddUserConfig)
+		addUserConfig, err := GetSetting[types.EnvConfig](svc, ctx, types.SettingKeyEnvConfig)
 		if err != nil {
 			return nil, err
 		}

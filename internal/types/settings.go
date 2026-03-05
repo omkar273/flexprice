@@ -27,7 +27,6 @@ const (
 	SettingKeyWalletBalanceAlertConfig SettingKey = "wallet_balance_alert_config"
 	SettingKeyPrepareProcessedEvents   SettingKey = "prepare_processed_events_config"
 	SettingKeyCustomAnalytics          SettingKey = "custom_analytics_config"
-	SettingKeyAddUserConfig            SettingKey = "add_user_config"
 )
 
 func (s *SettingKey) Validate() error {
@@ -40,9 +39,7 @@ func (s *SettingKey) Validate() error {
 		SettingKeyCustomerOnboarding,
 		SettingKeyWalletBalanceAlertConfig,
 		SettingKeyPrepareProcessedEvents,
-		SettingKeyCustomAnalytics,
-		SettingKeyAddUserConfig,
-	}
+		SettingKeyCustomAnalytics}
 
 	if !lo.Contains(allowedKeys, *s) {
 		return ierr.NewErrorf("invalid setting key: %s", *s).
@@ -88,20 +85,11 @@ func (c InvoicePDFConfig) Validate() error {
 	return c.TemplateName.Validate()
 }
 
-// EnvConfig represents environment creation limits configuration
+// EnvConfig represents environment creation limits and user limit configuration
 type EnvConfig struct {
-	Production  int `json:"production" validate:"required,min=0"`
-	Development int `json:"development" validate:"required,min=0"`
-}
-
-// AddUserConfig represents the maximum number of users allowed per tenant
-type AddUserConfig struct {
-	MaxUsers int `json:"max_users" validate:"required,min=1"`
-}
-
-// Validate implements SettingConfig interface
-func (c AddUserConfig) Validate() error {
-	return validator.ValidateRequest(c)
+	Production  int `json:"production" validate:"omitempty,min=0"`
+	Development int `json:"development" validate:"omitempty,min=0"`
+	MaxUsers    int `json:"max_users" validate:"omitempty,min=1"`
 }
 
 // Validate implements SettingConfig interface
@@ -311,6 +299,7 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 	defaultEnvConfig := EnvConfig{
 		Production:  1,
 		Development: 2,
+		MaxUsers:    10,
 	}
 
 	// Note: WorkflowConfig is now defined in service package to avoid import cycles
@@ -406,13 +395,6 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 			},
 			Description: "Configuration for custom analytics calculations (e.g., revenue per minute)",
 		},
-		SettingKeyAddUserConfig: {
-			Key: SettingKeyAddUserConfig,
-			DefaultValue: map[string]interface{}{
-				"max_users": 10,
-			},
-			Description: "Maximum number of users allowed per tenant (default 10)",
-		},
 	}, nil
 }
 
@@ -500,13 +482,6 @@ func ValidateSettingValue(key SettingKey, value map[string]interface{}) error {
 
 	case SettingKeyCustomAnalytics:
 		config, err := utils.ToStruct[CustomAnalyticsConfig](value)
-		if err != nil {
-			return err
-		}
-		return config.Validate()
-
-	case SettingKeyAddUserConfig:
-		config, err := utils.ToStruct[AddUserConfig](value)
 		if err != nil {
 			return err
 		}
