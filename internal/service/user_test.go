@@ -32,10 +32,11 @@ func (s *UserServiceSuite) SetupTest() {
 	s.userRepo = testutil.NewInMemoryUserStore()
 	s.tenantRepo = testutil.NewInMemoryTenantStore()
 	s.userService = &userService{
-		userRepo:     s.userRepo,
-		tenantRepo:   s.tenantRepo,
-		rbacService:  nil,
-		supabaseAuth: nil,
+		userRepo:        s.userRepo,
+		tenantRepo:      s.tenantRepo,
+		rbacService:     nil,
+		supabaseAuth:    nil,
+		settingsService: nil,
 	}
 
 	s.tenantRepo.Create(s.ctx, &tenant.Tenant{
@@ -136,24 +137,26 @@ func (s *UserServiceSuite) TestCreateUser_TableDriven() {
 			req:  dto.CreateUserRequest{Type: types.UserTypeUser, Email: "u@example.com"},
 			setup: func() *userService {
 				return &userService{
-					userRepo:     s.userRepo,
-					tenantRepo:   s.tenantRepo,
-					rbacService:  nil,
-					supabaseAuth: nil,
+					userRepo:        s.userRepo,
+					tenantRepo:      s.tenantRepo,
+					rbacService:     nil,
+					supabaseAuth:    nil,
+					settingsService: nil,
 				}
 			},
 			wantErr:     true,
-			errContains: "auth provider not configured",
+			errContains: "settings service not configured",
 		},
 		{
 			name: "type_service_account_without_rbac_returns_error",
 			req:  dto.CreateUserRequest{Type: types.UserTypeServiceAccount, Roles: []string{"event_ingestor"}},
 			setup: func() *userService {
 				return &userService{
-					userRepo:     s.userRepo,
-					tenantRepo:   s.tenantRepo,
-					rbacService:  nil,
-					supabaseAuth: nil,
+					userRepo:        s.userRepo,
+					tenantRepo:      s.tenantRepo,
+					rbacService:     nil,
+					supabaseAuth:    nil,
+					settingsService: nil,
 				}
 			},
 			wantErr:     true,
@@ -164,10 +167,11 @@ func (s *UserServiceSuite) TestCreateUser_TableDriven() {
 			req:  dto.CreateUserRequest{Type: types.UserType("invalid"), Email: "u@example.com"},
 			setup: func() *userService {
 				return &userService{
-					userRepo:     s.userRepo,
-					tenantRepo:   s.tenantRepo,
-					rbacService:  nil,
-					supabaseAuth: nil,
+					userRepo:        s.userRepo,
+					tenantRepo:      s.tenantRepo,
+					rbacService:     nil,
+					supabaseAuth:    nil,
+					settingsService: nil,
 				}
 			},
 			wantErr:     true,
@@ -187,10 +191,11 @@ func (s *UserServiceSuite) TestCreateUser_TableDriven() {
 			req:  dto.CreateUserRequest{Type: types.UserTypeServiceAccount, Roles: []string{"event_ingestor"}},
 			setup: func() *userService {
 				return &userService{
-					userRepo:     s.userRepo,
-					tenantRepo:   s.tenantRepo,
-					rbacService:  rbacSvc,
-					supabaseAuth: nil,
+					userRepo:        s.userRepo,
+					tenantRepo:      s.tenantRepo,
+					rbacService:     rbacSvc,
+					supabaseAuth:    nil,
+					settingsService: nil,
 				}
 			},
 			wantErr:     false,
