@@ -104,54 +104,6 @@ func (s *CreditAdjustmentServiceSuite) setupTestData() {
 	s.testData.wallets = []*wallet.Wallet{}
 }
 
-// Helper method to create a wallet with specified properties
-func (s *CreditAdjustmentServiceSuite) createWallet(id string, currency string, balance decimal.Decimal, creditBalance decimal.Decimal, status types.WalletStatus) *wallet.Wallet {
-	// If a credit transaction will be created, set initial CreditBalance to 0
-	// The credit transaction will set both Balance and CreditBalance correctly
-	initialCreditBalance := creditBalance
-	if creditBalance.GreaterThan(decimal.Zero) && status == types.WalletStatusActive {
-		initialCreditBalance = decimal.Zero
-	}
-
-	w := &wallet.Wallet{
-		ID:             id,
-		CustomerID:     s.testData.customer.ID,
-		Currency:       currency,
-		Balance:        balance,
-		CreditBalance:  initialCreditBalance,
-		WalletStatus:   status,
-		Name:           "Test Wallet " + id,
-		Description:    "Test wallet for credit adjustment",
-		ConversionRate: decimal.NewFromInt(1),
-		EnvironmentID:  "env_test",              // Required for wallet balance alert events
-		WalletType:     types.WalletTypePrePaid, // Credit adjustments use PrePaid wallets
-		BaseModel:      types.GetDefaultBaseModel(s.GetContext()),
-	}
-	s.NoError(s.GetStores().WalletRepo.CreateWallet(s.GetContext(), w))
-
-	// If creditBalance is greater than zero and wallet is active, create a credit transaction
-	// This is required because DebitWallet uses FindEligibleCredits which looks for credit transactions
-	// Only create credits for active wallets since inactive wallets won't be used anyway
-	if creditBalance.GreaterThan(decimal.Zero) && status == types.WalletStatusActive {
-		walletService := s.getWalletService()
-		creditOp := &wallet.WalletOperation{
-			WalletID:          w.ID,
-			Type:              types.TransactionTypeCredit,
-			CreditAmount:      creditBalance,
-			Description:       "Initial credit for test wallet",
-			TransactionReason: types.TransactionReasonFreeCredit,
-		}
-		s.NoError(walletService.CreditWallet(s.GetContext(), creditOp))
-
-		// Reload wallet to get updated balances
-		updatedWallet, err := s.GetStores().WalletRepo.GetWalletByID(s.GetContext(), w.ID)
-		s.NoError(err)
-		w = updatedWallet
-	}
-
-	return w
-}
-
 // Helper method to create an invoice with line items
 func (s *CreditAdjustmentServiceSuite) createInvoice(id string, currency string, lineItemAmounts []decimal.Decimal) *invoice.Invoice {
 	lineItems := make([]*invoice.InvoiceLineItem, len(lineItemAmounts))
