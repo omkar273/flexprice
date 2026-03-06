@@ -309,11 +309,12 @@ type CustomerPortalSection struct {
 
 // CustomerPortalTab represents a single tab within a portal section
 type CustomerPortalTab struct {
-	ID         string                       `json:"id" validate:"required"`
-	Type       string                       `json:"type" validate:"required"`
-	Enabled    bool                         `json:"enabled"`
-	Order      int                          `json:"order,omitempty"`
-	UsageGraph *CustomerPortalUsageGraph    `json:"usage_graph,omitempty"`
+	ID          string                        `json:"id" validate:"required"`
+	Type        string                        `json:"type" validate:"required"`
+	Enabled     bool                          `json:"enabled"`
+	Order       int                           `json:"order,omitempty"`
+	UsageGraph  *CustomerPortalUsageGraph     `json:"usage_graph,omitempty"`
+	MetricCards *CustomerPortalMetricCards    `json:"metric_cards,omitempty"`
 }
 
 // CustomerPortalUsageGraph holds configuration for usage_graph tab types
@@ -322,6 +323,13 @@ type CustomerPortalUsageGraph struct {
 	DefaultPreset        string   `json:"default_preset,omitempty"`
 	AllowCustomDateRange bool     `json:"allow_custom_date_range"`
 	FeatureFilterMode    string   `json:"feature_filter_mode,omitempty"`
+}
+
+// CustomerPortalMetricCards holds configuration for metric_cards tab types
+type CustomerPortalMetricCards struct {
+	ShowCostMetrics   bool `json:"show_cost_metrics"`
+	ShowCustomMetrics bool `json:"show_custom_metrics"`
+	ShowRevenueMetric bool `json:"show_revenue_metric"`
 }
 
 // GetDefaultSettings returns the default settings configuration for all setting keys
@@ -405,9 +413,63 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 	defaultPrepareProcessedEventsConfigMap := defaultPrepareProcessedEventsConfig
 
 	defaultCustomerPortalConfig := CustomerPortalConfig{
-		Version:  "1.0",
-		Theme:    CustomerPortalTheme{},
-		Sections: []CustomerPortalSection{},
+		Version: "1.0",
+		Theme:   CustomerPortalTheme{},
+		Sections: []CustomerPortalSection{
+			{
+				ID: "usage", Label: "Usage", Enabled: true, Order: 1,
+				Tabs: []CustomerPortalTab{
+					{
+						ID: "1", Type: "metric_cards", Order: 1, Enabled: true,
+						MetricCards: &CustomerPortalMetricCards{
+							ShowCostMetrics:   true,
+							ShowCustomMetrics: true,
+							ShowRevenueMetric: true,
+						},
+					},
+					{
+						ID: "2", Type: "usage_graph", Order: 2, Enabled: true,
+						UsageGraph: &CustomerPortalUsageGraph{
+							DatePresets:          []string{"today", "last_7_days", "last_30_days", "current_month", "last_month"},
+							DefaultPreset:        "last_7_days",
+							FeatureFilterMode:    "inc",
+							AllowCustomDateRange: true,
+						},
+					},
+					{ID: "4", Type: "current_usage", Order: 3, Enabled: true},
+					{ID: "3", Type: "usage_breakdown", Order: 4, Enabled: true},
+				},
+			},
+			{
+				ID: "credits", Label: "Credits", Enabled: true, Order: 2,
+				Tabs: []CustomerPortalTab{
+					{ID: "6", Type: "wallet_balance", Order: 1, Enabled: true},
+					{ID: "7", Type: "wallet_transactions", Order: 2, Enabled: true},
+				},
+			},
+			{
+				ID: "invoices", Label: "Invoices", Enabled: true, Order: 3,
+				Tabs: []CustomerPortalTab{
+					{ID: "8", Type: "invoices", Order: 1, Enabled: true},
+				},
+			},
+			{
+				ID: "overview", Label: "Overview", Enabled: true, Order: 4,
+				Tabs: []CustomerPortalTab{
+					{ID: "9", Type: "wallet_balance", Order: 1, Enabled: true},
+					{ID: "10", Type: "subscriptions", Order: 2, Enabled: true},
+					{
+						ID: "11", Type: "usage_graph", Order: 3, Enabled: true,
+						UsageGraph: &CustomerPortalUsageGraph{
+							DatePresets:          []string{"last_7_days", "last_30_days"},
+							DefaultPreset:        "last_7_days",
+							FeatureFilterMode:    "all",
+							AllowCustomDateRange: true,
+						},
+					},
+				},
+			},
+		},
 	}
 	defaultCustomerPortalConfigMap, err := utils.ToMap(defaultCustomerPortalConfig)
 	if err != nil {

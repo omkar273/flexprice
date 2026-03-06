@@ -329,11 +329,6 @@ type CostSheetUsageTrackingLazyConfig struct {
 type CustomerPortalConfig struct {
 	URL               string `mapstructure:"url" validate:"required"`
 	TokenTimeoutHours int    `mapstructure:"token_timeout_hours" validate:"required"`
-	// DefaultTenantID and DefaultEnvironmentID are used as a fallback when a tenant
-	// has no customer_portal_config set. If the requesting tenant has no config,
-	// the config from this default tenant/env is returned instead.
-	DefaultTenantID      string `mapstructure:"default_tenant_id" validate:"omitempty"`
-	DefaultEnvironmentID string `mapstructure:"default_environment_id" validate:"omitempty"`
 }
 
 // RedisConfig holds configuration for Redis

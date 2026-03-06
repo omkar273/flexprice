@@ -372,52 +372,10 @@ func (s *customerPortalService) GetInvoicePDFUrl(ctx context.Context, invoiceID 
 }
 
 // GetPortalConfig returns the customer_portal_config setting for the current tenant/environment.
-// Fallback behaviour: if the current tenant/env has no config saved (empty sections),
-// and a default tenant+environment is configured, the default tenant's config is returned.
+// If no config is saved for the tenant, the hardcoded defaults from GetDefaultSettings() are returned.
 func (s *customerPortalService) GetPortalConfig(ctx context.Context) (*dto.SettingResponse, error) {
 	settingsService := NewSettingsService(s.ServiceParams)
-
-	resp, err := settingsService.GetSettingByKey(ctx, types.SettingKeyCustomerPortalConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	// If the tenant has a real config (non-empty sections), return it as-is.
-	if portalConfigHasSections(resp) {
-		return resp, nil
-	}
-
-	// No sections configured for this tenant — try the default tenant/env fallback.
-	defaultTenantID := s.Config.CustomerPortal.DefaultTenantID
-	defaultEnvID := s.Config.CustomerPortal.DefaultEnvironmentID
-	if defaultTenantID == "" {
-		// No fallback configured, return what we have (empty / struct defaults).
-		return resp, nil
-	}
-
-	fallbackCtx := context.WithValue(ctx, types.CtxTenantID, defaultTenantID)
-	fallbackCtx = context.WithValue(fallbackCtx, types.CtxEnvironmentID, defaultEnvID)
-
-	fallbackResp, err := settingsService.GetSettingByKey(fallbackCtx, types.SettingKeyCustomerPortalConfig)
-	if err != nil {
-		// Fallback fetch failed — return the original (empty) response rather than an error.
-		return resp, nil
-	}
-
-	return fallbackResp, nil
-}
-
-// portalConfigHasSections returns true when the setting value contains at least one section.
-func portalConfigHasSections(resp *dto.SettingResponse) bool {
-	if resp == nil || resp.Setting == nil {
-		return false
-	}
-	sections, ok := resp.Value["sections"]
-	if !ok {
-		return false
-	}
-	arr, ok := sections.([]interface{})
-	return ok && len(arr) > 0
+	return settingsService.GetSettingByKey(ctx, types.SettingKeyCustomerPortalConfig)
 }
 
 // GetWalletTransactions returns transactions for a wallet with pagination
