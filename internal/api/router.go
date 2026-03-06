@@ -569,6 +569,9 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 		customerPortalAPI.GET("/wallets/:id", handlers.CustomerPortal.GetWallet)
 		customerPortalAPI.GET("/wallets/:id/transactions", handlers.CustomerPortal.GetWalletTransactions)
 
+		// Portal config (theme, sections, tabs)
+		customerPortalAPI.GET("/config", handlers.CustomerPortal.GetPortalConfig)
+
 		// Analytics
 		customerPortalAPI.POST("/analytics/revenue", handlers.CustomerPortal.GetAnalytics)
 
