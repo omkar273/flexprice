@@ -779,8 +779,15 @@ func (r *subscriptionRepository) CreateWithLineItems(ctx context.Context, sub *d
 				SetUpdatedAt(time.Now())
 		}
 
-		if err := client.SubscriptionLineItem.CreateBulk(bulk...).Exec(ctx); err != nil {
-			return fmt.Errorf("failed to create subscription line items: %w", err)
+		// Insert in batches to stay within PostgreSQL's 65535 parameter limit.
+		for i := 0; i < len(bulk); i += subscriptionLineItemBatchSize {
+			end := i + subscriptionLineItemBatchSize
+			if end > len(bulk) {
+				end = len(bulk)
+			}
+			if err := client.SubscriptionLineItem.CreateBulk(bulk[i:end]...).Exec(ctx); err != nil {
+				return fmt.Errorf("failed to create subscription line items: %w", err)
+			}
 		}
 
 		return nil
