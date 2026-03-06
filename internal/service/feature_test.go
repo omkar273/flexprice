@@ -104,11 +104,7 @@ func (s *FeatureServiceSuite) setupTestData() {
 		Type:        types.FeatureTypeMetered,
 		MeterID:     s.testData.meters.apiCalls.ID,
 		BaseModel:   types.GetDefaultBaseModel(s.GetContext()),
-		ReportingUnit: &types.ReportingUnit{
-			UnitSingular:   "thousand tokens",
-			UnitPlural:     "thousands of tokens",
-			ConversionRate: lo.ToPtr(decimal.RequireFromString("0.001")),
-		},
+		ReportingUnit: testutil.NewReportingUnit("thousand tokens", "thousands of tokens", "0.001"),
 	}
 	s.testData.features.apiCalls.CreatedAt = now
 	s.NoError(s.featureRepo.Create(s.GetContext(), s.testData.features.apiCalls))
@@ -232,11 +228,7 @@ func (s *FeatureServiceSuite) TestCreateFeature() {
 				MeterID:     s.testData.meters.apiCalls.ID,
 				UnitSingular: "token",
 				UnitPlural:   "tokens",
-				ReportingUnit: &types.ReportingUnit{
-					UnitSingular:   "thousand tokens",
-					UnitPlural:     "thousands of tokens",
-					ConversionRate: lo.ToPtr(decimal.RequireFromString("0.001")),
-				},
+				ReportingUnit: testutil.NewReportingUnit("thousand tokens", "thousands of tokens", "0.001"),
 			},
 		},
 		{
@@ -263,8 +255,8 @@ func (s *FeatureServiceSuite) TestCreateFeature() {
 				Type:        types.FeatureTypeMetered,
 				MeterID:     s.testData.meters.apiCalls.ID,
 				ReportingUnit: &types.ReportingUnit{
-					UnitSingular: "thousand tokens",
-					UnitPlural:   "thousands of tokens",
+					UnitSingular:   "thousand tokens",
+					UnitPlural:     "thousands of tokens",
 					ConversionRate: nil,
 				},
 			},
@@ -850,11 +842,7 @@ func (s *FeatureServiceSuite) TestUpdateFeature() {
 			id:   s.testData.features.apiCalls.ID,
 			req: dto.UpdateFeatureRequest{
 				Name: lo.ToPtr("API Calls Feature"),
-				ReportingUnit: &types.ReportingUnit{
-					UnitSingular:   "million tokens",
-					UnitPlural:     "millions of tokens",
-					ConversionRate: lo.ToPtr(decimal.RequireFromString("0.000001")),
-				},
+				ReportingUnit: testutil.NewReportingUnit("million tokens", "millions of tokens", "0.000001"),
 			},
 		},
 		{
@@ -989,6 +977,87 @@ func (s *FeatureServiceSuite) TestDeleteFeature() {
 			}
 
 			s.NoError(err)
+		})
+	}
+}
+
+func (s *FeatureServiceSuite) TestFeature_ToReportingValue() {
+	// apiCalls feature has ReportingUnit: thousand tokens, conversion_rate 0.001
+	// Formula: display = unit_value / conversion_rate, rounded to 2 decimals
+	f := s.testData.features.apiCalls
+	s.Require().NotNil(f)
+	s.Require().NotNil(f.ReportingUnit)
+	s.Require().NotNil(f.ReportingUnit.ConversionRate)
+
+	tests := []struct {
+		name        string
+		feature     *feature.Feature
+		unitValue   decimal.Decimal
+		wantDisplay decimal.Decimal // expected converted value (rounded to 2 decimals)
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:        "converts base to display - 1000 base with rate 0.001 = 1000000 display",
+			feature:     f,
+			unitValue:   decimal.NewFromInt(1000),
+			wantDisplay: decimal.RequireFromString("1000000"),
+			wantErr:     false,
+		},
+		{
+			name:        "converts and rounds to 2 decimals",
+			feature:     f,
+			unitValue:   decimal.RequireFromString("1234.5678"),
+			wantDisplay: decimal.RequireFromString("1234567.8"), // 1234.5678 / 0.001 = 1234567.8
+			wantErr:     false,
+		},
+		{
+			name:        "nil feature returns error",
+			feature:     nil,
+			unitValue:   decimal.Zero,
+			wantErr:     true,
+			errContains: "reporting_unit is required",
+		},
+		{
+			name: "feature with nil ReportingUnit returns error",
+			feature: &feature.Feature{
+				ID:            "no-ru",
+				Name:          "No RU",
+				ReportingUnit: nil,
+			},
+			unitValue:   decimal.Zero,
+			wantErr:     true,
+			errContains: "reporting_unit is required",
+		},
+		{
+			name: "feature with nil ConversionRate returns error",
+			feature: &feature.Feature{
+				ID: "no-rate",
+				ReportingUnit: &types.ReportingUnit{
+					UnitSingular:   "x",
+					UnitPlural:     "xs",
+					ConversionRate: nil,
+				},
+			},
+			unitValue:   decimal.NewFromInt(1),
+			wantErr:     true,
+			errContains: "conversion_rate is required",
+		},
+	}
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			got, err := tt.feature.ToReportingValue(tt.unitValue)
+			if tt.wantErr {
+				s.Error(err)
+				if tt.errContains != "" {
+					s.Contains(err.Error(), tt.errContains)
+				}
+				s.Nil(got)
+				return
+			}
+			s.NoError(err)
+			s.Require().NotNil(got)
+			s.True(tt.wantDisplay.Equal(*got), "ToReportingValue(unit_value) = display rounded to 2 decimals; got %s", got.String())
 		})
 	}
 }
