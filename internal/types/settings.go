@@ -424,7 +424,7 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 					{
 						ID: "1", Type: "metric_cards", Order: 1, Enabled: true,
 						MetricCards: &CustomerPortalMetricCards{
-							ShowCostMetrics:   true,
+							ShowCostMetrics:   false,
 							ShowCustomMetrics: true,
 							ShowRevenueMetric: true,
 						},
