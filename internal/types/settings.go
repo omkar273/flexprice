@@ -88,10 +88,11 @@ func (c InvoicePDFConfig) Validate() error {
 	return c.TemplateName.Validate()
 }
 
-// EnvConfig represents environment creation limits configuration
+// EnvConfig represents environment creation limits and user limit configuration
 type EnvConfig struct {
-	Production  int `json:"production" validate:"required,min=0"`
-	Development int `json:"development" validate:"required,min=0"`
+	Production  int `json:"production" validate:"omitempty,min=0"`
+	Development int `json:"development" validate:"omitempty,min=0"`
+	MaxUsers    int `json:"max_users" validate:"omitempty,min=1"`
 }
 
 // Validate implements SettingConfig interface
@@ -300,21 +301,21 @@ type CustomerPortalTheme struct {
 
 // CustomerPortalSection represents a top-level navigation section in the portal
 type CustomerPortalSection struct {
-	ID      string                `json:"id" validate:"required"`
-	Label   string                `json:"label,omitempty"`
-	Enabled bool                  `json:"enabled"`
-	Order   int                   `json:"order,omitempty"`
-	Tabs    []CustomerPortalTab   `json:"tabs,omitempty" validate:"omitempty,dive"`
+	ID      string              `json:"id" validate:"required"`
+	Label   string              `json:"label,omitempty"`
+	Enabled bool                `json:"enabled"`
+	Order   int                 `json:"order,omitempty"`
+	Tabs    []CustomerPortalTab `json:"tabs,omitempty" validate:"omitempty,dive"`
 }
 
 // CustomerPortalTab represents a single tab within a portal section
 type CustomerPortalTab struct {
-	ID          string                        `json:"id" validate:"required"`
-	Type        string                        `json:"type" validate:"required"`
-	Enabled     bool                          `json:"enabled"`
-	Order       int                           `json:"order,omitempty"`
-	UsageGraph  *CustomerPortalUsageGraph     `json:"usage_graph,omitempty"`
-	MetricCards *CustomerPortalMetricCards    `json:"metric_cards,omitempty"`
+	ID          string                     `json:"id" validate:"required"`
+	Type        string                     `json:"type" validate:"required"`
+	Enabled     bool                       `json:"enabled"`
+	Order       int                        `json:"order,omitempty"`
+	UsageGraph  *CustomerPortalUsageGraph  `json:"usage_graph,omitempty"`
+	MetricCards *CustomerPortalMetricCards `json:"metric_cards,omitempty"`
 }
 
 // CustomerPortalUsageGraph holds configuration for usage_graph tab types
@@ -360,6 +361,7 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 	defaultEnvConfig := EnvConfig{
 		Production:  1,
 		Development: 2,
+		MaxUsers:    10,
 	}
 
 	// Note: WorkflowConfig is now defined in service package to avoid import cycles

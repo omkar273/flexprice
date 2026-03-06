@@ -37,7 +37,6 @@ func NewSettingsService(params ServiceParams) SettingsService {
 
 // isTenantLevelSetting checks if a setting is tenant-level (no environment_id)
 // Tenant-level settings apply across all environments for a tenant
-// Currently only env_config is tenant-level
 func isTenantLevelSetting(key types.SettingKey) bool {
 	return key == types.SettingKeyEnvConfig
 }
