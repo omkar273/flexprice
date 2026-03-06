@@ -69,23 +69,6 @@ func (s *CreditAdjustmentServiceSuite) getServiceImpl() *creditAdjustmentService
 	return s.service.(*creditAdjustmentService)
 }
 
-// getWalletService returns a wallet service instance for creating credit transactions
-func (s *CreditAdjustmentServiceSuite) getWalletService() WalletService {
-	stores := s.GetStores()
-	pubsub := testutil.NewInMemoryPubSub()
-	return NewWalletService(ServiceParams{
-		Logger:                   s.GetLogger(),
-		Config:                   s.GetConfig(),
-		DB:                       s.GetDB(),
-		WalletRepo:               stores.WalletRepo,
-		SettingsRepo:             stores.SettingsRepo,
-		AlertLogsRepo:            stores.AlertLogsRepo,
-		EventPublisher:           s.GetPublisher(),
-		WebhookPublisher:         s.GetWebhookPublisher(),
-		WalletBalanceAlertPubSub: types.WalletBalanceAlertPubSub{PubSub: pubsub},
-	})
-}
-
 func (s *CreditAdjustmentServiceSuite) setupTestData() {
 	// Clear any existing data
 	s.BaseServiceTestSuite.ClearStores()
@@ -102,45 +85,6 @@ func (s *CreditAdjustmentServiceSuite) setupTestData() {
 
 	// Initialize wallets slice
 	s.testData.wallets = []*wallet.Wallet{}
-}
-
-// Helper method to create an invoice with line items
-func (s *CreditAdjustmentServiceSuite) createInvoice(id string, currency string, lineItemAmounts []decimal.Decimal) *invoice.Invoice {
-	lineItems := make([]*invoice.InvoiceLineItem, len(lineItemAmounts))
-	for i, amount := range lineItemAmounts {
-		lineItems[i] = &invoice.InvoiceLineItem{
-			ID:         s.GetUUID(),
-			InvoiceID:  id,
-			CustomerID: s.testData.customer.ID,
-			Amount:     amount,
-			Currency:   currency,
-			Quantity:   decimal.NewFromInt(1),
-			PriceType:  lo.ToPtr(string(types.PRICE_TYPE_USAGE)),
-			BaseModel:  types.GetDefaultBaseModel(s.GetContext()),
-		}
-	}
-
-	// Calculate subtotal
-	subtotal := decimal.Zero
-	for _, amount := range lineItemAmounts {
-		subtotal = subtotal.Add(amount)
-	}
-
-	inv := &invoice.Invoice{
-		ID:            id,
-		CustomerID:    s.testData.customer.ID,
-		Currency:      currency,
-		Subtotal:      subtotal,
-		Total:         subtotal,
-		InvoiceType:   types.InvoiceTypeOneOff,
-		InvoiceStatus: types.InvoiceStatusDraft,
-		BaseModel:     types.GetDefaultBaseModel(s.GetContext()),
-		LineItems:     lineItems,
-	}
-
-	// Create invoice with line items
-	s.NoError(s.GetStores().InvoiceRepo.CreateWithLineItems(s.GetContext(), inv))
-	return inv
 }
 
 // Helper method to create a wallet for calculation tests (in-memory, no database)
@@ -212,3 +156,64 @@ func (s *CreditAdjustmentServiceSuite) TestCalculateCreditAdjustments_DustBalanc
 	s.Empty(debits, "dust wallet should not be debited")
 	s.True(inv.LineItems[0].PrepaidCreditsApplied.IsZero(), "no amount should be applied from dust")
 }
+
+func (s *CreditAdjustmentServiceSuite) TestCalculateCreditAdjustments_UsageOnlyAppliesAfterDiscounts() {
+	svc := s.getServiceImpl()
+
+	li := s.createLineItemForCalculation(decimal.NewFromInt(100), lo.ToPtr(string(types.PRICE_TYPE_USAGE)), decimal.NewFromInt(20))
+	li.InvoiceLevelDiscount = decimal.NewFromInt(10)
+	inv := s.createInvoiceForCalculation("inv_usage_after_discounts", "USD", []*invoice.InvoiceLineItem{li})
+
+	wallets := []*wallet.Wallet{
+		s.createWalletForCalculation("wallet_1", "USD", decimal.NewFromInt(50)),
+	}
+
+	debits, err := svc.CalculateCreditAdjustments(inv, wallets)
+	s.Require().NoError(err)
+
+	// Net line amount = 100 - 20 - 10 = 70; wallet balance 50 => apply 50.
+	s.True(decimal.NewFromInt(50).Equal(inv.LineItems[0].PrepaidCreditsApplied))
+	s.Len(debits, 1)
+	s.True(decimal.NewFromInt(50).Equal(debits["wallet_1"]))
+}
+
+func (s *CreditAdjustmentServiceSuite) TestCalculateCreditAdjustments_SkipsNonUsageLineItems() {
+	svc := s.getServiceImpl()
+
+	fixed := s.createLineItemForCalculation(decimal.NewFromInt(100), lo.ToPtr(string(types.PRICE_TYPE_FIXED)), decimal.Zero)
+	fixed.InvoiceLevelDiscount = decimal.Zero
+	inv := s.createInvoiceForCalculation("inv_fixed_skip", "USD", []*invoice.InvoiceLineItem{fixed})
+
+	wallets := []*wallet.Wallet{
+		s.createWalletForCalculation("wallet_1", "USD", decimal.NewFromInt(100)),
+	}
+
+	debits, err := svc.CalculateCreditAdjustments(inv, wallets)
+	s.Require().NoError(err)
+
+	s.True(inv.LineItems[0].PrepaidCreditsApplied.IsZero(), "fixed line item should not get prepaid credits applied")
+	s.Empty(debits, "no wallets should be debited when invoice has no usage items")
+}
+
+func (s *CreditAdjustmentServiceSuite) TestCalculateCreditAdjustments_MultipleWalletsConsumedInOrder() {
+	svc := s.getServiceImpl()
+
+	li := s.createLineItemForCalculation(decimal.NewFromInt(50), lo.ToPtr(string(types.PRICE_TYPE_USAGE)), decimal.Zero)
+	li.InvoiceLevelDiscount = decimal.Zero
+	inv := s.createInvoiceForCalculation("inv_multi_wallet", "USD", []*invoice.InvoiceLineItem{li})
+
+	wallets := []*wallet.Wallet{
+		s.createWalletForCalculation("wallet_a", "USD", decimal.NewFromInt(30)),
+		s.createWalletForCalculation("wallet_b", "USD", decimal.NewFromInt(40)),
+	}
+
+	debits, err := svc.CalculateCreditAdjustments(inv, wallets)
+	s.Require().NoError(err)
+
+	// Need 50. Consume wallet_a(30) then wallet_b(20).
+	s.True(decimal.NewFromInt(50).Equal(inv.LineItems[0].PrepaidCreditsApplied))
+	s.Len(debits, 2)
+	s.True(decimal.NewFromInt(30).Equal(debits["wallet_a"]))
+	s.True(decimal.NewFromInt(20).Equal(debits["wallet_b"]))
+}
+
