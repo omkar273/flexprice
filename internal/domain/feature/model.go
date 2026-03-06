@@ -82,8 +82,9 @@ func FromEntList(features []*ent.Feature) []*Feature {
 }
 
 // ToReportingValue converts a value from base units to reporting (display) units.
-// Formula: reporting_value = unit_value * conversion_rate.
-// Returns error if reporting unit is nil or conversion_rate is not set; otherwise returns the converted value.
+// Formula: unit value = reporting value * conversion_rate.
+// Returns error if reporting unit is nil or conversion_rate is not set; otherwise returns the converted value
+// rounded to 2 decimal places.
 func (r *Feature) ToReportingValue(unitValue decimal.Decimal) (*decimal.Decimal, error) {
 	if r == nil || r.ReportingUnit == nil {
 		return nil, ierr.NewError("reporting_unit is required").
@@ -95,5 +96,6 @@ func (r *Feature) ToReportingValue(unitValue decimal.Decimal) (*decimal.Decimal,
 			WithHint("Reporting unit must have a conversion_rate to convert unit value to reporting value").
 			Mark(ierr.ErrValidation)
 	}
-	return lo.ToPtr(unitValue.Mul(*r.ReportingUnit.ConversionRate)), nil
+	result := unitValue.Div(*r.ReportingUnit.ConversionRate).Round(2)
+	return lo.ToPtr(result), nil
 }
