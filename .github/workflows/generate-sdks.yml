@@ -3,7 +3,7 @@
 # Flow: trigger -> version-check (resolve version from sdk-version.json vs published npm; skip if resolved equals .speakeasy/gen/go.yaml) -> generate -> push to GitHub -> publish to npm/PyPI.
 # Version: resolved in version-check (sdk-version.json vs npm); if npm greater, use bumped npm; else use sdk-version.json. All downstream jobs use this resolved version only. Skip when resolved equals gen/go.yaml.
 #
-# Triggers: push to main (path-filtered); workflow_dispatch. When version unchanged, generate and publish are skipped.
+# Triggers: release published; workflow_dispatch. When version unchanged, generate and publish are skipped.
 # Required secrets: SPEAKEASY_API_KEY, SDK_DEPLOY_GIT_TOKEN (fine-grained PAT: Contents R/W + Metadata Read on target SDK repos), NPM_TOKEN, PYPI_TOKEN.
 # Published packages: pip install flexprice | npm i @flexprice/sdk | npm i @flexprice/mcp-server
 # Default SDK repos (override via SDK_GO_REPO, SDK_PYTHON_REPO, SDK_TYPESCRIPT_REPO, SDK_MCP_REPO): flexprice/go-sdk, flexprice/javascript-sdk, flexprice/python-sdk, flexprice/mcp-server.
@@ -13,15 +13,8 @@
 name: Generate SDKs
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/swagger/**"
-      - ".speakeasy/**"
-      - "api/custom/**"
-      - "cmd/**"
-      - "internal/api/**"
-      - "Makefile"
+  release:
+    types: [published]
   workflow_dispatch:
 
 concurrency:
@@ -194,7 +187,7 @@ jobs:
   # ---------------------------------------------------------------------------
   publish-to-github:
     needs: [version-check, generate]
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -268,7 +261,7 @@ jobs:
   # ---------------------------------------------------------------------------
   publish-summary:
     needs: [version-check, generate, publish-to-github]
-    if: success() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: success() && (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -302,7 +295,7 @@ jobs:
   # ---------------------------------------------------------------------------
   publish-to-registries:
     needs: [generate, publish-to-github]
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
