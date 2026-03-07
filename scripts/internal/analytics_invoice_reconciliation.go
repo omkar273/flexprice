@@ -245,17 +245,30 @@ func newAnalyticsInvoiceReconciliationScript() (*analyticsInvoiceReconciliationS
 	customerRepo := entRepo.NewCustomerRepository(pgClient, logger, cacheClient)
 	invoiceRepo := entRepo.NewInvoiceRepository(pgClient, logger, cacheClient)
 	featureRepo := entRepo.NewFeatureRepository(pgClient, logger, cacheClient)
+	meterRepo := entRepo.NewMeterRepository(pgClient, logger, cacheClient)
+	priceRepo := entRepo.NewPriceRepository(pgClient, logger, cacheClient)
+	planRepo := entRepo.NewPlanRepository(pgClient, logger, cacheClient)
+	subRepo := entRepo.NewSubscriptionRepository(pgClient, logger, cacheClient)
+	subLineItemRepo := entRepo.NewSubscriptionLineItemRepository(pgClient, logger, cacheClient)
+	addonRepo := entRepo.NewAddonRepository(pgClient, logger, cacheClient)
 	eventRepo := chRepo.NewEventRepository(chStore, logger)
 	featureUsageRepo := chRepo.NewFeatureUsageRepository(chStore, logger)
 
 	serviceParams := service.ServiceParams{
-		Logger:       logger,
-		Config:       cfg,
-		DB:          pgClient,
-		CustomerRepo: customerRepo,
-		InvoiceRepo:  invoiceRepo,
-		FeatureRepo:  featureRepo,
-		EventRepo:    eventRepo,
+		Logger:                   logger,
+		Config:                   cfg,
+		DB:                       pgClient,
+		CustomerRepo:             customerRepo,
+		InvoiceRepo:              invoiceRepo,
+		FeatureRepo:              featureRepo,
+		MeterRepo:                meterRepo,
+		PriceRepo:                priceRepo,
+		PlanRepo:                 planRepo,
+		SubRepo:                  subRepo,
+		SubscriptionLineItemRepo: subLineItemRepo,
+		AddonRepo:                addonRepo,
+		EventRepo:                eventRepo,
+		FeatureUsageRepo:         featureUsageRepo,
 	}
 	featureUsageTrackingService := service.NewFeatureUsageTrackingService(serviceParams, eventRepo, featureUsageRepo)
 
