@@ -26,7 +26,7 @@ func RegenerateDraftInvoicesScheduledWorkflow(ctx workflow.Context) (*invoiceMod
 			InitialInterval:    time.Second * 30,
 			BackoffCoefficient: 2.0,
 			MaximumInterval:    time.Minute * 5,
-			MaximumAttempts:    3,
+			MaximumAttempts:    1,
 		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOptions)
