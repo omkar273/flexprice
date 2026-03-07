@@ -72,6 +72,9 @@ func (r *featureRepository) Create(ctx context.Context, f *domainFeature.Feature
 		SetCreatedBy(f.CreatedBy).
 		SetUpdatedBy(f.UpdatedBy).
 		SetEnvironmentID(f.EnvironmentID)
+	if f.GroupID != "" {
+		createQuery = createQuery.SetGroupID(f.GroupID)
+	}
 
 	if f.ReportingUnit != nil && f.ReportingUnit.ConversionRate != nil {
 		ru := f.ReportingUnit
@@ -281,6 +284,11 @@ func (r *featureRepository) Update(ctx context.Context, f *domainFeature.Feature
 		SetMeterID(f.MeterID).
 		SetUpdatedAt(time.Now().UTC()).
 		SetUpdatedBy(types.GetUserID(ctx))
+	if f.GroupID != "" {
+		updateQuery = updateQuery.SetGroupID(f.GroupID)
+	} else {
+		updateQuery = updateQuery.ClearGroupID()
+	}
 
 	// Partial update: only set reporting unit columns when present (from request); never clear. Guard ConversionRate to avoid nil dereference.
 	if f.ReportingUnit != nil && f.ReportingUnit.ConversionRate != nil {
@@ -384,6 +392,50 @@ func (r *featureRepository) ListByIDs(ctx context.Context, featureIDs []string) 
 
 	// Use the existing List method
 	return r.List(ctx, filter)
+}
+
+// GetByGroupIDs returns features that belong to any of the given group IDs.
+func (r *featureRepository) GetByGroupIDs(ctx context.Context, groupIDs []string) ([]*domainFeature.Feature, error) {
+	if len(groupIDs) == 0 {
+		return []*domainFeature.Feature{}, nil
+	}
+	client := r.client.Reader(ctx)
+	features, err := client.Feature.Query().
+		Where(feature.GroupIDIn(groupIDs...)).
+		All(ctx)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to get features by group IDs").
+			WithReportableDetails(map[string]interface{}{
+				"group_ids": groupIDs,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+	return domainFeature.FromEntList(features), nil
+}
+
+// ClearByGroupID clears the group ID for all features in the given group.
+func (r *featureRepository) ClearByGroupID(ctx context.Context, groupID string) error {
+	client := r.client.Writer(ctx)
+	_, err := client.Feature.Update().
+		Where(
+			feature.GroupID(groupID),
+			feature.TenantID(types.GetTenantID(ctx)),
+			feature.EnvironmentID(types.GetEnvironmentID(ctx)),
+		).
+		ClearGroupID().
+		SetUpdatedAt(time.Now().UTC()).
+		SetUpdatedBy(types.GetUserID(ctx)).
+		Save(ctx)
+	if err != nil {
+		return ierr.WithError(err).
+			WithHint("Failed to clear group ID from features").
+			WithReportableDetails(map[string]interface{}{
+				"group_id": groupID,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+	return nil
 }
 
 // FeatureQuery type alias for better readability
