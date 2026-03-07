@@ -24,6 +24,7 @@ import (
 	"github.com/flexprice/flexprice/internal/interfaces"
 	"github.com/flexprice/flexprice/internal/s3"
 	"github.com/flexprice/flexprice/internal/temporal/models"
+	invoiceModels "github.com/flexprice/flexprice/internal/temporal/models/invoice"
 	temporalservice "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/samber/lo"
@@ -60,6 +61,8 @@ type InvoiceService interface {
 
 	// Cron methods
 	SyncInvoiceToExternalVendors(ctx context.Context, invoiceID string) error
+	// TriggerRegenerateDraftInvoicesInBatches lists draft subscription invoices in batches of 500 and starts a RegenerateDraftInvoicesBatchWorkflow per batch (fire-and-forget). For use by scheduled Temporal activity only.
+	TriggerRegenerateDraftInvoicesInBatches(ctx context.Context) (batchesStarted, totalInvoices int, err error)
 
 	DistributeInvoiceLevelDiscount(ctx context.Context, lineItems []*invoice.InvoiceLineItem, invoiceDiscountAmount decimal.Decimal) error
 }
@@ -2809,6 +2812,70 @@ func (s *invoiceService) RegenerateDraftSubscriptionInvoice(ctx context.Context,
 
 	// Return updated invoice
 	return s.GetInvoice(ctx, id)
+}
+
+const regenerateDraftInvoicesBatchSize = 500
+
+// TriggerRegenerateDraftInvoicesInBatches lists draft subscription invoices in batches and starts a RegenerateDraftInvoicesBatchWorkflow per batch (fire-and-forget).
+func (s *invoiceService) TriggerRegenerateDraftInvoicesInBatches(ctx context.Context) (batchesStarted, totalInvoices int, err error) {
+	temporalSvc := temporalservice.GetGlobalTemporalService()
+	if temporalSvc == nil {
+		return 0, 0, ierr.NewError("temporal service not available").
+			WithHint("Cannot trigger regenerate draft invoices workflows").
+			Mark(ierr.ErrInternal)
+	}
+
+	queryFilter := types.NewDefaultQueryFilter()
+	queryFilter.Limit = lo.ToPtr(regenerateDraftInvoicesBatchSize)
+	filter := &types.InvoiceFilter{
+		QueryFilter:   queryFilter,
+		InvoiceStatus: []types.InvoiceStatus{types.InvoiceStatusDraft},
+		InvoiceType:   types.InvoiceTypeSubscription,
+		SkipLineItems: true,
+	}
+
+	for offset := 0; ; offset += regenerateDraftInvoicesBatchSize {
+		filter.QueryFilter.Offset = lo.ToPtr(offset)
+		invoices, listErr := s.InvoiceRepo.ListAllTenant(ctx, filter)
+		if listErr != nil {
+			s.Logger.Errorw("failed to list draft subscription invoices", "error", listErr, "offset", offset)
+			return batchesStarted, totalInvoices, listErr
+		}
+		if len(invoices) == 0 {
+			break
+		}
+
+		items := make([]invoiceModels.InvoiceTenantEnv, len(invoices))
+		for i, inv := range invoices {
+			items[i] = invoiceModels.InvoiceTenantEnv{
+				InvoiceID:     inv.ID,
+				TenantID:      inv.TenantID,
+				EnvironmentID: inv.EnvironmentID,
+			}
+		}
+		input := invoiceModels.RegenerateDraftInvoicesBatchWorkflowInput{Invoices: items}
+		if err := input.Validate(); err != nil {
+			s.Logger.Errorw("invalid batch input for regenerate draft invoices", "error", err, "offset", offset)
+			return batchesStarted, totalInvoices, err
+		}
+
+		_, startErr := temporalSvc.ExecuteWorkflow(ctx, types.TemporalRegenerateDraftInvoicesBatchWorkflow, input)
+		if startErr != nil {
+			s.Logger.Errorw("failed to start regenerate draft invoices batch workflow", "error", startErr, "offset", offset, "batch_size", len(items))
+			return batchesStarted, totalInvoices, startErr
+		}
+
+		batchesStarted++
+		totalInvoices += len(invoices)
+		s.Logger.Infow("started regenerate draft invoices batch workflow", "offset", offset, "batch_size", len(invoices), "batches_started", batchesStarted)
+
+		if len(invoices) < regenerateDraftInvoicesBatchSize {
+			break
+		}
+	}
+
+	s.Logger.Infow("triggered regenerate draft invoices in batches", "batches_started", batchesStarted, "total_invoices", totalInvoices)
+	return batchesStarted, totalInvoices, nil
 }
 
 // RecalculateVoidedInvoice creates a fresh replacement invoice for a voided subscription invoice

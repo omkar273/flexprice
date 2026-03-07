@@ -356,6 +356,9 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			invoices.POST("/:id/recalculate", handlers.Invoice.RecalculateInvoice)
 			invoices.POST("/:id/comms/trigger", handlers.Invoice.TriggerCommunication)
 			invoices.POST("/:id/webhook/trigger", handlers.Invoice.TriggerWebhook)
+
+			// System schedule: trigger once to create 6-hour Temporal schedule
+			invoices.POST("/temporal/schedule-regenerate-draft-invoices", handlers.ScheduledTask.ScheduleRegenerateDraftInvoices)
 		}
 
 		feature := v1Private.Group("/features")
