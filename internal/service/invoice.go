@@ -49,7 +49,7 @@ type InvoiceService interface {
 	GetInvoicePDF(ctx context.Context, id string) ([]byte, error)
 	GetInvoicePDFUrl(ctx context.Context, id string) (string, error)
 	RecalculateInvoice(ctx context.Context, id string) (*dto.InvoiceResponse, error)
-	RecalculateInvoiceV2(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error)
+	RegenerateDraftSubscriptionInvoice(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error)
 	RecalculateInvoiceAmounts(ctx context.Context, invoiceID string) error
 	CalculatePriceBreakdown(ctx context.Context, inv *dto.InvoiceResponse) (map[string][]dto.SourceUsageItem, error)
 	CalculateUsageBreakdown(ctx context.Context, inv *dto.InvoiceResponse, groupBy []string, forceRealtimeRecalculation bool) (map[string][]dto.UsageBreakdownItem, error)
@@ -2600,9 +2600,17 @@ func (s *invoiceService) publishInternalWebhookEvent(ctx context.Context, eventN
 	)
 }
 
-// RecalculateInvoiceV2 recalculates a draft subscription invoice in-place (replaces line items, reapplies credits/coupons/taxes).
-func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error) {
-	s.Logger.Infow("recalculating invoice v2 (draft)", "invoice_id", id)
+// RegenerateDraftSubscriptionInvoice regenerates a draft subscription invoice in-place from current subscription and usage.
+//
+// Behavior:
+//   - Removes existing line items and recomputes them from the subscription (plan, prices, usage).
+//   - Reapplies credits, coupons, and taxes to the new line items.
+//   - Updates invoice totals, amount due, and payment status. The same invoice ID is kept.
+//
+// Use when subscription or usage data has changed after the draft was created but before finalizing.
+// If finalize is true, the invoice is finalized after regeneration; otherwise it remains in draft.
+func (s *invoiceService) RegenerateDraftSubscriptionInvoice(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error) {
+	s.Logger.Infow("regenerating draft subscription invoice", "invoice_id", id)
 
 	// Get the invoice
 	inv, err := s.InvoiceRepo.Get(ctx, id)
@@ -2766,38 +2774,37 @@ func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, fi
 			return err
 		}
 
-		s.Logger.Infow("successfully recalculated invoice with fresh calculation",
+		s.Logger.Infow("successfully regenerated draft subscription invoice",
 			"invoice_id", inv.ID,
 			"subscription_id", *inv.SubscriptionID,
 			"old_amount_due", inv.AmountDue,
 			"new_amount_due", newInvoiceReq.AmountDue,
 			"old_line_items", len(existingLineItemIDs),
-			"new_line_items", len(newLineItems),
-			"recalculation_type", "complete_fresh_calculation")
+			"new_line_items", len(newLineItems))
 
 		return nil
 	})
 
 	if err != nil {
-		s.Logger.Errorw("failed to recalculate invoice",
+		s.Logger.Errorw("failed to regenerate draft subscription invoice",
 			"error", err,
 			"invoice_id", inv.ID,
 			"subscription_id", *inv.SubscriptionID)
 		return nil, err
 	}
 
-	// Publish webhook event for invoice recalculation
+	// Publish webhook event for invoice regeneration
 	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceCreateDraft, inv.ID)
 
 	// Finalize the invoice if requested
 	if finalize {
 		if err := s.FinalizeInvoice(ctx, id); err != nil {
-			s.Logger.Errorw("failed to finalize invoice after recalculation",
+			s.Logger.Errorw("failed to finalize invoice after regeneration",
 				"error", err,
 				"invoice_id", id)
 			return nil, err
 		}
-		s.Logger.Infow("successfully finalized invoice after recalculation", "invoice_id", id)
+		s.Logger.Infow("successfully finalized invoice after regeneration", "invoice_id", id)
 	}
 
 	// Return updated invoice
@@ -3134,24 +3141,6 @@ func (s *invoiceService) HandleIncompleteSubscriptionPayment(ctx context.Context
 		"subscription_id", *invoice.SubscriptionID)
 
 	return nil
-}
-
-// generateProrationInvoiceDescription creates a description for proration invoices
-func (s *invoiceService) generateProrationInvoiceDescription(cancellationType, cancellationReason string, totalAmount decimal.Decimal) string {
-	if totalAmount.IsNegative() {
-		// Credit invoice
-		switch cancellationType {
-		case "immediate":
-			return fmt.Sprintf("Credit for unused time - immediate cancellation (%s)", cancellationReason)
-		case "specific_date":
-			return fmt.Sprintf("Credit for unused time - scheduled cancellation (%s)", cancellationReason)
-		default:
-			return fmt.Sprintf("Cancellation credit (%s)", cancellationReason)
-		}
-	} else {
-		// Charge invoice (rare for cancellations, but possible)
-		return fmt.Sprintf("Proration charges - cancellation (%s)", cancellationReason)
-	}
 }
 
 // CalculateUsageBreakdown provides flexible usage breakdown with custom grouping
