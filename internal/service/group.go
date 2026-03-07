@@ -210,7 +210,7 @@ func (s *groupService) getAssociatedEntitiesBulk(ctx context.Context, groups []*
 			}
 			entityIDsByGroup := make(map[string][]string)
 			for _, f := range features {
-				groupID := f.Group.ID
+				groupID := f.GroupID
 				entityIDsByGroup[groupID] = append(entityIDsByGroup[groupID], f.ID)
 			}
 			for groupID, entityIDs := range entityIDsByGroup {

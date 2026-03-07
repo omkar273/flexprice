@@ -104,7 +104,9 @@ func (s *featureService) CreateFeature(ctx context.Context, req dto.CreateFeatur
 	response := &dto.FeatureResponse{Feature: featureModel}
 	if featureModel.GroupID != "" {
 		groupService := NewGroupService(s.ServiceParams)
-		if groupResp, err := groupService.GetGroup(ctx, featureModel.GroupID); err == nil {
+		if groupResp, err := groupService.GetGroup(ctx, featureModel.GroupID); err != nil {
+			s.Logger.Warnw("failed to fetch group for feature create response", "group_id", featureModel.GroupID, "error", err)
+		} else {
 			response.Group = groupResp
 		}
 	}
@@ -368,7 +370,9 @@ func (s *featureService) UpdateFeature(ctx context.Context, id string, req dto.U
 	response := &dto.FeatureResponse{Feature: feature}
 	if feature.GroupID != "" {
 		groupService := NewGroupService(s.ServiceParams)
-		if groupResp, err := groupService.GetGroup(ctx, feature.GroupID); err == nil {
+		if groupResp, err := groupService.GetGroup(ctx, feature.GroupID); err != nil {
+			s.Logger.Warnw("failed to fetch group for feature update response", "group_id", feature.GroupID, "error", err)
+		} else {
 			response.Group = groupResp
 		}
 	}

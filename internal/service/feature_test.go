@@ -270,6 +270,17 @@ func (s *FeatureServiceSuite) TestCreateFeature() {
 			wantErr:   true,
 			errString: "conversion_rate",
 		},
+		{
+			name: "error - non-existent group_id",
+			req: dto.CreateFeatureRequest{
+				Name:        "Feature With Bad Group",
+				LookupKey:   "bad_group_feature",
+				Type:        types.FeatureTypeBoolean,
+				GroupID:     "group_nonexistent",
+			},
+			wantErr:   true,
+			errString: "not found",
+		},
 	}
 
 	for _, tt := range tests {
@@ -303,6 +314,29 @@ func (s *FeatureServiceSuite) TestCreateFeature() {
 			}
 		})
 	}
+}
+
+func (s *FeatureServiceSuite) TestCreateFeature_InvalidGroupValidation() {
+	// Create a group with entity_type "price" (wrong for features)
+	priceGroup := &group.Group{
+		ID:            "group_price_type",
+		Name:          "Price Group",
+		EntityType:    types.GroupEntityTypePrice,
+		LookupKey:     "price_group_key",
+		EnvironmentID: types.GetEnvironmentID(s.GetContext()),
+		BaseModel:     types.GetDefaultBaseModel(s.GetContext()),
+	}
+	s.NoError(s.groupRepo.Create(s.GetContext(), priceGroup))
+
+	req := dto.CreateFeatureRequest{
+		Name:        "Feature With Wrong Group Type",
+		LookupKey:   "wrong_group_type_feature",
+		Type:        types.FeatureTypeBoolean,
+		GroupID:     priceGroup.ID,
+	}
+	_, err := s.service.CreateFeature(s.GetContext(), req)
+	s.Error(err)
+	s.Contains(err.Error(), "invalid group type")
 }
 
 func (s *FeatureServiceSuite) TestCreateFeature_WithGroupID() {

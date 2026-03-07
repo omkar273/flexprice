@@ -284,6 +284,7 @@ func (r *featureRepository) Update(ctx context.Context, f *domainFeature.Feature
 		SetMeterID(f.MeterID).
 		SetUpdatedAt(time.Now().UTC()).
 		SetUpdatedBy(types.GetUserID(ctx))
+	// GroupID: set by service from request; "" means clear. Caller must set intentionally (service only sets when req.GroupID != nil).
 	if f.GroupID != "" {
 		updateQuery = updateQuery.SetGroupID(f.GroupID)
 	} else {
@@ -395,13 +396,18 @@ func (r *featureRepository) ListByIDs(ctx context.Context, featureIDs []string) 
 }
 
 // GetByGroupIDs returns features that belong to any of the given group IDs.
+// Scoped by tenant and environment from context (consistent with Get, List, ClearByGroupID).
 func (r *featureRepository) GetByGroupIDs(ctx context.Context, groupIDs []string) ([]*domainFeature.Feature, error) {
 	if len(groupIDs) == 0 {
 		return []*domainFeature.Feature{}, nil
 	}
 	client := r.client.Reader(ctx)
 	features, err := client.Feature.Query().
-		Where(feature.GroupIDIn(groupIDs...)).
+		Where(
+			feature.GroupIDIn(groupIDs...),
+			feature.TenantID(types.GetTenantID(ctx)),
+			feature.EnvironmentID(types.GetEnvironmentID(ctx)),
+		).
 		All(ctx)
 	if err != nil {
 		return nil, ierr.WithError(err).
@@ -415,9 +421,25 @@ func (r *featureRepository) GetByGroupIDs(ctx context.Context, groupIDs []string
 }
 
 // ClearByGroupID clears the group ID for all features in the given group.
+// Invalidates per-feature cache for affected IDs so Get() does not return stale GroupID.
 func (r *featureRepository) ClearByGroupID(ctx context.Context, groupID string) error {
+	// Fetch affected feature IDs before update so we can invalidate cache
+	reader := r.client.Reader(ctx)
+	affected, err := reader.Feature.Query().
+		Where(
+			feature.GroupID(groupID),
+			feature.TenantID(types.GetTenantID(ctx)),
+			feature.EnvironmentID(types.GetEnvironmentID(ctx)),
+		).
+		IDs(ctx)
+	if err != nil {
+		return ierr.WithError(err).
+			WithHint("Failed to list features for group clear").
+			Mark(ierr.ErrDatabase)
+	}
+
 	client := r.client.Writer(ctx)
-	_, err := client.Feature.Update().
+	_, err = client.Feature.Update().
 		Where(
 			feature.GroupID(groupID),
 			feature.TenantID(types.GetTenantID(ctx)),
@@ -434,6 +456,10 @@ func (r *featureRepository) ClearByGroupID(ctx context.Context, groupID string) 
 				"group_id": groupID,
 			}).
 			Mark(ierr.ErrDatabase)
+	}
+
+	for _, featureID := range affected {
+		r.DeleteCache(ctx, featureID)
 	}
 	return nil
 }
