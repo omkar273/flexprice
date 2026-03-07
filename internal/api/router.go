@@ -354,7 +354,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			invoices.POST("/:id/payment/attempt", handlers.Invoice.AttemptPayment)
 			invoices.GET("/:id/pdf", handlers.Invoice.GetInvoicePDF)
 			invoices.POST("/:id/recalculate", handlers.Invoice.RecalculateInvoice)
-			invoices.POST("/:id/recalculate-v2", handlers.Invoice.RecalculateInvoiceV2)
 			invoices.POST("/:id/comms/trigger", handlers.Invoice.TriggerCommunication)
 			invoices.POST("/:id/webhook/trigger", handlers.Invoice.TriggerWebhook)
 		}
