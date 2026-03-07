@@ -810,9 +810,15 @@ func (s *temporalService) buildRecalculateInvoiceInput(_ context.Context, tenant
 // buildRegenerateDraftInvoicesBatchWorkflowInput builds input for the batch regenerate draft invoices workflow.
 func (s *temporalService) buildRegenerateDraftInvoicesBatchWorkflowInput(_ context.Context, _, _, _ string, params interface{}) (interface{}, error) {
 	if input, ok := params.(invoiceModels.RegenerateDraftInvoicesBatchWorkflowInput); ok {
+		if err := input.Validate(); err != nil {
+			return nil, err
+		}
 		return input, nil
 	}
 	if input, ok := params.(*invoiceModels.RegenerateDraftInvoicesBatchWorkflowInput); ok {
+		if err := input.Validate(); err != nil {
+			return nil, err
+		}
 		return *input, nil
 	}
 	return nil, errors.NewError("invalid input for regenerate draft invoices batch workflow").
