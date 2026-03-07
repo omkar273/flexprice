@@ -817,6 +817,12 @@ func (s *scheduledTaskService) ScheduleUpdateBillingPeriod(ctx context.Context) 
 // Schedule ID is fixed so repeated calls are idempotent (Temporal returns already exists if present).
 // Follows same convention as ScheduleUpdateBillingPeriod (resource-scoped route, trigger once). Fixed schedule ID for idempotent create.
 func (s *scheduledTaskService) ScheduleRegenerateDraftInvoices(ctx context.Context) (string, error) {
+	if s.temporalClient == nil {
+		return "", ierr.NewError("temporal client not configured").
+			WithHint("Temporal client is not available").
+			Mark(ierr.ErrInternal)
+	}
+
 	const scheduleID = "schtask_regenerate_draft_invoices"
 	// Cron: at minute 0 of every 6th hour (00:00, 06:00, 12:00, 18:00 UTC)
 	cronExpr := "0 */6 * * *"
