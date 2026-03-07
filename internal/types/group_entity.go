@@ -9,7 +9,7 @@ import (
 type GroupEntityType string
 
 const (
-	GroupEntityTypePrice  GroupEntityType = "price"
+	GroupEntityTypePrice   GroupEntityType = "price"
 	GroupEntityTypeFeature GroupEntityType = "feature"
 )
 

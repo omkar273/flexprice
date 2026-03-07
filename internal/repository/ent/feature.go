@@ -493,6 +493,8 @@ func (o FeatureQueryOptions) GetFieldName(field string) string {
 		return feature.FieldType
 	case "status":
 		return feature.FieldStatus
+	case "group_id":
+		return feature.FieldGroupID
 	default:
 		// unknown field
 		return ""
