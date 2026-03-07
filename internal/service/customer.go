@@ -754,12 +754,14 @@ func (s *customerService) handleCustomerOnboarding(ctx context.Context, customer
 		"action_count", len(workflowConfig.Actions))
 
 	// Prepare workflow input with all necessary IDs
+	// Pass both CustomerID and ExternalCustomerID so the workflow can skip create_customer when customer exists
 	input := &workflowModels.CustomerOnboardingWorkflowInput{
-		CustomerID:     customer.ID,
-		TenantID:       tenantID,
-		EnvironmentID:  envID,
-		UserID:         userID,
-		WorkflowConfig: *workflowConfig,
+		CustomerID:         customer.ID,
+		ExternalCustomerID: customer.ExternalID,
+		TenantID:           tenantID,
+		EnvironmentID:      envID,
+		UserID:             userID,
+		WorkflowConfig:     *workflowConfig,
 	}
 
 	// Validate input

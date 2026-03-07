@@ -14,6 +14,11 @@ import (
 	"github.com/flexprice/flexprice/internal/types"
 )
 
+// subscriptionLineItemBatchSize is the maximum number of line items to insert in a single
+// bulk operation. PostgreSQL limits the total number of parameters to 65535; batching
+// prevents hitting that ceiling when a subscription has many line items.
+const subscriptionLineItemBatchSize = 1000
+
 type subscriptionLineItemRepository struct {
 	client    postgres.IClient
 	log       *logger.Logger
@@ -386,16 +391,24 @@ func (r *subscriptionLineItemRepository) CreateBulk(ctx context.Context, items [
 			SetUpdatedAt(item.UpdatedAt)
 	}
 
-	// Execute bulk create
-	_, err := client.SubscriptionLineItem.CreateBulk(bulk...).Save(ctx)
-	if err != nil {
-		SetSpanError(span, err)
-		return ierr.WithError(err).
-			WithHint("Failed to create subscription line items in bulk").
-			WithReportableDetails(map[string]interface{}{
-				"count": len(items),
-			}).
-			Mark(ierr.ErrDatabase)
+	// Execute bulk create in batches to avoid PostgreSQL's 65535 parameter limit.
+	for i := 0; i < len(bulk); i += subscriptionLineItemBatchSize {
+		end := i + subscriptionLineItemBatchSize
+		if end > len(bulk) {
+			end = len(bulk)
+		}
+		_, err := client.SubscriptionLineItem.CreateBulk(bulk[i:end]...).Save(ctx)
+		if err != nil {
+			SetSpanError(span, err)
+			return ierr.WithError(err).
+				WithHint("Failed to create subscription line items in bulk").
+				WithReportableDetails(map[string]interface{}{
+					"count":       len(items),
+					"batch_start": i,
+					"batch_end":   end,
+				}).
+				Mark(ierr.ErrDatabase)
+		}
 	}
 
 	SetSpanSuccess(span)
