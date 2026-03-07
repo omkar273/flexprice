@@ -41,10 +41,10 @@ type AnalyticsInvoiceDiffRow struct {
 }
 
 type analyticsInvoiceReconciliationScript struct {
-	log                          *logger.Logger
-	customerRepo                 customer.Repository
-	invoiceRepo                  invoice.Repository
-	costSheetUsageTrackingService service.CostSheetUsageTrackingService
+	log                           *logger.Logger
+	customerRepo                  customer.Repository
+	invoiceRepo                   invoice.Repository
+	featureUsageTrackingService   service.FeatureUsageTrackingService
 }
 
 // RunAnalyticsInvoiceReconciliation compares analytics total cost to invoice subtotals for a period and writes diffs to CSV.
@@ -87,25 +87,25 @@ func RunAnalyticsInvoiceReconciliation() error {
 
 	log.Printf("Found %d customers", len(customers))
 
-	// 2) For each customer: get analytics total cost (same period)
+	// 2) For each customer: get analytics total cost via feature usage tracking (same period)
 	analyticsByCustomer := make(map[string]decimal.Decimal)
 	for i, c := range customers {
 		if c.TenantID != tenantID || c.EnvironmentID != environmentID {
 			continue
 		}
+		if c.ExternalID == "" {
+			log.Printf("Skip customer %s: no external_customer_id", c.ID)
+			continue
+		}
 		if i%50 == 0 && i > 0 {
 			log.Printf("Analytics progress: %d/%d customers", i, len(customers))
 		}
-		req := &dto.GetCostAnalyticsRequest{
+		req := &dto.GetUsageAnalyticsRequest{
+			ExternalCustomerID: c.ExternalID,
 			StartTime:          startTime,
 			EndTime:            endTime,
-			ExternalCustomerID: c.ExternalID,
 		}
-		if err := req.Validate(); err != nil {
-			log.Printf("Skip customer %s: invalid analytics request: %v", c.ID, err)
-			continue
-		}
-		resp, err := script.costSheetUsageTrackingService.GetCostSheetUsageAnalytics(ctx, req)
+		resp, err := script.featureUsageTrackingService.GetDetailedUsageAnalyticsV2(ctx, req)
 		if err != nil {
 			log.Printf("Warning: analytics for customer %s (%s): %v", c.ExternalID, c.ID, err)
 			continue
@@ -244,32 +244,25 @@ func newAnalyticsInvoiceReconciliationScript() (*analyticsInvoiceReconciliationS
 
 	customerRepo := entRepo.NewCustomerRepository(pgClient, logger, cacheClient)
 	invoiceRepo := entRepo.NewInvoiceRepository(pgClient, logger, cacheClient)
-	costsheetRepo := entRepo.NewCostsheetRepository(pgClient, logger, cacheClient)
 	featureRepo := entRepo.NewFeatureRepository(pgClient, logger, cacheClient)
-	meterRepo := entRepo.NewMeterRepository(pgClient, logger, cacheClient)
-	priceRepo := entRepo.NewPriceRepository(pgClient, logger, cacheClient)
 	eventRepo := chRepo.NewEventRepository(chStore, logger)
-	costUsageRepo := chRepo.NewCostSheetUsageRepository(chStore, logger)
+	featureUsageRepo := chRepo.NewFeatureUsageRepository(chStore, logger)
 
 	serviceParams := service.ServiceParams{
-		Logger:             logger,
-		Config:             cfg,
-		DB:                 pgClient,
-		CustomerRepo:       customerRepo,
-		InvoiceRepo:        invoiceRepo,
-		CostSheetRepo:      costsheetRepo,
-		CostSheetUsageRepo: costUsageRepo,
-		FeatureRepo:        featureRepo,
-		MeterRepo:          meterRepo,
-		PriceRepo:          priceRepo,
-		EventRepo:          eventRepo,
+		Logger:       logger,
+		Config:       cfg,
+		DB:          pgClient,
+		CustomerRepo: customerRepo,
+		InvoiceRepo:  invoiceRepo,
+		FeatureRepo:  featureRepo,
+		EventRepo:    eventRepo,
 	}
-	costSheetUsageTrackingService := service.NewCostSheetUsageTrackingService(serviceParams, eventRepo, costUsageRepo)
+	featureUsageTrackingService := service.NewFeatureUsageTrackingService(serviceParams, eventRepo, featureUsageRepo)
 
 	return &analyticsInvoiceReconciliationScript{
-		log:                          logger,
-		customerRepo:                 customerRepo,
-		invoiceRepo:                  invoiceRepo,
-		costSheetUsageTrackingService: costSheetUsageTrackingService,
+		log:                         logger,
+		customerRepo:                customerRepo,
+		invoiceRepo:                 invoiceRepo,
+		featureUsageTrackingService: featureUsageTrackingService,
 	}, nil
 }
