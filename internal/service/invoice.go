@@ -48,7 +48,8 @@ type InvoiceService interface {
 	AttemptPayment(ctx context.Context, id string) error
 	GetInvoicePDF(ctx context.Context, id string) ([]byte, error)
 	GetInvoicePDFUrl(ctx context.Context, id string) (string, error)
-	RecalculateInvoice(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error)
+	RecalculateInvoice(ctx context.Context, id string) (*dto.InvoiceResponse, error)
+	RecalculateInvoiceV2(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error)
 	RecalculateInvoiceAmounts(ctx context.Context, invoiceID string) error
 	CalculatePriceBreakdown(ctx context.Context, inv *dto.InvoiceResponse) (map[string][]dto.SourceUsageItem, error)
 	CalculateUsageBreakdown(ctx context.Context, inv *dto.InvoiceResponse, groupBy []string, forceRealtimeRecalculation bool) (map[string][]dto.UsageBreakdownItem, error)
@@ -722,6 +723,9 @@ func (s *invoiceService) VoidInvoice(ctx context.Context, id string, req dto.Inv
 	allowedPaymentStatuses := []types.PaymentStatus{
 		types.PaymentStatusPending,
 		types.PaymentStatusFailed,
+		types.PaymentStatusSucceeded,
+		types.PaymentStatusPartiallyRefunded,
+		types.PaymentStatusOverpaid,
 	}
 	if !lo.Contains(allowedPaymentStatuses, inv.PaymentStatus) {
 		return ierr.NewError("invoice payment status is not allowed").
@@ -732,16 +736,66 @@ func (s *invoiceService) VoidInvoice(ctx context.Context, id string, req dto.Inv
 			Mark(ierr.ErrValidation)
 	}
 
-	now := time.Now().UTC()
-	inv.InvoiceStatus = types.InvoiceStatusVoided
-	inv.VoidedAt = &now
-	if req.Metadata != nil {
-		if err := s.updateMetadata(inv, req); err != nil {
-			return err
+	err = s.DB.WithTx(ctx, func(tx context.Context) error {
+		now := time.Now().UTC()
+		inv.InvoiceStatus = types.InvoiceStatusVoided
+		inv.VoidedAt = &now
+		if req.Metadata != nil {
+			if err := s.updateMetadata(inv, req); err != nil {
+				return err
+			}
 		}
-	}
 
-	if err := s.InvoiceRepo.Update(ctx, inv); err != nil {
+		// Refund AmountPaid + TotalPrepaidCreditsApplied back to the customer's wallet.
+		// Both represent value the customer already provided for this invoice.
+		refundAmount := inv.AmountPaid.Add(inv.TotalPrepaidCreditsApplied)
+		if refundAmount.IsPositive() {
+			walletService := NewWalletService(s.ServiceParams)
+
+			wallets, err := walletService.GetWalletsByCustomerID(tx, inv.CustomerID)
+			if err != nil {
+				return err
+			}
+
+			var selectedWallet *dto.WalletResponse
+			for _, w := range wallets {
+				if types.IsMatchingCurrency(w.Currency, inv.Currency) && w.WalletType == types.WalletTypePrePaid {
+					selectedWallet = w
+					break
+				}
+			}
+			if selectedWallet == nil {
+				walletReq := &dto.CreateWalletRequest{
+					Name:           "Subscription Wallet",
+					CustomerID:     inv.CustomerID,
+					Currency:       inv.Currency,
+					ConversionRate: decimal.NewFromInt(1),
+					WalletType:     types.WalletTypePrePaid,
+				}
+				selectedWallet, err = walletService.CreateWallet(tx, walletReq)
+				if err != nil {
+					return err
+				}
+			}
+
+			walletTxnReq := &dto.TopUpWalletRequest{
+				Amount:            refundAmount,
+				TransactionReason: types.TransactionReasonInvoiceVoidRefund,
+				Metadata:          types.Metadata{"invoice_id": inv.ID},
+				IdempotencyKey:    lo.ToPtr(inv.ID),
+				Description:       fmt.Sprintf("Refund for voided invoice: %s", lo.FromPtrOr(inv.InvoiceNumber, inv.ID)),
+			}
+			if _, err = walletService.TopUpWallet(tx, selectedWallet.ID, walletTxnReq); err != nil {
+				return err
+			}
+
+			inv.RefundedAmount = inv.RefundedAmount.Add(refundAmount)
+			inv.PaymentStatus = types.PaymentStatusRefunded
+		}
+
+		return s.InvoiceRepo.Update(tx, inv)
+	})
+	if err != nil {
 		return err
 	}
 
@@ -2546,8 +2600,9 @@ func (s *invoiceService) publishInternalWebhookEvent(ctx context.Context, eventN
 	)
 }
 
-func (s *invoiceService) RecalculateInvoice(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error) {
-	s.Logger.Infow("recalculating invoice", "invoice_id", id)
+// RecalculateInvoiceV2 recalculates a draft subscription invoice in-place (replaces line items, reapplies credits/coupons/taxes).
+func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error) {
+	s.Logger.Infow("recalculating invoice v2 (draft)", "invoice_id", id)
 
 	// Get the invoice
 	inv, err := s.InvoiceRepo.Get(ctx, id)
@@ -2747,6 +2802,100 @@ func (s *invoiceService) RecalculateInvoice(ctx context.Context, id string, fina
 
 	// Return updated invoice
 	return s.GetInvoice(ctx, id)
+}
+
+// RecalculateVoidedInvoice creates a fresh replacement invoice for a voided subscription invoice
+// covering the same billing period. It validates that:
+//   - The invoice is of type SUBSCRIPTION
+//   - The invoice status is VOIDED
+//   - The invoice has never been recalculated (RecalculatedInvoiceID == nil)
+//
+// On success it links the original voided invoice to the new invoice via RecalculatedInvoiceID.
+func (s *invoiceService) RecalculateInvoice(ctx context.Context, id string) (*dto.InvoiceResponse, error) {
+	s.Logger.Infow("recalculating voided invoice", "invoice_id", id)
+
+	inv, err := s.InvoiceRepo.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if inv.InvoiceType != types.InvoiceTypeSubscription {
+		return nil, ierr.NewError("invoice type is not supported").
+			WithHintf("only SUBSCRIPTION invoices can be recalculated, got %s", inv.InvoiceType).
+			Mark(ierr.ErrValidation)
+	}
+
+	if inv.InvoiceStatus != types.InvoiceStatusVoided {
+		return nil, ierr.NewError("invoice is not voided").
+			WithHint("only VOIDED invoices can be recalculated").
+			WithReportableDetails(map[string]any{"current_status": inv.InvoiceStatus}).
+			Mark(ierr.ErrValidation)
+	}
+
+	if inv.RecalculatedInvoiceID != nil {
+		return nil, ierr.NewError("invoice has already been recalculated").
+			WithHintf("invoice %s was already recalculated as %s", id, *inv.RecalculatedInvoiceID).
+			WithReportableDetails(map[string]any{"recalculated_invoice_id": *inv.RecalculatedInvoiceID}).
+			Mark(ierr.ErrValidation)
+	}
+
+	if inv.SubscriptionID == nil {
+		return nil, ierr.NewError("invoice has no associated subscription").
+			WithHint("subscription_id is required for recalculation").
+			Mark(ierr.ErrValidation)
+	}
+
+	if inv.PeriodStart == nil || inv.PeriodEnd == nil {
+		return nil, ierr.NewError("invoice has no billing period").
+			WithHint("period_start and period_end are required for recalculation").
+			Mark(ierr.ErrValidation)
+	}
+
+	// Fetch subscription with current line items (same as subscription billing flow).
+	sub, _, err := s.SubRepo.GetWithLineItems(ctx, *inv.SubscriptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the same method as subscription billing (processSubscriptionPeriod): CreateSubscriptionInvoice
+	// with normalized payment params. The previous (voided) invoice does not conflict with new creation:
+	// - GetByIdempotencyKey excludes VOIDED (invoice.InvoiceStatusNEQ(VOIDED)), so same idempotency key won't hit the old invoice.
+	// - ExistsForPeriod excludes VOIDED, so period-uniqueness check allows the new invoice.
+	// - DB partial unique index on (subscription_id, period_start, period_end) has WHERE invoice_status != 'VOIDED', so the new row is valid.
+	// - Voiding calls InvoiceRepo.Update which DeleteCache(inv.ID) and clears idempotency-key cache, so cache won't return the voided invoice.
+	paymentParams := dto.NewPaymentParametersFromSubscription(
+		sub.CollectionMethod,
+		sub.PaymentBehavior,
+		sub.GatewayPaymentMethodID,
+	).NormalizePaymentParameters()
+
+	newInv, _, err := s.CreateSubscriptionInvoice(ctx, &dto.CreateSubscriptionInvoiceRequest{
+		SubscriptionID: *inv.SubscriptionID,
+		PeriodStart:    *inv.PeriodStart,
+		PeriodEnd:      *inv.PeriodEnd,
+		ReferencePoint: types.ReferencePointPeriodEnd,
+	}, paymentParams, types.InvoiceFlowManual, false)
+	if err != nil {
+		return nil, err
+	}
+	if newInv == nil {
+		return nil, ierr.NewError("recalculation produced no invoice").
+			WithHint("recalculation resulted in zero subtotal for this period").
+			Mark(ierr.ErrValidation)
+	}
+
+	// Link the original voided invoice to the new replacement invoice.
+	inv.RecalculatedInvoiceID = &newInv.ID
+	if err := s.InvoiceRepo.Update(ctx, inv); err != nil {
+		return nil, err
+	}
+
+	s.Logger.Infow("successfully recalculated voided invoice",
+		"original_invoice_id", id,
+		"new_invoice_id", newInv.ID,
+	)
+
+	return s.GetInvoice(ctx, newInv.ID)
 }
 
 // RecalculateTaxesOnInvoice recalculates taxes on an invoice if it's a subscription invoice
