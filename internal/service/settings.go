@@ -38,7 +38,7 @@ func NewSettingsService(params ServiceParams) SettingsService {
 // isTenantLevelSetting checks if a setting is tenant-level (no environment_id)
 // Tenant-level settings apply across all environments for a tenant
 func isTenantLevelSetting(key types.SettingKey) bool {
-	return key == types.SettingKeyEnvConfig
+	return key == types.SettingKeyTenantConfig
 }
 
 // fetchSetting fetches a setting from the repository
@@ -219,8 +219,8 @@ func (s *settingsService) GetSettingByKey(ctx context.Context, key types.Setting
 		return getSettingByKey[types.SubscriptionConfig](s, ctx, key)
 	case types.SettingKeyInvoicePDFConfig:
 		return getSettingByKey[types.InvoicePDFConfig](s, ctx, key)
-	case types.SettingKeyEnvConfig:
-		return getSettingByKey[types.EnvConfig](s, ctx, key)
+	case types.SettingKeyTenantConfig:
+		return getSettingByKey[types.TenantConfig](s, ctx, key)
 	case types.SettingKeyCustomerOnboarding:
 		return getSettingByKey[*workflowModels.WorkflowConfig](s, ctx, key)
 	case types.SettingKeyPrepareProcessedEvents:
@@ -261,8 +261,8 @@ func (s *settingsService) UpdateSettingByKey(ctx context.Context, key types.Sett
 		return updateSettingByKey[types.SubscriptionConfig](s, ctx, key, req)
 	case types.SettingKeyInvoicePDFConfig:
 		return updateSettingByKey[types.InvoicePDFConfig](s, ctx, key, req)
-	case types.SettingKeyEnvConfig:
-		return updateSettingByKey[types.EnvConfig](s, ctx, key, req)
+	case types.SettingKeyTenantConfig:
+		return updateSettingByKey[types.TenantConfig](s, ctx, key, req)
 	case types.SettingKeyCustomerOnboarding:
 		return updateSettingByKey[*workflowModels.WorkflowConfig](s, ctx, key, req)
 	case types.SettingKeyPrepareProcessedEvents:
