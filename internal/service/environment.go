@@ -44,7 +44,7 @@ func (s *environmentService) CreateEnvironment(ctx context.Context, req dto.Crea
 
 	// Check environment limits for prod and sandbox environments
 	if envType == types.EnvironmentProduction || envType == types.EnvironmentDevelopment {
-		// Get env config with defaults (tenant-level, no environment_id)
+		// Get tenant config with defaults (tenant-level, no environment_id)
 		tenantConfig, err := GetSetting[types.TenantConfig](
 			s.settingsService.(*settingsService),
 			ctx,
