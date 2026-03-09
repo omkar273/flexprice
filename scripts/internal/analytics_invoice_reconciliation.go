@@ -251,6 +251,7 @@ func newAnalyticsInvoiceReconciliationScript() (*analyticsInvoiceReconciliationS
 	subRepo := entRepo.NewSubscriptionRepository(pgClient, logger, cacheClient)
 	subLineItemRepo := entRepo.NewSubscriptionLineItemRepository(pgClient, logger, cacheClient)
 	addonRepo := entRepo.NewAddonRepository(pgClient, logger, cacheClient)
+	settingsRepo := entRepo.NewSettingsRepository(pgClient, logger, cacheClient)
 	eventRepo := chRepo.NewEventRepository(chStore, logger)
 	featureUsageRepo := chRepo.NewFeatureUsageRepository(chStore, logger)
 
@@ -267,6 +268,7 @@ func newAnalyticsInvoiceReconciliationScript() (*analyticsInvoiceReconciliationS
 		SubRepo:                  subRepo,
 		SubscriptionLineItemRepo: subLineItemRepo,
 		AddonRepo:                addonRepo,
+		SettingsRepo:             settingsRepo,
 		EventRepo:                eventRepo,
 		FeatureUsageRepo:         featureUsageRepo,
 	}
