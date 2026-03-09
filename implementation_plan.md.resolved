@@ -1,0 +1,175 @@
+# Subscription Billing Workflow Restructure
+
+## Problem
+
+[CreateDraftInvoicesActivity](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/subscription/update_billing_period_activities.go#96-129) calls [CreateDraftInvoiceForSubscription](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/subscription.go#5759-5793), which **returns `nil` for zero-amount periods** (line 5781 of [subscription.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/subscription.go)). This means zero-dollar periods are silently dropped, causing missed invoices and no auditability.
+
+[ProcessInvoiceWorkflow](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/workflows/invoice/process_invoice_workflow.go#21-125) today just does Finalize → Sync → Pay with no usage calculation step.
+
+---
+
+## Proposed Changes
+
+### 1. New `InvoiceStatusSkipped` status
+
+#### [MODIFY] [invoice.go (types)](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/types/invoice.go)
+
+Add a new constant alongside `DRAFT`, `FINALIZED`, `VOIDED`:
+```go
+// InvoiceStatusSkipped indicates a zero-usage invoice that was intentionally skipped.
+// No invoice number is assigned and no payment is attempted.
+InvoiceStatusSkipped InvoiceStatus = "SKIPPED"
+```
+
+- Add `InvoiceStatusSkipped` to the [Validate()](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/models/subscription_billing.go#33-50) allowed list.
+
+---
+
+### 2. Zero-Dollar Placeholder Draft Invoice Creation
+
+#### [MODIFY] [subscription.go (CreateDraftInvoiceForSubscription)](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/subscription.go)
+
+**Current behavior:** Returns `nil, nil` if `invoiceReq.Subtotal.IsZero()`.
+
+**New behavior:** Always call `invoiceService.CreateInvoice(ctx, *invoiceReq)` — even when subtotal is zero. The request will produce a valid `draft` invoice with `amount = 0`, no line items, and no invoice number.
+
+> [!IMPORTANT]
+> The [CreateInvoice](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go#117-307) method already handles generating invoice numbers. We need to **skip invoice number generation** when subtotal is zero. One approach: pass `InvoiceNumber: lo.ToPtr("")` (empty) in the request when zero, and guard the number generation inside [CreateInvoice](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go#117-307). Alternatively, add a `SkipInvoiceNumber bool` option to [CreateInvoiceRequest](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go#65-67). Preferred approach: **Add `SkipInvoiceNumber bool` to `dto.CreateInvoiceRequest`** and gate the number-generation block in [CreateInvoice](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go#117-307) on it.
+
+Concretely, [PrepareSubscriptionInvoiceRequest](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go#1526-1741) (in [billing.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go)) will be updated to set `SkipInvoiceNumber = true` when subtotal is zero.
+
+#### [MODIFY] [billing.go (PrepareSubscriptionInvoiceRequest)](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go)
+
+When the resulting [CreateInvoiceRequest](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go#65-67) has a zero subtotal, set `SkipInvoiceNumber = true` and include **no line items**.
+
+#### [MODIFY] [dto/invoice.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/api/dto/invoice.go) *(if needed)*
+
+Add `SkipInvoiceNumber bool` to [CreateInvoiceRequest](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go#65-67).
+
+#### [MODIFY] [invoice.go (service CreateInvoice)](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go)
+
+Gate the invoice number generation block (step 4) behind `!req.SkipInvoiceNumber`.
+
+---
+
+### 3. New `CalculateInvoiceActivity` in [ProcessInvoiceWorkflow](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/workflows/invoice/process_invoice_workflow.go#21-125)
+
+#### [MODIFY] [invoice_activities.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/invoice/invoice_activities.go)
+
+Add a new activity `CalculateInvoiceActivity`:
+- Loads the invoice (and its subscription).
+- Calls `billingService.PrepareSubscriptionInvoiceRequest(ctx, sub, periodStart, periodEnd, ReferencePointPeriodEnd)` to get the full charged amount.
+- **If usage/amount == 0**: marks invoice status as `SKIPPED` (via a new `InvoiceService.SkipInvoice(ctx, id)` method or inline repo update). Returns `{Skipped: true}`.
+- **If usage/amount > 0**:
+  - Creates/replaces line items on the invoice (using an `UpdateInvoiceLineItems` approach or re-running [CreateInvoice](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go#117-307) with the existing ID).
+  - Assigns an invoice number (calls `InvoiceRepo.GetNextInvoiceNumber`).
+  - Returns `{Skipped: false}`.
+
+> [!IMPORTANT]
+> **Design Decision**: The simplest approach is to add a new service method `InvoiceService.CalculateAndPopulateInvoice(ctx, invoiceID)` that:
+> 1. Fetches the invoice + subscription.
+> 2. Calls billing service to calculate all charges.
+> 3. If zero: updates status → `SKIPPED`, returns skipped=true.
+> 4. If non-zero: adds line items, assigns invoice number, updates draft record.
+
+#### Models: add `CalculateInvoiceActivityInput/Output`
+
+#### [MODIFY] [process_invoice.go (models)](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/models/invoice/process_invoice.go)
+
+Add:
+```go
+type CalculateInvoiceActivityInput struct {
+    InvoiceID     string
+    TenantID      string
+    EnvironmentID string
+    UserID        string
+}
+
+type CalculateInvoiceActivityOutput struct {
+    Skipped bool
+    Amount  decimal.Decimal
+}
+```
+
+---
+
+### 4. Update [ProcessInvoiceWorkflow](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/workflows/invoice/process_invoice_workflow.go#21-125)
+
+#### [MODIFY] [process_invoice_workflow.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/workflows/invoice/process_invoice_workflow.go)
+
+New step ordering:
+1. **STEP 1**: `CalculateInvoiceActivity` — compute usage, populate line items, assign invoice number, or mark skipped.
+2. **If `output.Skipped == true`**: return early — no finalize, no sync, no payment.
+3. **STEP 2**: [FinalizeInvoiceActivity](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/invoice/invoice_activities.go#29-59)
+4. **STEP 3**: [SyncInvoiceToVendorActivity](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/invoice/invoice_activities.go#60-90)
+5. **STEP 4**: [AttemptInvoicePaymentActivity](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/invoice/invoice_activities.go#91-121)
+
+Add a new constant:
+```go
+ActivityCalculateInvoice = "CalculateInvoiceActivity"
+```
+
+---
+
+### 5. [CreateDraftInvoicesActivity](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/subscription/update_billing_period_activities.go#96-129) always returns IDs
+
+#### [MODIFY] [update_billing_period_activities.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/subscription/update_billing_period_activities.go)
+
+Remove the `if invoice != nil` guard — always append the invoice ID to the list, since we no longer return `nil` for zero-amount invoices.
+
+---
+
+## Files Summary
+
+| File | Change |
+|------|--------|
+| [internal/types/invoice.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/types/invoice.go) | Add `InvoiceStatusSkipped` |
+| [internal/api/dto/invoice.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/api/dto/invoice.go) | Add `SkipInvoiceNumber bool` to [CreateInvoiceRequest](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go#65-67) |
+| [internal/service/invoice.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go) | Gate invoice number generation on `SkipInvoiceNumber`; add `SkipInvoice` + `CalculateAndPopulateInvoice` methods |
+| [internal/service/subscription.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/subscription.go) | [CreateDraftInvoiceForSubscription](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/subscription.go#5759-5793): remove zero-check bail-out, always create |
+| [internal/service/billing.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go) | Set `SkipInvoiceNumber=true` in [PrepareSubscriptionInvoiceRequest](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/billing.go#1526-1741) when subtotal is zero |
+| [internal/temporal/models/invoice/process_invoice.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/models/invoice/process_invoice.go) | Add `CalculateInvoiceActivity` models |
+| [internal/temporal/activities/invoice/invoice_activities.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/invoice/invoice_activities.go) | Add `CalculateInvoiceActivity` |
+| [internal/temporal/workflows/invoice/process_invoice_workflow.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/workflows/invoice/process_invoice_workflow.go) | Add Step 0 (calculate), skip downstream if `Skipped=true` |
+| [internal/temporal/activities/subscription/update_billing_period_activities.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/subscription/update_billing_period_activities.go) | Remove `if invoice != nil` guard |
+| [internal/temporal/registration.go](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/registration.go) | Register `CalculateInvoiceActivity` |
+
+---
+
+## Key Design Decisions for Discussion
+
+> [!NOTE]
+> **Q1 — Where does `CalculateAndPopulateInvoice` live?**
+> Proposed: as a new [InvoiceService](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go#32-64) method, so it can be tested independently and reused outside Temporal.
+
+> [!NOTE]
+> **Q2 — Line item replacement strategy**
+> Since the zero-dollar draft has no line items, we can simply call `InvoiceRepo.CreateWithLineItems` after deleting the old empty invoice — OR add a new `UpdateLineItems` repo method. Which do you prefer?
+
+> [!NOTE]
+> **Q3 — Invoice number assignment on populate**
+> Currently `GetNextInvoiceNumber` is called during [CreateInvoice](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go#117-307). For the new flow we'd call it during `CalculateAndPopulateInvoice`. Should we call it only at populate time (recommended), or pre-assign and then void/reclaim on skip?
+
+> [!NOTE]
+> **Q4 — [performFinalizeInvoiceActions](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go#642-663) guard**
+> Currently it checks `inv.InvoiceStatus != DRAFT` and errors. We need to ensure `SKIPPED` invoices never reach [FinalizeInvoice](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/service/invoice.go#38-39) (handled by early return in workflow).
+
+---
+
+## Verification Plan
+
+### Build check
+```bash
+cd /Users/hiteshshimpi/Desktop/Work/flexprice && go build ./...
+```
+
+### Unit tests (existing)
+```bash
+cd /Users/hiteshshimpi/Desktop/Work/flexprice && go test ./internal/service/... -run TestBilling -v
+cd /Users/hiteshshimpi/Desktop/Work/flexprice && go test ./internal/service/... -run TestInvoice -v
+```
+
+### Manual verification
+1. Trigger a subscription with no usage for the period — confirm the invoice is created with status `SKIPPED`, amount = 0, no invoice number.
+2. Trigger a subscription with usage for the period — confirm the invoice transitions: `DRAFT` → calculated with line items + invoice number → `FINALIZED` → payment attempted.
+3. Confirm [CreateDraftInvoicesActivity](file:///Users/hiteshshimpi/Desktop/Work/flexprice/internal/temporal/activities/subscription/update_billing_period_activities.go#96-129) always returns an invoice ID even for zero-dollar periods.

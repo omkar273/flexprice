@@ -2460,7 +2460,16 @@ type bucketedCostParams struct {
 // calculateBucketedCost calculates cost for bucketed max meters
 func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context, priceService PriceService, item *events.DetailedUsageAnalytic, price *price.Price, meter *meter.Meter, data *AnalyticsData) {
 	hasGroupBy := meter.Aggregation.GroupBy != ""
-	params := &bucketedCostParams{ctx, priceService, item, price, data, meter.Aggregation.Type, meter.Aggregation.BucketSize, hasGroupBy}
+	params := &bucketedCostParams{
+		ctx:          ctx,
+		priceService: priceService,
+		item:         item,
+		price:        price,
+		data:         data,
+		aggType:      meter.Aggregation.Type,
+		bucketSize:   meter.Aggregation.BucketSize,
+		hasGroupBy:   hasGroupBy,
+	}
 	lineItem := data.SubscriptionLineItems[item.SubLineItemID]
 	hasCommitment := lineItem != nil && lineItem.HasCommitment()
 	isWindowed := hasCommitment && lineItem.CommitmentWindowed
@@ -2469,21 +2478,21 @@ func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context,
 	// For grouped meters with tiered pricing and no commitment, fetch per-group usage
 	// and calculate cost independently per group (e.g. per KRN) to match billing behavior.
 	if hasGroupBy && price.BillingModel == types.BILLING_MODEL_TIERED && !hasCommitment {
-		usageResult, err := s.fetchGroupedBucketedUsage(ctx, item, meter, data)
-		if err == nil && usageResult != nil && len(usageResult.Results) > 0 {
-			item.TotalCost = priceService.CalculateCostFromUsageResults(ctx, price, usageResult.Results)
+		if groupedResult, groupErr := s.fetchGroupedBucketedUsage(ctx, item, meter, data); groupErr == nil && groupedResult != nil && len(groupedResult.Results) > 0 {
+			item.TotalCost = priceService.CalculateCostFromUsageResults(ctx, price, groupedResult.Results)
 			item.Currency = price.Currency
 			// Still calculate per-point costs for time-series display using flat pricing
 			s.calculatePointCosts(params, lineItem, isWindowed)
 			// Merge bucket-level points to request window level
 			params.item.Points = s.mergeBucketPointsByWindow(params.item.Points, params.aggType)
 			return
+		} else if groupErr != nil {
+			// Fall through to regular bucketed calculation if fetch fails
+			s.Logger.Warnw("failed to fetch grouped bucketed usage for analytics, falling back to flat calculation",
+				"error", groupErr,
+				"feature_id", item.FeatureID,
+				"meter_id", meter.ID)
 		}
-		// Fall through to regular bucketed calculation if fetch fails
-		s.Logger.Warnw("failed to fetch grouped bucketed usage for analytics, falling back to flat calculation",
-			"error", err,
-			"feature_id", item.FeatureID,
-			"meter_id", meter.ID)
 	}
 
 	var cost decimal.Decimal

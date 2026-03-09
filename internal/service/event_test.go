@@ -300,7 +300,7 @@ func (s *EventServiceSuite) TestGetUsage() {
 				EndTime:            time.Now(),
 				BucketSize:         types.WindowSizeHour,
 			},
-			expectedValue: decimal.NewFromFloat(15), // Should still return the overall maximum
+			expectedValue: decimal.NewFromFloat(25), // Sum of per-bucket maxes (bucket A: max=10, bucket B: max=15)
 			expectedError: false,
 		},
 	}
