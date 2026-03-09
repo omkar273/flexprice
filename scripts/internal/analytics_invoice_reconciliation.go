@@ -28,7 +28,7 @@ import (
 
 const (
 	dateLayout                   = "2006-01-02"
-	defaultReconciliationWorkers = 1000
+	defaultReconciliationWorkers = 5000
 	envReconciliationWorkers     = "RECONCILIATION_WORKERS"
 )
 
@@ -55,6 +55,10 @@ type analyticsInvoiceReconciliationScript struct {
 // RunAnalyticsInvoiceReconciliation compares analytics total cost to invoice subtotals for a period and writes diffs to CSV.
 // Period is hardcoded to 1 Feb – 1 Mar. Requires TENANT_ID and ENVIRONMENT_ID.
 // Infrastructure (Postgres, ClickHouse, Kafka) must be running.
+//
+// Invoice side uses stored subtotals only: values come from invoiceRepo.List() (inv.Subtotal).
+// Recalculated totals from GetInvoiceWithBreakdown()/recalculateInvoiceTotals() are not used,
+// so the report may show divergence where DB-stored subtotals differ from in-memory recalculated totals.
 func RunAnalyticsInvoiceReconciliation() error {
 	tenantID := os.Getenv("TENANT_ID")
 	environmentID := os.Getenv("ENVIRONMENT_ID")
@@ -123,15 +127,17 @@ func RunAnalyticsInvoiceReconciliation() error {
 		return fmt.Errorf("list invoices: %w", err)
 	}
 
-	invoiceSubtotalByCustomer := make(map[string]decimal.Decimal)
+	// Sum stored subtotals by customer (DB values only; not recalculated via GetInvoiceWithBreakdown/recalculateInvoiceTotals)
+	storedInvoiceSubtotalByCustomer := make(map[string]decimal.Decimal)
 	invoiceIDsByCustomer := make(map[string][]string)
 	for _, inv := range invoices {
 		if inv.TenantID != tenantID || inv.EnvironmentID != environmentID {
 			continue
 		}
-		invoiceSubtotalByCustomer[inv.CustomerID] = invoiceSubtotalByCustomer[inv.CustomerID].Add(inv.Subtotal)
+		storedInvoiceSubtotalByCustomer[inv.CustomerID] = storedInvoiceSubtotalByCustomer[inv.CustomerID].Add(inv.Subtotal)
 		invoiceIDsByCustomer[inv.CustomerID] = append(invoiceIDsByCustomer[inv.CustomerID], inv.ID)
 	}
+	log.Printf("Summed stored invoice subtotals for %d invoices (DB-stored values only; not runtime-recalculated)", len(invoices))
 
 	// 4) Build diff rows (only where there is a meaningful difference)
 	var rows []AnalyticsInvoiceDiffRow
@@ -142,8 +148,8 @@ func RunAnalyticsInvoiceReconciliation() error {
 			continue
 		}
 		analyticsCost := analyticsByCustomer[c.ID]
-		invoiceSubtotal := invoiceSubtotalByCustomer[c.ID]
-		diff := analyticsCost.Sub(invoiceSubtotal)
+		storedSubtotal := storedInvoiceSubtotalByCustomer[c.ID]
+		diff := analyticsCost.Sub(storedSubtotal)
 		if diff.Abs().LessThanOrEqual(tolerance) {
 			continue
 		}
@@ -167,7 +173,7 @@ func RunAnalyticsInvoiceReconciliation() error {
 			CustomerName:       customerName,
 			ExternalCustomerID: c.ExternalID,
 			AnalyticsTotalCost: analyticsCost.StringFixed(4),
-			InvoiceSubtotalSum: invoiceSubtotal.StringFixed(4),
+			InvoiceSubtotalSum: storedSubtotal.StringFixed(4),
 			Diff:               diff.StringFixed(4),
 			InvoiceIDs:         idList,
 			InvoiceCount:       len(ids),
