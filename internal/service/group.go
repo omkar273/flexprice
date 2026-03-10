@@ -131,9 +131,19 @@ func (s *groupService) ListGroups(ctx context.Context, filter *types.GroupFilter
 		return nil, err
 	}
 
+	// Fetch entity_ids for all groups in bulk (prices or features by entity_type)
+	entityIDsByGroup, err := s.getAssociatedEntitiesBulk(ctx, groups)
+	if err != nil {
+		return nil, err
+	}
+
 	responses := make([]*dto.GroupResponse, len(groups))
 	for i, groupObj := range groups {
-		responses[i] = dto.ToGroupResponse(groupObj)
+		ids := entityIDsByGroup[groupObj.ID]
+		if ids == nil {
+			ids = []string{}
+		}
+		responses[i] = dto.ToGroupResponseWithEntities(groupObj, ids)
 	}
 
 	return &dto.ListGroupsResponse{
