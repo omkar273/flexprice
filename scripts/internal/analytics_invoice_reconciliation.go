@@ -237,8 +237,8 @@ func runAnalyticsWorkers(
 					StartTime:          startTime,
 					EndTime:            endTime,
 				}
-				resp, err := script.featureUsageTrackingService.GetDetailedUsageAnalyticsV2(ctx, req)
-				if err != nil {
+				resp, err := script.featureUsageTrackingService.GetDetailedUsageAnalytics(ctx, req)
+				if err != nil {       
 					resultCh <- analyticsResult{customerID: c.ID, err: err}
 					continue
 				}
