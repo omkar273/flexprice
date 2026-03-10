@@ -7,8 +7,8 @@ import (
 	"github.com/flexprice/flexprice/ent/group"
 	"github.com/flexprice/flexprice/ent/predicate"
 	"github.com/flexprice/flexprice/internal/cache"
-	"github.com/flexprice/flexprice/internal/dsl"
 	domainGroup "github.com/flexprice/flexprice/internal/domain/group"
+	"github.com/flexprice/flexprice/internal/dsl"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/postgres"
@@ -68,7 +68,6 @@ func (r *groupRepository) Get(ctx context.Context, id string) (*domainGroup.Grou
 			group.IDEQ(id),
 			group.TenantIDEQ(tenantID),
 			group.EnvironmentIDEQ(environmentID),
-			group.StatusEQ(string(types.StatusPublished)),
 		).
 		Only(ctx)
 
