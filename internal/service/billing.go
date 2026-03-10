@@ -817,6 +817,58 @@ func (s *billingService) CalculateUsageCharges(
 	return usageCharges, totalUsageCost, nil
 }
 
+// getCumulativePriorBaseFromInvoices derives total_prior_base from prior invoice line items
+// for subscriptions with cumulative commitment. Returns (totalPriorBase, hasPriorInvoices).
+// When hasPriorInvoices is false, caller should use existing per-period logic.
+func (s *billingService) getCumulativePriorBaseFromInvoices(
+	ctx context.Context,
+	subscriptionID string,
+	commitmentStart, periodStart time.Time,
+	overageFactor decimal.Decimal,
+) (decimal.Decimal, bool, error) {
+	filter := types.NewNoLimitInvoiceFilter()
+	filter.SubscriptionID = subscriptionID
+	filter.PeriodStartGTE = &commitmentStart
+	filter.PeriodEndLTE = &periodStart
+	filter.InvoiceStatus = []types.InvoiceStatus{types.InvoiceStatusFinalized}
+	filter.SkipLineItems = false
+
+	invoices, err := s.InvoiceRepo.List(ctx, filter)
+	if err != nil {
+		return decimal.Zero, false, err
+	}
+	if len(invoices) == 0 {
+		return decimal.Zero, false, nil
+	}
+
+	totalPriorBase := decimal.Zero
+	for _, inv := range invoices {
+		for _, item := range inv.LineItems {
+			// Only usage line items; exclude fixed and true-up
+			if item.PriceType == nil || *item.PriceType != string(types.PRICE_TYPE_USAGE) {
+				continue
+			}
+			if item.Metadata != nil {
+				if v, ok := item.Metadata["is_commitment_trueup"]; ok && v == "true" {
+					continue
+				}
+			}
+			// Overage line: base = amount / overage_factor; else base = amount
+			if item.Metadata != nil {
+				if v, ok := item.Metadata["is_overage"]; ok && v == "true" {
+					if overageFactor.GreaterThan(decimal.Zero) {
+						totalPriorBase = totalPriorBase.Add(item.Amount.Div(overageFactor))
+					}
+					continue
+				}
+			}
+			totalPriorBase = totalPriorBase.Add(item.Amount)
+		}
+	}
+
+	return totalPriorBase, true, nil
+}
+
 // calculateRemainingCommitment calculates the remaining commitment amount
 // that needs to be charged as a true-up
 func (s *billingService) calculateRemainingCommitment(
@@ -892,6 +944,41 @@ func (s *billingService) CalculateFeatureUsageCharges(
 
 	usageCharges := make([]dto.CreateInvoiceLineItemRequest, 0)
 	totalUsageCost := decimal.Zero
+
+	// Cumulative subscription commitment: when CommitmentDuration != BillingPeriod and prior invoices exist
+	var useCumulativePath bool
+	var totalPriorBase decimal.Decimal
+	var commitmentStart, commitmentEnd time.Time
+	commitmentAmount := lo.FromPtr(sub.CommitmentAmount)
+	overageFactor := lo.FromPtr(sub.OverageFactor)
+	if sub.HasCommitment() && sub.CommitmentDuration != nil &&
+		types.BillingPeriod(*sub.CommitmentDuration) != sub.BillingPeriod &&
+		commitmentAmount.GreaterThan(decimal.Zero) && overageFactor.GreaterThan(decimal.NewFromInt(1)) {
+		var ok bool
+		commitmentStart, commitmentEnd, ok = getSubscriptionCommitmentPeriodBounds(sub, periodStart)
+		if ok {
+			priorBase, hasPrior, err := s.getCumulativePriorBaseFromInvoices(ctx, sub.ID, commitmentStart, periodStart, overageFactor)
+			if err != nil {
+				return nil, decimal.Zero, err
+			}
+			if hasPrior {
+				useCumulativePath = true
+				totalPriorBase = priorBase
+			}
+		}
+	}
+
+	// baseChargesForCumulative collects base amounts when using cumulative commitment path
+	type baseChargeInfo struct {
+		item                  *subscription.SubscriptionLineItem
+		matchingCharge        *dto.SubscriptionUsageByMetersResponse
+		baseAmount            decimal.Decimal
+		quantityForCalculation decimal.Decimal
+		priceUnitAmount       decimal.Decimal
+		displayName           *string
+		metadata              types.Metadata
+	}
+	baseChargesForCumulative := make([]baseChargeInfo, 0)
 
 	// Use subscription service to get aggregated entitlements
 	subscriptionService := NewSubscriptionService(s.ServiceParams)
@@ -1250,6 +1337,54 @@ func (s *billingService) CalculateFeatureUsageCharges(
 			// Store commitment info separately
 			var commitmentInfo *types.CommitmentInfo
 
+			// For cumulative path: skip line-item commitment; collect base for allocation
+			if useCumulativePath {
+				baseAmount := lineItemAmount
+				if matchingCharge.IsOverage && overageFactor.GreaterThan(decimal.Zero) {
+					baseAmount = lineItemAmount.Div(overageFactor)
+				}
+				metadata := types.Metadata{
+					"description": fmt.Sprintf("%s (Usage Charge)", item.DisplayName),
+				}
+				displayName := lo.ToPtr(item.DisplayName)
+				if matchingCharge.IsOverage {
+					metadata["is_overage"] = "true"
+					metadata["overage_factor"] = fmt.Sprintf("%v", matchingCharge.OverageFactor)
+					metadata["description"] = fmt.Sprintf("%s (Overage Charge)", item.DisplayName)
+					displayName = lo.ToPtr(fmt.Sprintf("%s (Overage)", item.DisplayName))
+				}
+				if entitlementOk && matchingEntitlement != nil && matchingEntitlement.IsEnabled {
+					switch matchingEntitlement.UsageResetPeriod {
+					case types.ENTITLEMENT_USAGE_RESET_PERIOD_DAILY:
+						metadata["usage_reset_period"] = "daily"
+					case types.ENTITLEMENT_USAGE_RESET_PERIOD_MONTHLY:
+						metadata["usage_reset_period"] = "monthly"
+					case types.ENTITLEMENT_USAGE_RESET_PERIOD_NEVER:
+						metadata["usage_reset_period"] = "never"
+					}
+				}
+				var priceUnitAmount decimal.Decimal
+				if item.PriceUnit != nil {
+					priceUnit, err := s.PriceUnitRepo.GetByCode(ctx, lo.FromPtr(item.PriceUnit))
+					if err == nil {
+						converted, convErr := priceunit.ConvertToPriceUnitAmount(ctx, lineItemAmount, priceUnit.ConversionRate, priceUnit.BaseCurrency)
+						if convErr == nil {
+							priceUnitAmount = converted
+						}
+					}
+				}
+				baseChargesForCumulative = append(baseChargesForCumulative, baseChargeInfo{
+					item:                   item,
+					matchingCharge:         matchingCharge,
+					baseAmount:             baseAmount,
+					quantityForCalculation: quantityForCalculation,
+					priceUnitAmount:        priceUnitAmount,
+					displayName:            displayName,
+					metadata:               metadata,
+				})
+				continue
+			}
+
 			// Apply line-item commitment if configured
 			// Line item commitment takes precedence over subscription-level commitment
 			if item.HasCommitment() {
@@ -1420,9 +1555,117 @@ func (s *billingService) CalculateFeatureUsageCharges(
 		}
 	}
 
-	// Add commitment true-up line item if there's remaining commitment
-	commitmentAmount := lo.FromPtr(sub.CommitmentAmount)
-	overageFactor := lo.FromPtr(sub.OverageFactor)
+	// Cumulative path: allocate within_commitment, add overage line, add true-up, return
+	if useCumulativePath {
+		totalCurrentBase := decimal.Zero
+		for _, bc := range baseChargesForCumulative {
+			totalCurrentBase = totalCurrentBase.Add(bc.baseAmount)
+		}
+		isLastPeriod := isLastPeriodOfCommitmentPeriod(periodEnd, commitmentEnd)
+		result := applyCumulativeSubscriptionCommitment(
+			commitmentAmount, overageFactor, totalCurrentBase, totalPriorBase,
+			sub.EnableTrueUp, isLastPeriod, s.Logger,
+		)
+
+		// Allocate within_commitment proportionally to usage line items
+		for _, bc := range baseChargesForCumulative {
+			var allocatedAmount decimal.Decimal
+			if totalCurrentBase.GreaterThan(decimal.Zero) {
+				allocatedAmount = bc.baseAmount.Div(totalCurrentBase).Mul(result.WithinCommitment)
+			}
+			roundedAmount := types.RoundToCurrencyPrecision(allocatedAmount, sub.Currency)
+			// Use proportional quantity so amount and quantity align (e.g. 4 units at $1 = $4, not 5 units at $4)
+			displayQuantity := bc.quantityForCalculation
+			if bc.baseAmount.GreaterThan(decimal.Zero) {
+				displayQuantity = bc.quantityForCalculation.Mul(allocatedAmount).Div(bc.baseAmount)
+			}
+			displayQuantity = types.RoundToCurrencyPrecision(displayQuantity, sub.Currency)
+			usageCharges = append(usageCharges, dto.CreateInvoiceLineItemRequest{
+				EntityID:         lo.ToPtr(bc.item.EntityID),
+				EntityType:       lo.ToPtr(string(bc.item.EntityType)),
+				PlanDisplayName:  lo.ToPtr(bc.item.PlanDisplayName),
+				PriceType:        lo.ToPtr(string(bc.item.PriceType)),
+				PriceID:          lo.ToPtr(bc.item.PriceID),
+				MeterID:          lo.ToPtr(bc.item.MeterID),
+				MeterDisplayName: lo.ToPtr(bc.item.MeterDisplayName),
+				PriceUnit:        bc.item.PriceUnit,
+				PriceUnitAmount:  lo.ToPtr(bc.priceUnitAmount),
+				DisplayName:      bc.displayName,
+				Amount:           roundedAmount,
+				Quantity:         displayQuantity,
+				PeriodStart:      lo.ToPtr(bc.item.GetPeriodStart(periodStart)),
+				PeriodEnd:        lo.ToPtr(bc.item.GetPeriodEnd(periodEnd)),
+				Metadata:         bc.metadata,
+			})
+			totalUsageCost = totalUsageCost.Add(roundedAmount)
+		}
+
+		// Add separate overage line item (quantity = overage base so "1 overage" shows quantity 1)
+		if result.OverageAmount.GreaterThan(decimal.Zero) {
+			planDisplayName := ""
+			for _, item := range sub.LineItems {
+				if item.PlanDisplayName != "" {
+					planDisplayName = item.PlanDisplayName
+					break
+				}
+			}
+			roundedOverage := types.RoundToCurrencyPrecision(result.OverageAmount, sub.Currency)
+			overageQuantity := types.RoundToCurrencyPrecision(result.OverageBase, sub.Currency)
+			usageCharges = append(usageCharges, dto.CreateInvoiceLineItemRequest{
+				EntityID:        lo.ToPtr(sub.PlanID),
+				EntityType:      lo.ToPtr(string(types.SubscriptionLineItemEntityTypePlan)),
+				PlanDisplayName: lo.ToPtr(planDisplayName),
+				PriceType:       lo.ToPtr(string(types.PRICE_TYPE_FIXED)),
+				DisplayName:     lo.ToPtr(fmt.Sprintf("%s Overage", planDisplayName)),
+				Amount:          roundedOverage,
+				Quantity:        overageQuantity,
+				PeriodStart:     &periodStart,
+				PeriodEnd:       &periodEnd,
+				PriceID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE)),
+				Metadata: types.Metadata{
+					"is_overage":      "true",
+					"overage_factor":  overageFactor.String(),
+					"description":    "Overage charge (cumulative commitment)",
+				},
+			})
+			totalUsageCost = totalUsageCost.Add(roundedOverage)
+		}
+
+		// Add true-up line item if on last period and enabled
+		if result.TrueUpAmount.GreaterThan(decimal.Zero) {
+			planDisplayName := ""
+			for _, item := range sub.LineItems {
+				if item.PlanDisplayName != "" {
+					planDisplayName = item.PlanDisplayName
+					break
+				}
+			}
+			roundedTrueUp := types.RoundToCurrencyPrecision(result.TrueUpAmount, sub.Currency)
+			usageCharges = append(usageCharges, dto.CreateInvoiceLineItemRequest{
+				EntityID:        lo.ToPtr(sub.PlanID),
+				EntityType:      lo.ToPtr(string(types.SubscriptionLineItemEntityTypePlan)),
+				PriceType:       lo.ToPtr(string(types.PRICE_TYPE_FIXED)),
+				PlanDisplayName: lo.ToPtr(planDisplayName),
+				DisplayName:     lo.ToPtr(fmt.Sprintf("%s True Up", planDisplayName)),
+				Amount:          roundedTrueUp,
+				Quantity:        decimal.NewFromInt(1),
+				PeriodStart:     &periodStart,
+				PeriodEnd:       &periodEnd,
+				PriceID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE)),
+				Metadata: types.Metadata{
+					"is_commitment_trueup": "true",
+					"description":         "Remaining commitment amount for commitment period",
+					"commitment_amount":   commitmentAmount.String(),
+					"commitment_utilized": result.CommitmentUtilized.String(),
+				},
+			})
+			totalUsageCost = totalUsageCost.Add(roundedTrueUp)
+		}
+
+		return usageCharges, totalUsageCost, nil
+	}
+
+	// Add commitment true-up line item if there's remaining commitment (non-cumulative path)
 	hasCommitment := commitmentAmount.GreaterThan(decimal.Zero) && overageFactor.GreaterThan(decimal.NewFromInt(1))
 
 	if hasCommitment {
@@ -1598,7 +1841,7 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 
 	case types.ReferencePointPeriodEnd:
 		// Include both arrear charges for current period and advance charges for next period
-		// First, process arrear charges for current period
+		// Use calculateFeatureUsageCharges for arrear so cumulative commitment is applied (feature_usage path)
 		arrearLineItems, err := s.FilterLineItemsToBeInvoiced(ctx, sub, periodStart, periodEnd, classification.CurrentPeriodArrear)
 		if err != nil {
 			return nil, err
@@ -1616,8 +1859,8 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 			return zeroAmountInvoice, nil
 		}
 
-		// For current period arrear charges
-		arrearResult, err := s.CalculateCharges(
+		// For current period arrear charges (feature_usage path for cumulative commitment support)
+		arrearResult, err := s.calculateFeatureUsageCharges(
 			ctx,
 			sub,
 			arrearLineItems,
@@ -1693,14 +1936,14 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 		description = fmt.Sprintf("Preview invoice for subscription %s", sub.ID)
 		metadata["is_preview"] = "true"
 	case types.ReferencePointCancel:
-		// for cancel, include arrer line items only
+		// for cancel, include arrear line items only (feature_usage path for cumulative commitment)
 		arrearLineItems, err := s.FilterLineItemsToBeInvoiced(ctx, sub, periodStart, periodEnd, classification.CurrentPeriodArrear)
 		if err != nil {
 			return nil, err
 		}
 
 		// For current period arrear charges
-		arrearResult, err := s.CalculateCharges(
+		arrearResult, err := s.calculateFeatureUsageCharges(
 			ctx,
 			sub,
 			arrearLineItems,

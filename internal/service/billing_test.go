@@ -1832,6 +1832,239 @@ func (s *BillingServiceSuite) TestCalculateFeatureUsageCharges_MatchesActiveLine
 	s.True(totalAmount.GreaterThan(decimal.Zero), "Total should be positive")
 }
 
+func (s *BillingServiceSuite) TestCalculateFeatureUsageCharges_CumulativeCommitment() {
+	// Monthly subscription with annual commitment ($60), overage factor 2x
+	ctx := s.GetContext()
+	s.setupTestData()
+	s.invoiceRepo.Clear()
+
+	commitmentAmount := decimal.NewFromInt(60)
+	overageFactor := decimal.NewFromInt(2)
+	commitmentDuration := types.BILLING_PERIOD_ANNUAL
+
+	sub := *s.testData.subscription
+	sub.CommitmentAmount = &commitmentAmount
+	sub.OverageFactor = &overageFactor
+	sub.CommitmentDuration = &commitmentDuration
+	sub.EnableTrueUp = false
+	// Use fixed period for deterministic commitment bounds
+	sub.StartDate = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	sub.CurrentPeriodStart = time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)
+	sub.CurrentPeriodEnd = time.Date(2025, 4, 1, 0, 0, 0, 0, time.UTC)
+	sub.BillingAnchor = sub.CurrentPeriodEnd
+
+	apiCallsLineItem := sub.LineItems[1] // Usage line item
+	sub.LineItems = []*subscription.SubscriptionLineItem{sub.LineItems[0], apiCallsLineItem} // Fixed + API Calls
+
+	tests := []struct {
+		name              string
+		priorInvoices     []*invoice.Invoice
+		currentUsageBase  float64
+		expectedTotal     decimal.Decimal
+		expectedOverageLine decimal.Decimal
+	}{
+		{
+			// Case 1: Invoice 1 $30, Invoice 2 $20, Current $12 → prior base 50, current 12, total 62 → $2 overage → $4 overage charge
+			name: "case1_simple_cumulative",
+			priorInvoices: []*invoice.Invoice{
+				{
+					ID:              "inv_1",
+					CustomerID:      sub.CustomerID,
+					SubscriptionID:  lo.ToPtr(sub.ID),
+					InvoiceType:     types.InvoiceTypeSubscription,
+					InvoiceStatus:   types.InvoiceStatusFinalized,
+					PaymentStatus:   types.PaymentStatusPending,
+					Currency:        "usd",
+					AmountDue:       decimal.NewFromInt(30),
+					PeriodStart:     lo.ToPtr(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
+					PeriodEnd:       lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+					BaseModel:       types.GetDefaultBaseModel(ctx),
+					LineItems: []*invoice.InvoiceLineItem{
+						{
+							ID:             "li_1",
+							InvoiceID:      "inv_1",
+							CustomerID:     sub.CustomerID,
+							SubscriptionID: lo.ToPtr(sub.ID),
+							PriceID:        lo.ToPtr(s.testData.prices.apiCalls.ID),
+							PriceType:      lo.ToPtr(string(types.PRICE_TYPE_USAGE)),
+							Amount:         decimal.NewFromInt(30),
+							Currency:       "usd",
+							PeriodStart:    lo.ToPtr(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
+							PeriodEnd:      lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+							BaseModel:      types.GetDefaultBaseModel(ctx),
+						},
+					},
+				},
+				{
+					ID:              "inv_2",
+					CustomerID:      sub.CustomerID,
+					SubscriptionID:  lo.ToPtr(sub.ID),
+					InvoiceType:     types.InvoiceTypeSubscription,
+					InvoiceStatus:   types.InvoiceStatusFinalized,
+					PaymentStatus:   types.PaymentStatusPending,
+					Currency:        "usd",
+					AmountDue:       decimal.NewFromInt(20),
+					PeriodStart:     lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+					PeriodEnd:       lo.ToPtr(time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)),
+					BaseModel:       types.GetDefaultBaseModel(ctx),
+					LineItems: []*invoice.InvoiceLineItem{
+						{
+							ID:             "li_2",
+							InvoiceID:      "inv_2",
+							CustomerID:     sub.CustomerID,
+							SubscriptionID: lo.ToPtr(sub.ID),
+							PriceID:        lo.ToPtr(s.testData.prices.apiCalls.ID),
+							PriceType:      lo.ToPtr(string(types.PRICE_TYPE_USAGE)),
+							Amount:         decimal.NewFromInt(20),
+							Currency:       "usd",
+							PeriodStart:    lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+							PeriodEnd:      lo.ToPtr(time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)),
+							BaseModel:      types.GetDefaultBaseModel(ctx),
+						},
+					},
+				},
+			},
+			currentUsageBase:  12,
+			expectedTotal:     decimal.NewFromInt(14), // 10 within + 4 overage
+			expectedOverageLine: decimal.NewFromInt(4),
+		},
+		{
+			// Case 2: Invoice 1 $30, Invoice 2 $40 (with $10 overage → $20 charged), Current $12 → prior base 70, all $12 overage → $24
+			name: "case2_previous_overage_invoiced",
+			priorInvoices: []*invoice.Invoice{
+				{
+					ID:              "inv_1",
+					CustomerID:      sub.CustomerID,
+					SubscriptionID:  lo.ToPtr(sub.ID),
+					InvoiceType:     types.InvoiceTypeSubscription,
+					InvoiceStatus:   types.InvoiceStatusFinalized,
+					PaymentStatus:   types.PaymentStatusPending,
+					Currency:        "usd",
+					AmountDue:       decimal.NewFromInt(30),
+					PeriodStart:     lo.ToPtr(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
+					PeriodEnd:       lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+					BaseModel:       types.GetDefaultBaseModel(ctx),
+					LineItems: []*invoice.InvoiceLineItem{
+						{
+							ID:             "li_1",
+							InvoiceID:      "inv_1",
+							CustomerID:     sub.CustomerID,
+							SubscriptionID: lo.ToPtr(sub.ID),
+							PriceID:        lo.ToPtr(s.testData.prices.apiCalls.ID),
+							PriceType:      lo.ToPtr(string(types.PRICE_TYPE_USAGE)),
+							Amount:         decimal.NewFromInt(30),
+							Currency:       "usd",
+							PeriodStart:    lo.ToPtr(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)),
+							PeriodEnd:      lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+							BaseModel:      types.GetDefaultBaseModel(ctx),
+						},
+					},
+				},
+				{
+					ID:              "inv_2",
+					CustomerID:      sub.CustomerID,
+					SubscriptionID:  lo.ToPtr(sub.ID),
+					InvoiceType:     types.InvoiceTypeSubscription,
+					InvoiceStatus:   types.InvoiceStatusFinalized,
+					PaymentStatus:   types.PaymentStatusPending,
+					Currency:        "usd",
+					AmountDue:       decimal.NewFromInt(50), // 30 within + 20 overage
+					PeriodStart:     lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+					PeriodEnd:       lo.ToPtr(time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)),
+					BaseModel:       types.GetDefaultBaseModel(ctx),
+					LineItems: []*invoice.InvoiceLineItem{
+						{
+							ID:             "li_2a",
+							InvoiceID:      "inv_2",
+							CustomerID:     sub.CustomerID,
+							SubscriptionID: lo.ToPtr(sub.ID),
+							PriceID:        lo.ToPtr(s.testData.prices.apiCalls.ID),
+							PriceType:      lo.ToPtr(string(types.PRICE_TYPE_USAGE)),
+							Amount:         decimal.NewFromInt(30),
+							Currency:       "usd",
+							PeriodStart:    lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+							PeriodEnd:      lo.ToPtr(time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)),
+							BaseModel:      types.GetDefaultBaseModel(ctx),
+						},
+						{
+							ID:             "li_2b",
+							InvoiceID:      "inv_2",
+							CustomerID:     sub.CustomerID,
+							SubscriptionID: lo.ToPtr(sub.ID),
+							PriceID:        lo.ToPtr(s.testData.prices.apiCalls.ID),
+							PriceType:      lo.ToPtr(string(types.PRICE_TYPE_USAGE)),
+							Amount:         decimal.NewFromInt(20),
+							Currency:       "usd",
+							Metadata:       types.Metadata{"is_overage": "true"},
+							PeriodStart:    lo.ToPtr(time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)),
+							PeriodEnd:      lo.ToPtr(time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC)),
+							BaseModel:      types.GetDefaultBaseModel(ctx),
+						},
+					},
+				},
+			},
+			currentUsageBase:  12,
+			expectedTotal:     decimal.NewFromInt(24), // all overage
+			expectedOverageLine: decimal.NewFromInt(24),
+		},
+		{
+			// First period: no prior invoices → use existing per-period logic (no cumulative)
+			name:              "first_period_no_prior_invoices",
+			priorInvoices:     nil,
+			currentUsageBase:  12,
+			expectedTotal:     decimal.NewFromInt(12), // no commitment in per-period when no prior
+			expectedOverageLine: decimal.Zero,
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			s.invoiceRepo.Clear()
+			for _, inv := range tt.priorInvoices {
+				s.NoError(s.GetStores().InvoiceRepo.CreateWithLineItems(ctx, inv))
+			}
+
+			usage := &dto.GetUsageBySubscriptionResponse{
+				StartTime: sub.CurrentPeriodStart,
+				EndTime:   sub.CurrentPeriodEnd,
+				Currency:  sub.Currency,
+				Charges: []*dto.SubscriptionUsageByMetersResponse{
+					{
+						SubscriptionLineItemID: apiCallsLineItem.ID,
+						Price:                  s.testData.prices.apiCalls,
+						Quantity:               600, // arbitrary, amount drives the charge
+						Amount:                 tt.currentUsageBase,
+						IsOverage:              false,
+						OverageFactor:         2,
+					},
+				},
+			}
+
+			lineItems, totalAmount, err := s.service.CalculateFeatureUsageCharges(
+				ctx,
+				&sub,
+				usage,
+				sub.CurrentPeriodStart,
+				sub.CurrentPeriodEnd,
+				nil,
+			)
+
+			s.NoError(err)
+			s.True(totalAmount.Equal(tt.expectedTotal), "expected total %s, got %s", tt.expectedTotal.String(), totalAmount.String())
+
+			if tt.expectedOverageLine.GreaterThan(decimal.Zero) {
+				var overageAmount decimal.Decimal
+				for _, li := range lineItems {
+					if li.Metadata != nil && li.Metadata["is_overage"] == "true" {
+						overageAmount = overageAmount.Add(li.Amount)
+					}
+				}
+				s.True(overageAmount.Equal(tt.expectedOverageLine), "expected overage line %s, got %s", tt.expectedOverageLine.String(), overageAmount.String())
+			}
+		})
+	}
+}
+
 func (s *BillingServiceSuite) TestCalculateNeverResetUsage() {
 	ctx := s.GetContext()
 
