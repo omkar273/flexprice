@@ -107,30 +107,7 @@ func RunAnalyticsInvoiceReconciliation() error {
 	workers := getReconciliationWorkers()
 	log.Printf("Processing %d customers with %d parallel workers, appending diff rows to CSV as each completes", len(toProcess), workers)
 
-	// 2) List invoices created in period, sum subtotal by customer (needed before we iterate customers)
-	invFilter := types.NewNoLimitInvoiceFilter()
-	invFilter.CreatedAtGTE = &startTime
-	invFilter.CreatedAtLTE = &endTime
-	invFilter.SkipLineItems = true
-
-	invoices, err := script.invoiceRepo.List(ctx, invFilter)
-	if err != nil {
-		return fmt.Errorf("list invoices: %w", err)
-	}
-
-	// Sum stored subtotals by customer (DB values only; not recalculated via GetInvoiceWithBreakdown/recalculateInvoiceTotals)
-	storedInvoiceSubtotalByCustomer := make(map[string]decimal.Decimal)
-	invoiceIDsByCustomer := make(map[string][]string)
-	for _, inv := range invoices {
-		if inv.TenantID != tenantID || inv.EnvironmentID != environmentID {
-			continue
-		}
-		storedInvoiceSubtotalByCustomer[inv.CustomerID] = storedInvoiceSubtotalByCustomer[inv.CustomerID].Add(inv.Subtotal)
-		invoiceIDsByCustomer[inv.CustomerID] = append(invoiceIDsByCustomer[inv.CustomerID], inv.ID)
-	}
-	log.Printf("Summed stored invoice subtotals for %d invoices (DB-stored values only; not runtime-recalculated)", len(invoices))
-
-	// 3) Open CSV and run N workers: each result appends a row if diff exceeds tolerance
+	// 2) Open CSV and run N workers: each result fetches invoices by customer ID, then appends a row if diff
 	outputFile := fmt.Sprintf("analytics_invoice_reconciliation_%s_%s.csv", tenantID, time.Now().Format("20060102_150405"))
 	csvFile, err := os.Create(outputFile)
 	if err != nil {
@@ -153,7 +130,6 @@ func RunAnalyticsInvoiceReconciliation() error {
 
 	rowsWritten, completed := runReconciliationWorkers(
 		ctx, script, toProcess, startTime, endTime, workers,
-		storedInvoiceSubtotalByCustomer, invoiceIDsByCustomer,
 		csvWriter,
 	)
 	csvWriter.Flush()
@@ -161,9 +137,9 @@ func RunAnalyticsInvoiceReconciliation() error {
 		return fmt.Errorf("flush CSV: %w", err)
 	}
 	if rowsWritten == 0 {
-		log.Printf("No differences found; wrote CSV with header only to %s (completed %d/%d customers)", outputFile, completed, len(toProcess))
+		log.Printf("Wrote CSV with header only to %s (completed %d/%d customers)", outputFile, completed, len(toProcess))
 	} else {
-		log.Printf("Wrote %d diff rows to %s (completed %d/%d customers)", rowsWritten, outputFile, completed, len(toProcess))
+		log.Printf("Wrote %d customer rows (diff at each customer level) to %s (completed %d/%d customers)", rowsWritten, outputFile, completed, len(toProcess))
 	}
 	return nil
 }
@@ -187,7 +163,8 @@ type analyticsResult struct {
 }
 
 // runReconciliationWorkers runs GetDetailedUsageAnalytics with a worker pool; as each result
-// arrives, if analytics total and invoice subtotal don't match, a row is appended to the CSV.
+// arrives, fetches invoices for that customer (by customer ID, created in period), sums subtotal,
+// and appends one row per customer with analytics total, invoice subtotal, and diff at customer level.
 // Returns rowsWritten and completed count.
 func runReconciliationWorkers(
 	ctx context.Context,
@@ -195,8 +172,6 @@ func runReconciliationWorkers(
 	customers []*customer.Customer,
 	startTime, endTime time.Time,
 	workers int,
-	storedInvoiceSubtotalByCustomer map[string]decimal.Decimal,
-	invoiceIDsByCustomer map[string][]string,
 	csvWriter *csv.Writer,
 ) (rowsWritten, completed int) {
 	if len(customers) == 0 {
@@ -244,19 +219,33 @@ func runReconciliationWorkers(
 		if r.err != nil {
 			log.Printf("Warning: analytics for customer %s: %v", r.customer.ID, r.err)
 			if completed%100 == 0 || completed == len(customers) {
-				log.Printf("Progress: %d/%d customers (%d diff rows so far)", completed, len(customers), rowsWritten)
+				log.Printf("Progress: %d/%d customers (%d rows written)", completed, len(customers), rowsWritten)
 			}
 			continue
 		}
 		c := r.customer
 		analyticsCost := r.totalCost
-		storedSubtotal := storedInvoiceSubtotalByCustomer[c.ID]
-		if analyticsCost.Equal(storedSubtotal) {
+
+		invFilter := types.NewNoLimitInvoiceFilter()
+		invFilter.CustomerID = c.ID
+		invFilter.CreatedAtGTE = &startTime
+		invFilter.CreatedAtLTE = &endTime
+		invFilter.SkipLineItems = true
+		invoices, err := script.invoiceRepo.List(ctx, invFilter)
+		if err != nil {
+			log.Printf("Warning: list invoices for customer %s: %v", c.ID, err)
 			if completed%100 == 0 || completed == len(customers) {
-				log.Printf("Progress: %d/%d customers (%d diff rows so far)", completed, len(customers), rowsWritten)
+				log.Printf("Progress: %d/%d customers (%d rows written)", completed, len(customers), rowsWritten)
 			}
 			continue
 		}
+		var storedSubtotal decimal.Decimal
+		var ids []string
+		for _, inv := range invoices {
+			storedSubtotal = storedSubtotal.Add(inv.Subtotal)
+			ids = append(ids, inv.ID)
+		}
+
 		diff := analyticsCost.Sub(storedSubtotal)
 		customerName := c.Name
 		if customerName == "" {
@@ -265,7 +254,6 @@ func runReconciliationWorkers(
 		if customerName == "" {
 			customerName = c.ID
 		}
-		ids := invoiceIDsByCustomer[c.ID]
 		idList := ""
 		for _, id := range ids {
 			if idList != "" {
@@ -287,7 +275,7 @@ func runReconciliationWorkers(
 			csvWriter.Flush()
 		}
 		if completed%100 == 0 || completed == len(customers) {
-			log.Printf("Progress: %d/%d customers (%d diff rows so far)", completed, len(customers), rowsWritten)
+			log.Printf("Progress: %d/%d customers (%d rows written)", completed, len(customers), rowsWritten)
 		}
 	}
 	return rowsWritten, completed
