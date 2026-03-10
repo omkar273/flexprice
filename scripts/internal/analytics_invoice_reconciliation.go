@@ -139,14 +139,13 @@ func RunAnalyticsInvoiceReconciliation() error {
 	}
 	log.Printf("Summed stored invoice subtotals for %d invoices (DB-stored values only; not runtime-recalculated)", len(invoices))
 
-	// 4) Build diff rows (only where there is a meaningful difference)
+	// 4) Build diff rows (only where there is a meaningful difference).
+	// Iterate over toProcess so we only consider customers we ran analytics for (with ExternalID);
+	// avoids false diffs from customers missing from analyticsByCustomer.
 	var rows []AnalyticsInvoiceDiffRow
 	tolerance := decimal.NewFromFloat(0.0001)
 
-	for _, c := range customers {
-		if c.TenantID != tenantID || c.EnvironmentID != environmentID {
-			continue
-		}
+	for _, c := range toProcess {
 		analyticsCost := analyticsByCustomer[c.ID]
 		storedSubtotal := storedInvoiceSubtotalByCustomer[c.ID]
 		diff := analyticsCost.Sub(storedSubtotal)
@@ -181,17 +180,15 @@ func RunAnalyticsInvoiceReconciliation() error {
 		})
 	}
 
-	if len(rows) == 0 {
-		log.Printf("No differences found; no CSV written.")
-		return nil
-	}
-
 	outputFile := fmt.Sprintf("analytics_invoice_reconciliation_%s_%s.csv", tenantID, time.Now().Format("20060102_150405"))
 	if err := writeReconciliationCSV(rows, outputFile); err != nil {
 		return fmt.Errorf("write CSV: %w", err)
 	}
-
-	log.Printf("Wrote %d diff rows to %s", len(rows), outputFile)
+	if len(rows) == 0 {
+		log.Printf("No differences found; wrote CSV with header only to %s", outputFile)
+	} else {
+		log.Printf("Wrote %d diff rows to %s", len(rows), outputFile)
+	}
 	return nil
 }
 
