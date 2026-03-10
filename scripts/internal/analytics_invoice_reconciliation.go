@@ -31,6 +31,8 @@ const (
 	dateLayout                   = "2006-01-02"
 	defaultReconciliationWorkers = 10
 	envReconciliationWorkers     = "RECONCILIATION_WORKERS"
+	envStartTime                 = "START_TIME"
+	envEndTime                   = "END_TIME"
 )
 
 // AnalyticsInvoiceDiffRow represents one row in the reconciliation diff CSV
@@ -54,7 +56,7 @@ type analyticsInvoiceReconciliationScript struct {
 }
 
 // RunAnalyticsInvoiceReconciliation compares analytics total cost to invoice subtotals for a period and writes diffs to CSV.
-// Period is hardcoded to 1 Feb – 1 Mar. Requires TENANT_ID and ENVIRONMENT_ID.
+// Requires TENANT_ID and ENVIRONMENT_ID. Optional START_TIME and END_TIME (date 2006-01-02 or ISO-8601); default is start of current year through end of today UTC.
 // Infrastructure (Postgres, ClickHouse, Kafka) must be running.
 //
 // Invoice side uses stored subtotals only: values come from invoiceRepo.List() (inv.Subtotal).
@@ -68,8 +70,10 @@ func RunAnalyticsInvoiceReconciliation() error {
 		return fmt.Errorf("TENANT_ID and ENVIRONMENT_ID are required")
 	}
 
-	startTime := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
-	endTime := time.Date(2025, time.March, 1, 0, 0, 0, 0, time.UTC)
+	startTime, endTime, err := parseReconciliationPeriod()
+	if err != nil {
+		return err
+	}
 
 	log.Printf("Reconciling analytics vs invoices for period %s to %s (tenant=%s, env=%s)",
 		startTime.Format(dateLayout), endTime.Format(dateLayout), tenantID, environmentID)
@@ -118,7 +122,7 @@ func RunAnalyticsInvoiceReconciliation() error {
 	header := []string{
 		"customer_id", "customer_name", "external_customer_id",
 		"analytics_total_cost", "invoice_subtotal_sum", "diff",
-		"invoice_ids", "invoice_count", "currency",
+		"invoice_ids", "invoice_count_in_period", "total_invoice_count", "currency",
 	}
 	if err := csvWriter.Write(header); err != nil {
 		return fmt.Errorf("write CSV header: %w", err)
@@ -142,6 +146,49 @@ func RunAnalyticsInvoiceReconciliation() error {
 		log.Printf("Wrote %d customer rows (diff at each customer level) to %s (completed %d/%d customers)", rowsWritten, outputFile, completed, len(toProcess))
 	}
 	return nil
+}
+
+// parseReconciliationPeriod returns start and end time for the reconciliation period.
+// Uses START_TIME and END_TIME env vars (date-only 2006-01-02 or ISO-8601). If unset,
+// defaults to start of current year and end of current day UTC so invoice/list and analytics match real data.
+func parseReconciliationPeriod() (startTime, endTime time.Time, err error) {
+	now := time.Now().UTC()
+	defaultStart := time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+	defaultEnd := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 999999999, time.UTC)
+
+	startStr := os.Getenv(envStartTime)
+	endStr := os.Getenv(envEndTime)
+
+	if startStr == "" {
+		startTime = defaultStart
+	} else {
+		startTime, err = parseTime(startStr)
+		if err != nil {
+			return time.Time{}, time.Time{}, fmt.Errorf("invalid START_TIME %q: %w", startStr, err)
+		}
+	}
+	if endStr == "" {
+		endTime = defaultEnd
+	} else {
+		endTime, err = parseTime(endStr)
+		if err != nil {
+			return time.Time{}, time.Time{}, fmt.Errorf("invalid END_TIME %q: %w", endStr, err)
+		}
+	}
+	if startTime.After(endTime) {
+		return time.Time{}, time.Time{}, fmt.Errorf("START_TIME must be before or equal to END_TIME")
+	}
+	return startTime, endTime, nil
+}
+
+func parseTime(s string) (time.Time, error) {
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t, nil
+	}
+	if t, err := time.Parse(dateLayout, s); err == nil {
+		return t, nil
+	}
+	return time.Time{}, fmt.Errorf("use date (2006-01-02) or ISO-8601")
 }
 
 func getReconciliationWorkers() int {
@@ -245,6 +292,17 @@ func runReconciliationWorkers(
 			storedSubtotal = storedSubtotal.Add(inv.Subtotal)
 			ids = append(ids, inv.ID)
 		}
+		inPeriodCount := len(ids)
+
+		// Total invoice count for this customer (all time, same tenant/env)
+		totalFilter := types.NewNoLimitInvoiceFilter()
+		totalFilter.CustomerID = c.ID
+		totalFilter.SkipLineItems = true
+		totalInvoiceCount, countErr := script.invoiceRepo.Count(ctx, totalFilter)
+		if countErr != nil {
+			log.Printf("Warning: count invoices for customer %s: %v", c.ID, countErr)
+			totalInvoiceCount = 0
+		}
 
 		diff := analyticsCost.Sub(storedSubtotal)
 		customerName := c.Name
@@ -264,7 +322,7 @@ func runReconciliationWorkers(
 		record := []string{
 			c.ID, customerName, c.ExternalID,
 			analyticsCost.StringFixed(4), storedSubtotal.StringFixed(4), diff.StringFixed(4),
-			idList, fmt.Sprintf("%d", len(ids)), "USD",
+			idList, fmt.Sprintf("%d", inPeriodCount), fmt.Sprintf("%d", totalInvoiceCount), "USD",
 		}
 		if err := csvWriter.Write(record); err != nil {
 			log.Printf("Error writing CSV row for customer %s: %v", c.ID, err)
