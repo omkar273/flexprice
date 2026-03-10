@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -111,8 +112,15 @@ func RunAnalyticsInvoiceReconciliation() error {
 	workers := getReconciliationWorkers()
 	log.Printf("Processing %d customers with %d parallel workers, appending diff rows to CSV as each completes", len(toProcess), workers)
 
-	// 2) Open CSV and run N workers: each result fetches invoices by customer ID, then appends a row if diff
+	// 2) Run N workers: collect one row per customer, then sort by diff ascending (most negative first) and write CSV
 	outputFile := fmt.Sprintf("analytics_invoice_reconciliation_%s_%s.csv", tenantID, time.Now().Format("20060102_150405"))
+	rows, completed := runReconciliationWorkers(
+		ctx, script, toProcess, startTime, endTime, workers,
+	)
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].diff.LessThan(rows[j].diff)
+	})
+
 	csvFile, err := os.Create(outputFile)
 	if err != nil {
 		return fmt.Errorf("create CSV: %w", err)
@@ -127,23 +135,19 @@ func RunAnalyticsInvoiceReconciliation() error {
 	if err := csvWriter.Write(header); err != nil {
 		return fmt.Errorf("write CSV header: %w", err)
 	}
-	csvWriter.Flush()
-	if err := csvWriter.Error(); err != nil {
-		return fmt.Errorf("flush CSV header: %w", err)
+	for _, r := range rows {
+		if err := csvWriter.Write(r.record); err != nil {
+			return fmt.Errorf("write CSV row: %w", err)
+		}
 	}
-
-	rowsWritten, completed := runReconciliationWorkers(
-		ctx, script, toProcess, startTime, endTime, workers,
-		csvWriter,
-	)
 	csvWriter.Flush()
 	if err := csvWriter.Error(); err != nil {
 		return fmt.Errorf("flush CSV: %w", err)
 	}
-	if rowsWritten == 0 {
+	if len(rows) == 0 {
 		log.Printf("Wrote CSV with header only to %s (completed %d/%d customers)", outputFile, completed, len(toProcess))
 	} else {
-		log.Printf("Wrote %d customer rows (diff at each customer level) to %s (completed %d/%d customers)", rowsWritten, outputFile, completed, len(toProcess))
+		log.Printf("Wrote %d customer rows sorted by diff ascending to %s (completed %d/%d customers)", len(rows), outputFile, completed, len(toProcess))
 	}
 	return nil
 }
@@ -209,20 +213,24 @@ type analyticsResult struct {
 	err       error
 }
 
+// reconciliationRow holds a CSV record and its diff for sorting (ascending = most negative first).
+type reconciliationRow struct {
+	record []string
+	diff   decimal.Decimal
+}
+
 // runReconciliationWorkers runs GetDetailedUsageAnalytics with a worker pool; as each result
 // arrives, fetches invoices for that customer (by customer ID, created in period), sums subtotal,
-// and appends one row per customer with analytics total, invoice subtotal, and diff at customer level.
-// Returns rowsWritten and completed count.
+// and collects one row per customer. Returns rows (to be sorted by diff) and completed count.
 func runReconciliationWorkers(
 	ctx context.Context,
 	script *analyticsInvoiceReconciliationScript,
 	customers []*customer.Customer,
 	startTime, endTime time.Time,
 	workers int,
-	csvWriter *csv.Writer,
-) (rowsWritten, completed int) {
+) (rows []reconciliationRow, completed int) {
 	if len(customers) == 0 {
-		return 0, 0
+		return nil, 0
 	}
 	if workers > len(customers) {
 		workers = len(customers)
@@ -266,7 +274,7 @@ func runReconciliationWorkers(
 		if r.err != nil {
 			log.Printf("Warning: analytics for customer %s: %v", r.customer.ID, r.err)
 			if completed%100 == 0 || completed == len(customers) {
-				log.Printf("Progress: %d/%d customers (%d rows written)", completed, len(customers), rowsWritten)
+				log.Printf("Progress: %d/%d customers (%d rows collected)", completed, len(customers), len(rows))
 			}
 			continue
 		}
@@ -283,7 +291,7 @@ func runReconciliationWorkers(
 		if err != nil {
 			log.Printf("Warning: list invoices for customer %s: %v", c.ID, err)
 			if completed%100 == 0 || completed == len(customers) {
-				log.Printf("Progress: %d/%d customers (%d rows written)", completed, len(customers), rowsWritten)
+				log.Printf("Progress: %d/%d customers (%d rows collected)", completed, len(customers), len(rows))
 			}
 			continue
 		}
@@ -326,19 +334,12 @@ func runReconciliationWorkers(
 			analyticsCost.StringFixed(4), storedSubtotal.StringFixed(4), diff.StringFixed(4),
 			idList, fmt.Sprintf("%d", inPeriodCount), fmt.Sprintf("%d", totalInvoiceCount), "USD",
 		}
-		if err := csvWriter.Write(record); err != nil {
-			log.Printf("Error writing CSV row for customer %s: %v", c.ID, err)
-			continue
-		}
-		rowsWritten++
-		if rowsWritten%50 == 0 {
-			csvWriter.Flush()
-		}
+		rows = append(rows, reconciliationRow{record: record, diff: diff})
 		if completed%100 == 0 || completed == len(customers) {
-			log.Printf("Progress: %d/%d customers (%d rows written)", completed, len(customers), rowsWritten)
+			log.Printf("Progress: %d/%d customers (%d rows collected)", completed, len(customers), len(rows))
 		}
 	}
-	return rowsWritten, completed
+	return rows, completed
 }
 
 func newAnalyticsInvoiceReconciliationScript() (*analyticsInvoiceReconciliationScript, error) {
