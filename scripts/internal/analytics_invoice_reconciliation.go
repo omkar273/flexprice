@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
@@ -28,7 +29,7 @@ import (
 
 const (
 	dateLayout                   = "2006-01-02"
-	defaultReconciliationWorkers = 5000
+	defaultReconciliationWorkers = 10
 	envReconciliationWorkers     = "RECONCILIATION_WORKERS"
 )
 
@@ -107,15 +108,10 @@ func RunAnalyticsInvoiceReconciliation() error {
 		}
 		toProcess = append(toProcess, c)
 	}
-	log.Printf("Processing %d customers (with external_customer_id)", len(toProcess))
-
 	workers := getReconciliationWorkers()
-	log.Printf("Using %d workers for analytics", workers)
+	log.Printf("Processing %d customers with %d parallel workers, appending diff rows to CSV as each completes", len(toProcess), workers)
 
-	// 2) For each customer: get analytics total cost via feature usage tracking (same period), in parallel
-	analyticsByCustomer := runAnalyticsWorkers(ctx, script, toProcess, startTime, endTime, workers)
-
-	// 3) List invoices in period (period_end in range), sum subtotal by customer
+	// 2) List invoices in period (period_end in range), sum subtotal by customer (needed before we iterate customers)
 	invFilter := types.NewNoLimitInvoiceFilter()
 	invFilter.PeriodEndGTE = &periodEndGTE
 	invFilter.PeriodEndLTE = &periodEndLTE
@@ -139,17 +135,133 @@ func RunAnalyticsInvoiceReconciliation() error {
 	}
 	log.Printf("Summed stored invoice subtotals for %d invoices (DB-stored values only; not runtime-recalculated)", len(invoices))
 
-	// 4) Build diff rows (only where there is a meaningful difference).
-	// Iterate over toProcess so we only consider customers we ran analytics for (with ExternalID);
-	// avoids false diffs from customers missing from analyticsByCustomer.
-	var rows []AnalyticsInvoiceDiffRow
-	tolerance := decimal.NewFromFloat(0.0001)
+	// 3) Open CSV and run N workers: each result appends a row if diff exceeds tolerance
+	outputFile := fmt.Sprintf("analytics_invoice_reconciliation_%s_%s.csv", tenantID, time.Now().Format("20060102_150405"))
+	csvFile, err := os.Create(outputFile)
+	if err != nil {
+		return fmt.Errorf("create CSV: %w", err)
+	}
+	defer csvFile.Close()
+	csvWriter := csv.NewWriter(csvFile)
+	header := []string{
+		"customer_id", "customer_name", "external_customer_id",
+		"analytics_total_cost", "invoice_subtotal_sum", "diff",
+		"invoice_ids", "invoice_count", "currency",
+	}
+	if err := csvWriter.Write(header); err != nil {
+		return fmt.Errorf("write CSV header: %w", err)
+	}
+	csvWriter.Flush()
+	if err := csvWriter.Error(); err != nil {
+		return fmt.Errorf("flush CSV header: %w", err)
+	}
 
-	for _, c := range toProcess {
-		analyticsCost := analyticsByCustomer[c.ID]
+	tolerance := decimal.NewFromFloat(0.0001)
+	rowsWritten, completed := runReconciliationWorkers(
+		ctx, script, toProcess, startTime, endTime, workers,
+		storedInvoiceSubtotalByCustomer, invoiceIDsByCustomer,
+		tolerance, csvWriter,
+	)
+	csvWriter.Flush()
+	if err := csvWriter.Error(); err != nil {
+		return fmt.Errorf("flush CSV: %w", err)
+	}
+	if rowsWritten == 0 {
+		log.Printf("No differences found; wrote CSV with header only to %s (completed %d/%d customers)", outputFile, completed, len(toProcess))
+	} else {
+		log.Printf("Wrote %d diff rows to %s (completed %d/%d customers)", rowsWritten, outputFile, completed, len(toProcess))
+	}
+	return nil
+}
+
+func getReconciliationWorkers() int {
+	s := os.Getenv(envReconciliationWorkers)
+	if s == "" {
+		return defaultReconciliationWorkers
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil || n < 1 {
+		return defaultReconciliationWorkers
+	}
+	return n
+}
+
+type analyticsResult struct {
+	customer  *customer.Customer
+	totalCost decimal.Decimal
+	err       error
+}
+
+// runReconciliationWorkers runs GetDetailedUsageAnalytics with a worker pool; as each result
+// arrives, if the diff exceeds tolerance a row is appended to the CSV. Returns rowsWritten and completed count.
+func runReconciliationWorkers(
+	ctx context.Context,
+	script *analyticsInvoiceReconciliationScript,
+	customers []*customer.Customer,
+	startTime, endTime time.Time,
+	workers int,
+	storedInvoiceSubtotalByCustomer map[string]decimal.Decimal,
+	invoiceIDsByCustomer map[string][]string,
+	tolerance decimal.Decimal,
+	csvWriter *csv.Writer,
+) (rowsWritten, completed int) {
+	if len(customers) == 0 {
+		return 0, 0
+	}
+	if workers > len(customers) {
+		workers = len(customers)
+	}
+
+	jobCh := make(chan *customer.Customer, len(customers))
+	resultCh := make(chan analyticsResult, workers*2)
+
+	var wg sync.WaitGroup
+	for w := 0; w < workers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for c := range jobCh {
+				req := &dto.GetUsageAnalyticsRequest{
+					ExternalCustomerID: c.ExternalID,
+					StartTime:          startTime,
+					EndTime:            endTime,
+				}
+				resp, err := script.featureUsageTrackingService.GetDetailedUsageAnalytics(ctx, req)
+				if err != nil {
+					resultCh <- analyticsResult{customer: c, err: err}
+					continue
+				}
+				resultCh <- analyticsResult{customer: c, totalCost: resp.TotalCost}
+			}
+		}()
+	}
+
+	go func() {
+		for _, c := range customers {
+			jobCh <- c
+		}
+		close(jobCh)
+		wg.Wait()
+		close(resultCh)
+	}()
+
+	for r := range resultCh {
+		completed++
+		if r.err != nil {
+			log.Printf("Warning: analytics for customer %s: %v", r.customer.ID, r.err)
+			if completed%100 == 0 || completed == len(customers) {
+				log.Printf("Progress: %d/%d customers (%d diff rows so far)", completed, len(customers), rowsWritten)
+			}
+			continue
+		}
+		c := r.customer
+		analyticsCost := r.totalCost
 		storedSubtotal := storedInvoiceSubtotalByCustomer[c.ID]
 		diff := analyticsCost.Sub(storedSubtotal)
 		if diff.Abs().LessThanOrEqual(tolerance) {
+			if completed%100 == 0 || completed == len(customers) {
+				log.Printf("Progress: %d/%d customers (%d diff rows so far)", completed, len(customers), rowsWritten)
+			}
 			continue
 		}
 		customerName := c.Name
@@ -167,136 +279,24 @@ func RunAnalyticsInvoiceReconciliation() error {
 			}
 			idList += id
 		}
-		rows = append(rows, AnalyticsInvoiceDiffRow{
-			CustomerID:         c.ID,
-			CustomerName:       customerName,
-			ExternalCustomerID: c.ExternalID,
-			AnalyticsTotalCost: analyticsCost.StringFixed(4),
-			InvoiceSubtotalSum: storedSubtotal.StringFixed(4),
-			Diff:               diff.StringFixed(4),
-			InvoiceIDs:         idList,
-			InvoiceCount:       len(ids),
-			Currency:           "USD",
-		})
-	}
-
-	outputFile := fmt.Sprintf("analytics_invoice_reconciliation_%s_%s.csv", tenantID, time.Now().Format("20060102_150405"))
-	if err := writeReconciliationCSV(rows, outputFile); err != nil {
-		return fmt.Errorf("write CSV: %w", err)
-	}
-	if len(rows) == 0 {
-		log.Printf("No differences found; wrote CSV with header only to %s", outputFile)
-	} else {
-		log.Printf("Wrote %d diff rows to %s", len(rows), outputFile)
-	}
-	return nil
-}
-
-// getReconciliationWorkers returns RECONCILIATION_WORKERS env (default defaultReconciliationWorkers), clamped to at least 1.
-func getReconciliationWorkers() int {
-	s := os.Getenv(envReconciliationWorkers)
-	if s == "" {
-		return defaultReconciliationWorkers
-	}
-	n, err := strconv.Atoi(s)
-	if err != nil || n < 1 {
-		return defaultReconciliationWorkers
-	}
-	return n
-}
-
-type analyticsResult struct {
-	customerID string
-	totalCost  decimal.Decimal
-	err        error
-}
-
-// runAnalyticsWorkers runs GetDetailedUsageAnalyticsV2 for each customer using a worker pool.
-func runAnalyticsWorkers(
-	ctx context.Context,
-	script *analyticsInvoiceReconciliationScript,
-	customers []*customer.Customer,
-	startTime, endTime time.Time,
-	workers int,
-) map[string]decimal.Decimal {
-	if len(customers) == 0 {
-		return make(map[string]decimal.Decimal)
-	}
-	if workers > len(customers) {
-		workers = len(customers)
-	}
-
-	jobCh := make(chan *customer.Customer, len(customers))
-	resultCh := make(chan analyticsResult, workers*2)
-
-	for w := 0; w < workers; w++ {
-		go func() {
-			for c := range jobCh {
-				req := &dto.GetUsageAnalyticsRequest{
-					ExternalCustomerID: c.ExternalID,
-					StartTime:          startTime,
-					EndTime:            endTime,
-				}
-				resp, err := script.featureUsageTrackingService.GetDetailedUsageAnalytics(ctx, req)
-				if err != nil {       
-					resultCh <- analyticsResult{customerID: c.ID, err: err}
-					continue
-				}
-				resultCh <- analyticsResult{customerID: c.ID, totalCost: resp.TotalCost}
-			}
-		}()
-	}
-
-	go func() {
-		for _, c := range customers {
-			jobCh <- c
+		record := []string{
+			c.ID, customerName, c.ExternalID,
+			analyticsCost.StringFixed(4), storedSubtotal.StringFixed(4), diff.StringFixed(4),
+			idList, fmt.Sprintf("%d", len(ids)), "USD",
 		}
-		close(jobCh)
-	}()
-
-	analyticsByCustomer := make(map[string]decimal.Decimal)
-	for i := 0; i < len(customers); i++ {
-		r := <-resultCh
-		if r.err != nil {
-			log.Printf("Warning: analytics for customer %s: %v", r.customerID, r.err)
+		if err := csvWriter.Write(record); err != nil {
+			log.Printf("Error writing CSV row for customer %s: %v", c.ID, err)
 			continue
 		}
-		analyticsByCustomer[r.customerID] = r.totalCost
-		if (i+1)%500 == 0 || i+1 == len(customers) {
-			log.Printf("Analytics progress: %d/%d customers", i+1, len(customers))
+		rowsWritten++
+		if rowsWritten%50 == 0 {
+			csvWriter.Flush()
+		}
+		if completed%100 == 0 || completed == len(customers) {
+			log.Printf("Progress: %d/%d customers (%d diff rows so far)", completed, len(customers), rowsWritten)
 		}
 	}
-	return analyticsByCustomer
-}
-
-func writeReconciliationCSV(rows []AnalyticsInvoiceDiffRow, filename string) error {
-	f, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	w := csv.NewWriter(f)
-	defer w.Flush()
-
-	header := []string{
-		"customer_id", "customer_name", "external_customer_id",
-		"analytics_total_cost", "invoice_subtotal_sum", "diff",
-		"invoice_ids", "invoice_count", "currency",
-	}
-	if err := w.Write(header); err != nil {
-		return err
-	}
-	for _, r := range rows {
-		record := []string{
-			r.CustomerID, r.CustomerName, r.ExternalCustomerID,
-			r.AnalyticsTotalCost, r.InvoiceSubtotalSum, r.Diff,
-			r.InvoiceIDs, fmt.Sprintf("%d", r.InvoiceCount), r.Currency,
-		}
-		if err := w.Write(record); err != nil {
-			return err
-		}
-	}
-	return nil
+	return rowsWritten, completed
 }
 
 func newAnalyticsInvoiceReconciliationScript() (*analyticsInvoiceReconciliationScript, error) {
