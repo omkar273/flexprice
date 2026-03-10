@@ -278,6 +278,7 @@ func runReconciliationWorkers(
 		invFilter.CreatedAtGTE = &startTime
 		invFilter.CreatedAtLTE = &endTime
 		invFilter.SkipLineItems = true
+		invFilter.InvoiceType = types.InvoiceTypeSubscription
 		invoices, err := script.invoiceRepo.List(ctx, invFilter)
 		if err != nil {
 			log.Printf("Warning: list invoices for customer %s: %v", c.ID, err)
@@ -298,6 +299,7 @@ func runReconciliationWorkers(
 		totalFilter := types.NewNoLimitInvoiceFilter()
 		totalFilter.CustomerID = c.ID
 		totalFilter.SkipLineItems = true
+		totalFilter.InvoiceType = types.InvoiceTypeSubscription
 		totalInvoiceCount, countErr := script.invoiceRepo.Count(ctx, totalFilter)
 		if countErr != nil {
 			log.Printf("Warning: count invoices for customer %s: %v", c.ID, countErr)
