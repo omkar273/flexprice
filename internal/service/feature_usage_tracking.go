@@ -2481,8 +2481,8 @@ func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context,
 		if groupedResult, groupErr := s.fetchGroupedBucketedUsage(ctx, item, meter, data); groupErr == nil && groupedResult != nil && len(groupedResult.Results) > 0 {
 			item.TotalCost = priceService.CalculateCostFromUsageResults(ctx, price, groupedResult.Results)
 			item.Currency = price.Currency
-			// Still calculate per-point costs for time-series display using flat pricing
-			s.calculatePointCosts(params, lineItem, isWindowed)
+			// Use per-group tiered pricing for time-series points so point costs match TotalCost.
+			s.setPointCostsFromGroupedResults(ctx, priceService, price, params.item.Points, groupedResult.Results)
 			// Merge bucket-level points to request window level
 			params.item.Points = s.mergeBucketPointsByWindow(params.item.Points, params.aggType)
 			return
@@ -2628,6 +2628,41 @@ func (s *featureUsageTrackingService) extractBucketValues(points []events.UsageA
 		values[i] = s.getCorrectUsageValueForPoint(pt, aggType)
 	}
 	return values
+}
+
+// setPointCostsFromGroupedResults sets each point's Cost using per-group tiered pricing from
+// grouped usage results, so time-series point costs match item.TotalCost (which is computed
+// from the same results via CalculateCostFromUsageResults).
+func (s *featureUsageTrackingService) setPointCostsFromGroupedResults(
+	ctx context.Context,
+	priceService PriceService,
+	price *price.Price,
+	points []events.UsageAnalyticPoint,
+	results []events.UsageResult,
+) {
+	if len(results) == 0 || len(points) == 0 {
+		return
+	}
+	// Group results by bucket/window (WindowSize = bucket start from repo).
+	byWindow := make(map[time.Time][]events.UsageResult)
+	for _, r := range results {
+		byWindow[r.WindowSize] = append(byWindow[r.WindowSize], r)
+	}
+	costByWindow := make(map[time.Time]decimal.Decimal)
+	for window, windowResults := range byWindow {
+		costByWindow[window] = priceService.CalculateCostFromUsageResults(ctx, price, windowResults)
+	}
+	for i := range points {
+		// Match point to bucket: bucket-level points use Timestamp as bucket start.
+		key := points[i].Timestamp
+		if key.IsZero() {
+			key = points[i].WindowStart
+		}
+		if c, ok := costByWindow[key]; ok {
+			points[i].Cost = c
+		}
+		// If not found (e.g. zero-usage bucket), Cost remains as-is (typically zero)
+	}
 }
 
 // calculatePointCosts calculates cost for each individual point.

@@ -667,6 +667,7 @@ func (s *billingService) CalculateUsageCharges(
 							item.GetPeriodEnd(periodEnd),
 							meter.Aggregation.BucketSize,
 							&sub.BillingAnchor,
+							meter.Aggregation.Type,
 						)
 
 						// Apply window-based commitment
@@ -846,34 +847,62 @@ func (s *billingService) calculateRemainingCommitment(
 	return decimal.Max(remainingCommitment, decimal.Zero)
 }
 
+// aggregateUsageResultsByWindow reduces multiple results per window (e.g. from group_by)
+// into one value per window using the meter aggregation type (SUM or MAX).
+func aggregateUsageResultsByWindow(results []events.UsageResult, aggType types.AggregationType) map[time.Time]decimal.Decimal {
+	out := make(map[time.Time]decimal.Decimal)
+	for _, r := range results {
+		existing, ok := out[r.WindowSize]
+		if !ok {
+			out[r.WindowSize] = r.Value
+			continue
+		}
+		switch aggType {
+		case types.AggregationMax:
+			if r.Value.GreaterThan(existing) {
+				out[r.WindowSize] = r.Value
+			}
+		default:
+			// SUM and others: sum values per window
+			out[r.WindowSize] = existing.Add(r.Value)
+		}
+	}
+	return out
+}
+
 // fillBucketedValuesForWindowedCommitment returns one value per expected bucket in the period.
-// When CommitmentTrueUpEnabled is true, fills missing buckets (no usage) with zero so that
-// windowed commitment true-up is applied to every window. Otherwise returns only the
-// buckets returned by the usage API (current behavior).
+// When multiple results exist per bucket (e.g. from group_by), they are aggregated into one
+// value per window using aggType (SUM or MAX). When CommitmentTrueUpEnabled is true, fills
+// missing buckets (no usage) with zero so that windowed commitment true-up is applied to
+// every window. Otherwise returns one value per unique window in sorted order.
 func (s *billingService) fillBucketedValuesForWindowedCommitment(
 	item *subscription.SubscriptionLineItem,
 	usageResult *events.AggregationResult,
 	periodStart, periodEnd time.Time,
 	bucketSize types.WindowSize,
 	billingAnchor *time.Time,
+	aggType types.AggregationType,
 ) []decimal.Decimal {
 	if usageResult == nil {
 		return nil
 	}
+	usageByWindow := aggregateUsageResultsByWindow(usageResult.Results, aggType)
 	if !item.CommitmentTrueUpEnabled {
-		bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-		for i, result := range usageResult.Results {
-			bucketedValues[i] = result.Value
+		// Return one value per unique window in sorted order.
+		keys := make([]time.Time, 0, len(usageByWindow))
+		for t := range usageByWindow {
+			keys = append(keys, t)
+		}
+		sort.Slice(keys, func(i, j int) bool { return keys[i].Before(keys[j]) })
+		bucketedValues := make([]decimal.Decimal, len(keys))
+		for i, t := range keys {
+			bucketedValues[i] = usageByWindow[t]
 		}
 		return bucketedValues
 	}
 	expectedStarts := generateBucketStarts(periodStart, periodEnd, bucketSize, billingAnchor)
 	if len(expectedStarts) == 0 {
 		return nil
-	}
-	usageByWindow := make(map[time.Time]decimal.Decimal)
-	for _, r := range usageResult.Results {
-		usageByWindow[r.WindowSize] = r.Value
 	}
 	bucketedValues := make([]decimal.Decimal, 0, len(expectedStarts))
 	for _, t := range expectedStarts {
@@ -1289,6 +1318,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 							item.GetPeriodEnd(periodEnd),
 							meter.Aggregation.BucketSize,
 							&sub.BillingAnchor,
+							meter.Aggregation.Type,
 						)
 
 						// Apply window-based commitment
