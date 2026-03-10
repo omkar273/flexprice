@@ -298,36 +298,12 @@ func (o GroupQueryOptions) ApplyPaginationFilter(query GroupQuery, limit int, of
 	return query
 }
 
-// GetFieldName returns the ent field name for group (matches ent/schema/group.go + mixins for extensive search).
+// GetFieldName returns the ent field name for group; delegates to ent's ValidColumn so new schema fields are supported automatically.
 func (o GroupQueryOptions) GetFieldName(field string) string {
-	switch field {
-	case "id":
-		return group.FieldID
-	case "tenant_id":
-		return group.FieldTenantID
-	case "status":
-		return group.FieldStatus
-	case "created_at":
-		return group.FieldCreatedAt
-	case "updated_at":
-		return group.FieldUpdatedAt
-	case "created_by":
-		return group.FieldCreatedBy
-	case "updated_by":
-		return group.FieldUpdatedBy
-	case "environment_id":
-		return group.FieldEnvironmentID
-	case "metadata":
-		return group.FieldMetadata
-	case "name":
-		return group.FieldName
-	case "entity_type":
-		return group.FieldEntityType
-	case "lookup_key":
-		return group.FieldLookupKey
-	default:
-		return ""
+	if group.ValidColumn(field) {
+		return field
 	}
+	return ""
 }
 
 func (o GroupQueryOptions) GetFieldResolver(field string) (string, error) {

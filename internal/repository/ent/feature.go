@@ -505,26 +505,12 @@ func (o FeatureQueryOptions) ApplyPaginationFilter(query FeatureQuery, limit int
 	return query
 }
 
+// GetFieldName returns the ent field name for feature; delegates to ent's ValidColumn so new schema fields are supported automatically.
 func (o FeatureQueryOptions) GetFieldName(field string) string {
-	switch field {
-	case "created_at":
-		return feature.FieldCreatedAt
-	case "updated_at":
-		return feature.FieldUpdatedAt
-	case "name":
-		return feature.FieldName
-	case "lookup_key":
-		return feature.FieldLookupKey
-	case "type":
-		return feature.FieldType
-	case "status":
-		return feature.FieldStatus
-	case "group_id":
-		return feature.FieldGroupID
-	default:
-		// unknown field
-		return ""
+	if feature.ValidColumn(field) {
+		return field
 	}
+	return ""
 }
 
 func (o FeatureQueryOptions) applyEntityQueryOptions(ctx context.Context, f *types.FeatureFilter, query FeatureQuery) (FeatureQuery, error) {
