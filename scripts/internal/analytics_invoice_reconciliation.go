@@ -67,7 +67,7 @@ func RunAnalyticsInvoiceReconciliation() error {
 		return fmt.Errorf("TENANT_ID and ENVIRONMENT_ID are required")
 	}
 
-	startTime := time.Date(2025, time.February, 1, 0, 0, 0, 0, time.UTC)
+	startTime := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
 	endTime := time.Date(2025, time.March, 1, 0, 0, 0, 0, time.UTC)
 
 	// End of period for invoice filter: period_end in [start, end]
