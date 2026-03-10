@@ -2519,7 +2519,8 @@ func (s *featureUsageTrackingService) fetchGroupedBucketedUsage(
 		return nil, fmt.Errorf("analytics params not available")
 	}
 
-	// Build the feature_usage bucketed query params with group_by
+	// Build the feature_usage bucketed query params with group_by.
+	// Preserve request property filters so bucketed cost uses the same scope as displayed usage.
 	usageParams := &events.UsageParams{
 		ExternalCustomerID: data.Params.ExternalCustomerID,
 		EventName:          m.EventName,
@@ -2529,6 +2530,7 @@ func (s *featureUsageTrackingService) fetchGroupedBucketedUsage(
 		StartTime:          data.Params.StartTime,
 		EndTime:            data.Params.EndTime,
 		GroupByProperty:    m.Aggregation.GroupBy,
+		Filters:            data.Params.PropertyFilters,
 	}
 
 	// Set billing anchor from subscription if available
