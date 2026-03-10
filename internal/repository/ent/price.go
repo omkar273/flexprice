@@ -540,6 +540,8 @@ func (o PriceQueryOptions) GetFieldName(field string) string {
 		return price.FieldAmount
 	case "display_name":
 		return price.FieldDisplayName
+	case "group_id":
+		return price.FieldGroupID
 	default:
 		// unknown field
 		return ""
