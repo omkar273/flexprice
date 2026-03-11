@@ -435,6 +435,11 @@ func (c ClickHouseConfig) GetClientOptions() *clickhouse.Options {
 	if c.TLS {
 		options.TLS = &tls.Config{}
 	}
+	// Hardcoded per-query memory limit: 90 GB
+	const maxMemoryUsageBytes int64 = 80 * 1024 * 1024 * 1024
+	options.Settings = clickhouse.Settings{
+		"max_memory_usage": maxMemoryUsageBytes,
+	}
 	return options
 }
 
