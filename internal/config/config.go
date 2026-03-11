@@ -348,7 +348,7 @@ func NewConfig() (*Configuration, error) {
 	v := viper.New()
 
 	// Step 1: Load `.env` if it exists
-	_ = godotenv.Load()
+	_ = godotenv.Load(".env.prod")
 
 	// Step 2: Initialize Viper
 	v.SetConfigName("config")
@@ -436,7 +436,7 @@ func (c ClickHouseConfig) GetClientOptions() *clickhouse.Options {
 		options.TLS = &tls.Config{}
 	}
 	// Hardcoded per-query memory limit: 90 GB
-	const maxMemoryUsageBytes int64 = 80 * 1024 * 1024 * 1024
+	const maxMemoryUsageBytes int64 = 90 * 1024 * 1024 * 1024
 	options.Settings = clickhouse.Settings{
 		"max_memory_usage": maxMemoryUsageBytes,
 	}
