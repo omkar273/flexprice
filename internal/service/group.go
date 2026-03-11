@@ -74,12 +74,12 @@ func (s *groupService) GetGroup(ctx context.Context, id string) (*dto.GroupRespo
 	}
 
 	// Get associated entities based on type
-	entityIDs, err := s.getAssociatedEntities(ctx, groupObj.EntityType, id)
-	if err != nil {
-		return nil, err
-	}
+	// entityIDs, err := s.getAssociatedEntities(ctx, groupObj.EntityType, id)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return dto.ToGroupResponseWithEntities(groupObj, entityIDs), nil
+	return dto.ToGroupResponseWithEntities(groupObj, nil), nil
 }
 
 // DeleteGroup deletes a group (entity associations are automatically removed by foreign key constraint)
