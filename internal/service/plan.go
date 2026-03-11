@@ -912,24 +912,34 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		}))
 	}
 
-	// Inside tx: only the four DB writes
+	// Batch size for bulk creates (prices, entitlements, credit grants)
+	const createBatchSize = 100
+
+	// Inside tx: plan create then batched bulk creates
 	var entitlementsCreated []*domainEntitlement.Entitlement
 	var grantsCreated []*domainCreditGrant.CreditGrant
 	err = s.DB.WithTx(ctx, func(txCtx context.Context) error {
 		if err := s.PlanRepo.Create(txCtx, newPlan); err != nil {
 			return err
 		}
-		if err := s.PriceRepo.CreateBulk(txCtx, newPrices); err != nil {
-			return err
+		for _, batch := range lo.Chunk(newPrices, createBatchSize) {
+			if err := s.PriceRepo.CreateBulk(txCtx, batch); err != nil {
+				return err
+			}
 		}
-		var err error
-		entitlementsCreated, err = s.EntitlementRepo.CreateBulk(txCtx, newEntitlements)
-		if err != nil {
-			return err
+		for _, batch := range lo.Chunk(newEntitlements, createBatchSize) {
+			created, err := s.EntitlementRepo.CreateBulk(txCtx, batch)
+			if err != nil {
+				return err
+			}
+			entitlementsCreated = append(entitlementsCreated, created...)
 		}
-		grantsCreated, err = s.CreditGrantRepo.CreateBulk(txCtx, newGrants)
-		if err != nil {
-			return err
+		for _, batch := range lo.Chunk(newGrants, createBatchSize) {
+			created, err := s.CreditGrantRepo.CreateBulk(txCtx, batch)
+			if err != nil {
+				return err
+			}
+			grantsCreated = append(grantsCreated, created...)
 		}
 		return nil
 	})
