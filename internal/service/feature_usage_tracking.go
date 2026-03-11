@@ -2281,6 +2281,12 @@ func (s *featureUsageTrackingService) enrichWithMetadata(ctx context.Context, da
 		}
 		data.Groups[groupID] = grp
 	}
+	// Backfill Feature.Group so expand=feature returns group
+	for _, f := range data.Features {
+		if f.GroupID != "" {
+			f.Group = data.Groups[f.GroupID]
+		}
+	}
 
 	// Fetch meters
 	if len(meterIDs) > 0 {
