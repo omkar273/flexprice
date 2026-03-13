@@ -5,14 +5,15 @@ import (
 )
 
 func TestClickHouseConfig_GetClientOptions_MaxMemoryUsage(t *testing.T) {
-	// Hardcoded limit: 90 GB
-	const wantMaxMemoryUsageBytes = 90 * 1024 * 1024 * 1024
+	// Hardcoded limit: 50 GB
+	const wantMaxMemoryUsageBytes = 50 * 1024 * 1024 * 1024
 
 	c := ClickHouseConfig{
-		Address:  "127.0.0.1:9000",
-		Username: "u",
-		Password: "p",
-		Database: "d",
+		Address:        "127.0.0.1:9000",
+		Username:       "u",
+		Password:       "p",
+		Database:       "d",
+		MaxMemoryUsage: 50,
 	}
 	opts := c.GetClientOptions()
 	if opts.Settings == nil {
@@ -27,6 +28,6 @@ func TestClickHouseConfig_GetClientOptions_MaxMemoryUsage(t *testing.T) {
 		t.Fatalf("max_memory_usage value type: got %T, want int64", v)
 	}
 	if got != wantMaxMemoryUsageBytes {
-		t.Errorf("max_memory_usage: got %d, want %d (90 GB)", got, wantMaxMemoryUsageBytes)
+		t.Errorf("max_memory_usage: got %d, want %d (50 GB)", got, wantMaxMemoryUsageBytes)
 	}
 }
