@@ -259,12 +259,12 @@ func (s *planService) UpdatePlan(ctx context.Context, id string, req dto.UpdateP
 	}
 
 	// Get the existing plan
-	planResponse, err := s.GetPlan(ctx, id)
+	data, err := s.PlanRepo.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	plan := planResponse.Plan
+	plan := data
 
 	// Update plan fields if provided
 	if req.Name != nil {
@@ -297,7 +297,12 @@ func (s *planService) UpdatePlan(ctx context.Context, id string, req dto.UpdateP
 		return nil, err
 	}
 
-	return s.GetPlan(ctx, id)
+	data, err = s.PlanRepo.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.PlanResponse{Plan: data}, nil
 }
 
 func (s *planService) DeletePlan(ctx context.Context, id string) error {
