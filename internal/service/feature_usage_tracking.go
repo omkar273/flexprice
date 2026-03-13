@@ -2454,46 +2454,15 @@ type bucketedCostParams struct {
 	data         *AnalyticsData
 	aggType      types.AggregationType
 	bucketSize   types.WindowSize
-	hasGroupBy   bool // whether the meter uses group_by property (e.g. per KRN)
 }
 
 // calculateBucketedCost calculates cost for bucketed max meters
 func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context, priceService PriceService, item *events.DetailedUsageAnalytic, price *price.Price, meter *meter.Meter, data *AnalyticsData) {
-	hasGroupBy := meter.Aggregation.GroupBy != ""
-	params := &bucketedCostParams{
-		ctx:          ctx,
-		priceService: priceService,
-		item:         item,
-		price:        price,
-		data:         data,
-		aggType:      meter.Aggregation.Type,
-		bucketSize:   meter.Aggregation.BucketSize,
-		hasGroupBy:   hasGroupBy,
-	}
+	params := &bucketedCostParams{ctx, priceService, item, price, data, meter.Aggregation.Type, meter.Aggregation.BucketSize}
 	lineItem := data.SubscriptionLineItems[item.SubLineItemID]
 	hasCommitment := lineItem != nil && lineItem.HasCommitment()
 	isWindowed := hasCommitment && lineItem.CommitmentWindowed
 	hasTrueUp := isWindowed && lineItem.CommitmentTrueUpEnabled
-
-	// For grouped meters with tiered pricing and no commitment, fetch per-group usage
-	// and calculate cost independently per group (e.g. per KRN) to match billing behavior.
-	if hasGroupBy && price.BillingModel == types.BILLING_MODEL_TIERED && !hasCommitment {
-		if groupedResult, groupErr := s.fetchGroupedBucketedUsage(ctx, item, meter, data); groupErr == nil && groupedResult != nil && len(groupedResult.Results) > 0 {
-			item.TotalCost = priceService.CalculateCostFromUsageResults(ctx, price, groupedResult.Results)
-			item.Currency = price.Currency
-			// Use per-group tiered pricing for time-series points so point costs match TotalCost.
-			s.setPointCostsFromGroupedResults(ctx, priceService, price, params.item.Points, groupedResult.Results)
-			// Merge bucket-level points to request window level
-			params.item.Points = s.mergeBucketPointsByWindow(params.item.Points, params.aggType)
-			return
-		} else if groupErr != nil {
-			// Fall through to regular bucketed calculation if fetch fails
-			s.Logger.Warnw("failed to fetch grouped bucketed usage for analytics, falling back to flat calculation",
-				"error", groupErr,
-				"feature_id", item.FeatureID,
-				"meter_id", meter.ID)
-		}
-	}
 
 	var cost decimal.Decimal
 
@@ -2505,50 +2474,6 @@ func (s *featureUsageTrackingService) calculateBucketedCost(ctx context.Context,
 
 	item.TotalCost = cost
 	item.Currency = price.Currency
-}
-
-// fetchGroupedBucketedUsage fetches per-group bucketed usage results for a meter with group_by.
-// This enables per-group tiered pricing in analytics, matching the billing path behavior.
-func (s *featureUsageTrackingService) fetchGroupedBucketedUsage(
-	ctx context.Context,
-	item *events.DetailedUsageAnalytic,
-	m *meter.Meter,
-	data *AnalyticsData,
-) (*events.AggregationResult, error) {
-	if data.Params == nil {
-		return nil, fmt.Errorf("analytics params not available")
-	}
-
-	// Build the feature_usage bucketed query params with group_by.
-	// Preserve request property filters so bucketed cost uses the same scope as displayed usage.
-	usageParams := &events.UsageParams{
-		ExternalCustomerID: data.Params.ExternalCustomerID,
-		EventName:          m.EventName,
-		PropertyName:       m.Aggregation.Field,
-		AggregationType:    m.Aggregation.Type,
-		WindowSize:         m.Aggregation.BucketSize,
-		StartTime:          data.Params.StartTime,
-		EndTime:            data.Params.EndTime,
-		GroupByProperty:    m.Aggregation.GroupBy,
-		Filters:            data.Params.PropertyFilters,
-	}
-
-	// Set billing anchor from subscription if available
-	if item.SubscriptionID != "" {
-		if sub, ok := data.SubscriptionsMap[item.SubscriptionID]; ok {
-			usageParams.BillingAnchor = &sub.BillingAnchor
-		}
-	}
-
-	featureUsageParams := &events.FeatureUsageParams{
-		UsageParams:   usageParams,
-		FeatureID:     item.FeatureID,
-		PriceID:       item.PriceID,
-		MeterID:       item.MeterID,
-		SubLineItemID: item.SubLineItemID,
-	}
-
-	return s.featureUsageRepo.GetUsageForBucketedMeters(ctx, featureUsageParams)
 }
 
 // processPointsWithBuckets handles the case where we have time-series points to process.
@@ -2563,9 +2488,6 @@ func (s *featureUsageTrackingService) processPointsWithBuckets(
 	var cost decimal.Decimal
 	switch {
 	case !hasCommitment:
-		// Note: grouped+tiered without commitment is handled earlier in calculateBucketedCost
-		// via fetchGroupedBucketedUsage + CalculateCostFromUsageResults.
-		// This path only executes for non-grouped meters or non-tiered pricing.
 		cost = p.priceService.CalculateBucketedCost(p.ctx, p.price, bucketedValues)
 	case isWindowed:
 		cost = decimal.Zero // Will be summed from points after processing
@@ -2628,41 +2550,6 @@ func (s *featureUsageTrackingService) extractBucketValues(points []events.UsageA
 		values[i] = s.getCorrectUsageValueForPoint(pt, aggType)
 	}
 	return values
-}
-
-// setPointCostsFromGroupedResults sets each point's Cost using per-group tiered pricing from
-// grouped usage results, so time-series point costs match item.TotalCost (which is computed
-// from the same results via CalculateCostFromUsageResults).
-func (s *featureUsageTrackingService) setPointCostsFromGroupedResults(
-	ctx context.Context,
-	priceService PriceService,
-	price *price.Price,
-	points []events.UsageAnalyticPoint,
-	results []events.UsageResult,
-) {
-	if len(results) == 0 || len(points) == 0 {
-		return
-	}
-	// Group results by bucket/window (WindowSize = bucket start from repo).
-	byWindow := make(map[time.Time][]events.UsageResult)
-	for _, r := range results {
-		byWindow[r.WindowSize] = append(byWindow[r.WindowSize], r)
-	}
-	costByWindow := make(map[time.Time]decimal.Decimal)
-	for window, windowResults := range byWindow {
-		costByWindow[window] = priceService.CalculateCostFromUsageResults(ctx, price, windowResults)
-	}
-	for i := range points {
-		// Match point to bucket: bucket-level points use Timestamp as bucket start.
-		key := points[i].Timestamp
-		if key.IsZero() {
-			key = points[i].WindowStart
-		}
-		if c, ok := costByWindow[key]; ok {
-			points[i].Cost = c
-		}
-		// If not found (e.g. zero-usage bucket), Cost remains as-is (typically zero)
-	}
 }
 
 // calculatePointCosts calculates cost for each individual point.
