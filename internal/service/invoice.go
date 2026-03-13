@@ -1690,6 +1690,12 @@ func (s *invoiceService) GetPreviewInvoice(ctx context.Context, req dto.GetPrevi
 	s.Logger.Infow("prepared invoice request for preview",
 		"invoice_request", invReq)
 
+	if req.HideZeroLineItems {
+		invReq.LineItems = lo.Filter(invReq.LineItems, func(item dto.CreateInvoiceLineItemRequest, _ int) bool {
+			return !item.Amount.IsZero()
+		})
+	}
+
 	// Create a draft invoice object for preview; ToInvoice applies preview discounts and taxes
 	inv, err := invReq.ToInvoice(ctx)
 	if err != nil {
