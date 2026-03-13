@@ -2,6 +2,7 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -1614,10 +1615,10 @@ func (s *BillingServiceSuite) TestCalculateUsageChargesWithBucketedMaxAggregatio
 					BaseModel: types.GetDefaultBaseModel(ctx),
 				}
 			},
-			bucketValues:     []decimal.Decimal{decimal.NewFromInt(9), decimal.NewFromInt(15)}, // Bucket 1: max(2,5,6,9)=9, Bucket 2: max(10,15)=15
-			expectedAmount:   decimal.NewFromFloat(1.65),                                       // Bucket 1: 9*0.10=$0.90, Bucket 2: 10*0.10+5*0.05=$1.25, Total=$1.65
+			bucketValues:     []decimal.Decimal{decimal.NewFromInt(9), decimal.NewFromInt(15)}, // Bucket 1: max=9, Bucket 2: max=15
+			expectedAmount:   decimal.NewFromFloat(2.15),                                       // Slab: Bucket 1: 9*0.10=$0.90, Bucket 2: 10*0.10+5*0.05=$1.25, Total=$2.15
 			expectedQuantity: decimal.NewFromInt(24),                                           // 9 + 15 = 24
-			description:      "Tiered slab: Bucket1[2,5,6,9]→max=9→9*$0.10=$0.90, Bucket2[10,15]→max=15→10*$0.10+5*$0.05=$1.25, Total=$1.65",
+			description:      "Tiered slab: Bucket1→max=9→9*$0.10=$0.90, Bucket2→max=15→10*$0.10+5*$0.05=$1.25, Total=$2.15",
 		},
 		{
 			name:         "bucketed_max_tiered_volume",
@@ -1703,6 +1704,23 @@ func (s *BillingServiceSuite) TestCalculateUsageChargesWithBucketedMaxAggregatio
 			// Update subscription with new line item - save to repository
 			s.testData.subscription.LineItems = append(s.testData.subscription.LineItems, lineItem)
 			s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, s.testData.subscription))
+
+			// Insert events into the event store so GetUsageByMeter returns bucketed results.
+			// Each bucket value gets events in a separate minute bucket.
+			baseTime := s.testData.subscription.CurrentPeriodStart.Add(time.Hour)
+			for i, bucketMax := range tt.bucketValues {
+				s.NoError(s.GetStores().EventRepo.InsertEvent(ctx, &events.Event{
+					ID:                 fmt.Sprintf("evt_bucketed_%s_%d", tt.name, i),
+					TenantID:           types.GetTenantID(ctx),
+					EnvironmentID:      types.GetEnvironmentID(ctx),
+					EventName:          "bucketed_event",
+					ExternalCustomerID: s.testData.customer.ExternalID,
+					Timestamp:          baseTime.Add(time.Duration(i) * time.Minute),
+					Properties: map[string]interface{}{
+						"value": bucketMax.InexactFloat64(),
+					},
+				}))
+			}
 
 			// Create a copy of the subscription with the updated line items for CalculateUsageCharges
 			subscriptionWithLineItems := *s.testData.subscription

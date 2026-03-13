@@ -95,6 +95,44 @@ func NewBillingService(params ServiceParams) BillingService {
 	}
 }
 
+// bucketedMeterCost holds the result of calculating cost for a bucketed meter
+type bucketedMeterCost struct {
+	Amount   decimal.Decimal
+	Quantity decimal.Decimal
+}
+
+// calculateBucketedMeterCost calculates cost for a bucketed meter using usage results.
+// For meters with group_by and tiered pricing, each group's usage is priced independently.
+func calculateBucketedMeterCost(
+	ctx context.Context,
+	priceService PriceService,
+	priceObj *price.Price,
+	usageResult *events.AggregationResult,
+	hasGroupBy bool,
+) bucketedMeterCost {
+	usePerGroupPricing := hasGroupBy && priceObj.BillingModel == types.BILLING_MODEL_TIERED
+	if usePerGroupPricing {
+		return bucketedMeterCost{
+			Amount:   priceService.CalculateCostFromUsageResults(ctx, priceObj, usageResult.Results),
+			Quantity: usageResult.Value,
+		}
+	}
+	bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
+	for i, r := range usageResult.Results {
+		bucketedValues[i] = r.Value
+	}
+	totalQuantity := usageResult.Value
+	if totalQuantity.IsZero() {
+		for _, v := range bucketedValues {
+			totalQuantity = totalQuantity.Add(v)
+		}
+	}
+	return bucketedMeterCost{
+		Amount:   priceService.CalculateBucketedCost(ctx, priceObj, bucketedValues),
+		Quantity: totalQuantity,
+	}
+}
+
 // FixedLineItemInclusion is the result of Algorithm A/B for a fixed line item.
 type FixedLineItemInclusion string
 
@@ -351,13 +389,74 @@ func (s *billingService) CalculateUsageCharges(
 		// Process each matching charge individually (normal and overage charges)
 		for _, matchingCharge := range matchingCharges {
 			quantityForCalculation := decimal.NewFromFloat(matchingCharge.Quantity)
-			matchingEntitlement, ok := entitlementsByMeterID[item.MeterID]
+			matchingEntitlement, entitlementOk := entitlementsByMeterID[item.MeterID]
 
-			// Only apply entitlement adjustments if:
+			// Get meter from pre-fetched map for bucketed meter checks
+			meter, meterOk := meterMap[item.MeterID]
+			if !meterOk {
+				return nil, decimal.Zero, ierr.NewError("meter not found").
+					WithHint(fmt.Sprintf("Meter with ID %s not found", item.MeterID)).
+					WithReportableDetails(map[string]interface{}{
+						"meter_id": item.MeterID,
+					}).
+					Mark(ierr.ErrNotFound)
+			}
+
+			// Handle bucketed meters (max or sum) - calculate cost using bucket values.
+			// Per-group tiered pricing only applies to max meters with group_by;
+			// sum meters don't use per-group pricing (consistent with CalculateFeatureUsageCharges).
+			if (meter.IsBucketedMaxMeter() || meter.IsBucketedSumMeter()) && matchingCharge.Price != nil {
+				hasGroupBy := meter.Aggregation.GroupBy != "" && !meter.IsBucketedSumMeter()
+				usageRequest := &dto.GetUsageByMeterRequest{
+					MeterID:            item.MeterID,
+					PriceID:            item.PriceID,
+					ExternalCustomerID: customer.ExternalID,
+					StartTime:          item.GetPeriodStart(periodStart),
+					EndTime:            item.GetPeriodEnd(periodEnd),
+					WindowSize:         meter.Aggregation.BucketSize,
+					BillingAnchor:      &sub.BillingAnchor,
+				}
+				usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
+				if err != nil {
+					return nil, decimal.Zero, err
+				}
+
+				cost := calculateBucketedMeterCost(ctx, priceService, matchingCharge.Price, usageResult, hasGroupBy)
+				matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(cost.Amount, matchingCharge.Price.Currency)
+				matchingCharge.Quantity = cost.Quantity.InexactFloat64()
+				quantityForCalculation = cost.Quantity
+			}
+
+			// Apply entitlement adjustments for bucketed meters.
+			// Bucketed meters price each bucket independently, so entitlements apply at the
+			// aggregate level (total quantity = sum of bucket maxes).
+			// For unlimited entitlements → zero cost. For usage-limited entitlements →
+			// reduce total quantity and recalculate with standard pricing.
+			if !matchingCharge.IsOverage && entitlementOk && matchingEntitlement.IsEnabled &&
+				(meter.IsBucketedMaxMeter() || meter.IsBucketedSumMeter()) {
+				if matchingEntitlement.UsageLimit != nil {
+					usageAllowed := decimal.NewFromFloat(float64(*matchingEntitlement.UsageLimit))
+					adjustedQuantity := decimal.Max(quantityForCalculation.Sub(usageAllowed), decimal.Zero)
+					if !adjustedQuantity.Equal(quantityForCalculation) {
+						quantityForCalculation = adjustedQuantity
+						if matchingCharge.Price != nil {
+							adjustedAmount := priceService.CalculateCost(ctx, matchingCharge.Price, quantityForCalculation)
+							matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(adjustedAmount, matchingCharge.Price.Currency)
+						}
+					}
+				} else {
+					// Unlimited entitlement → zero cost
+					quantityForCalculation = decimal.Zero
+					matchingCharge.Amount = 0
+				}
+			}
+
+			// Apply entitlement adjustments for non-bucketed meters:
 			// 1. This is not an overage charge
 			// 2. There is a matching entitlement
 			// 3. The entitlement is enabled
-			if !matchingCharge.IsOverage && ok && matchingEntitlement.IsEnabled {
+			// 4. This is not a bucketed meter (handled above)
+			if !matchingCharge.IsOverage && entitlementOk && matchingEntitlement.IsEnabled && !meter.IsBucketedMaxMeter() && !meter.IsBucketedSumMeter() {
 				if matchingEntitlement.UsageLimit != nil {
 
 					// consider the usage reset period
@@ -497,96 +596,11 @@ func (s *billingService) CalculateUsageCharges(
 						quantityForCalculation = decimal.Max(adjustedQuantity, decimal.Zero)
 					}
 
-					// Recalculate the amount based on the adjusted quantity
+					// Recalculate the amount based on the adjusted quantity (only for non-bucketed meters)
 					if matchingCharge.Price != nil {
-						// Get meter from pre-fetched map
-						meter, ok := meterMap[item.MeterID]
-						if !ok {
-							return nil, decimal.Zero, ierr.NewError("meter not found").
-								WithHint(fmt.Sprintf("Meter with ID %s not found", item.MeterID)).
-								WithReportableDetails(map[string]interface{}{
-									"meter_id": item.MeterID,
-								}).
-								Mark(ierr.ErrNotFound)
-						}
-
-						// For bucketed max, we need to process each bucket's max value
-						if meter.IsBucketedMaxMeter() {
-							// Get usage with bucketed values
-							usageRequest := &dto.GetUsageByMeterRequest{
-								MeterID:            item.MeterID,
-								PriceID:            item.PriceID,
-								ExternalCustomerID: customer.ExternalID,
-								StartTime:          item.GetPeriodStart(periodStart),
-								EndTime:            item.GetPeriodEnd(periodEnd),
-								WindowSize:         types.WindowSizeMonth, // Set monthly window size for custom billing periods
-								BillingAnchor:      &sub.BillingAnchor,
-							}
-
-							// Get usage data with buckets
-							usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
-							if err != nil {
-								return nil, decimal.Zero, err
-							}
-
-							// Extract bucket values
-							bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-							for i, result := range usageResult.Results {
-								bucketedValues[i] = result.Value
-							}
-
-							// Calculate cost using bucketed values
-							adjustedAmount := priceService.CalculateBucketedCost(ctx, matchingCharge.Price, bucketedValues)
-							matchingCharge.Amount = adjustedAmount.InexactFloat64()
-
-							// Update quantity to reflect the sum of all bucket maxes
-							totalBucketQuantity := decimal.Zero
-							for _, bucketValue := range bucketedValues {
-								totalBucketQuantity = totalBucketQuantity.Add(bucketValue)
-							}
-							matchingCharge.Quantity = totalBucketQuantity.InexactFloat64()
-							quantityForCalculation = totalBucketQuantity
-						} else if meter.IsBucketedSumMeter() {
-							// For sum with bucket, we need to process each bucket's sum value
-							// Get usage with bucketed values
-							usageRequest := &dto.GetUsageByMeterRequest{
-								MeterID:            item.MeterID,
-								PriceID:            item.PriceID,
-								ExternalCustomerID: customer.ExternalID,
-								StartTime:          item.GetPeriodStart(periodStart),
-								EndTime:            item.GetPeriodEnd(periodEnd),
-								WindowSize:         meter.Aggregation.BucketSize, // Use the meter's bucket size
-								BillingAnchor:      &sub.BillingAnchor,
-							}
-
-							// Get usage data with buckets
-							usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
-							if err != nil {
-								return nil, decimal.Zero, err
-							}
-
-							// Extract bucket values (each bucket contains the sum for that window)
-							bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-							for i, result := range usageResult.Results {
-								bucketedValues[i] = result.Value
-							}
-
-							// Calculate cost using bucketed values (each bucket is priced independently)
-							adjustedAmount := priceService.CalculateBucketedCost(ctx, matchingCharge.Price, bucketedValues)
-							matchingCharge.Amount = adjustedAmount.InexactFloat64()
-
-							// Update quantity to reflect the sum of all bucket sums
-							totalBucketQuantity := decimal.Zero
-							for _, bucketValue := range bucketedValues {
-								totalBucketQuantity = totalBucketQuantity.Add(bucketValue)
-							}
-							matchingCharge.Quantity = totalBucketQuantity.InexactFloat64()
-							quantityForCalculation = totalBucketQuantity
-						} else {
-							// For regular pricing, use standard cost calculation
-							adjustedAmount := priceService.CalculateCost(ctx, matchingCharge.Price, quantityForCalculation)
-							matchingCharge.Amount = adjustedAmount.InexactFloat64()
-						}
+						// For regular pricing, use standard cost calculation
+						adjustedAmount := priceService.CalculateCost(ctx, matchingCharge.Price, quantityForCalculation)
+						matchingCharge.Amount = adjustedAmount.InexactFloat64()
 					}
 				} else {
 					// unlimited usage allowed, so we set the usage quantity for calculation to 0
@@ -653,6 +667,7 @@ func (s *billingService) CalculateUsageCharges(
 							item.GetPeriodEnd(periodEnd),
 							meter.Aggregation.BucketSize,
 							&sub.BillingAnchor,
+							meter.Aggregation.Type,
 						)
 
 						// Apply window-based commitment
@@ -704,7 +719,7 @@ func (s *billingService) CalculateUsageCharges(
 			}
 
 			// Add usage reset period metadata if entitlement has daily, monthly, or never reset
-			if !matchingCharge.IsOverage && ok && matchingEntitlement.IsEnabled {
+			if !matchingCharge.IsOverage && entitlementOk && matchingEntitlement.IsEnabled {
 				switch matchingEntitlement.UsageResetPeriod {
 				case types.ENTITLEMENT_USAGE_RESET_PERIOD_DAILY:
 					metadata["usage_reset_period"] = "daily"
@@ -884,34 +899,62 @@ func (s *billingService) calculateRemainingCommitment(
 	return decimal.Max(remainingCommitment, decimal.Zero)
 }
 
+// aggregateUsageResultsByWindow reduces multiple results per window (e.g. from group_by)
+// into one value per window using the meter aggregation type (SUM or MAX).
+func aggregateUsageResultsByWindow(results []events.UsageResult, aggType types.AggregationType) map[time.Time]decimal.Decimal {
+	out := make(map[time.Time]decimal.Decimal)
+	for _, r := range results {
+		existing, ok := out[r.WindowSize]
+		if !ok {
+			out[r.WindowSize] = r.Value
+			continue
+		}
+		switch aggType {
+		case types.AggregationMax:
+			if r.Value.GreaterThan(existing) {
+				out[r.WindowSize] = r.Value
+			}
+		default:
+			// SUM and others: sum values per window
+			out[r.WindowSize] = existing.Add(r.Value)
+		}
+	}
+	return out
+}
+
 // fillBucketedValuesForWindowedCommitment returns one value per expected bucket in the period.
-// When CommitmentTrueUpEnabled is true, fills missing buckets (no usage) with zero so that
-// windowed commitment true-up is applied to every window. Otherwise returns only the
-// buckets returned by the usage API (current behavior).
+// When multiple results exist per bucket (e.g. from group_by), they are aggregated into one
+// value per window using aggType (SUM or MAX). When CommitmentTrueUpEnabled is true, fills
+// missing buckets (no usage) with zero so that windowed commitment true-up is applied to
+// every window. Otherwise returns one value per unique window in sorted order.
 func (s *billingService) fillBucketedValuesForWindowedCommitment(
 	item *subscription.SubscriptionLineItem,
 	usageResult *events.AggregationResult,
 	periodStart, periodEnd time.Time,
 	bucketSize types.WindowSize,
 	billingAnchor *time.Time,
+	aggType types.AggregationType,
 ) []decimal.Decimal {
 	if usageResult == nil {
 		return nil
 	}
+	usageByWindow := aggregateUsageResultsByWindow(usageResult.Results, aggType)
 	if !item.CommitmentTrueUpEnabled {
-		bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-		for i, result := range usageResult.Results {
-			bucketedValues[i] = result.Value
+		// Return one value per unique window in sorted order.
+		keys := make([]time.Time, 0, len(usageByWindow))
+		for t := range usageByWindow {
+			keys = append(keys, t)
+		}
+		sort.Slice(keys, func(i, j int) bool { return keys[i].Before(keys[j]) })
+		bucketedValues := make([]decimal.Decimal, len(keys))
+		for i, t := range keys {
+			bucketedValues[i] = usageByWindow[t]
 		}
 		return bucketedValues
 	}
 	expectedStarts := generateBucketStarts(periodStart, periodEnd, bucketSize, billingAnchor)
 	if len(expectedStarts) == 0 {
 		return nil
-	}
-	usageByWindow := make(map[time.Time]decimal.Decimal)
-	for _, r := range usageResult.Results {
-		usageByWindow[r.WindowSize] = r.Value
 	}
 	bucketedValues := make([]decimal.Decimal, 0, len(expectedStarts))
 	for _, t := range expectedStarts {
@@ -1077,10 +1120,14 @@ func (s *billingService) CalculateFeatureUsageCharges(
 			// (price, meter, customer, time range, window size), so we reuse the result.
 			var cachedBucketedUsageResult *events.AggregationResult
 
-			// Handle bucketed max meters first - this should always be checked regardless of entitlements
-			// But skip overage charges as they already have the correct amount with overage factor applied
-			if meter.IsBucketedMaxMeter() && matchingCharge.Price != nil {
-				// Get usage with bucketed values
+			// Handle bucketed meters (max or sum) - uses optimized feature_usage table
+			if (meter.IsBucketedMaxMeter() || meter.IsBucketedSumMeter()) && matchingCharge.Price != nil {
+				aggType := types.AggregationMax
+				groupBy := meter.Aggregation.GroupBy
+				if meter.IsBucketedSumMeter() {
+					aggType = types.AggregationSum
+					groupBy = "" // sum meters don't use per-group pricing
+				}
 				usageRequest := &events.FeatureUsageParams{
 					PriceID:       item.PriceID,
 					MeterID:       item.MeterID,
@@ -1088,91 +1135,51 @@ func (s *billingService) CalculateFeatureUsageCharges(
 					SubLineItemID: item.ID,
 					UsageParams: &events.UsageParams{
 						ExternalCustomerID: customer.ExternalID,
-						AggregationType:    types.AggregationMax,
+						AggregationType:    aggType,
 						StartTime:          item.GetPeriodStart(periodStart),
 						EndTime:            item.GetPeriodEnd(periodEnd),
-						WindowSize:         meter.Aggregation.BucketSize, // Set monthly window size for custom billing periods
+						WindowSize:         meter.Aggregation.BucketSize,
 						BillingAnchor:      &sub.BillingAnchor,
-						GroupByProperty:    meter.Aggregation.GroupBy,
+						GroupByProperty:    groupBy,
 					},
 				}
-
-				// Get usage data with buckets
 				usageResult, err := s.FeatureUsageRepo.GetUsageForBucketedMeters(ctx, usageRequest)
 				if err != nil {
 					return nil, decimal.Zero, err
 				}
 				cachedBucketedUsageResult = usageResult
 
-				// Extract bucket values
-				bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-				for i, result := range usageResult.Results {
-					bucketedValues[i] = result.Value
-				}
-
-				// Calculate cost using bucketed values
-				adjustedAmount := priceService.CalculateBucketedCost(ctx, matchingCharge.Price, bucketedValues)
-				matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(adjustedAmount, matchingCharge.Price.Currency)
-
-				// Update quantity to reflect the sum of all bucket maxes
-				totalBucketQuantity := decimal.Zero
-				for _, bucketValue := range bucketedValues {
-					totalBucketQuantity = totalBucketQuantity.Add(bucketValue)
-				}
-				matchingCharge.Quantity = totalBucketQuantity.InexactFloat64()
-				quantityForCalculation = totalBucketQuantity
-			} else if meter.IsBucketedSumMeter() && matchingCharge.Price != nil {
-				// Handle sum with bucket meters - uses optimized feature_usage table
-				// Get usage with bucketed values
-				usageRequest := &events.FeatureUsageParams{
-					PriceID:       item.PriceID,
-					MeterID:       item.MeterID,
-					Source:        querySource,
-					SubLineItemID: item.ID,
-					UsageParams: &events.UsageParams{
-						ExternalCustomerID: customer.ExternalID,
-						AggregationType:    types.AggregationSum,
-						StartTime:          item.GetPeriodStart(periodStart),
-						EndTime:            item.GetPeriodEnd(periodEnd),
-						WindowSize:         meter.Aggregation.BucketSize, // Use the meter's bucket size
-						BillingAnchor:      &sub.BillingAnchor,
-						GroupByProperty:    meter.Aggregation.GroupBy,
-					},
-				}
-
-				// Get usage data with buckets from feature_usage table (optimized, pre-aggregated)
-				usageResult, err := s.FeatureUsageRepo.GetUsageForBucketedMeters(ctx, usageRequest)
-				if err != nil {
-					return nil, decimal.Zero, err
-				}
-				cachedBucketedUsageResult = usageResult
-
-				// Extract bucket values (each bucket contains the sum for that window)
-				bucketedValues := make([]decimal.Decimal, len(usageResult.Results))
-				for i, result := range usageResult.Results {
-					bucketedValues[i] = result.Value
-				}
-
-				// Calculate cost using bucketed values (each bucket is priced independently)
-				adjustedAmount := priceService.CalculateBucketedCost(ctx, matchingCharge.Price, bucketedValues)
-				matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(adjustedAmount, matchingCharge.Price.Currency)
-
-				// Update quantity to reflect the sum of all bucket sums
-				totalBucketQuantity := decimal.Zero
-				for _, bucketValue := range bucketedValues {
-					totalBucketQuantity = totalBucketQuantity.Add(bucketValue)
-				}
-				matchingCharge.Quantity = totalBucketQuantity.InexactFloat64()
-				quantityForCalculation = totalBucketQuantity
+				cost := calculateBucketedMeterCost(ctx, priceService, matchingCharge.Price, usageResult, groupBy != "")
+				matchingCharge.Amount = priceDomain.FormatAmountToFloat64WithPrecision(cost.Amount, matchingCharge.Price.Currency)
+				matchingCharge.Quantity = cost.Quantity.InexactFloat64()
+				quantityForCalculation = cost.Quantity
 			}
 
-			// Only apply entitlement adjustments if:
+			// Apply entitlement adjustments for bucketed meters (same logic as CalculateUsageCharges).
+			if !matchingCharge.IsOverage && entitlementOk && matchingEntitlement.IsEnabled &&
+				(meter.IsBucketedMaxMeter() || meter.IsBucketedSumMeter()) {
+				if matchingEntitlement.UsageLimit != nil {
+					usageAllowed := decimal.NewFromFloat(float64(*matchingEntitlement.UsageLimit))
+					adjustedQuantity := decimal.Max(quantityForCalculation.Sub(usageAllowed), decimal.Zero)
+					if !adjustedQuantity.Equal(quantityForCalculation) {
+						quantityForCalculation = adjustedQuantity
+						if matchingCharge.Price != nil {
+							adjustedAmount := priceService.CalculateCost(ctx, matchingCharge.Price, quantityForCalculation)
+							matchingCharge.Amount = price.FormatAmountToFloat64WithPrecision(adjustedAmount, matchingCharge.Price.Currency)
+						}
+					}
+				} else {
+					quantityForCalculation = decimal.Zero
+					matchingCharge.Amount = 0
+				}
+			}
+
+			// Apply entitlement adjustments for non-bucketed meters:
 			// 1. This is not an overage charge
 			// 2. There is a matching entitlement
 			// 3. The entitlement is enabled
-			// 4. This is not a bucketed max meter (already handled above)
-			// 5. This is not a sum with bucket meter (already handled above)
-			if !matchingCharge.IsOverage && entitlementOk && matchingEntitlement.IsEnabled {
+			// 4. This is not a bucketed meter (handled above)
+			if !matchingCharge.IsOverage && entitlementOk && matchingEntitlement.IsEnabled && !meter.IsBucketedMaxMeter() && !meter.IsBucketedSumMeter() {
 				if matchingEntitlement.UsageLimit != nil {
 
 					// consider the usage reset period
@@ -1446,6 +1453,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 							item.GetPeriodEnd(periodEnd),
 							meter.Aggregation.BucketSize,
 							&sub.BillingAnchor,
+							meter.Aggregation.Type,
 						)
 
 						// Apply window-based commitment
