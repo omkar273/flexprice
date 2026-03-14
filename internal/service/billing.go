@@ -1062,13 +1062,13 @@ func (s *billingService) CalculateFeatureUsageCharges(
 
 	// baseChargesForCumulative collects base amounts when using cumulative commitment path
 	type baseChargeInfo struct {
-		item                  *subscription.SubscriptionLineItem
-		matchingCharge        *dto.SubscriptionUsageByMetersResponse
-		baseAmount            decimal.Decimal
+		item                   *subscription.SubscriptionLineItem
+		matchingCharge         *dto.SubscriptionUsageByMetersResponse
+		baseAmount             decimal.Decimal
 		quantityForCalculation decimal.Decimal
-		priceUnitAmount       decimal.Decimal
-		displayName           *string
-		metadata              types.Metadata
+		priceUnitAmount        decimal.Decimal
+		displayName            *string
+		metadata               types.Metadata
 	}
 	baseChargesForCumulative := make([]baseChargeInfo, 0)
 
@@ -1680,8 +1680,8 @@ func (s *billingService) CalculateFeatureUsageCharges(
 				PeriodEnd:       &periodEnd,
 				PriceID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE)),
 				Metadata: types.Metadata{
-					"is_overage":      "true",
-					"overage_factor":  overageFactor.String(),
+					"is_overage":     "true",
+					"overage_factor": overageFactor.String(),
 					"description":    "Overage charge (cumulative commitment)",
 				},
 			})
@@ -1711,9 +1711,9 @@ func (s *billingService) CalculateFeatureUsageCharges(
 				PriceID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE)),
 				Metadata: types.Metadata{
 					"is_commitment_trueup": "true",
-					"description":         "Remaining commitment amount for commitment period",
-					"commitment_amount":   commitmentAmount.String(),
-					"commitment_utilized": result.CommitmentUtilized.String(),
+					"description":          "Remaining commitment amount for commitment period",
+					"commitment_amount":    commitmentAmount.String(),
+					"commitment_utilized":  result.CommitmentUtilized.String(),
 				},
 			})
 			totalUsageCost = totalUsageCost.Add(roundedTrueUp)
@@ -2497,7 +2497,11 @@ func (s *billingService) applyProrationToLineItem(
 	prorationService := NewProrationService(s.ServiceParams)
 	// Check if proration should be applied
 	if sub.ProrationBehavior == types.ProrationBehaviorNone {
-		// No proration needed
+		return originalAmount, nil
+	}
+
+	// Mixed billing periods and proration are mutually exclusive.
+	if sub.HasMixedBillingPeriods() {
 		return originalAmount, nil
 	}
 

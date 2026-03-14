@@ -276,6 +276,75 @@ func BillingPeriodGreaterThan(a, b BillingPeriod) bool {
 	return BillingPeriodOrder(a) > BillingPeriodOrder(b)
 }
 
+// BillingPeriodToMonths converts a BillingPeriod to its month-equivalent.
+// Sub-month periods (DAILY, WEEKLY) return 0 because they cannot participate
+// in month-based alignment checks.
+func BillingPeriodToMonths(b BillingPeriod) int {
+	switch b {
+	case BILLING_PERIOD_MONTHLY:
+		return 1
+	case BILLING_PERIOD_QUARTER:
+		return 3
+	case BILLING_PERIOD_HALF_YEAR:
+		return 6
+	case BILLING_PERIOD_ANNUAL:
+		return 12
+	default:
+		return 0
+	}
+}
+
+// IsBillingPeriodMultiple returns true when longer is an exact multiple of shorter
+// (e.g. QUARTERLY is 3× MONTHLY). Both periods must be month-based; sub-month
+// periods always return false when compared with month-based periods.
+func IsBillingPeriodMultiple(longer, shorter BillingPeriod) bool {
+	lm := BillingPeriodToMonths(longer)
+	sm := BillingPeriodToMonths(shorter)
+	if lm == 0 || sm == 0 {
+		return longer == shorter
+	}
+	return lm%sm == 0
+}
+
+// MinBillingPeriod returns the shortest BillingPeriod in the slice.
+// Returns "" for an empty slice.
+func MinBillingPeriod(periods []BillingPeriod) BillingPeriod {
+	if len(periods) == 0 {
+		return ""
+	}
+	min := periods[0]
+	for _, p := range periods[1:] {
+		if BillingPeriodOrder(p) < BillingPeriodOrder(min) {
+			min = p
+		}
+	}
+	return min
+}
+
+// ValidateBillingPeriodAlignment ensures every period in the list is a valid
+// multiple of the smallest period. Returns nil when len(periods) <= 1.
+func ValidateBillingPeriodAlignment(periods []BillingPeriod) error {
+	if len(periods) <= 1 {
+		return nil
+	}
+	min := MinBillingPeriod(periods)
+	for _, p := range periods {
+		if p == min {
+			continue
+		}
+		if !IsBillingPeriodMultiple(p, min) {
+			return ierr.NewError("billing periods are not aligned").
+				WithHint("All billing periods must be multiples of the smallest billing period").
+				WithReportableDetails(map[string]interface{}{
+					"period":          p,
+					"smallest_period": min,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	}
+	return nil
+}
+
 func (b BillingModel) Validate() error {
 	allowed := []BillingModel{
 		BILLING_MODEL_FLAT_FEE,
