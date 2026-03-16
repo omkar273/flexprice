@@ -1471,6 +1471,96 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 		})
 	})
 
+	s.Run("TestCancelSubscriptionWithAddons", func() {
+		ctx := s.GetContext()
+		subService := s.service.(*subscriptionService)
+
+		// Create subscription to cancel
+		subWithAddon := &subscription.Subscription{
+			ID:                 "sub_cancel_with_addons",
+			CustomerID:         s.testData.customer.ID,
+			PlanID:             s.testData.plan.ID,
+			SubscriptionStatus: types.SubscriptionStatusActive,
+			StartDate:          s.testData.now.Add(-30 * 24 * time.Hour),
+			CurrentPeriodStart:  s.testData.now.Add(-24 * time.Hour),
+			CurrentPeriodEnd:    s.testData.now.Add(6 * 24 * time.Hour),
+			BillingPeriod:       types.BILLING_PERIOD_MONTHLY,
+			BillingPeriodCount:  1,
+			Currency:            "usd",
+			BaseModel:           types.GetDefaultBaseModel(ctx),
+			LineItems:           []*subscription.SubscriptionLineItem{},
+		}
+		s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, subWithAddon, subWithAddon.LineItems))
+
+		addonID := "addon_cancel_with_sub"
+		priceID := "price_addon_cancel_with_sub"
+		a := &addon.Addon{
+			ID:          addonID,
+			LookupKey:   addonID,
+			Name:        "Addon to cancel",
+			Description: "Addon cancelled with subscription",
+			Type:        types.AddonTypeOnetime,
+			BaseModel:   types.GetDefaultBaseModel(ctx),
+		}
+		s.NoError(subService.AddonRepo.Create(ctx, a))
+		p := &price.Price{
+			ID:                 priceID,
+			Amount:             decimal.Zero,
+			Currency:           "usd",
+			EntityType:         types.PRICE_ENTITY_TYPE_ADDON,
+			EntityID:           addonID,
+			Type:               types.PRICE_TYPE_USAGE,
+			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+			BillingPeriodCount: 1,
+			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
+			BillingCadence:     types.BILLING_CADENCE_RECURRING,
+			InvoiceCadence:     types.InvoiceCadenceAdvance,
+			MeterID:            s.testData.meters.apiCalls.ID,
+			BaseModel:          types.GetDefaultBaseModel(ctx),
+		}
+		s.NoError(s.GetStores().PriceRepo.Create(ctx, p))
+
+		now := time.Now().UTC()
+		_, err := s.service.AddAddonToSubscription(ctx, subWithAddon.ID, &dto.AddAddonToSubscriptionRequest{
+			AddonID:   addonID,
+			StartDate: &now,
+		})
+		s.NoError(err)
+
+		_, err = s.service.CancelSubscription(ctx, subWithAddon.ID, &dto.CancelSubscriptionRequest{
+			CancellationType:  types.CancellationTypeImmediate,
+			ProrationBehavior: types.ProrationBehaviorNone,
+			Reason:            "test_cancel_addons",
+		})
+		s.NoError(err)
+
+		// Verify addon associations are marked cancelled
+		aaFilter := types.NewNoLimitAddonAssociationFilter()
+		aaFilter.EntityIDs = []string{subWithAddon.ID}
+		aaFilter.EntityType = lo.ToPtr(types.AddonAssociationEntityTypeSubscription)
+		associations, err := s.GetStores().AddonAssociationRepo.List(ctx, aaFilter)
+		s.NoError(err)
+		s.NotEmpty(associations, "should have addon associations")
+		for _, aa := range associations {
+			s.Equal(types.AddonStatusCancelled, aa.AddonStatus, "addon association should be cancelled")
+			s.NotNil(aa.EndDate, "addon association should have end date")
+			s.NotEmpty(aa.CancellationReason, "addon association should have cancellation reason")
+			s.Contains(aa.CancellationReason, "Subscription cancelled", "cancellation reason should mention subscription cancelled")
+		}
+
+		// Verify addon line items are terminated (end_date set)
+		liFilter := types.NewNoLimitSubscriptionLineItemFilter()
+		liFilter.SubscriptionIDs = []string{subWithAddon.ID}
+		liFilter.EntityIDs = []string{addonID}
+		liFilter.EntityType = lo.ToPtr(types.SubscriptionLineItemEntityTypeAddon)
+		lineItems, err := s.GetStores().SubscriptionLineItemRepo.List(ctx, liFilter)
+		s.NoError(err)
+		s.NotEmpty(lineItems, "should have addon line items")
+		for _, li := range lineItems {
+			s.False(li.EndDate.IsZero(), "addon line item should be terminated (end_date set)")
+		}
+	})
+
 	s.Run("TestCancelAtPeriodEnd", func() {
 		// Create an active subscription for period end cancel test
 		periodEndSub := &subscription.Subscription{
