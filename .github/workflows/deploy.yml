@@ -15,7 +15,7 @@ on:
         description: "Dry run — validate config & print plan, skip register/deploy"
         type: boolean
         default: false
-b
+
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -189,7 +189,7 @@ jobs:
   deploy-api:
     name: Deploy API (${{ strategy.job-index }})
     needs: [build, resolve-config, migrate-db]
-    if: ${{ always() && needs.resolve-config.result == 'success' }}
+    if: ${{ needs.build.result == 'success' && needs.resolve-config.result == 'success' && needs.migrate-db.result == 'success' }}
     runs-on: self-hosted
     strategy:
       matrix:
@@ -217,7 +217,7 @@ jobs:
   deploy-consumer:
     name: Deploy Consumer (${{ strategy.job-index }})
     needs: [build, resolve-config, migrate-db]
-    if: ${{ always() && needs.resolve-config.result == 'success' }}
+    if: ${{ needs.build.result == 'success' && needs.resolve-config.result == 'success' && needs.migrate-db.result == 'success' }}
     runs-on: self-hosted
     strategy:
       matrix:
@@ -245,7 +245,7 @@ jobs:
   deploy-worker:
     name: Deploy Worker (${{ strategy.job-index }})
     needs: [build, resolve-config, migrate-db]
-    if: ${{ always() && needs.resolve-config.result == 'success' }}
+    if: ${{ needs.build.result == 'success' && needs.resolve-config.result == 'success' && needs.migrate-db.result == 'success' }}
     runs-on: self-hosted
     strategy:
       matrix:
