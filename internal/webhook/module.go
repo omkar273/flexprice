@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"github.com/flexprice/flexprice/internal/config"
+	kafkaProducerPkg "github.com/flexprice/flexprice/internal/kafka"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/pubsub"
 	"github.com/flexprice/flexprice/internal/pubsub/kafka"
@@ -19,22 +20,14 @@ import (
 var Module = fx.Options(
 	// Core dependencies
 	fx.Provide(
-		// PubSub for sending webhook events
 		providePubSub,
 	),
 
 	// Webhook components
 	fx.Provide(
-		// Publisher for sending webhook events
-		publisher.NewPublisher,
-
-		// Handler for processing webhook events
+		provideWebhookPublisher,
 		handler.NewHandler,
-
-		// Payload builder factory and services
 		providePayloadBuilderFactory,
-
-		// Main webhook service
 		NewWebhookService,
 	),
 )
@@ -74,16 +67,29 @@ func providePubSub(
 	logger *logger.Logger,
 ) pubsub.PubSub {
 	switch cfg.Webhook.PubSub {
-	case types.MemoryPubSub:
-		return memory.NewPubSub(cfg, logger)
 	case types.KafkaPubSub:
-		pubsub, err := kafka.NewPubSubFromConfig(cfg, logger, cfg.Webhook.ConsumerGroup)
+		pubSub, err := kafka.NewPubSubFromConfig(cfg, logger, cfg.Webhook.ConsumerGroup)
 		if err != nil {
 			logger.Fatalw("failed to create kafka pubsub for webhooks", "error", err)
 		}
-		return pubsub
+		return pubSub
+	case types.MemoryPubSub:
+		return memory.NewPubSub(cfg, logger)
 	default:
 		logger.Fatalw("unsupported webhook pubsub type", "type", cfg.Webhook.PubSub)
 	}
 	return nil
+}
+
+// provideWebhookPublisher returns a webhook publisher. When webhook.pubsub is kafka, uses the shared Kafka producer (publishing goes to Kafka); otherwise uses the in-memory PubSub.
+func provideWebhookPublisher(
+	cfg *config.Configuration,
+	logger *logger.Logger,
+	pubSub pubsub.PubSub,
+	producer *kafkaProducerPkg.Producer,
+) (publisher.WebhookPublisher, error) {
+	if cfg.Webhook.PubSub == types.KafkaPubSub {
+		return publisher.NewPublisherFromProducer(producer, cfg, logger)
+	}
+	return publisher.NewPublisher(pubSub, cfg, logger)
 }
