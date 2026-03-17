@@ -71,19 +71,19 @@ func (s *planService) GetPlan(ctx context.Context, id string) (*dto.PlanResponse
 		AllowExpired: true,
 	})
 	if err != nil {
-		s.Logger.Errorw("failed to fetch prices for plan", "plan_id", plan.ID, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to fetch prices for plan", "plan_id", plan.ID, "error", err)
 		return nil, err
 	}
 
 	entitlements, err := entitlementService.GetPlanEntitlements(ctx, plan.ID)
 	if err != nil {
-		s.Logger.Errorw("failed to fetch entitlements for plan", "plan_id", plan.ID, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to fetch entitlements for plan", "plan_id", plan.ID, "error", err)
 		return nil, err
 	}
 
 	creditGrants, err := NewCreditGrantService(s.ServiceParams).GetCreditGrantsByPlan(ctx, plan.ID)
 	if err != nil {
-		s.Logger.Errorw("failed to fetch credit grants for plan", "plan_id", plan.ID, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to fetch credit grants for plan", "plan_id", plan.ID, "error", err)
 		return nil, err
 	}
 
@@ -398,7 +398,7 @@ func (s *planService) SyncPlanPrices(ctx context.Context, planID string) (*dto.S
 
 	plan, err := s.PlanRepo.Get(ctx, planID)
 	if err != nil {
-		s.Logger.Errorw("failed to get plan for price synchronization", "plan_id", planID, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to get plan for price synchronization", "plan_id", planID, "error", err)
 		return nil, err
 	}
 
@@ -413,7 +413,7 @@ func (s *planService) SyncPlanPrices(ctx context.Context, planID string) (*dto.S
 		terminationIteration++
 		numTerminated, err := s.PlanPriceSyncRepo.TerminateExpiredPlanPricesLineItems(ctx, planPriceSyncParams)
 		if err != nil {
-			s.Logger.Errorw("failed to terminate expired plan price line items", "plan_id", planID, "error", err)
+			s.Logger.ErrorwCtx(ctx, "failed to terminate expired plan price line items", "plan_id", planID, "error", err)
 			return nil, err
 		}
 		lineItemsTerminated += numTerminated
@@ -438,13 +438,13 @@ func (s *planService) SyncPlanPrices(ctx context.Context, planID string) (*dto.S
 
 		missingPairs, err := s.PlanPriceSyncRepo.ListPlanLineItemsToCreate(ctx, queryParams)
 		if err != nil {
-			s.Logger.Errorw("failed to list plan line items to create", "plan_id", planID, "error", err)
+			s.Logger.ErrorwCtx(ctx, "failed to list plan line items to create", "plan_id", planID, "error", err)
 			return nil, err
 		}
 
 		nextSubID, err := s.PlanPriceSyncRepo.GetLastSubscriptionIDInBatch(ctx, queryParams)
 		if err != nil {
-			s.Logger.Errorw("failed to get last subscription ID in batch", "plan_id", planID, "error", err)
+			s.Logger.ErrorwCtx(ctx, "failed to get last subscription ID in batch", "plan_id", planID, "error", err)
 			return nil, err
 		}
 
@@ -474,7 +474,7 @@ func (s *planService) SyncPlanPrices(ctx context.Context, planID string) (*dto.S
 
 		prices, err := s.PriceRepo.List(ctx, priceFilter)
 		if err != nil {
-			s.Logger.Errorw("failed to fetch prices for line item creation", "plan_id", planID, "error", err)
+			s.Logger.ErrorwCtx(ctx, "failed to fetch prices for line item creation", "plan_id", planID, "error", err)
 			return nil, err
 		}
 		priceMap := lo.KeyBy(prices, func(p *domainPrice.Price) string { return p.ID })
@@ -483,7 +483,7 @@ func (s *planService) SyncPlanPrices(ctx context.Context, planID string) (*dto.S
 		subFilter.SubscriptionIDs = subscriptionIDs
 		subs, err := s.SubRepo.List(ctx, subFilter)
 		if err != nil {
-			s.Logger.Errorw("failed to fetch subscriptions for line item creation", "plan_id", planID, "error", err)
+			s.Logger.ErrorwCtx(ctx, "failed to fetch subscriptions for line item creation", "plan_id", planID, "error", err)
 			return nil, err
 		}
 		subMap := lo.KeyBy(subs, func(s *subscription.Subscription) string { return s.ID })
@@ -519,7 +519,7 @@ func (s *planService) SyncPlanPrices(ctx context.Context, planID string) (*dto.S
 
 				err = s.SubscriptionLineItemRepo.CreateBulk(ctx, batch)
 				if err != nil {
-					s.Logger.Errorw("failed to create plan line items in bulk batch",
+					s.Logger.ErrorwCtx(ctx, "failed to create plan line items in bulk batch",
 						"plan_id", planID,
 						"error", err,
 						"batch_start", i,
@@ -551,12 +551,12 @@ func (s *planService) SyncPlanPrices(ctx context.Context, planID string) (*dto.S
 				}
 				workflowRun, err := temporalSvc.ExecuteWorkflow(ctx, types.TemporalReprocessEventsForPlanWorkflow, workflowInput)
 				if err != nil {
-					s.Logger.Warnw("failed to start reprocess events for plan workflow",
+					s.Logger.WarnwCtx(ctx, "failed to start reprocess events for plan workflow",
 						"plan_id", planID,
 						"missing_pairs_count", len(missingPairs),
 						"error", err)
 				} else {
-					s.Logger.Debugw("reprocess events for plan workflow started",
+					s.Logger.DebugwCtx(ctx, "reprocess events for plan workflow started",
 						"plan_id", planID,
 						"missing_pairs_count", len(missingPairs),
 						"workflow_id", workflowRun.GetID(),
@@ -581,7 +581,7 @@ func (s *planService) SyncPlanPrices(ctx context.Context, planID string) (*dto.S
 		},
 	}
 	totalSyncDuration := time.Since(syncStartTime)
-	s.Logger.Infow("completed plan price synchronization",
+	s.Logger.InfowCtx(ctx, "completed plan price synchronization",
 		"plan_id", planID,
 		"line_items_found_for_creation", lineItemsFoundForCreation,
 		"line_items_created", lineItemsCreated,
@@ -614,7 +614,7 @@ func (s *planService) ReprocessEventsForMissingPairs(ctx context.Context, missin
 
 	prices, err := s.PriceRepo.List(ctx, priceFilter)
 	if err != nil {
-		s.Logger.Errorw("failed to fetch prices for reprocess events for plan", "price_ids", priceIDs, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to fetch prices for reprocess events for plan", "price_ids", priceIDs, "error", err)
 		return err
 	}
 	priceMap := lo.KeyBy(prices, func(p *domainPrice.Price) string { return p.ID })
@@ -650,7 +650,7 @@ func (s *planService) ReprocessEventsForMissingPairs(ctx context.Context, missin
 	customerFilter.CustomerIDs = allCustomerIDs
 	customers, err := s.CustomerRepo.List(ctx, customerFilter)
 	if err != nil {
-		s.Logger.Errorw("failed to list customers for reprocess events for plan", "customer_ids", allCustomerIDs, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to list customers for reprocess events for plan", "customer_ids", allCustomerIDs, "error", err)
 		return err
 	}
 	customerIDToExternalID := make(map[string]string, len(customers))
@@ -690,7 +690,7 @@ func (s *planService) ReprocessEventsForMissingPairs(ctx context.Context, missin
 
 		eventName, ok := meterIDToEventName[price.MeterID]
 		if !ok || eventName == "" {
-			s.Logger.Warnw("skipping reprocess events for price due to missing meter-event mapping",
+			s.Logger.WarnwCtx(ctx, "skipping reprocess events for price due to missing meter-event mapping",
 				"price_id", priceID,
 				"meter_id", price.MeterID)
 			continue
@@ -714,7 +714,7 @@ func (s *planService) ReprocessEventsForMissingPairs(ctx context.Context, missin
 				CountTotal:         false,
 			})
 			if getEventsErr != nil {
-				s.Logger.Warnw("failed to get events for plan reprocess pre-check",
+				s.Logger.WarnwCtx(ctx, "failed to get events for plan reprocess pre-check",
 					"price_id", priceID,
 					"external_customer_id", extID,
 					"event_name", eventName,
@@ -740,10 +740,10 @@ func (s *planService) ReprocessEventsForMissingPairs(ctx context.Context, missin
 			}
 			workflowRun, err := temporalSvc.ExecuteWorkflow(ctx, types.TemporalReprocessEventsWorkflow, workflowInput)
 			if err != nil {
-				s.Logger.Warnw("failed to start reprocess events workflow for plan customer",
+				s.Logger.WarnwCtx(ctx, "failed to start reprocess events workflow for plan customer",
 					"price_id", priceID, "external_customer_id", extID, "error", err)
 			} else {
-				s.Logger.Debugw("reprocess events workflow started for plan customer",
+				s.Logger.DebugwCtx(ctx, "reprocess events workflow started for plan customer",
 					"price_id", priceID, "external_customer_id", extID,
 					"workflow_id", workflowRun.GetID(), "run_id", workflowRun.GetRunID())
 			}
@@ -828,7 +828,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		WithEntityType(types.PRICE_ENTITY_TYPE_PLAN).
 		WithStatus(types.StatusPublished))
 	if err != nil {
-		s.Logger.Errorw("failed to fetch prices for plan clone", "plan_id", id, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to fetch prices for plan clone", "plan_id", id, "error", err)
 		return nil, err
 	}
 
@@ -837,7 +837,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		WithPlanIDs([]string{id}).
 		WithStatus(types.StatusPublished))
 	if err != nil {
-		s.Logger.Errorw("failed to fetch entitlements for plan clone", "plan_id", id, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to fetch entitlements for plan clone", "plan_id", id, "error", err)
 		return nil, err
 	}
 
@@ -847,7 +847,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		WithStatus(types.StatusPublished).
 		WithScope(types.CreditGrantScopePlan))
 	if err != nil {
-		s.Logger.Errorw("failed to fetch credit grants for plan clone", "plan_id", id, "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to fetch credit grants for plan clone", "plan_id", id, "error", err)
 		return nil, err
 	}
 
@@ -952,7 +952,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		return nil, err
 	}
 
-	s.Logger.Infow("plan cloned successfully",
+	s.Logger.InfowCtx(ctx, "plan cloned successfully",
 		"source_plan_id", id,
 		"new_plan_id", newPlan.ID,
 		"prices_cloned", len(newPrices),
