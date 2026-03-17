@@ -93,7 +93,7 @@ logging:
 
 webhook:
   enabled: true
-  topic: "staging_system_events"
+  topic: "system_events"
   # Use "kafka" for split deployment (API publishes, consumer process subscribes). Use "memory" for single-process/local.
   pubsub: "kafka"
   consumer_group: "system-events-consumer"
