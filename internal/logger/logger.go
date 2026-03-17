@@ -244,7 +244,11 @@ func (l *Logger) sendToSentryLogs(level sentry.LogLevel, msg string, keysAndValu
 			return
 		}
 	}
-	if sentry.CurrentHub().Client() == nil {
+	hub := sentry.GetHubFromContext(l.sentryCtx)
+	if hub == nil {
+		hub = sentry.CurrentHub()
+	}
+	if hub.Client() == nil {
 		return
 	}
 

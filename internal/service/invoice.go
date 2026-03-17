@@ -3566,11 +3566,11 @@ func (s *invoiceService) getAppliedTaxesForPDF(ctx context.Context, invoiceID st
 		return nil, err
 	}
 
-	s.Logger.Infow("DEBUG: Applied taxes response", "count", len(appliedTaxesResponse.Items))
+	s.Logger.Debugw("Applied taxes response", "count", len(appliedTaxesResponse.Items))
 	for i, item := range appliedTaxesResponse.Items {
-		s.Logger.Infow("DEBUG: Applied tax item", "index", i, "tax_rate_id", item.TaxRateID, "has_tax_rate", item.TaxRate != nil)
+		s.Logger.Debugw("Applied tax item", "index", i, "tax_rate_id", item.TaxRateID, "has_tax_rate", item.TaxRate != nil)
 		if item.TaxRate != nil {
-			s.Logger.Infow("DEBUG: Tax rate details", "name", item.TaxRate.Name, "code", item.TaxRate.Code)
+			s.Logger.Debugw("Tax rate details", "name", item.TaxRate.Name, "code", item.TaxRate.Code)
 		}
 	}
 
