@@ -316,6 +316,7 @@ func (s *settingsService) DeleteSettingByKey(ctx context.Context, key types.Sett
 // getSettingByKey fetches a setting and returns it as a DTO response.
 // If setting does not exist: returns default value.
 // If setting exists: returns default merged with fetched (fetched keys overwrite default).
+// Round-trips the merged map through ToStruct[T] so nested structure is validated and API reads are as strict as GetSetting.
 func getSettingByKey[T any](s *settingsService, ctx context.Context, key types.SettingKey) (*dto.SettingResponse, error) {
 	setting, err := s.fetchSetting(ctx, key)
 	if err != nil && !ent.IsNotFound(err) {
@@ -329,6 +330,13 @@ func getSettingByKey[T any](s *settingsService, ctx context.Context, key types.S
 	valueMap, err := resolvedValueMap[T](key, fetched)
 	if err != nil {
 		return nil, err
+	}
+
+	// Validate merged payload structurally (nested keys, types) so we fail on malformed persisted values.
+	if _, err := utils.ToStruct[T](valueMap); err != nil {
+		return nil, ierr.WithError(err).
+			WithHintf("Stored value for setting %s is invalid or has unexpected structure", key).
+			Mark(ierr.ErrValidation)
 	}
 
 	// Persisted setting: include ID, base model, key, value, and environment ID.
