@@ -8,6 +8,7 @@ import (
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/fluent/fluent-logger-golang/fluent"
+	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -17,6 +18,7 @@ type Logger struct {
 	*zap.SugaredLogger
 	fluentdLogger *fluent.Fluent
 	serviceName   string
+	sentryEnabled bool
 }
 
 // Global logger for convenience
@@ -75,6 +77,7 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		SugaredLogger: zapLogger.Sugar(),
 		fluentdLogger: fluentdLogger,
 		serviceName:   string(cfg.Deployment.Mode),
+		sentryEnabled: true, // TODO: Hardcoding for testing
 	}, nil
 }
 
@@ -166,12 +169,16 @@ func (l *Logger) Infof(template string, args ...interface{}) {
 
 func (l *Logger) Warnf(template string, args ...interface{}) {
 	l.SugaredLogger.Warnf(template, args...)
-	l.sendToFluentd("warning", l.sprintf(template, args...), nil)
+	msg := l.sprintf(template, args...)
+	l.sendToFluentd("warning", msg, nil)
+	l.captureToSentry(sentry.LevelWarning, msg)
 }
 
 func (l *Logger) Errorf(template string, args ...interface{}) {
 	l.SugaredLogger.Errorf(template, args...)
-	l.sendToFluentd("error", l.sprintf(template, args...), nil)
+	msg := l.sprintf(template, args...)
+	l.sendToFluentd("error", msg, nil)
+	l.captureToSentry(sentry.LevelError, msg)
 }
 
 func (l *Logger) Fatalf(template string, args ...interface{}) {
@@ -202,7 +209,48 @@ func (l *Logger) WithContext(ctx context.Context) *Logger {
 		),
 		fluentdLogger: l.fluentdLogger,
 		serviceName:   l.serviceName,
+		sentryEnabled: l.sentryEnabled,
 	}
+}
+
+// captureToSentry sends an event to Sentry if enabled.
+// It looks for an "error" key in keysAndValues and uses CaptureException;
+// otherwise it falls back to CaptureMessage.
+func (l *Logger) captureToSentry(level sentry.Level, msg string, keysAndValues ...interface{}) {
+	if !l.sentryEnabled {
+		return
+	}
+	hub := sentry.CurrentHub()
+	if hub.Client() == nil {
+		return
+	}
+
+	// Look for an error value in key-value pairs
+	for i := 1; i < len(keysAndValues); i += 2 {
+		if err, ok := keysAndValues[i].(error); ok {
+			hub.WithScope(func(scope *sentry.Scope) {
+				scope.SetLevel(level)
+				scope.SetExtra("message", msg)
+				for j := 0; j < len(keysAndValues)-1; j += 2 {
+					if key, ok := keysAndValues[j].(string); ok {
+						scope.SetExtra(key, keysAndValues[j+1])
+					}
+				}
+				hub.CaptureException(err)
+			})
+			return
+		}
+	}
+
+	hub.WithScope(func(scope *sentry.Scope) {
+		scope.SetLevel(level)
+		for i := 0; i < len(keysAndValues)-1; i += 2 {
+			if key, ok := keysAndValues[i].(string); ok {
+				scope.SetExtra(key, keysAndValues[i+1])
+			}
+		}
+		hub.CaptureMessage(msg)
+	})
 }
 
 // Structured logging methods that include context fields
@@ -219,11 +267,13 @@ func (l *Logger) Infow(msg string, keysAndValues ...interface{}) {
 func (l *Logger) Warnw(msg string, keysAndValues ...interface{}) {
 	l.SugaredLogger.Warnw(msg, keysAndValues...)
 	l.sendToFluentd("warning", msg, l.keysAndValuesToMap(keysAndValues...))
+	l.captureToSentry(sentry.LevelWarning, msg, keysAndValues...)
 }
 
 func (l *Logger) Errorw(msg string, keysAndValues ...interface{}) {
 	l.SugaredLogger.Errorw(msg, keysAndValues...)
 	l.sendToFluentd("error", msg, l.keysAndValuesToMap(keysAndValues...))
+	l.captureToSentry(sentry.LevelError, msg, keysAndValues...)
 }
 
 // keysAndValuesToMap converts variadic key-value pairs to a map

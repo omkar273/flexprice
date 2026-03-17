@@ -37,6 +37,8 @@ func RegisterHooks(lc fx.Lifecycle, svc *Service) {
 				Dsn:              svc.cfg.Sentry.DSN,
 				Environment:      svc.cfg.Sentry.Environment,
 				EnableTracing:    true,
+				EnableLogs:       true,
+				DisableMetrics:   true,
 				TracesSampleRate: svc.cfg.Sentry.SampleRate,
 				BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
 					return event
@@ -90,7 +92,6 @@ func (s *Service) CaptureException(err error) {
 
 // AddBreadcrumb adds a breadcrumb to the current scope
 func (s *Service) AddBreadcrumb(category, message string, data map[string]interface{}) {
-	return
 	if !s.IsEnabled() {
 		return
 	}
@@ -112,8 +113,6 @@ func (s *Service) Flush(timeout uint) bool {
 
 // StartDBSpan starts a new database span in the current transaction
 func (s *Service) StartDBSpan(ctx context.Context, operation string, params map[string]interface{}) (*sentry.Span, context.Context) {
-	return nil, ctx
-
 	if !s.IsEnabled() {
 		return nil, ctx
 	}
@@ -133,7 +132,6 @@ func (s *Service) StartDBSpan(ctx context.Context, operation string, params map[
 
 // StartClickHouseSpan starts a new ClickHouse span in the current transaction
 func (s *Service) StartClickHouseSpan(ctx context.Context, operation string, params map[string]interface{}) (*sentry.Span, context.Context) {
-	return nil, ctx
 	if !s.cfg.Sentry.Enabled {
 		return nil, ctx
 	}
@@ -209,8 +207,6 @@ func (s *Service) MonitorEventProcessing(ctx context.Context, eventName string, 
 
 // StartTransaction creates a new transaction or returns an existing one from context
 func (s *Service) StartTransaction(ctx context.Context, name string, options ...sentry.SpanOption) (*sentry.Span, context.Context) {
-	return nil, ctx
-
 	if !s.cfg.Sentry.Enabled {
 		return nil, ctx
 	}
@@ -244,8 +240,6 @@ func (f *SpanFinisher) Finish() {
 
 // StartRepositorySpan creates a span for a repository operation
 func (s *Service) StartRepositorySpan(ctx context.Context, repository, operation string, params map[string]interface{}) (*sentry.Span, context.Context) {
-	return nil, ctx
-
 	if !s.cfg.Sentry.Enabled {
 		return nil, ctx
 	}
