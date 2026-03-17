@@ -43,6 +43,25 @@ func RegisterHooks(lc fx.Lifecycle, svc *Service) {
 				BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
 					return event
 				},
+				// BeforeSendLog is called for every structured log record before it is sent.
+				// Return nil to drop a log record.
+				BeforeSendLog: func(log *sentry.Log) *sentry.Log {
+					// Drop debug logs in non-development environments to reduce noise/quota.
+					if log.Level == sentry.LogLevelDebug && svc.cfg.Sentry.Environment != "development" {
+						return nil
+					}
+					return log
+				},
+				// Only keep transaction traces for HTTP 200 responses.
+				// Error events (CaptureException) are unaffected by this filter.
+				BeforeSendTransaction: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+					if traceCtx, ok := event.Contexts["trace"]; ok {
+						if status, ok := traceCtx["status"].(string); ok && status != "ok" {
+							return nil
+						}
+					}
+					return event
+				},
 				TracesSampler: sentry.TracesSampler(func(ctx sentry.SamplingContext) float64 {
 					if ctx.Span.Name == "GET /health" {
 						return 0.0

@@ -13,12 +13,22 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// sentryToZapLevel maps a sentry LogLevel to its zapcore equivalent for level-gating.
+var sentryToZapLevel = map[sentry.LogLevel]zapcore.Level{
+	sentry.LogLevelDebug: zapcore.DebugLevel,
+	sentry.LogLevelInfo:  zapcore.InfoLevel,
+	sentry.LogLevelWarn:  zapcore.WarnLevel,
+	sentry.LogLevelError: zapcore.ErrorLevel,
+	sentry.LogLevelFatal: zapcore.FatalLevel,
+}
+
 // Logger wraps zap.SugaredLogger to provide logging functionality
 type Logger struct {
 	*zap.SugaredLogger
 	fluentdLogger *fluent.Fluent
 	serviceName   string
 	sentryEnabled bool
+	sentryCtx     context.Context // used for sentry.NewLogger; defaults to context.Background()
 }
 
 // Global logger for convenience
@@ -77,7 +87,8 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		SugaredLogger: zapLogger.Sugar(),
 		fluentdLogger: fluentdLogger,
 		serviceName:   string(cfg.Deployment.Mode),
-		sentryEnabled: true, // TODO: Hardcoding for testing
+		sentryEnabled: cfg.Sentry.Enabled,
+		sentryCtx:     context.Background(),
 	}, nil
 }
 
@@ -159,18 +170,23 @@ func (l *Logger) sendToFluentd(level string, msg string, fields map[string]inter
 // Helper methods to make logging more convenient
 func (l *Logger) Debugf(template string, args ...interface{}) {
 	l.SugaredLogger.Debugf(template, args...)
-	l.sendToFluentd("debug", l.sprintf(template, args...), nil)
+	msg := l.sprintf(template, args...)
+	l.sendToFluentd("debug", msg, nil)
+	l.sendToSentryLogs(sentry.LogLevelDebug, msg)
 }
 
 func (l *Logger) Infof(template string, args ...interface{}) {
 	l.SugaredLogger.Infof(template, args...)
-	l.sendToFluentd("info", l.sprintf(template, args...), nil)
+	msg := l.sprintf(template, args...)
+	l.sendToFluentd("info", msg, nil)
+	l.sendToSentryLogs(sentry.LogLevelInfo, msg)
 }
 
 func (l *Logger) Warnf(template string, args ...interface{}) {
 	l.SugaredLogger.Warnf(template, args...)
 	msg := l.sprintf(template, args...)
 	l.sendToFluentd("warning", msg, nil)
+	l.sendToSentryLogs(sentry.LogLevelWarn, msg)
 	l.captureToSentry(sentry.LevelWarning, msg)
 }
 
@@ -178,12 +194,14 @@ func (l *Logger) Errorf(template string, args ...interface{}) {
 	l.SugaredLogger.Errorf(template, args...)
 	msg := l.sprintf(template, args...)
 	l.sendToFluentd("error", msg, nil)
+	l.sendToSentryLogs(sentry.LogLevelError, msg)
 	l.captureToSentry(sentry.LevelError, msg)
 }
 
 func (l *Logger) Fatalf(template string, args ...interface{}) {
 	msg := l.sprintf(template, args...)
 	l.sendToFluentd("fatal", msg, nil)
+	l.sendToSentryLogs(sentry.LogLevelFatal, msg)
 	l.SugaredLogger.Fatalf(template, args...)
 }
 
@@ -210,7 +228,65 @@ func (l *Logger) WithContext(ctx context.Context) *Logger {
 		fluentdLogger: l.fluentdLogger,
 		serviceName:   l.serviceName,
 		sentryEnabled: l.sentryEnabled,
+		sentryCtx:     ctx,
 	}
+}
+
+// sendToSentryLogs sends a structured log record to Sentry Logs (requires EnableLogs: true).
+// This is separate from captureToSentry — it feeds the Sentry Logs product, not the Issues/Events stream.
+// It respects the configured zap log level, so debug logs won't be sent in production.
+func (l *Logger) sendToSentryLogs(level sentry.LogLevel, msg string, keysAndValues ...interface{}) {
+	if !l.sentryEnabled {
+		return
+	}
+	if zapLevel, ok := sentryToZapLevel[level]; ok {
+		if !l.SugaredLogger.Desugar().Core().Enabled(zapLevel) {
+			return
+		}
+	}
+	if sentry.CurrentHub().Client() == nil {
+		return
+	}
+
+	sl := sentry.NewLogger(l.sentryCtx)
+	var entry sentry.LogEntry
+	switch level {
+	case sentry.LogLevelDebug:
+		entry = sl.Debug()
+	case sentry.LogLevelInfo:
+		entry = sl.Info()
+	case sentry.LogLevelWarn:
+		entry = sl.Warn()
+	case sentry.LogLevelError:
+		entry = sl.Error()
+	default:
+		entry = sl.Info()
+	}
+
+	for i := 0; i+1 < len(keysAndValues); i += 2 {
+		key, ok := keysAndValues[i].(string)
+		if !ok {
+			continue
+		}
+		switch v := keysAndValues[i+1].(type) {
+		case string:
+			entry = entry.String(key, v)
+		case int:
+			entry = entry.Int(key, v)
+		case int64:
+			entry = entry.Int64(key, v)
+		case float64:
+			entry = entry.Float64(key, v)
+		case bool:
+			entry = entry.Bool(key, v)
+		case error:
+			entry = entry.String(key, v.Error())
+		default:
+			entry = entry.String(key, fmt.Sprintf("%v", v))
+		}
+	}
+
+	entry.Emit(msg)
 }
 
 // captureToSentry sends an event to Sentry if enabled.
@@ -257,22 +333,26 @@ func (l *Logger) captureToSentry(level sentry.Level, msg string, keysAndValues .
 func (l *Logger) Debugw(msg string, keysAndValues ...interface{}) {
 	l.SugaredLogger.Debugw(msg, keysAndValues...)
 	l.sendToFluentd("debug", msg, l.keysAndValuesToMap(keysAndValues...))
+	l.sendToSentryLogs(sentry.LogLevelDebug, msg, keysAndValues...)
 }
 
 func (l *Logger) Infow(msg string, keysAndValues ...interface{}) {
 	l.SugaredLogger.Infow(msg, keysAndValues...)
 	l.sendToFluentd("info", msg, l.keysAndValuesToMap(keysAndValues...))
+	l.sendToSentryLogs(sentry.LogLevelInfo, msg, keysAndValues...)
 }
 
 func (l *Logger) Warnw(msg string, keysAndValues ...interface{}) {
 	l.SugaredLogger.Warnw(msg, keysAndValues...)
 	l.sendToFluentd("warning", msg, l.keysAndValuesToMap(keysAndValues...))
+	l.sendToSentryLogs(sentry.LogLevelWarn, msg, keysAndValues...)
 	l.captureToSentry(sentry.LevelWarning, msg, keysAndValues...)
 }
 
 func (l *Logger) Errorw(msg string, keysAndValues ...interface{}) {
 	l.SugaredLogger.Errorw(msg, keysAndValues...)
 	l.sendToFluentd("error", msg, l.keysAndValuesToMap(keysAndValues...))
+	l.sendToSentryLogs(sentry.LogLevelError, msg, keysAndValues...)
 	l.captureToSentry(sentry.LevelError, msg, keysAndValues...)
 }
 
