@@ -244,7 +244,11 @@ func (l *Logger) sendToSentryLogs(level sentry.LogLevel, msg string, keysAndValu
 			return
 		}
 	}
-	if sentry.CurrentHub().Client() == nil {
+	hub := sentry.GetHubFromContext(l.sentryCtx)
+	if hub == nil {
+		hub = sentry.CurrentHub()
+	}
+	if hub.Client() == nil {
 		return
 	}
 
@@ -296,7 +300,12 @@ func (l *Logger) captureToSentry(level sentry.Level, msg string, keysAndValues .
 	if !l.sentryEnabled {
 		return
 	}
-	hub := sentry.CurrentHub()
+	// Use the per-request hub if available (set by sentrygin on c.Request.Context()),
+	// otherwise fall back to the global hub.
+	hub := sentry.GetHubFromContext(l.sentryCtx)
+	if hub == nil {
+		hub = sentry.CurrentHub()
+	}
 	if hub.Client() == nil {
 		return
 	}

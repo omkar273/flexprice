@@ -3,6 +3,7 @@ package sentry
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/config"
@@ -46,6 +47,10 @@ func RegisterHooks(lc fx.Lifecycle, svc *Service) {
 				// BeforeSendLog is called for every structured log record before it is sent.
 				// Return nil to drop a log record.
 				BeforeSendLog: func(log *sentry.Log) *sentry.Log {
+					// Drop /health endpoint logs to avoid noise from liveness/readiness probes.
+					if strings.Contains(log.Body, "/health") {
+						return nil
+					}
 					// Drop debug logs in non-development environments to reduce noise/quota.
 					if log.Level == sentry.LogLevelDebug && svc.cfg.Sentry.Environment != "development" {
 						return nil
