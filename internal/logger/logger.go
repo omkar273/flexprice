@@ -232,6 +232,15 @@ func (l *Logger) WithContext(ctx context.Context) *Logger {
 	}
 }
 
+// Ctx is a short alias for WithContext — use at the top of service methods to get a
+// request-scoped logger that carries the correct Sentry trace ID:
+//
+//	log := s.Logger.Ctx(ctx)
+//	log.Errorw("failed", "error", err)
+func (l *Logger) Ctx(ctx context.Context) *Logger {
+	return l.WithContext(ctx)
+}
+
 // sendToSentryLogs sends a structured log record to Sentry Logs (requires EnableLogs: true).
 // This is separate from captureToSentry — it feeds the Sentry Logs product, not the Issues/Events stream.
 // It respects the configured zap log level, so debug logs won't be sent in production.
@@ -363,6 +372,42 @@ func (l *Logger) Errorw(msg string, keysAndValues ...interface{}) {
 	l.sendToFluentd("error", msg, l.keysAndValuesToMap(keysAndValues...))
 	l.sendToSentryLogs(sentry.LogLevelError, msg, keysAndValues...)
 	l.captureToSentry(sentry.LevelError, msg, keysAndValues...)
+}
+
+// Context-aware logging methods — these bind the request context for Sentry trace correlation.
+// Use these in service/repository methods instead of the plain variants:
+//
+//	s.Logger.ErrorwCtx(ctx, "failed", "error", err)   instead of   s.Logger.Errorw("failed", "error", err)
+func (l *Logger) DebugwCtx(ctx context.Context, msg string, keysAndValues ...interface{}) {
+	l.WithContext(ctx).Debugw(msg, keysAndValues...)
+}
+
+func (l *Logger) InfowCtx(ctx context.Context, msg string, keysAndValues ...interface{}) {
+	l.WithContext(ctx).Infow(msg, keysAndValues...)
+}
+
+func (l *Logger) WarnwCtx(ctx context.Context, msg string, keysAndValues ...interface{}) {
+	l.WithContext(ctx).Warnw(msg, keysAndValues...)
+}
+
+func (l *Logger) ErrorwCtx(ctx context.Context, msg string, keysAndValues ...interface{}) {
+	l.WithContext(ctx).Errorw(msg, keysAndValues...)
+}
+
+func (l *Logger) DebugfCtx(ctx context.Context, template string, args ...interface{}) {
+	l.WithContext(ctx).Debugf(template, args...)
+}
+
+func (l *Logger) InfofCtx(ctx context.Context, template string, args ...interface{}) {
+	l.WithContext(ctx).Infof(template, args...)
+}
+
+func (l *Logger) WarnfCtx(ctx context.Context, template string, args ...interface{}) {
+	l.WithContext(ctx).Warnf(template, args...)
+}
+
+func (l *Logger) ErrorfCtx(ctx context.Context, template string, args ...interface{}) {
+	l.WithContext(ctx).Errorf(template, args...)
 }
 
 // keysAndValuesToMap converts variadic key-value pairs to a map
