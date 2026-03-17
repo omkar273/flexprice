@@ -1732,7 +1732,12 @@ func (s *subscriptionService) CancelSubscription(
 			return err
 		}
 
-		// Step 7a: Handle scheduling for end_of_period cancellation
+		// Step 7a: Cancel all addons on the subscription (mark associations cancelled, terminate addon line items)
+		if err := s.cancelAddonsForSubscription(ctx, subscription.ID, effectiveDate, req.Reason); err != nil {
+			return err
+		}
+
+		// Step 7b: Handle scheduling for end_of_period cancellation
 		if req.CancellationType == types.CancellationTypeEndOfPeriod {
 			// Cancel all pending schedules (especially plan changes) before creating cancellation schedule
 			if err := s.cancelAllPendingSchedules(ctx, subscription.ID); err != nil {
@@ -4039,6 +4044,129 @@ func (s *subscriptionService) validateEntitlementCompatibility(ctx context.Conte
 	return nil
 }
 
+// cancelAddonsForSubscription marks all active addon associations for the subscription as cancelled
+// and terminates subscription line items where entity type is addon and entity id is the addon id.
+// Called during subscription cancellation (immediate or end_of_period) with the effective cancellation date.
+// Uses the same GetActiveAddonAssociation path as the API so we reliably find all active addons on the subscription.
+func (s *subscriptionService) cancelAddonsForSubscription(ctx context.Context, subscriptionID string, effectiveDate time.Time, reason string) error {
+	logger := s.Logger.With(
+		zap.String("subscription_id", subscriptionID),
+		zap.Time("effective_date", effectiveDate),
+	)
+
+	addonService := NewAddonService(s.ServiceParams)
+	activeAddons, err := addonService.GetActiveAddonAssociation(ctx, dto.GetActiveAddonAssociationRequest{
+		EntityID:   subscriptionID,
+		EntityType: types.AddonAssociationEntityTypeSubscription,
+	})
+	if err != nil {
+		return ierr.WithError(err).
+			WithHint("Failed to get active addon associations for subscription").
+			Mark(ierr.ErrDatabase)
+	}
+
+	if activeAddons == nil || len(activeAddons.Items) == 0 {
+		logger.Debug("no active addon associations to cancel")
+		return nil
+	}
+
+	logger.Infow("cancelling addon associations for subscription",
+		"subscription_id", subscriptionID,
+		"addon_count", len(activeAddons.Items))
+
+	cancellationReason := "Subscription cancelled"
+	if reason != "" {
+		cancellationReason = fmt.Sprintf("Subscription cancelled: %s", reason)
+	}
+
+	addonIDsToCancel := make(map[string]struct{}, len(activeAddons.Items))
+
+	for _, addonResp := range activeAddons.Items {
+		if addonResp == nil || addonResp.AddonAssociation == nil {
+			continue
+		}
+		association := addonResp.AddonAssociation
+
+		// Skip if already has end date (already scheduled for removal)
+		if association.EndDate != nil && !association.EndDate.IsZero() {
+			logger.Debugw("addon association already has end date, skipping",
+				"addon_association_id", association.ID,
+				"end_date", association.EndDate)
+			continue
+		}
+
+		addonIDsToCancel[association.AddonID] = struct{}{}
+
+		association.AddonStatus = types.AddonStatusCancelled
+		association.CancellationReason = cancellationReason
+		association.CancelledAt = &effectiveDate
+		association.EndDate = &effectiveDate
+
+		if err := s.AddonAssociationRepo.Update(ctx, association); err != nil {
+			logger.Errorw("failed to update addon association",
+				"addon_association_id", association.ID,
+				"error", err)
+			return ierr.WithError(err).
+				WithHintf("Failed to cancel addon association %s", association.ID).
+				Mark(ierr.ErrDatabase)
+		}
+
+		logger.Infow("cancelled addon association",
+			"addon_association_id", association.ID,
+			"addon_id", association.AddonID)
+	}
+
+	if len(addonIDsToCancel) == 0 {
+		return nil
+	}
+
+	addonIDList := lo.Keys(addonIDsToCancel)
+	lineItemFilter := types.NewNoLimitSubscriptionLineItemFilter()
+	lineItemFilter.SubscriptionIDs = []string{subscriptionID}
+	lineItemFilter.EntityIDs = addonIDList
+	lineItemFilter.EntityType = lo.ToPtr(types.SubscriptionLineItemEntityTypeAddon)
+
+	allLineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
+	if err != nil {
+		logger.Errorw("failed to list subscription line items for addon termination",
+			"subscription_id", subscriptionID,
+			"error", err)
+		return ierr.WithError(err).
+			WithHint("Failed to list subscription line items for addon termination").
+			Mark(ierr.ErrDatabase)
+	}
+
+	logger.Infow("listed addon line items for termination",
+		"subscription_id", subscriptionID,
+		"entity_ids_filter", addonIDList,
+		"line_items_found", len(allLineItems))
+
+	deleteReq := dto.DeleteSubscriptionLineItemRequest{EffectiveFrom: &effectiveDate}
+	terminated := 0
+	for _, lineItem := range allLineItems {
+		if !lineItem.EndDate.IsZero() {
+			continue
+		}
+		if _, err := s.DeleteSubscriptionLineItem(ctx, lineItem.ID, deleteReq); err != nil {
+			logger.Errorw("failed to terminate addon line item",
+				"line_item_id", lineItem.ID,
+				"entity_id", lineItem.EntityID,
+				"error", err)
+			return ierr.WithError(err).
+				WithHintf("Failed to terminate line item %s (entity_type=addon, entity_id=%s)", lineItem.ID, lineItem.EntityID).
+				Mark(ierr.ErrDatabase)
+		}
+		terminated++
+	}
+
+	logger.Infow("terminated addon line items for subscription",
+		"subscription_id", subscriptionID,
+		"addon_ids_count", len(addonIDsToCancel),
+		"line_items_terminated", terminated)
+
+	return nil
+}
+
 // RemoveAddonFromSubscription removes an addon from a subscription by addon association ID
 func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, req *dto.RemoveAddonRequest) error {
 	// Validate request
@@ -4080,6 +4208,7 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 		endReason = req.Reason
 	}
 
+	association.AddonStatus = types.AddonStatusCancelled
 	association.CancellationReason = endReason
 	association.CancelledAt = effectiveEndDate
 	association.EndDate = effectiveEndDate
