@@ -49,10 +49,18 @@ func lineItemFilterFn(ctx context.Context, item *subscription.SubscriptionLineIt
 		return false
 	}
 
-	// Filter by entity IDs
+	// Filter by entity type (when set)
+	if f.EntityType != nil && item.EntityType != *f.EntityType {
+		return false
+	}
+
+	// Filter by entity IDs (when set)
 	if len(f.EntityIDs) > 0 {
-		// Check if the item's EntityID matches any of the plan IDs and EntityType is plan
-		if item.EntityType != types.SubscriptionLineItemEntityTypePlan || !lo.Contains(f.EntityIDs, item.EntityID) {
+		if !lo.Contains(f.EntityIDs, item.EntityID) {
+			return false
+		}
+		// When EntityType is not set, legacy behavior: only match plan line items
+		if f.EntityType == nil && item.EntityType != types.SubscriptionLineItemEntityTypePlan {
 			return false
 		}
 	}

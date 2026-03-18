@@ -388,7 +388,7 @@ func (s *subscriptionService) UpdateSubscriptionLineItem(ctx context.Context, li
 			return nil, err
 		}
 
-		s.Logger.Infow("updated subscription line item with price overrides",
+		s.Logger.InfowCtx(ctx, "updated subscription line item with price overrides",
 			"subscription_id", sub.ID,
 			"old_line_item_id", existingLineItem.ID,
 			"new_line_item_id", newLineItem.ID,
@@ -438,7 +438,7 @@ func (s *subscriptionService) UpdateSubscriptionLineItem(ctx context.Context, li
 			return nil, err
 		}
 
-		s.Logger.Infow("updated subscription line item",
+		s.Logger.InfowCtx(ctx, "updated subscription line item",
 			"subscription_id", sub.ID,
 			"line_item_id", existingLineItem.ID)
 

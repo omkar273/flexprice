@@ -209,6 +209,17 @@ func convertMapToConnectionMetadata(metadata map[string]interface{}, providerTyp
 		return types.ConnectionMetadata{
 			Moyasar: moyasarMetadata,
 		}
+	case types.SecretProviderPaddle:
+		paddleMetadata := &types.PaddleConnectionMetadata{}
+		if apiKey, ok := metadata["api_key"].(string); ok {
+			paddleMetadata.APIKey = apiKey
+		}
+		if webhookSecret, ok := metadata["webhook_secret"].(string); ok {
+			paddleMetadata.WebhookSecret = webhookSecret
+		}
+		return types.ConnectionMetadata{
+			Paddle: paddleMetadata,
+		}
 	default:
 		// For other providers or unknown types, use generic format
 		return types.ConnectionMetadata{
