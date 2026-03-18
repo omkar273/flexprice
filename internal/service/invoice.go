@@ -862,6 +862,9 @@ func (s *invoiceService) ProcessDraftInvoice(ctx context.Context, id string, pay
 	// Sync to Nomod if Nomod connection is enabled (async via Temporal)
 	s.triggerNomodInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
 
+	// Sync to Paddle if Paddle connection is enabled (async via Temporal)
+	s.triggerPaddleInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
+
 	// try to process payment for the invoice based on behavior and log any errors
 	// Pass the subscription object to avoid extra DB call
 	// Error handling logic is properly handled in attemptPaymentForSubscriptionInvoice
@@ -1361,6 +1364,78 @@ func (s *invoiceService) triggerMoyasarInvoiceSyncWorkflow(ctx context.Context, 
 	}
 
 	s.Logger.Infow("Moyasar invoice sync workflow started successfully",
+		"invoice_id", invoiceID,
+		"customer_id", customerID,
+		"workflow_id", workflowRun.GetID(),
+		"run_id", workflowRun.GetRunID())
+}
+
+// triggerPaddleInvoiceSyncWorkflow triggers the Paddle invoice sync workflow via Temporal
+func (s *invoiceService) triggerPaddleInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID string) {
+	tenantID := types.GetTenantID(ctx)
+	envID := types.GetEnvironmentID(ctx)
+
+	s.Logger.Infow("triggering Paddle invoice sync workflow",
+		"invoice_id", invoiceID,
+		"customer_id", customerID,
+		"tenant_id", tenantID,
+		"environment_id", envID)
+
+	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderPaddle)
+	if err != nil {
+		s.Logger.Warnw("invoice and customer not synced to Paddle: Paddle connection not available",
+			"invoice_id", invoiceID,
+			"customer_id", customerID,
+			"error", err,
+			"reason", "no_paddle_connection")
+		return
+	}
+
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
+		s.Logger.Warnw("invoice and customer not synced to Paddle: invoice outbound sync disabled for Paddle connection",
+			"invoice_id", invoiceID,
+			"customer_id", customerID,
+			"connection_id", lo.Ternary(conn != nil, conn.ID, ""),
+			"reason", "invoice_outbound_disabled")
+		return
+	}
+
+	input := &models.PaddleInvoiceSyncWorkflowInput{
+		InvoiceID:     invoiceID,
+		CustomerID:    customerID,
+		TenantID:      tenantID,
+		EnvironmentID: envID,
+	}
+
+	if err := input.Validate(); err != nil {
+		s.Logger.Errorw("invalid workflow input for Paddle invoice sync",
+			"error", err,
+			"invoice_id", invoiceID,
+			"customer_id", customerID)
+		return
+	}
+
+	temporalSvc := temporalservice.GetGlobalTemporalService()
+	if temporalSvc == nil {
+		s.Logger.Warnw("temporal service not available for Paddle invoice sync",
+			"invoice_id", invoiceID)
+		return
+	}
+
+	workflowRun, err := temporalSvc.ExecuteWorkflow(
+		ctx,
+		types.TemporalPaddleInvoiceSyncWorkflow,
+		input,
+	)
+	if err != nil {
+		s.Logger.Errorw("failed to start Paddle invoice sync workflow",
+			"error", err,
+			"invoice_id", invoiceID,
+			"customer_id", customerID)
+		return
+	}
+
+	s.Logger.Infow("Paddle invoice sync workflow started successfully",
 		"invoice_id", invoiceID,
 		"customer_id", customerID,
 		"workflow_id", workflowRun.GetID(),
@@ -3777,6 +3852,9 @@ func (s *invoiceService) SyncInvoiceToExternalVendors(ctx context.Context, invoi
 
 	// Sync to Nomod if Nomod connection is enabled (async via Temporal)
 	s.triggerNomodInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID)
+
+	// Sync to Paddle if Paddle connection is enabled (async via Temporal)
+	s.triggerPaddleInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID)
 
 	return nil
 }

@@ -17,6 +17,7 @@ const (
 	ConnectionMetadataTypeChargebee ConnectionMetadataType = "chargebee"
 	ConnectionMetadataTypeNomod     ConnectionMetadataType = "nomod"
 	ConnectionMetadataTypeMoyasar   ConnectionMetadataType = "moyasar"
+	ConnectionMetadataTypePaddle    ConnectionMetadataType = "paddle"
 )
 
 func (t ConnectionMetadataType) Validate() error {
@@ -29,10 +30,11 @@ func (t ConnectionMetadataType) Validate() error {
 		ConnectionMetadataTypeChargebee,
 		ConnectionMetadataTypeNomod,
 		ConnectionMetadataTypeMoyasar,
+		ConnectionMetadataTypePaddle,
 	}
 	if !lo.Contains(allowedTypes, t) {
 		return ierr.NewError("invalid connection metadata type").
-			WithHint("Connection metadata type must be one of: stripe, generic, s3, hubspot, razorpay, chargebee, nomod, moyasar").
+			WithHint("Connection metadata type must be one of: stripe, generic, s3, hubspot, razorpay, chargebee, nomod, moyasar, paddle").
 			Mark(ierr.ErrValidation)
 	}
 	return nil
@@ -225,6 +227,27 @@ func (m *MoyasarConnectionMetadata) Validate() error {
 	return nil
 }
 
+// PaddleConnectionMetadata represents Paddle-specific connection metadata
+type PaddleConnectionMetadata struct {
+	APIKey        string `json:"api_key"`        // Paddle API Key (encrypted)
+	WebhookSecret string `json:"webhook_secret"` // Paddle webhook secret (encrypted)
+}
+
+// Validate validates the Paddle connection metadata
+func (p *PaddleConnectionMetadata) Validate() error {
+	if p.APIKey == "" {
+		return ierr.NewError("api_key is required").
+			WithHint("Paddle API key is required").
+			Mark(ierr.ErrValidation)
+	}
+	if p.WebhookSecret == "" {
+		return ierr.NewError("webhook_secret is required").
+			WithHint("Paddle webhook secret is required for webhook verification").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
 // ConnectionSettings represents general connection settings
 type ConnectionSettings struct {
 	InvoiceSyncEnable *bool `json:"invoice_sync_enable,omitempty"`
@@ -275,6 +298,7 @@ type ConnectionMetadata struct {
 	QuickBooks *QuickBooksConnectionMetadata `json:"quickbooks,omitempty"`
 	Nomod      *NomodConnectionMetadata      `json:"nomod,omitempty"`
 	Moyasar    *MoyasarConnectionMetadata    `json:"moyasar,omitempty"`
+	Paddle     *PaddleConnectionMetadata     `json:"paddle,omitempty"`
 	Generic    *GenericConnectionMetadata    `json:"generic,omitempty"`
 	Settings   *ConnectionSettings           `json:"settings,omitempty"`
 }
@@ -338,6 +362,13 @@ func (c *ConnectionMetadata) Validate(providerType SecretProvider) error {
 				Mark(ierr.ErrValidation)
 		}
 		return c.Moyasar.Validate()
+	case SecretProviderPaddle:
+		if c.Paddle == nil {
+			return ierr.NewError("paddle metadata is required").
+				WithHint("Paddle metadata is required for paddle provider").
+				Mark(ierr.ErrValidation)
+		}
+		return c.Paddle.Validate()
 	default:
 		// For other providers or unknown types, use generic format
 		if c.Generic == nil {
