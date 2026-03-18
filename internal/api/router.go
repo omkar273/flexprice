@@ -211,18 +211,18 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			customer.GET("/lookup/:lookup_key", handlers.Customer.GetCustomerByLookupKey)    // Legacy route with lookup_key as path parameter
 			customer.GET("/external/:external_id", handlers.Customer.GetCustomerByLookupKey) // New route with external_id as path parameter
 
-		// New endpoints for entitlements and usage
-		customer.GET("/:id/entitlements", handlers.Customer.GetCustomerEntitlements)
-		customer.GET("/usage", handlers.Customer.GetCustomerUsageSummary)     // New route with query parameters (must come first!)
-		customer.GET("/:id/usage", handlers.Customer.GetCustomerUsageSummary) // Deprecated route with path parameter
-		customer.GET("/:id/grants/upcoming", handlers.Customer.GetUpcomingCreditGrantApplications)
+			// New endpoints for entitlements and usage
+			customer.GET("/:id/entitlements", handlers.Customer.GetCustomerEntitlements)
+			customer.GET("/usage", handlers.Customer.GetCustomerUsageSummary)     // New route with query parameters (must come first!)
+			customer.GET("/:id/usage", handlers.Customer.GetCustomerUsageSummary) // Deprecated route with path parameter
+			customer.GET("/:id/grants/upcoming", handlers.Customer.GetUpcomingCreditGrantApplications)
 
-		// Customer hierarchy endpoints
-		customer.GET("/:id/children", handlers.Customer.GetCustomerChildren)
-		customer.GET("/:id/hierarchy", handlers.Customer.GetCustomerHierarchy)
+			// Customer hierarchy endpoints
+			customer.GET("/:id/children", handlers.Customer.GetCustomerChildren)
+			customer.GET("/:id/hierarchy", handlers.Customer.GetCustomerHierarchy)
 
-		// other routes for customer
-		customer.GET("/:id/wallets", handlers.Wallet.GetWalletsByCustomerID)
+			// other routes for customer
+			customer.GET("/:id/wallets", handlers.Wallet.GetWalletsByCustomerID)
 			customer.GET("/:id/invoices/summary", handlers.Invoice.GetCustomerInvoiceSummary)
 			customer.GET("/wallets", handlers.Wallet.GetCustomerWallets)
 
