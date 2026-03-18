@@ -15,6 +15,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/invoice"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/interfaces"
+	"github.com/samber/lo"
 
 	"github.com/flexprice/flexprice/internal/domain/price"
 	"github.com/flexprice/flexprice/internal/domain/proration"
@@ -26,7 +27,6 @@ import (
 
 	"github.com/flexprice/flexprice/internal/types"
 	webhookDto "github.com/flexprice/flexprice/internal/webhook/dto"
-	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 )
@@ -6173,12 +6173,6 @@ func (s *subscriptionService) validateUsageCustomerIDs(ctx context.Context, subs
 		return ierr.NewError("one or more usage customers not found").
 			WithHint("All usage_customer_ids must reference valid customers").
 			Mark(ierr.ErrValidation)
-	}
-
-	// Build map for quick lookup
-	customerMap := make(map[string]*customer.Customer, len(usageCustomers))
-	for _, c := range usageCustomers {
-		customerMap[c.ID] = c
 	}
 
 	// Validate hierarchy constraints
