@@ -128,6 +128,22 @@ type CustomerResponse struct {
 // @Description Response object for listing customers with pagination
 type ListCustomersResponse = types.ListResponse[*CustomerResponse]
 
+// CustomerHierarchyResponse represents the hierarchical view of a customer
+// @Description Contains the customer, its parent (if exists), and all children in the hierarchy
+type CustomerHierarchyResponse struct {
+	// customer is the requested customer
+	Customer *CustomerResponse `json:"customer"`
+
+	// parent_id is the ID of the parent customer (null if this is a root customer)
+	ParentID *string `json:"parent_id,omitempty"`
+
+	// children contains all child customers in the hierarchy
+	Children []*CustomerResponse `json:"children"`
+
+	// total_children is the count of child customers
+	TotalChildren int `json:"total_children"`
+}
+
 func (r *CreateCustomerRequest) Validate() error {
 	if err := validator.ValidateRequest(r); err != nil {
 		return err

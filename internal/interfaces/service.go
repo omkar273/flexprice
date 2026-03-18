@@ -22,6 +22,10 @@ type CustomerService interface {
 	DeleteCustomer(ctx context.Context, id string) error
 	GetCustomerByLookupKey(ctx context.Context, lookupKey string) (*dto.CustomerResponse, error)
 
+	// Hierarchy operations
+	GetCustomerChildren(ctx context.Context, parentID string) (*dto.ListCustomersResponse, error)
+	GetCustomerHierarchy(ctx context.Context, customerID string) (*dto.CustomerHierarchyResponse, error)
+
 	// Credit grant applications
 	GetUpcomingCreditGrantApplications(ctx context.Context, customerID string) (*dto.ListCreditGrantApplicationsResponse, error)
 }

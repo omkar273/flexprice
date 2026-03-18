@@ -953,15 +953,18 @@ func (s *featureUsageTrackingService) prepareProcessedEventsV2(ctx context.Conte
 	}
 
 	// STEP 4: Get subscription line items by meter IDs + customer ID (TARGETED QUERY)
+	// This is a two-way lookup:
+	// 1. Direct: line items where CustomerIDs = [customer.ID] (customer owns the line item)
+	// 2. Usage-customer: line items where UsageCustomerIDs = [customer.ID] (customer is included as usage customer)
 	lineItemFilter := types.NewNoLimitSubscriptionLineItemFilter()
 	lineItemFilter.MeterIDs = meterIDs
 	lineItemFilter.CustomerIDs = []string{customer.ID}
 	lineItemFilter.ActiveFilter = true
 	lineItemFilter.CurrentPeriodStart = &event.Timestamp
 
-	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
+	directLineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
 	if err != nil {
-		s.Logger.Errorw("failed to get subscription line items",
+		s.Logger.Errorw("failed to get direct subscription line items",
 			"error", err,
 			"event_id", event.ID,
 			"customer_id", customer.ID,
@@ -970,8 +973,40 @@ func (s *featureUsageTrackingService) prepareProcessedEventsV2(ctx context.Conte
 		return results, err
 	}
 
+	// Second query: line items where customer is a usage_customer
+	usageCustomerFilter := types.NewNoLimitSubscriptionLineItemFilter()
+	usageCustomerFilter.MeterIDs = meterIDs
+	usageCustomerFilter.UsageCustomerIDs = []string{customer.ID}
+	usageCustomerFilter.ActiveFilter = true
+	usageCustomerFilter.CurrentPeriodStart = &event.Timestamp
+
+	usageCustomerLineItems, err := s.SubscriptionLineItemRepo.List(ctx, usageCustomerFilter)
+	if err != nil {
+		s.Logger.Errorw("failed to get usage customer subscription line items",
+			"error", err,
+			"event_id", event.ID,
+			"customer_id", customer.ID,
+			"meter_ids", meterIDs,
+		)
+		return results, err
+	}
+
+	// Merge and dedupe the two result sets
+	lineItemsMap := make(map[string]*subscription.SubscriptionLineItem)
+	for _, li := range directLineItems {
+		lineItemsMap[li.ID] = li
+	}
+	for _, li := range usageCustomerLineItems {
+		lineItemsMap[li.ID] = li // Dedupes automatically if same line item appears in both
+	}
+
+	lineItems := make([]*subscription.SubscriptionLineItem, 0, len(lineItemsMap))
+	for _, li := range lineItemsMap {
+		lineItems = append(lineItems, li)
+	}
+
 	if len(lineItems) == 0 {
-		s.Logger.Debugw("no active subscription line items found for meters and customer, skipping",
+		s.Logger.Debugw("no active subscription line items found for meters and customer (direct or usage_customer), skipping",
 			"event_id", event.ID,
 			"customer_id", customer.ID,
 			"meter_ids", meterIDs,

@@ -641,6 +641,25 @@ func (s *customerService) validateParentCustomerAssignment(ctx context.Context, 
 			Mark(ierr.ErrInvalidOperation)
 	}
 
+	// Enforce max 100 children per parent
+	existingChildFilter := types.NewCustomerFilter()
+	existingChildFilter.ParentCustomerIDs = []string{newParentID}
+
+	childCount, err := s.CustomerRepo.Count(ctx, existingChildFilter)
+	if err != nil {
+		return err
+	}
+
+	if childCount >= 100 {
+		return ierr.NewError("parent customer has reached maximum of 100 children").
+			WithHint("Cannot add more than 100 child customers to a single parent").
+			WithReportableDetails(map[string]interface{}{
+				"parent_id":     newParentID,
+				"current_count": childCount,
+			}).
+			Mark(ierr.ErrInvalidOperation)
+	}
+
 	return nil
 }
 
@@ -812,4 +831,103 @@ func (s *customerService) handleCustomerOnboarding(ctx context.Context, customer
 		"run_id", workflowRun.GetRunID())
 
 	return nil
+}
+
+// GetCustomerChildren retrieves all child customers for a given parent customer
+func (s *customerService) GetCustomerChildren(ctx context.Context, parentID string) (*dto.ListCustomersResponse, error) {
+	// Validate parent customer exists
+	_, err := s.CustomerRepo.Get(ctx, parentID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get all child customers
+	filter := types.NewNoLimitCustomerFilter()
+	filter.ParentCustomerIDs = []string{parentID}
+
+	children, err := s.CustomerRepo.List(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	count, err := s.CustomerRepo.Count(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to response DTOs
+	childResponses := make([]*dto.CustomerResponse, len(children))
+	for i, child := range children {
+		childResponses[i] = &dto.CustomerResponse{
+			Customer: child,
+		}
+	}
+
+	return &dto.ListCustomersResponse{
+		Items: childResponses,
+		Pagination: types.PaginationResponse{
+			Total:  count,
+			Limit:  0,
+			Offset: 0,
+		},
+	}, nil
+}
+
+// GetCustomerHierarchy retrieves the full hierarchy for a customer (parent + all children)
+func (s *customerService) GetCustomerHierarchy(ctx context.Context, customerID string) (*dto.CustomerHierarchyResponse, error) {
+	// Get the customer
+	cust, err := s.CustomerRepo.Get(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &dto.CustomerHierarchyResponse{
+		Customer: &dto.CustomerResponse{
+			Customer: cust,
+		},
+	}
+
+	// If customer has a parent, fetch parent details
+	if cust.ParentCustomerID != nil {
+		parent, err := s.CustomerRepo.Get(ctx, *cust.ParentCustomerID)
+		if err != nil {
+			s.Logger.Warnw("failed to fetch parent customer",
+				"customer_id", customerID,
+				"parent_id", *cust.ParentCustomerID,
+				"error", err)
+			// Don't fail the request, just log the warning
+		} else {
+			response.Customer.ParentCustomer = &dto.CustomerResponse{
+				Customer: parent,
+			}
+			response.ParentID = &parent.ID
+		}
+	}
+
+	// Determine the root of the hierarchy (parent if exists, otherwise this customer)
+	rootID := customerID
+	if cust.ParentCustomerID != nil {
+		rootID = *cust.ParentCustomerID
+	}
+
+	// Fetch all children of the root
+	childFilter := types.NewNoLimitCustomerFilter()
+	childFilter.ParentCustomerIDs = []string{rootID}
+
+	children, err := s.CustomerRepo.List(ctx, childFilter)
+	if err != nil {
+		return nil, err		
+	}
+
+	// Convert to response DTOs
+	childResponses := make([]*dto.CustomerResponse, len(children))
+	for i, child := range children {
+		childResponses[i] = &dto.CustomerResponse{
+			Customer: child,
+		}
+	}
+	response.Children = childResponses
+	response.TotalChildren = len(children)
+
+	return response, nil
 }

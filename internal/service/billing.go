@@ -826,6 +826,7 @@ func (s *billingService) CalculateUsageCharges(
 				PeriodEnd:        lo.ToPtr(item.GetPeriodEnd(periodEnd)),
 				Metadata:         metadata,
 				CommitmentInfo:   commitmentInfo,
+				UsageCustomerIDs: item.EffectiveUsageCustomerIDs(sub),
 			})
 		}
 	}
@@ -1608,6 +1609,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 				PeriodEnd:        lo.ToPtr(item.GetPeriodEnd(periodEnd)),
 				Metadata:         metadata,
 				CommitmentInfo:   commitmentInfo,
+				UsageCustomerIDs: item.EffectiveUsageCustomerIDs(sub),
 			})
 		}
 	}
@@ -1653,6 +1655,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 				PeriodStart:      lo.ToPtr(bc.item.GetPeriodStart(periodStart)),
 				PeriodEnd:        lo.ToPtr(bc.item.GetPeriodEnd(periodEnd)),
 				Metadata:         bc.metadata,
+				UsageCustomerIDs: bc.item.EffectiveUsageCustomerIDs(sub),
 			})
 			totalUsageCost = totalUsageCost.Add(roundedAmount)
 		}
@@ -3266,4 +3269,101 @@ func (s *billingService) calculateNeverResetUsage(
 		"billable_quantity", billableQuantity)
 
 	return billableQuantity, nil
+}
+
+// resolveHierarchyCustomers resolves customer IDs for hierarchy analytics
+// Returns a list of customers (parent + children) and a map of customer details
+func (s *billingService) resolveHierarchyCustomers(
+	ctx context.Context,
+	primaryCustomerID string,
+	includeChildren bool,
+	childCustomerIDs []string,
+) ([]*customer.Customer, map[string]*customer.Customer, error) {
+	// Get the primary customer
+	primaryCustomer, err := s.CustomerRepo.Get(ctx, primaryCustomerID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// If no hierarchy params, return just the primary customer
+	if !includeChildren && len(childCustomerIDs) == 0 {
+		customerMap := map[string]*customer.Customer{
+			primaryCustomerID: primaryCustomer,
+		}
+		return []*customer.Customer{primaryCustomer}, customerMap, nil
+	}
+
+	// Determine which children to include
+	var targetChildIDs []string
+	if includeChildren {
+		// Fetch all children
+		childFilter := types.NewCustomerFilter()
+		childFilter.ParentCustomerIDs = []string{primaryCustomerID}
+		childFilter.Limit = lo.ToPtr(1000)
+
+		children, err := s.CustomerRepo.List(ctx, childFilter)
+		if err != nil {
+			return nil, nil, ierr.WithError(err).
+				WithHint("Failed to fetch child customers").
+				Mark(ierr.ErrDatabase)
+		}
+
+		for _, child := range children {
+			targetChildIDs = append(targetChildIDs, child.ID)
+		}
+	} else if len(childCustomerIDs) > 0 {
+		// Use provided child IDs
+		targetChildIDs = childCustomerIDs
+	}
+
+	// Validate that all specified children are actually children of the primary customer
+	if len(targetChildIDs) > 0 {
+		childFilter := types.NewCustomerFilter()
+		childFilter.CustomerIDs = targetChildIDs
+		childFilter.Limit = lo.ToPtr(len(targetChildIDs))
+
+		children, err := s.CustomerRepo.List(ctx, childFilter)
+		if err != nil {
+			return nil, nil, ierr.WithError(err).
+				WithHint("Failed to fetch specified child customers").
+				Mark(ierr.ErrDatabase)
+		}
+
+		if len(children) != len(targetChildIDs) {
+			return nil, nil, ierr.NewError("one or more specified child customers not found").
+				WithHint("All child_customer_ids must reference valid customers").
+				Mark(ierr.ErrValidation)
+		}
+
+		// Validate hierarchy relationship
+		for _, child := range children {
+			if child.ParentCustomerID == nil || *child.ParentCustomerID != primaryCustomerID {
+				return nil, nil, ierr.NewError("specified customer is not a child of the primary customer").
+					WithHint("All child_customer_ids must be children of the specified customer").
+					WithReportableDetails(map[string]interface{}{
+						"primary_customer_id": primaryCustomerID,
+						"invalid_child_id":    child.ID,
+					}).
+					Mark(ierr.ErrValidation)
+			}
+		}
+
+		// Build result
+		allCustomers := []*customer.Customer{primaryCustomer}
+		allCustomers = append(allCustomers, children...)
+
+		customerMap := make(map[string]*customer.Customer, len(allCustomers))
+		customerMap[primaryCustomerID] = primaryCustomer
+		for _, child := range children {
+			customerMap[child.ID] = child
+		}
+
+		return allCustomers, customerMap, nil
+	}
+
+	// No children found or specified
+	customerMap := map[string]*customer.Customer{
+		primaryCustomerID: primaryCustomer,
+	}
+	return []*customer.Customer{primaryCustomer}, customerMap, nil
 }
