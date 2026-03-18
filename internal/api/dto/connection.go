@@ -214,6 +214,20 @@ func convertFlatMetadataToStructured(flatMetadata map[string]interface{}, provid
 			Moyasar: moyasarMetadata,
 		}
 
+	case types.SecretProviderPaddle:
+		paddleMetadata := &types.PaddleConnectionMetadata{}
+
+		if apiKey, ok := flatMetadata["api_key"].(string); ok {
+			paddleMetadata.APIKey = apiKey
+		}
+		if webhookSecret, ok := flatMetadata["webhook_secret"].(string); ok {
+			paddleMetadata.WebhookSecret = webhookSecret
+		}
+
+		return types.ConnectionMetadata{
+			Paddle: paddleMetadata,
+		}
+
 	default:
 		// For other providers or unknown types, use generic format
 		return types.ConnectionMetadata{

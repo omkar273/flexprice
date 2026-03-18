@@ -305,6 +305,26 @@ func (s *connectionService) encryptMetadata(encryptedSecretData types.Connection
 
 		encryptedMetadata.Moyasar = moyasarMeta
 
+	case types.SecretProviderPaddle:
+		if encryptedSecretData.Paddle == nil {
+			s.Logger.Warnw("Paddle metadata is nil, cannot encrypt", "provider_type", providerType)
+			return types.ConnectionMetadata{}, ierr.NewError("Paddle metadata is required").
+				WithHint("Paddle connection requires encrypted_secret_data with api_key and webhook_secret").
+				Mark(ierr.ErrValidation)
+		}
+		encryptedAPIKey, err := s.encryptionService.Encrypt(encryptedSecretData.Paddle.APIKey)
+		if err != nil {
+			return types.ConnectionMetadata{}, err
+		}
+		encryptedWebhookSecret, err := s.encryptionService.Encrypt(encryptedSecretData.Paddle.WebhookSecret)
+		if err != nil {
+			return types.ConnectionMetadata{}, err
+		}
+		encryptedMetadata.Paddle = &types.PaddleConnectionMetadata{
+			APIKey:        encryptedAPIKey,
+			WebhookSecret: encryptedWebhookSecret,
+		}
+
 	default:
 		// For other providers or unknown types, use generic format
 		if encryptedSecretData.Generic != nil {
