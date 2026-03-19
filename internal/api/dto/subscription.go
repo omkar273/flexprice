@@ -901,6 +901,17 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		}
 	}
 
+	// Validate usage customer IDs if provided
+	if len(r.UsageCustomerIDs) > 0 {
+		for _, customerID := range r.UsageCustomerIDs {
+			if customerID == "" {
+				return ierr.NewError("usage_customer_id cannot be empty").
+					WithHint("Usage customer ID must be a non-empty string").
+					Mark(ierr.ErrValidation)
+			}
+		}
+	}
+
 	return nil
 }
 
