@@ -450,7 +450,7 @@ func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 	}
 
 	// Set usage_customer_ids: use provided value if given, else fallback to subscription's usage_customer_ids
-	if len(r.UsageCustomerIDs) > 0 {
+	if r.UsageCustomerIDs != nil {
 		lineItem.UsageCustomerIDs = r.UsageCustomerIDs
 	} else {
 		lineItem.UsageCustomerIDs = params.Subscription.UsageCustomerIDs
