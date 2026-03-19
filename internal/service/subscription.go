@@ -2202,7 +2202,7 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 		// Resolve customer IDs to external IDs for ClickHouse queries
 		externalCustomerIDs, err := s.resolveCustomerIDsToExternalIDs(ctx, usageCustomerIDs)
 		if err != nil {
-			s.Logger.Warnw("failed to resolve usage customer IDs to external IDs, falling back to subscription customer",
+			s.Logger.Warnw("failed to resolve usage customer IDs to external IDs",
 				"error", err,
 				"usage_customer_ids", usageCustomerIDs,
 				"subscription_id", req.SubscriptionID)
