@@ -219,7 +219,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 
 			// Customer hierarchy endpoints
 			customer.GET("/:id/children", handlers.Customer.GetCustomerChildren)
-			customer.GET("/:id/hierarchy", handlers.Customer.GetCustomerHierarchy)
 
 			// other routes for customer
 			customer.GET("/:id/wallets", handlers.Wallet.GetWalletsByCustomerID)

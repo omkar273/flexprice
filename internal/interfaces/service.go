@@ -24,7 +24,6 @@ type CustomerService interface {
 
 	// Hierarchy operations
 	GetCustomerChildren(ctx context.Context, parentID string) (*dto.ListCustomersResponse, error)
-	GetCustomerHierarchy(ctx context.Context, customerID string) (*dto.CustomerHierarchyResponse, error)
 
 	// Credit grant applications
 	GetUpcomingCreditGrantApplications(ctx context.Context, customerID string) (*dto.ListCreditGrantApplicationsResponse, error)

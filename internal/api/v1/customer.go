@@ -107,30 +107,6 @@ func (h *CustomerHandler) GetCustomerChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// @Summary Get customer hierarchy
-// @ID getCustomerHierarchy
-// @Description Retrieve the full hierarchy for a customer (parent + all children)
-// @Tags Customers
-// @Produce json
-// @Security ApiKeyAuth
-// @Param id path string true "Customer ID"
-// @Success 200 {object} dto.CustomerHierarchyResponse
-// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
-// @Failure 404 {object} ierr.ErrorResponse "Customer not found"
-// @Failure 500 {object} ierr.ErrorResponse "Server error"
-// @Router /customers/{id}/hierarchy [get]
-func (h *CustomerHandler) GetCustomerHierarchy(c *gin.Context) {
-	id := c.Param("id")
-
-	resp, err := h.service.GetCustomerHierarchy(c.Request.Context(), id)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-
 func (h *CustomerHandler) ListCustomers(c *gin.Context) {
 	var filter types.CustomerFilter
 	if err := c.ShouldBindQuery(&filter); err != nil {
