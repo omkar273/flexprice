@@ -137,12 +137,30 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 		// 1. Generate idempotency key if not provided
 		var idempKey string
 		if req.IdempotencyKey == nil {
+			periodStart := req.PeriodStart
+			periodEnd := req.PeriodEnd
+
+			// To handle potential race conditions and prevent the creation of duplicate subscription invoices
+			// (e.g., when multiple cancellation or update requests are processed simultaneously),
+			// we truncate the billing period's start and end times to minute-level precision for
+			// idempotency key generation. This ensures that any additional requests for the same
+			// billing period within the same minute will generate an identical idempotency key,
+			// allowing the system to correctly identify and deduplicate them.
+			if periodStart != nil && !periodStart.IsZero() {
+				t := periodStart.Truncate(time.Minute)
+				periodStart = &t
+			}
+			if periodEnd != nil && !periodEnd.IsZero() {
+				t := periodEnd.Truncate(time.Minute)
+				periodEnd = &t
+			}
+
 			params := map[string]interface{}{
 				"tenant_id":      types.GetTenantID(ctx),
 				"environment_id": types.GetEnvironmentID(ctx),
 				"customer_id":    req.CustomerID,
-				"period_start":   req.PeriodStart,
-				"period_end":     req.PeriodEnd,
+				"period_start":   periodStart,
+				"period_end":     periodEnd,
 				// Including a timestamp here would always generate a new idempotency key
 				// for the same invoice, so it is intentionally omitted.
 				// "timestamp":    time.Now().UTC(),
