@@ -5328,18 +5328,20 @@ func (s *subscriptionService) GetSubscriptionEntitlements(ctx context.Context, s
 			Mark(ierr.ErrDatabase)
 	}
 
-	// Step 3: Extract unique addon IDs
+	// Step 3: Extract unique addon IDs for bulk fetch
 	addonIDs := lo.Uniq(lo.Map(activeAddons.Items, func(assoc *dto.AddonAssociationResponse, _ int) string {
-		if assoc != nil {
+		if assoc != nil && assoc.AddonID != "" {
 			return assoc.AddonID
 		}
 		return ""
 	}))
+	addonIDs = lo.Filter(addonIDs, func(id string, _ int) bool { return id != "" })
 
-	// Step 4: Fetch addon entitlements if any addons exist
+	// Step 4: Fetch addon entitlements and expand by association count (multi-addon support)
+	// When the same addon is attached multiple times (multiple_instance addon), each association
+	// contributes its entitlement. We expand entitlements so 2x addon A = 2x addon A's limits.
 	var addonEntitlements []*dto.EntitlementResponse
 	if len(addonIDs) > 0 {
-		// Create filter for bulk fetching addon entitlements
 		addonEntFilter := types.NewNoLimitEntitlementFilter().
 			WithEntityIDs(addonIDs).
 			WithEntityType(types.ENTITLEMENT_ENTITY_TYPE_ADDON).
@@ -5350,7 +5352,25 @@ func (s *subscriptionService) GetSubscriptionEntitlements(ctx context.Context, s
 		if err != nil {
 			return nil, err
 		}
-		addonEntitlements = addonEntResp.Items
+
+		// Build addonID -> entitlements map for lookup
+		addonEntitlementsByID := make(map[string][]*dto.EntitlementResponse)
+		for _, ent := range addonEntResp.Items {
+			if ent != nil && ent.EntityID != "" {
+				addonEntitlementsByID[ent.EntityID] = append(addonEntitlementsByID[ent.EntityID], ent)
+			}
+		}
+
+		// Expand: add entitlements once per addon association (supports multi-addon)
+		for _, assoc := range activeAddons.Items {
+			if assoc == nil || assoc.AddonID == "" {
+				continue
+			}
+			ents := addonEntitlementsByID[assoc.AddonID]
+			for _, ent := range ents {
+				addonEntitlements = append(addonEntitlements, ent)
+			}
+		}
 	}
 
 	// Step 5: Fetch subscription-scoped entitlement overrides
