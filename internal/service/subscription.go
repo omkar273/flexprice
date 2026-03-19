@@ -6154,8 +6154,16 @@ func (s *subscriptionService) validateUsageCustomerIDs(ctx context.Context, subs
 		return nil
 	}
 
+	// Ignore the subscription customer's own ID (parent/self in usage_customer_ids is allowed and treated as no-op)
+	filtered := lo.Filter(usageCustomerIDs, func(id string, _ int) bool {
+		return id != subscriptionCustomer.ID
+	})
+	if len(filtered) == 0 {
+		return nil
+	}
+
 	// Deduplicate IDs
-	uniqueIDs := lo.Uniq(usageCustomerIDs)
+	uniqueIDs := lo.Uniq(filtered)
 
 	// Fetch all usage customers in a single query
 	customerFilter := types.NewCustomerFilter()
