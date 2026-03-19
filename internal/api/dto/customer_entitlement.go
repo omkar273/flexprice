@@ -27,6 +27,12 @@ import (
 type GetCustomerEntitlementsRequest struct {
 	FeatureIDs      []string `json:"feature_ids,omitempty" form:"feature_ids"`
 	SubscriptionIDs []string `json:"subscription_ids,omitempty" form:"subscription_ids"`
+
+	// Hierarchy support - aggregate entitlements across parent and children
+	// Include all child customers in entitlement aggregation (convenience flag)
+	IncludeChildren bool `json:"include_children,omitempty" form:"include_children"`
+	// Specific child customer IDs to include (granular control)
+	ChildCustomerIDs []string `json:"child_customer_ids,omitempty" form:"child_customer_ids"`
 }
 
 func (r *GetCustomerEntitlementsRequest) Validate() error {
@@ -108,6 +114,8 @@ type GetCustomerUsageSummaryRequest struct {
 	IncludeChildren bool `json:"include_children,omitempty" form:"include_children"`
 	// Specific child customer IDs to include (granular control)
 	ChildCustomerIDs []string `json:"child_customer_ids,omitempty" form:"child_customer_ids"`
+	// Include per-customer breakdown in response (only applicable when hierarchy is enabled)
+	IncludeBreakdown bool `json:"include_breakdown,omitempty" form:"include_breakdown"`
 }
 
 func (r *GetCustomerUsageSummaryRequest) Validate() error {
