@@ -10337,6 +10337,33 @@ const docTemplate = `{
                 }
             }
         },
+        "/webhooks/events": {
+            "get": {
+                "description": "Returns all supported internal webhook event names grouped by category.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "List supported webhook event names",
+                "operationId": "listWebhookEvents",
+                "responses": {
+                    "200": {
+                        "description": "Supported webhook events",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/types.WebhookEventName"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/webhooks/hubspot/{tenant_id}/{environment_id}": {
             "post": {
                 "description": "Use as the HubSpot webhook endpoint URL. Receives deal and customer events (e.g. deal closed won) to create or update customers in FlexPrice.",
@@ -22761,7 +22788,6 @@ const docTemplate = `{
         "types.WindowSize": {
             "type": "string",
             "enum": [
-                "MONTH",
                 "MINUTE",
                 "15MIN",
                 "30MIN",
@@ -22771,10 +22797,10 @@ const docTemplate = `{
                 "12HOUR",
                 "DAY",
                 "WEEK",
+                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
-                "DefaultWindowSize",
                 "WindowSizeMinute",
                 "WindowSize15Min",
                 "WindowSize30Min",
@@ -22784,7 +22810,8 @@ const docTemplate = `{
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth"
+                "WindowSizeMonth",
+                "DefaultWindowSize"
             ]
         },
         "types.WorkflowExecutionFilter": {
@@ -23652,6 +23679,99 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "types.WebhookEventName": {
+            "type": "string",
+            "enum": [
+                "invoice.create.drafted",
+                "subscription.created",
+                "subscription.draft.created",
+                "subscription.activated",
+                "subscription.updated",
+                "subscription.paused",
+                "subscription.cancelled",
+                "subscription.resumed",
+                "subscription.phase.created",
+                "subscription.phase.updated",
+                "subscription.phase.deleted",
+                "feature.created",
+                "feature.updated",
+                "feature.deleted",
+                "feature.wallet_balance.alert",
+                "entitlement.created",
+                "entitlement.updated",
+                "entitlement.deleted",
+                "wallet.created",
+                "wallet.updated",
+                "wallet.terminated",
+                "wallet.transaction.created",
+                "payment.created",
+                "payment.updated",
+                "payment.failed",
+                "payment.success",
+                "payment.pending",
+                "customer.created",
+                "customer.updated",
+                "customer.deleted",
+                "invoice.update.finalized",
+                "invoice.update.payment",
+                "invoice.update.voided",
+                "invoice.update",
+                "invoice.payment.overdue",
+                "wallet.credit_balance.dropped",
+                "wallet.credit_balance.recovered",
+                "wallet.ongoing_balance.dropped",
+                "wallet.ongoing_balance.recovered",
+                "subscription.renewal.due",
+                "invoice.communication.triggered",
+                "credit_note.created",
+                "credit_note.updated"
+            ],
+            "x-enum-varnames": [
+                "WebhookEventInvoiceCreateDraft",
+                "WebhookEventSubscriptionCreated",
+                "WebhookEventSubscriptionDraftCreated",
+                "WebhookEventSubscriptionActivated",
+                "WebhookEventSubscriptionUpdated",
+                "WebhookEventSubscriptionPaused",
+                "WebhookEventSubscriptionCancelled",
+                "WebhookEventSubscriptionResumed",
+                "WebhookEventSubscriptionPhaseCreated",
+                "WebhookEventSubscriptionPhaseUpdated",
+                "WebhookEventSubscriptionPhaseDeleted",
+                "WebhookEventFeatureCreated",
+                "WebhookEventFeatureUpdated",
+                "WebhookEventFeatureDeleted",
+                "WebhookEventFeatureWalletBalanceAlert",
+                "WebhookEventEntitlementCreated",
+                "WebhookEventEntitlementUpdated",
+                "WebhookEventEntitlementDeleted",
+                "WebhookEventWalletCreated",
+                "WebhookEventWalletUpdated",
+                "WebhookEventWalletTerminated",
+                "WebhookEventWalletTransactionCreated",
+                "WebhookEventPaymentCreated",
+                "WebhookEventPaymentUpdated",
+                "WebhookEventPaymentFailed",
+                "WebhookEventPaymentSuccess",
+                "WebhookEventPaymentPending",
+                "WebhookEventCustomerCreated",
+                "WebhookEventCustomerUpdated",
+                "WebhookEventCustomerDeleted",
+                "WebhookEventInvoiceUpdateFinalized",
+                "WebhookEventInvoiceUpdatePayment",
+                "WebhookEventInvoiceUpdateVoided",
+                "WebhookEventInvoiceUpdate",
+                "WebhookEventInvoicePaymentOverdue",
+                "WebhookEventWalletCreditBalanceDropped",
+                "WebhookEventWalletCreditBalanceRecovered",
+                "WebhookEventWalletOngoingBalanceDropped",
+                "WebhookEventWalletOngoingBalanceRecovered",
+                "WebhookEventSubscriptionRenewalDue",
+                "WebhookEventInvoiceCommunicationTriggered",
+                "WebhookEventCreditNoteCreated",
+                "WebhookEventCreditNoteUpdated"
+            ]
         }
     },
     "securityDefinitions": {

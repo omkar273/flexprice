@@ -543,6 +543,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 		webhookGroup := v1Private.Group("/webhooks")
 		{
 			webhookGroup.GET("/dashboard", handlers.Webhook.GetDashboardURL)
+			webhookGroup.GET("/events", handlers.Webhook.ListWebhookEvents)
 		}
 	}
 

@@ -8738,7 +8738,6 @@ definitions:
     - WalletTypePostPaid
   types.WindowSize:
     enum:
-    - MONTH
     - MINUTE
     - 15MIN
     - 30MIN
@@ -8749,9 +8748,9 @@ definitions:
     - DAY
     - WEEK
     - MONTH
+    - MONTH
     type: string
     x-enum-varnames:
-    - DefaultWindowSize
     - WindowSizeMinute
     - WindowSize15Min
     - WindowSize30Min
@@ -8762,6 +8761,7 @@ definitions:
     - WindowSizeDay
     - WindowSizeWeek
     - WindowSizeMonth
+    - DefaultWindowSize
   types.WorkflowExecutionFilter:
     properties:
       end_time:
@@ -9401,6 +9401,96 @@ definitions:
         description: Display unit label, singular (e.g. "second")
         type: string
     type: object
+  types.WebhookEventName:
+    enum:
+    - invoice.create.drafted
+    - subscription.created
+    - subscription.draft.created
+    - subscription.activated
+    - subscription.updated
+    - subscription.paused
+    - subscription.cancelled
+    - subscription.resumed
+    - subscription.phase.created
+    - subscription.phase.updated
+    - subscription.phase.deleted
+    - feature.created
+    - feature.updated
+    - feature.deleted
+    - feature.wallet_balance.alert
+    - entitlement.created
+    - entitlement.updated
+    - entitlement.deleted
+    - wallet.created
+    - wallet.updated
+    - wallet.terminated
+    - wallet.transaction.created
+    - payment.created
+    - payment.updated
+    - payment.failed
+    - payment.success
+    - payment.pending
+    - customer.created
+    - customer.updated
+    - customer.deleted
+    - invoice.update.finalized
+    - invoice.update.payment
+    - invoice.update.voided
+    - invoice.update
+    - invoice.payment.overdue
+    - wallet.credit_balance.dropped
+    - wallet.credit_balance.recovered
+    - wallet.ongoing_balance.dropped
+    - wallet.ongoing_balance.recovered
+    - subscription.renewal.due
+    - invoice.communication.triggered
+    - credit_note.created
+    - credit_note.updated
+    type: string
+    x-enum-varnames:
+    - WebhookEventInvoiceCreateDraft
+    - WebhookEventSubscriptionCreated
+    - WebhookEventSubscriptionDraftCreated
+    - WebhookEventSubscriptionActivated
+    - WebhookEventSubscriptionUpdated
+    - WebhookEventSubscriptionPaused
+    - WebhookEventSubscriptionCancelled
+    - WebhookEventSubscriptionResumed
+    - WebhookEventSubscriptionPhaseCreated
+    - WebhookEventSubscriptionPhaseUpdated
+    - WebhookEventSubscriptionPhaseDeleted
+    - WebhookEventFeatureCreated
+    - WebhookEventFeatureUpdated
+    - WebhookEventFeatureDeleted
+    - WebhookEventFeatureWalletBalanceAlert
+    - WebhookEventEntitlementCreated
+    - WebhookEventEntitlementUpdated
+    - WebhookEventEntitlementDeleted
+    - WebhookEventWalletCreated
+    - WebhookEventWalletUpdated
+    - WebhookEventWalletTerminated
+    - WebhookEventWalletTransactionCreated
+    - WebhookEventPaymentCreated
+    - WebhookEventPaymentUpdated
+    - WebhookEventPaymentFailed
+    - WebhookEventPaymentSuccess
+    - WebhookEventPaymentPending
+    - WebhookEventCustomerCreated
+    - WebhookEventCustomerUpdated
+    - WebhookEventCustomerDeleted
+    - WebhookEventInvoiceUpdateFinalized
+    - WebhookEventInvoiceUpdatePayment
+    - WebhookEventInvoiceUpdateVoided
+    - WebhookEventInvoiceUpdate
+    - WebhookEventInvoicePaymentOverdue
+    - WebhookEventWalletCreditBalanceDropped
+    - WebhookEventWalletCreditBalanceRecovered
+    - WebhookEventWalletOngoingBalanceDropped
+    - WebhookEventWalletOngoingBalanceRecovered
+    - WebhookEventSubscriptionRenewalDue
+    - WebhookEventInvoiceCommunicationTriggered
+    - WebhookEventCreditNoteCreated
+    - WebhookEventCreditNoteUpdated
 info:
   contact:
     name: API Support
@@ -16249,6 +16339,24 @@ paths:
             additionalProperties: true
             type: object
       summary: Handle Chargebee webhook events
+      tags:
+      - Webhooks
+  /webhooks/events:
+    get:
+      description: Returns all supported internal webhook event names grouped by category.
+      operationId: listWebhookEvents
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Supported webhook events
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/types.WebhookEventName'
+              type: array
+            type: array
+      summary: List supported webhook event names
       tags:
       - Webhooks
   /webhooks/hubspot/{tenant_id}/{environment_id}:

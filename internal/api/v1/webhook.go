@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/integration"
 	chargebeewebhook "github.com/flexprice/flexprice/internal/integration/chargebee/webhook"
@@ -109,6 +110,17 @@ func (h *WebhookHandler) GetDashboardURL(c *gin.Context) {
 		"url":          url,
 		"svix_enabled": true,
 	})
+}
+
+// @Summary List supported webhook event names
+// @ID listWebhookEvents
+// @Description Returns all supported internal webhook event names grouped by category.
+// @Tags Webhooks
+// @Produce json
+// @Success 200 {array} dto.WebhookEventCatalogResponse "Supported webhook events"
+// @Router /webhooks/events [get]
+func (h *WebhookHandler) ListWebhookEvents(c *gin.Context) {
+	c.JSON(http.StatusOK, dto.WebhookEventCatalogResponse(types.ListWebhookEventNames()))
 }
 
 // @Summary Handle Stripe webhook events

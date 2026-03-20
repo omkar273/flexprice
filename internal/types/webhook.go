@@ -20,6 +20,60 @@ type WebhookEvent struct {
 	Payload       json.RawMessage  `json:"payload"`
 }
 
+// AllWebhookEventNames is the canonical list of supported internal webhook events.
+var AllWebhookEventNames = []WebhookEventName{
+	WebhookEventInvoiceCreateDraft,
+	WebhookEventSubscriptionCreated,
+	WebhookEventSubscriptionDraftCreated,
+	WebhookEventSubscriptionActivated,
+	WebhookEventSubscriptionUpdated,
+	WebhookEventSubscriptionPaused,
+	WebhookEventSubscriptionCancelled,
+	WebhookEventSubscriptionResumed,
+	WebhookEventSubscriptionPhaseCreated,
+	WebhookEventSubscriptionPhaseUpdated,
+	WebhookEventSubscriptionPhaseDeleted,
+	WebhookEventFeatureCreated,
+	WebhookEventFeatureUpdated,
+	WebhookEventFeatureDeleted,
+	WebhookEventFeatureWalletBalanceAlert,
+	WebhookEventEntitlementCreated,
+	WebhookEventEntitlementUpdated,
+	WebhookEventEntitlementDeleted,
+	WebhookEventWalletCreated,
+	WebhookEventWalletUpdated,
+	WebhookEventWalletTerminated,
+	WebhookEventWalletTransactionCreated,
+	WebhookEventPaymentCreated,
+	WebhookEventPaymentUpdated,
+	WebhookEventPaymentFailed,
+	WebhookEventPaymentSuccess,
+	WebhookEventPaymentPending,
+	WebhookEventCustomerCreated,
+	WebhookEventCustomerUpdated,
+	WebhookEventCustomerDeleted,
+	WebhookEventInvoiceUpdateFinalized,
+	WebhookEventInvoiceUpdatePayment,
+	WebhookEventInvoiceUpdateVoided,
+	WebhookEventInvoiceUpdate,
+	WebhookEventInvoicePaymentOverdue,
+	WebhookEventWalletCreditBalanceDropped,
+	WebhookEventWalletCreditBalanceRecovered,
+	WebhookEventWalletOngoingBalanceDropped,
+	WebhookEventWalletOngoingBalanceRecovered,
+	WebhookEventSubscriptionRenewalDue,
+	WebhookEventInvoiceCommunicationTriggered,
+	WebhookEventCreditNoteCreated,
+	WebhookEventCreditNoteUpdated,
+}
+
+// ListWebhookEventNames returns a copy to avoid accidental mutation.
+func ListWebhookEventNames() []WebhookEventName {
+	out := make([]WebhookEventName, len(AllWebhookEventNames))
+	copy(out, AllWebhookEventNames)
+	return out
+}
+
 // invoice event names
 const (
 	WebhookEventInvoiceCreateDraft WebhookEventName = "invoice.create.drafted"
