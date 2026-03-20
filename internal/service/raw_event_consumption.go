@@ -107,23 +107,31 @@ func (s *rawEventConsumptionService) RegisterHandler(
 }
 
 // loadIngestionFilter fetches the EventIngestionFilterConfig from the settings DB
-// and returns a ready-to-use allowlist map. When the setting is absent or the filter
-// is disabled it returns (false, nil) so the caller skips filtering entirely.
-func (s *rawEventConsumptionService) loadIngestionFilter(ctx context.Context) (enabled bool, allowlist map[string]struct{}) {
+// and returns a ready-to-use allowlist map.
+//
+// Error handling:
+//   - Setting absent (ErrNotFound) → filter disabled, returns (false, nil, nil)
+//   - Any other repo error → returns the error so the caller can fail the batch and retry
+//   - Parsing failure → same: error is returned for retry
+//   - Setting present but enabled=false → returns (false, nil, nil)
+func (s *rawEventConsumptionService) loadIngestionFilter(ctx context.Context) (enabled bool, allowlist map[string]struct{}, err error) {
 	setting, err := s.SettingsRepo.GetByKey(ctx, types.SettingKeyEventIngestionFilter)
 	if err != nil {
-		// Setting not configured → filter disabled, pass everything through
-		return false, nil
+		if ierr.IsNotFound(err) {
+			// Setting not configured is expected — filter simply disabled.
+			return false, nil, nil
+		}
+		// Transient DB or other operational error — bubble up so the batch retries.
+		return false, nil, fmt.Errorf("failed to load event ingestion filter setting: %w", err)
 	}
 
 	cfg, err := utils.ToStruct[types.EventIngestionFilterConfig](setting.Value)
 	if err != nil {
-		s.Logger.Errorw("failed to parse event ingestion filter config, filter disabled", "error", err)
-		return false, nil
+		return false, nil, fmt.Errorf("failed to parse event ingestion filter config: %w", err)
 	}
 
 	if !cfg.Enabled {
-		return false, nil
+		return false, nil, nil
 	}
 
 	allowlist = make(map[string]struct{}, len(cfg.AllowedExternalCustomerIDs))
@@ -134,7 +142,7 @@ func (s *rawEventConsumptionService) loadIngestionFilter(ctx context.Context) (e
 	s.Logger.Infow("event ingestion filter loaded",
 		"allowlist_size", len(allowlist),
 	)
-	return true, allowlist
+	return true, allowlist, nil
 }
 
 // processMessage processes a batch of raw events from Kafka
@@ -182,12 +190,22 @@ func (s *rawEventConsumptionService) processMessage(msg *message.Message) error 
 		}(),
 	)
 
-	// Build a context carrying tenant/environment so the settings repo can filter correctly.
-	ctx := types.SetTenantID(context.Background(), tenantID)
+	// Build a context from the message's own context so cancellation/tracing propagates,
+	// then attach tenant and environment IDs so the settings repo can scope its query.
+	ctx := types.SetTenantID(msg.Context(), tenantID)
 	ctx = types.SetEnvironmentID(ctx, environmentID)
 
 	// Fetch the ingestion filter once per batch (one DB read per Kafka message).
-	filterEnabled, allowlist := s.loadIngestionFilter(ctx)
+	// On a real settings-store error (not ErrNotFound) we fail the batch so Kafka retries it.
+	filterEnabled, allowlist, err := s.loadIngestionFilter(ctx)
+	if err != nil {
+		s.Logger.Errorw("failed to load ingestion filter, failing batch for retry",
+			"tenant_id", tenantID,
+			"environment_id", environmentID,
+			"error", err,
+		)
+		return fmt.Errorf("ingestion filter load error: %w", err)
+	}
 
 	// Counters for tracking
 	successCount := 0

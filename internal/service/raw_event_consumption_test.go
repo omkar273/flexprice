@@ -2,24 +2,27 @@ package service
 
 import (
 	"encoding/json"
+	"sort"
 	"testing"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	domainSettings "github.com/flexprice/flexprice/internal/domain/settings"
+	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/sentry"
 	"github.com/flexprice/flexprice/internal/testutil"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 // ---------------------------------------------------------------------------
-// Suite setup
+// Suite
 // ---------------------------------------------------------------------------
 
 type RawEventConsumptionSuite struct {
 	testutil.BaseServiceTestSuite
-	svc         *rawEventConsumptionService
+	svc          *rawEventConsumptionService
 	outputPubSub *testutil.InMemoryPubSub
 	settingsRepo *testutil.InMemorySettingsStore
 }
@@ -46,10 +49,13 @@ func (s *RawEventConsumptionSuite) SetupTest() {
 		outputPubSub:  s.outputPubSub,
 		sentryService: sentry.NewSentryService(s.GetConfig(), s.GetLogger()),
 	}
+
+	// Default output topic
+	s.GetConfig().RawEventConsumption.OutputTopic = testOutputTopic
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Constants
 // ---------------------------------------------------------------------------
 
 const (
@@ -58,15 +64,13 @@ const (
 	testOutputTopic   = "events"
 )
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 // validBentoPayload returns a minimal valid Bento event JSON for the given orgID.
 func validBentoPayload(orgID, eventID string) string {
-	return `{
-		"orgId":"` + orgID + `",
-		"id":"` + eventID + `",
-		"methodName":"CHAT_COMPLETION",
-		"providerName":"openai",
-		"createdAt":"2024-01-15T10:00:00Z"
-	}`
+	return `{"orgId":"` + orgID + `","id":"` + eventID + `","methodName":"CHAT_COMPLETION","providerName":"openai","createdAt":"2024-01-15T10:00:00Z"}`
 }
 
 // buildBatchMsg serialises a RawEventBatch into a Watermill message.
@@ -76,14 +80,16 @@ func buildBatchMsg(batch RawEventBatch) *message.Message {
 }
 
 // makeFilterSetting stores an EventIngestionFilterConfig in the in-memory settings
-// repo under the test tenant+environment.
+// repo under the test tenant + environment. Fails the test immediately on any error.
 func (s *RawEventConsumptionSuite) makeFilterSetting(enabled bool, allowedIDs []string) {
-	value, _ := json.Marshal(types.EventIngestionFilterConfig{
+	value, err := json.Marshal(types.EventIngestionFilterConfig{
 		Enabled:                    enabled,
 		AllowedExternalCustomerIDs: allowedIDs,
 	})
+	require.NoError(s.T(), err, "marshal filter config")
+
 	var valueMap map[string]interface{}
-	_ = json.Unmarshal(value, &valueMap)
+	require.NoError(s.T(), json.Unmarshal(value, &valueMap), "unmarshal filter config to map")
 
 	setting := &domainSettings.Setting{
 		ID:            types.GenerateUUID(),
@@ -97,163 +103,188 @@ func (s *RawEventConsumptionSuite) makeFilterSetting(enabled bool, allowedIDs []
 	setting.UpdatedAt = time.Now()
 
 	ctx := testutil.SetupContext()
-	_ = s.settingsRepo.Create(ctx, setting)
+	require.NoError(s.T(), s.settingsRepo.Create(ctx, setting), "create filter setting")
 }
 
-// publishedCount returns how many messages landed on the output topic.
-func (s *RawEventConsumptionSuite) publishedCount() int {
-	return len(s.outputPubSub.GetMessages(testOutputTopic))
-}
-
-// configure the output topic on the embedded config
-func (s *RawEventConsumptionSuite) setOutputTopic(topic string) {
-	s.svc.Config.RawEventConsumption.OutputTopic = topic
+// publishedExternalIDs decodes all messages published to the output topic and
+// returns the sorted list of ExternalCustomerID values.
+func (s *RawEventConsumptionSuite) publishedExternalIDs() []string {
+	msgs := s.outputPubSub.GetMessages(testOutputTopic)
+	ids := make([]string, 0, len(msgs))
+	for _, m := range msgs {
+		var evt events.Event
+		if err := json.Unmarshal(m.Payload, &evt); err == nil {
+			ids = append(ids, evt.ExternalCustomerID)
+		}
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 // ---------------------------------------------------------------------------
-// Tests
+// Table-driven filter tests
 // ---------------------------------------------------------------------------
 
-// TestFilterDisabled_AllEventsForwarded — setting absent, all events pass through.
-func (s *RawEventConsumptionSuite) TestFilterDisabled_AllEventsForwarded() {
-	s.setOutputTopic(testOutputTopic)
-
-	batch := RawEventBatch{
-		TenantID:      testTenantID,
-		EnvironmentID: testEnvironmentID,
-		Data: []json.RawMessage{
-			json.RawMessage(validBentoPayload("org_001", "evt_001")),
-			json.RawMessage(validBentoPayload("org_002", "evt_002")),
-			json.RawMessage(validBentoPayload("org_003", "evt_003")),
+func (s *RawEventConsumptionSuite) TestProcessMessage_FilterBehavior() {
+	tests := []struct {
+		name           string
+		setupFilter    func()
+		inputOrgIDs    []string // one event per org ID
+		wantForwarded  []string // sorted expected ExternalCustomerIDs that reach the output topic
+		wantErr        bool
+	}{
+		{
+			name:        "no filter setting → all events forwarded",
+			setupFilter: func() { /* no setting created */ },
+			inputOrgIDs: []string{"org_001", "org_002", "org_003"},
+			wantForwarded: []string{"org_001", "org_002", "org_003"},
+		},
+		{
+			name: "filter enabled=false → all events forwarded regardless of list",
+			setupFilter: func() {
+				s.makeFilterSetting(false, []string{"org_001"})
+			},
+			inputOrgIDs:   []string{"org_001", "org_999"},
+			wantForwarded: []string{"org_001", "org_999"},
+		},
+		{
+			name: "filter enabled → only allowlisted IDs forwarded",
+			setupFilter: func() {
+				s.makeFilterSetting(true, []string{"org_001", "org_002"})
+			},
+			inputOrgIDs:   []string{"org_001", "org_002", "org_003", "org_004"},
+			wantForwarded: []string{"org_001", "org_002"},
+		},
+		{
+			name: "filter enabled → no IDs match, nothing forwarded",
+			setupFilter: func() {
+				s.makeFilterSetting(true, []string{"org_allowed"})
+			},
+			inputOrgIDs:   []string{"org_not_in_list", "org_also_not"},
+			wantForwarded: []string{},
+		},
+		{
+			name: "filter enabled with empty allowlist → everything blocked",
+			setupFilter: func() {
+				s.makeFilterSetting(true, []string{})
+			},
+			inputOrgIDs:   []string{"org_001"},
+			wantForwarded: []string{},
 		},
 	}
 
-	err := s.svc.processMessage(buildBatchMsg(batch))
-	s.NoError(err)
-	s.Equal(3, s.publishedCount(), "all 3 events should be forwarded when filter is absent")
-}
+	for _, tc := range tests {
+		s.Run(tc.name, func() {
+			// Reset state between sub-tests
+			s.settingsRepo.Clear()
+			s.outputPubSub.ClearMessages()
 
-// TestFilterEnabled_AllowlistedIDsForwarded — only IDs in the allowlist pass.
-func (s *RawEventConsumptionSuite) TestFilterEnabled_AllowlistedIDsForwarded() {
-	s.setOutputTopic(testOutputTopic)
-	s.makeFilterSetting(true, []string{"org_001", "org_002"})
+			tc.setupFilter()
 
-	batch := RawEventBatch{
-		TenantID:      testTenantID,
-		EnvironmentID: testEnvironmentID,
-		Data: []json.RawMessage{
-			json.RawMessage(validBentoPayload("org_001", "evt_001")), // allowed
-			json.RawMessage(validBentoPayload("org_002", "evt_002")), // allowed
-			json.RawMessage(validBentoPayload("org_003", "evt_003")), // filtered out
-			json.RawMessage(validBentoPayload("org_004", "evt_004")), // filtered out
-		},
+			data := make([]json.RawMessage, len(tc.inputOrgIDs))
+			for i, orgID := range tc.inputOrgIDs {
+				data[i] = json.RawMessage(validBentoPayload(orgID, "evt_"+orgID))
+			}
+
+			batch := RawEventBatch{
+				TenantID:      testTenantID,
+				EnvironmentID: testEnvironmentID,
+				Data:          data,
+			}
+
+			err := s.svc.processMessage(buildBatchMsg(batch))
+
+			if tc.wantErr {
+				s.Error(err)
+				return
+			}
+			s.NoError(err)
+
+			got := s.publishedExternalIDs()
+			wantSorted := append([]string{}, tc.wantForwarded...)
+			sort.Strings(wantSorted)
+
+			s.Equal(wantSorted, got,
+				"forwarded ExternalCustomerIDs should exactly match allowlist")
+		})
 	}
-
-	err := s.svc.processMessage(buildBatchMsg(batch))
-	s.NoError(err)
-	s.Equal(2, s.publishedCount(), "only org_001 and org_002 should be forwarded")
 }
 
-// TestFilterEnabled_NoAllowlistedIDs — filter is on but the batch has no matching IDs.
-func (s *RawEventConsumptionSuite) TestFilterEnabled_NoAllowlistedIDs() {
-	s.setOutputTopic(testOutputTopic)
-	s.makeFilterSetting(true, []string{"org_allowed"})
+// ---------------------------------------------------------------------------
+// Edge-case tests (kept separate as they need special setup)
+// ---------------------------------------------------------------------------
 
-	batch := RawEventBatch{
-		TenantID:      testTenantID,
-		EnvironmentID: testEnvironmentID,
-		Data: []json.RawMessage{
-			json.RawMessage(validBentoPayload("org_not_in_list", "evt_001")),
-			json.RawMessage(validBentoPayload("org_also_not",    "evt_002")),
-		},
-	}
-
-	err := s.svc.processMessage(buildBatchMsg(batch))
-	s.NoError(err)
-	s.Equal(0, s.publishedCount(), "no events should be forwarded when no IDs match")
-}
-
-// TestFilterEnabledFalse_AllEventsForwarded — setting exists but enabled=false, all pass.
-func (s *RawEventConsumptionSuite) TestFilterEnabledFalse_AllEventsForwarded() {
-	s.setOutputTopic(testOutputTopic)
-	s.makeFilterSetting(false, []string{"org_001"}) // disabled
-
-	batch := RawEventBatch{
-		TenantID:      testTenantID,
-		EnvironmentID: testEnvironmentID,
-		Data: []json.RawMessage{
-			json.RawMessage(validBentoPayload("org_001", "evt_001")),
-			json.RawMessage(validBentoPayload("org_999", "evt_002")), // would be blocked if enabled
-		},
-	}
-
-	err := s.svc.processMessage(buildBatchMsg(batch))
-	s.NoError(err)
-	s.Equal(2, s.publishedCount(), "all events should pass when filter is disabled")
-}
-
-// TestFilterEnabled_EmptyAllowlist — filter on with empty list blocks everything.
-func (s *RawEventConsumptionSuite) TestFilterEnabled_EmptyAllowlist() {
-	s.setOutputTopic(testOutputTopic)
-	s.makeFilterSetting(true, []string{}) // enabled but empty
-
-	batch := RawEventBatch{
-		TenantID:      testTenantID,
-		EnvironmentID: testEnvironmentID,
-		Data: []json.RawMessage{
-			json.RawMessage(validBentoPayload("org_001", "evt_001")),
-		},
-	}
-
-	err := s.svc.processMessage(buildBatchMsg(batch))
-	s.NoError(err)
-	s.Equal(0, s.publishedCount(), "empty allowlist should block all events")
-}
-
-// TestInvalidEvent_Skipped — events that fail transformer validation are counted as skips,
-// not errors, regardless of filter state.
-func (s *RawEventConsumptionSuite) TestInvalidEvent_Skipped() {
-	s.setOutputTopic(testOutputTopic)
+// TestInvalidBentoEvent_SkippedBeforeFilterCheck — invalid events are dropped before the
+// filter check; a valid+allowed event in the same batch still gets through.
+func (s *RawEventConsumptionSuite) TestInvalidBentoEvent_SkippedBeforeFilterCheck() {
 	s.makeFilterSetting(true, []string{"org_001"})
 
-	invalidPayload := `{"orgId":"org_001"}` // missing required fields (methodName, providerName, id, createdAt)
+	// Missing required fields (methodName, providerName, id, createdAt)
+	invalidPayload := json.RawMessage(`{"orgId":"org_001"}`)
 
 	batch := RawEventBatch{
 		TenantID:      testTenantID,
 		EnvironmentID: testEnvironmentID,
 		Data: []json.RawMessage{
-			json.RawMessage(invalidPayload),
-			json.RawMessage(validBentoPayload("org_001", "evt_002")),
+			invalidPayload,
+			json.RawMessage(validBentoPayload("org_001", "evt_valid")),
 		},
 	}
 
 	err := s.svc.processMessage(buildBatchMsg(batch))
 	s.NoError(err)
-	// Invalid event is dropped before filter check; valid+allowed event goes through
-	s.Equal(1, s.publishedCount())
+	s.Equal([]string{"org_001"}, s.publishedExternalIDs())
 }
 
-// TestMalformedBatchPayload_ReturnsError — a non-JSON batch returns a non-retriable error.
-func (s *RawEventConsumptionSuite) TestMalformedBatchPayload_ReturnsError() {
-	// sentryService is nil, but we guard against panics by catching the error path
+// TestMalformedBatchPayload_ReturnsNonRetriableError — a completely non-JSON batch payload
+// returns an immediate non-retriable error (no retries would help).
+func (s *RawEventConsumptionSuite) TestMalformedBatchPayload_ReturnsNonRetriableError() {
 	msg := message.NewMessage("test-uuid", []byte("not-json"))
 	err := s.svc.processMessage(msg)
 	s.Error(err)
 	s.Contains(err.Error(), "non-retriable unmarshal error")
 }
 
-// TestTenantFallbackFromConfig — when batch has no tenant/env, config values are used
-// and the filter setting stored under config tenant/env is picked up correctly.
-func (s *RawEventConsumptionSuite) TestTenantFallbackFromConfig() {
-	s.setOutputTopic(testOutputTopic)
+// TestSettingsRepoError_FailsBatchForRetry — a transient settings-store error (not ErrNotFound)
+// must propagate so Watermill retries the entire batch.
+func (s *RawEventConsumptionSuite) TestSettingsRepoError_FailsBatchForRetry() {
+	// Replace the settings repo with one that always returns an operational error
+	// for GetByKey. We do this by pre-populating a setting with a corrupted value
+	// that causes a parse failure (which is treated as a hard error).
+	ctx := testutil.SetupContext()
+	corruptSetting := &domainSettings.Setting{
+		ID:            types.GenerateUUID(),
+		Key:           types.SettingKeyEventIngestionFilter,
+		Value:         map[string]interface{}{"enabled": "not-a-bool", "allowed_external_customer_ids": "also-wrong"},
+		EnvironmentID: testEnvironmentID,
+	}
+	corruptSetting.TenantID = testTenantID
+	corruptSetting.Status = types.StatusPublished
+	corruptSetting.CreatedAt = time.Now()
+	corruptSetting.UpdatedAt = time.Now()
+	require.NoError(s.T(), s.settingsRepo.Create(ctx, corruptSetting))
 
-	// Config tenant/env is what SetupContext uses (DefaultTenantID / env_sandbox)
+	batch := RawEventBatch{
+		TenantID:      testTenantID,
+		EnvironmentID: testEnvironmentID,
+		Data:          []json.RawMessage{json.RawMessage(validBentoPayload("org_001", "evt_001"))},
+	}
+
+	err := s.svc.processMessage(buildBatchMsg(batch))
+	s.Error(err, "corrupt setting value should fail the batch for retry")
+	s.Equal(0, len(s.outputPubSub.GetMessages(testOutputTopic)),
+		"no events should be forwarded when filter config is unreadable")
+}
+
+// TestTenantFallbackFromConfig — when the batch omits tenant/env, config fallback values
+// are used to scope the settings lookup and the filter activates correctly.
+func (s *RawEventConsumptionSuite) TestTenantFallbackFromConfig() {
 	s.GetConfig().Billing.TenantID = testTenantID
 	s.GetConfig().Billing.EnvironmentID = testEnvironmentID
 	s.makeFilterSetting(true, []string{"org_001"})
 
 	batch := RawEventBatch{
-		// TenantID and EnvironmentID intentionally omitted → falls back to config
+		// TenantID and EnvironmentID intentionally omitted → config fallback
 		Data: []json.RawMessage{
 			json.RawMessage(validBentoPayload("org_001", "evt_001")), // allowed
 			json.RawMessage(validBentoPayload("org_002", "evt_002")), // filtered
@@ -262,5 +293,5 @@ func (s *RawEventConsumptionSuite) TestTenantFallbackFromConfig() {
 
 	err := s.svc.processMessage(buildBatchMsg(batch))
 	s.NoError(err)
-	s.Equal(1, s.publishedCount())
+	s.Equal([]string{"org_001"}, s.publishedExternalIDs())
 }
