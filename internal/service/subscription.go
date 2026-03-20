@@ -1818,6 +1818,13 @@ func (s *subscriptionService) CancelSubscription(
 			}
 		}
 
+		// Cascade cancellation to INHERITED child subscriptions
+		if subscription.SubscriptionType == types.SubscriptionTypeParent {
+			if err := s.cascadeCancelToInherited(ctx, subscription, req); err != nil {
+				logger.Errorw("failed to cascade cancellation to inherited subs", "error", err)
+			}
+		}
+
 		return nil
 	})
 
@@ -1826,13 +1833,6 @@ func (s *subscriptionService) CancelSubscription(
 		return nil, ierr.WithError(err).
 			WithHint("Failed to process subscription cancellation").
 			Mark(ierr.ErrDatabase)
-	}
-
-	// Cascade cancellation to INHERITED child subscriptions
-	if subscription.SubscriptionType == types.SubscriptionTypeParent {
-		if err := s.cascadeCancelToInherited(ctx, subscription, req); err != nil {
-			logger.Errorw("failed to cascade cancellation to inherited subs", "error", err)
-		}
 	}
 
 	if !req.SuppressWebhook {
