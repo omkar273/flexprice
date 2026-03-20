@@ -5070,12 +5070,7 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 	if subscription.SubscriptionType == types.SubscriptionTypeParent {
 		inheritedSubs, ihErr := s.getInheritedSubscriptions(ctx, subscription.ID)
 		if ihErr != nil {
-			return nil, ierr.WithError(ihErr).
-				WithHint("Failed to list inherited subscriptions for usage aggregation").
-				WithReportableDetails(map[string]interface{}{
-					"subscription_id": subscription.ID,
-				}).
-				Error()
+			return nil, ihErr
 		}
 		for _, child := range inheritedSubs {
 			usageCustomerIDs = append(usageCustomerIDs, child.CustomerID)

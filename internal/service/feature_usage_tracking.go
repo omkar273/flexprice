@@ -567,7 +567,10 @@ func (s *featureUsageTrackingService) prepareProcessedEvents(ctx context.Context
 	if len(subscriptions) == 0 {
 		parentSubIDs, err := NewSubscriptionInheritanceService(s.ServiceParams).ListParentSubscriptionIDsForInheritedCustomer(ctx, customer.ID)
 		if err != nil {
-			s.Logger.Errorw("failed to list parent subscription IDs for inherited customer", "error", err)
+			s.Logger.ErrorwCtx(ctx, "failed to list parent subscription IDs for inherited customer",
+				"error", err,
+				"customer_id", customer.ID,
+			)
 		}
 		if len(parentSubIDs) > 0 {
 			parentFilter := types.NewSubscriptionFilter()
