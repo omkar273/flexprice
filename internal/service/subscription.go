@@ -6288,59 +6288,7 @@ func (s *subscriptionService) validateCustomerSubscriptionWorkflow(
 	usageCustomerIDs []string,
 ) error {
 	allCustomerIDs := lo.Uniq(append([]string{parentCustomerID}, usageCustomerIDs...))
-
-	filter := types.NewNoLimitSubscriptionFilter()
-	filter.CustomerIDs = allCustomerIDs
-	filter.SubscriptionStatus = []types.SubscriptionStatus{
-		types.SubscriptionStatusActive,
-		types.SubscriptionStatusTrialing,
-		types.SubscriptionStatusDraft,
-	}
-
-	existingSubs, err := s.SubRepo.List(ctx, filter)
-	if err != nil {
-		return err
-	}
-
-	// One pass: each row is already scoped to parent or usage customers via CustomerIDs filter.
-	for _, existing := range existingSubs {
-		existingType := existing.SubscriptionType
-		if existingType == "" {
-			existingType = types.SubscriptionTypeStandalone
-		}
-		cid := existing.CustomerID
-
-		if cid == parentCustomerID {
-			if newSubType == types.SubscriptionTypeParent && existingType == types.SubscriptionTypeStandalone {
-				return ierr.NewError("customer already has standalone subscriptions").
-					WithHint("A customer cannot have both standalone and hierarchy-based subscriptions; cancel existing subscriptions first").
-					WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
-					Mark(ierr.ErrInvalidOperation)
-			}
-			if newSubType == types.SubscriptionTypeStandalone && (existingType == types.SubscriptionTypeParent || existingType == types.SubscriptionTypeInherited) {
-				return ierr.NewError("customer already participates in a subscription hierarchy").
-					WithHint("A customer cannot have both standalone and hierarchy-based subscriptions; cancel existing subscriptions first").
-					WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
-					Mark(ierr.ErrInvalidOperation)
-			}
-			continue
-		}
-
-		// Usage customer (any non-parent ID in the batch is a child we care about)
-		if existingType == types.SubscriptionTypeStandalone {
-			return ierr.NewError("child customer already has standalone subscriptions").
-				WithHint("A customer cannot have both standalone and inherited subscriptions; cancel existing subscriptions first").
-				WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
-				Mark(ierr.ErrInvalidOperation)
-		}
-		if existingType == types.SubscriptionTypeParent {
-			return ierr.NewError("child customer is already a parent in another hierarchy").
-				WithHint("A customer cannot be both a parent and an inherited child").
-				WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
-				Mark(ierr.ErrInvalidOperation)
-		}
-	}
-	return nil
+	return NewSubscriptionInheritanceService(s.ServiceParams).ValidateCustomerHierarchyConflicts(ctx, parentCustomerID, allCustomerIDs, newSubType)
 }
 
 // createInheritedSubscriptions creates skeleton INHERITED subscriptions for each

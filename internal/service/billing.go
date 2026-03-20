@@ -2932,6 +2932,24 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 			}
 		}
 	}
+	service := NewSubscriptionInheritanceService(s.ServiceParams)
+
+	// Build map of subscription ID -> list of external customer IDs (parent + children for PARENT subs)
+	subscriptionCustomerIDsMap := make(map[string][]string)
+	for _, subscriptionID := range subscriptionIDs {
+		sub := subscriptionMap[subscriptionID]
+		if sub == nil {
+			continue
+		}
+
+		customerIDs, err := service.GetAggregatedCustomerIDs(ctx, sub)
+
+		if err != nil {
+			return nil, err
+		}
+
+		subscriptionCustomerIDsMap[subscriptionID] = customerIDs
+	}
 
 	// 3. Process usage data for each subscription
 	for _, subscriptionID := range subscriptionIDs {
@@ -2963,11 +2981,11 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 					meterID := featureMeterMap[featureID]
 					// Create usage request with daily window size for current billing period
 					usageRequest := &dto.GetUsageByMeterRequest{
-						MeterID:            meterID,
-						ExternalCustomerID: customer.ExternalID,
-						StartTime:          sub.CurrentPeriodStart,
-						EndTime:            sub.CurrentPeriodEnd,
-						WindowSize:         types.WindowSizeDay,
+						MeterID:             meterID,
+						ExternalCustomerIDs: subscriptionCustomerIDsMap[subscriptionID],
+						StartTime:           sub.CurrentPeriodStart,
+						EndTime:             sub.CurrentPeriodEnd,
+						WindowSize:          types.WindowSizeDay,
 					}
 
 					// Get usage data with daily windows
@@ -3014,12 +3032,12 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 
 					// Create usage request for current month with monthly window size
 					usageRequest := &dto.GetUsageByMeterRequest{
-						MeterID:            meterID,
-						ExternalCustomerID: customer.ExternalID,
-						StartTime:          sub.CurrentPeriodStart,
-						EndTime:            sub.CurrentPeriodEnd,
-						WindowSize:         types.WindowSizeMonth,
-						BillingAnchor:      &sub.BillingAnchor,
+						MeterID:             meterID,
+						ExternalCustomerIDs: subscriptionCustomerIDsMap[subscriptionID],
+						StartTime:           sub.CurrentPeriodStart,
+						EndTime:             sub.CurrentPeriodEnd,
+						WindowSize:          types.WindowSizeMonth,
+						BillingAnchor:       &sub.BillingAnchor,
 					}
 
 					// Get usage data for current month
@@ -3072,10 +3090,10 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 					// For never reset features, calculate cumulative usage from subscription start to current period end
 					// This maintains consistency with the billing logic
 					totalUsageRequest := &dto.GetUsageByMeterRequest{
-						MeterID:            meterID,
-						ExternalCustomerID: customer.ExternalID,
-						StartTime:          sub.StartDate,
-						EndTime:            sub.CurrentPeriodEnd,
+						MeterID:             meterID,
+						ExternalCustomerIDs: subscriptionCustomerIDsMap[subscriptionID],
+						StartTime:           sub.StartDate,
+						EndTime:             sub.CurrentPeriodEnd,
 					}
 
 					totalUsageResult, err := eventService.GetUsageByMeter(ctx, totalUsageRequest)

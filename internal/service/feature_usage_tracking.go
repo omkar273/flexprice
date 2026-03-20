@@ -565,7 +565,7 @@ func (s *featureUsageTrackingService) prepareProcessedEvents(ctx context.Context
 
 	// V1 hierarchy fallback: if no direct subscriptions, check for INHERITED subs
 	if len(subscriptions) == 0 {
-		parentSubIDs, resolveErr := s.resolveParentSubscriptionIDs(ctx, customer.ID)
+		parentSubIDs, resolveErr := NewSubscriptionInheritanceService(s.ServiceParams).ResolveParentSubscriptionIDs(ctx, customer.ID)
 		if resolveErr != nil {
 			s.Logger.Errorw("failed to resolve parent subscription IDs", "error", resolveErr)
 		}
@@ -4809,7 +4809,7 @@ func (s *featureUsageTrackingService) resolveHierarchyLineItems(
 	meterIDs []string,
 	eventTimestamp *time.Time,
 ) ([]*subscription.SubscriptionLineItem, error) {
-	parentSubIDs, err := s.resolveParentSubscriptionIDs(ctx, customerID)
+	parentSubIDs, err := NewSubscriptionInheritanceService(s.ServiceParams).ResolveParentSubscriptionIDs(ctx, customerID)
 	if err != nil || len(parentSubIDs) == 0 {
 		return nil, err
 	}
@@ -4824,36 +4824,4 @@ func (s *featureUsageTrackingService) resolveHierarchyLineItems(
 	}
 
 	return s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
-}
-
-// resolveParentSubscriptionIDs finds INHERITED subscriptions for a child customer
-// and returns the parent subscription IDs.
-func (s *featureUsageTrackingService) resolveParentSubscriptionIDs(
-	ctx context.Context,
-	customerID string,
-) ([]string, error) {
-	inheritedFilter := types.NewNoLimitSubscriptionFilter()
-	inheritedFilter.CustomerID = customerID
-	inheritedFilter.SubscriptionTypes = []types.SubscriptionType{types.SubscriptionTypeInherited}
-	inheritedFilter.Status = lo.ToPtr(types.StatusPublished)
-	inheritedFilter.SubscriptionStatus = []types.SubscriptionStatus{
-		types.SubscriptionStatusActive,
-		types.SubscriptionStatusTrialing,
-	}
-
-	inheritedSubs, err := s.SubRepo.List(ctx, inheritedFilter)
-	if err != nil {
-		return nil, err
-	}
-	if len(inheritedSubs) == 0 {
-		return nil, nil
-	}
-
-	parentIDs := make([]string, 0, len(inheritedSubs))
-	for _, inherited := range inheritedSubs {
-		if inherited.ParentSubscriptionID != nil && lo.FromPtr(inherited.ParentSubscriptionID) != "" {
-			parentIDs = append(parentIDs, lo.FromPtr(inherited.ParentSubscriptionID))
-		}
-	}
-	return lo.Uniq(parentIDs), nil
 }
