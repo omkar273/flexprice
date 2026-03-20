@@ -28,6 +28,7 @@ const (
 	SettingKeyPrepareProcessedEvents   SettingKey = "prepare_processed_events_config"
 	SettingKeyCustomAnalytics          SettingKey = "custom_analytics_config"
 	SettingKeyCustomerPortalConfig     SettingKey = "customer_portal_config"
+	SettingKeyEventIngestionFilter     SettingKey = "event_ingestion_filter"
 )
 
 func (s *SettingKey) Validate() error {
@@ -42,6 +43,7 @@ func (s *SettingKey) Validate() error {
 		SettingKeyPrepareProcessedEvents,
 		SettingKeyCustomAnalytics,
 		SettingKeyCustomerPortalConfig,
+		SettingKeyEventIngestionFilter,
 	}
 
 	if !lo.Contains(allowedKeys, *s) {
@@ -333,6 +335,22 @@ type CustomerPortalMetricCards struct {
 	ShowRevenueMetric bool `json:"show_revenue_metric"`
 }
 
+// EventIngestionFilterConfig controls which external customer IDs are allowed through
+// the raw-event → events transformation pipeline. When Enabled is true, only events
+// whose ExternalCustomerID appears in AllowedExternalCustomerIDs are forwarded; all
+// others are stored in raw_events but silently dropped at the enqueue step.
+// This is useful for large-volume pilots where only a subset of customers need live
+// billing (e.g. 400 out of 60 000 VAPI orgs).
+type EventIngestionFilterConfig struct {
+	Enabled                    bool     `json:"enabled"`
+	AllowedExternalCustomerIDs []string `json:"allowed_external_customer_ids"`
+}
+
+// Validate implements SettingConfig interface
+func (c EventIngestionFilterConfig) Validate() error {
+	return validator.ValidateRequest(c)
+}
+
 // GetDefaultSettings returns the default settings configuration for all setting keys
 // Uses typed structs and converts them to maps using ToMap utility from conversion.go
 func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
@@ -478,6 +496,15 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 		return nil, err
 	}
 
+	defaultEventIngestionFilterConfig := EventIngestionFilterConfig{
+		Enabled:                    false,
+		AllowedExternalCustomerIDs: []string{},
+	}
+	defaultEventIngestionFilterConfigMap, err := utils.ToMap(defaultEventIngestionFilterConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	return map[SettingKey]DefaultSettingValue{
 		SettingKeyInvoiceConfig: {
 			Key:          SettingKeyInvoiceConfig,
@@ -525,6 +552,11 @@ func GetDefaultSettings() (map[SettingKey]DefaultSettingValue, error) {
 			Key:          SettingKeyCustomerPortalConfig,
 			DefaultValue: defaultCustomerPortalConfigMap,
 			Description:  "Configuration for the customer self-service portal (branding, allowed sections, permissions)",
+		},
+		SettingKeyEventIngestionFilter: {
+			Key:          SettingKeyEventIngestionFilter,
+			DefaultValue: defaultEventIngestionFilterConfigMap,
+			Description:  "Controls which external customer IDs are forwarded from raw events to the events pipeline (pilot allowlist)",
 		},
 	}, nil
 }
@@ -620,6 +652,13 @@ func ValidateSettingValue(key SettingKey, value map[string]interface{}) error {
 
 	case SettingKeyCustomerPortalConfig:
 		config, err := utils.ToStruct[CustomerPortalConfig](value)
+		if err != nil {
+			return err
+		}
+		return config.Validate()
+
+	case SettingKeyEventIngestionFilter:
+		config, err := utils.ToStruct[EventIngestionFilterConfig](value)
 		if err != nil {
 			return err
 		}

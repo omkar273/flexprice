@@ -17,6 +17,8 @@ import (
 	"github.com/flexprice/flexprice/internal/pubsub/kafka"
 	pubsubRouter "github.com/flexprice/flexprice/internal/pubsub/router"
 	"github.com/flexprice/flexprice/internal/sentry"
+	"github.com/flexprice/flexprice/internal/types"
+	"github.com/flexprice/flexprice/internal/utils"
 )
 
 // RawEventConsumptionService handles consuming raw event batches from Kafka and transforming them
@@ -104,11 +106,47 @@ func (s *rawEventConsumptionService) RegisterHandler(
 	)
 }
 
+// loadIngestionFilter fetches the EventIngestionFilterConfig from the settings DB
+// and returns a ready-to-use allowlist map. When the setting is absent or the filter
+// is disabled it returns (false, nil) so the caller skips filtering entirely.
+func (s *rawEventConsumptionService) loadIngestionFilter(ctx context.Context) (enabled bool, allowlist map[string]struct{}) {
+	setting, err := s.SettingsRepo.GetByKey(ctx, types.SettingKeyEventIngestionFilter)
+	if err != nil {
+		// Setting not configured → filter disabled, pass everything through
+		return false, nil
+	}
+
+	cfg, err := utils.ToStruct[types.EventIngestionFilterConfig](setting.Value)
+	if err != nil {
+		s.Logger.Errorw("failed to parse event ingestion filter config, filter disabled", "error", err)
+		return false, nil
+	}
+
+	if !cfg.Enabled {
+		return false, nil
+	}
+
+	allowlist = make(map[string]struct{}, len(cfg.AllowedExternalCustomerIDs))
+	for _, id := range cfg.AllowedExternalCustomerIDs {
+		allowlist[id] = struct{}{}
+	}
+
+	s.Logger.Infow("event ingestion filter loaded",
+		"allowlist_size", len(allowlist),
+	)
+	return true, allowlist
+}
+
 // processMessage processes a batch of raw events from Kafka
 func (s *rawEventConsumptionService) processMessage(msg *message.Message) error {
+	ctx := context.Background()
+
 	s.Logger.Debugw("processing raw event batch from message queue",
 		"message_uuid", msg.UUID,
 	)
+
+	// Fetch the ingestion filter once per batch (one DB read per Kafka message).
+	filterEnabled, allowlist := s.loadIngestionFilter(ctx)
 
 	// Unmarshal the batch
 	var batch RawEventBatch
@@ -182,8 +220,21 @@ func (s *rawEventConsumptionService) processMessage(msg *message.Message) error 
 			continue
 		}
 
+		// Apply ingestion filter: skip events for customer IDs not in the allowlist.
+		// Raw event is still stored upstream; we only skip forwarding to the events topic.
+		if filterEnabled {
+			if _, ok := allowlist[transformedEvent.ExternalCustomerID]; !ok {
+				skipCount++
+				s.Logger.Debugw("event filtered by ingestion allowlist - skipped",
+					"external_customer_id", transformedEvent.ExternalCustomerID,
+					"batch_position", i+1,
+				)
+				continue
+			}
+		}
+
 		// Publish the transformed event to events topic
-		if err := s.publishTransformedEvent(context.Background(), transformedEvent); err != nil {
+		if err := s.publishTransformedEvent(ctx, transformedEvent); err != nil {
 			errorCount++
 			s.Logger.Errorw("failed to publish transformed event",
 				"event_id", transformedEvent.ID,
