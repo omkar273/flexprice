@@ -72,7 +72,7 @@ func subscriptionFilterFn(ctx context.Context, sub *subscription.Subscription, f
 	}
 
 	// Filter by entity status (published vs deleted)
-	if f.Status != nil && sub.Status != *f.Status {
+	if f.QueryFilter != nil && f.QueryFilter.Status != nil && sub.Status != *f.QueryFilter.Status {
 		return false
 	}
 
