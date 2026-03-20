@@ -139,16 +139,11 @@ func (s *rawEventConsumptionService) loadIngestionFilter(ctx context.Context) (e
 
 // processMessage processes a batch of raw events from Kafka
 func (s *rawEventConsumptionService) processMessage(msg *message.Message) error {
-	ctx := context.Background()
-
 	s.Logger.Debugw("processing raw event batch from message queue",
 		"message_uuid", msg.UUID,
 	)
 
-	// Fetch the ingestion filter once per batch (one DB read per Kafka message).
-	filterEnabled, allowlist := s.loadIngestionFilter(ctx)
-
-	// Unmarshal the batch
+	// Unmarshal the batch first so we have tenant/environment IDs.
 	var batch RawEventBatch
 	if err := json.Unmarshal(msg.Payload, &batch); err != nil {
 		s.Logger.Errorw("failed to unmarshal raw event batch",
@@ -186,6 +181,13 @@ func (s *rawEventConsumptionService) processMessage(msg *message.Message) error 
 			return "config"
 		}(),
 	)
+
+	// Build a context carrying tenant/environment so the settings repo can filter correctly.
+	ctx := types.SetTenantID(context.Background(), tenantID)
+	ctx = types.SetEnvironmentID(ctx, environmentID)
+
+	// Fetch the ingestion filter once per batch (one DB read per Kafka message).
+	filterEnabled, allowlist := s.loadIngestionFilter(ctx)
 
 	// Counters for tracking
 	successCount := 0
