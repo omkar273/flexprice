@@ -42,6 +42,13 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		config = zap.NewDevelopmentConfig()
 	}
 
+	// Apply the configured log level (debug/info/warn/error) to the zap logger.
+	// zap's AtomicLevel.UnmarshalText understands standard level strings.
+	if err := config.Level.UnmarshalText([]byte(cfg.Logging.Level)); err != nil {
+		// Fallback to info if the level string is invalid
+		config.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+	}
+
 	config.EncoderConfig.TimeKey = "timestamp"
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 

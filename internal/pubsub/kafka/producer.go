@@ -4,6 +4,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/flexprice/flexprice/internal/config"
+	"github.com/flexprice/flexprice/internal/types"
 )
 
 type Producer struct {
@@ -11,6 +12,10 @@ type Producer struct {
 }
 
 func NewProducer(cfg *config.Configuration) (*Producer, error) {
+	// enableDebugLogs allows watermill DEBUG messages in debug mode.
+	// TRACE is never enabled — it logs every individual message sent/received, which is too noisy.
+	enableDebugLogs := cfg.Logging.Level == types.LogLevelDebug
+
 	saramaConfig := GetSaramaConfig(cfg)
 	if saramaConfig != nil {
 		// add producer configs
@@ -24,7 +29,7 @@ func NewProducer(cfg *config.Configuration) (*Producer, error) {
 			Marshaler:             kafka.DefaultMarshaler{},
 			OverwriteSaramaConfig: saramaConfig,
 		},
-		watermill.NewStdLogger(false, false),
+		watermill.NewStdLogger(enableDebugLogs, false),
 	)
 	if err != nil {
 		return nil, err
