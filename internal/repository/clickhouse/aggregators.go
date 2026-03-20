@@ -369,7 +369,7 @@ func (a *CountAggregator) GetQuery(ctx context.Context, params *events.UsagePara
 	}
 
 	externalCustomerFilter := ""
-	if params.ExternalCustomerID != "" {
+	if params.ExternalCustomerID != "" || len(params.ExternalCustomerIDs) > 0 {
 		externalCustomerFilter = buildExternalCustomerFilter(params)
 	}
 
@@ -428,7 +428,7 @@ func (a *CountUniqueAggregator) GetQuery(ctx context.Context, params *events.Usa
 	}
 
 	externalCustomerFilter := ""
-	if params.ExternalCustomerID != "" {
+	if params.ExternalCustomerID != "" || len(params.ExternalCustomerIDs) > 0 {
 		externalCustomerFilter = buildExternalCustomerFilter(params)
 	}
 
@@ -495,7 +495,7 @@ func (a *AvgAggregator) GetQuery(ctx context.Context, params *events.UsageParams
 	}
 
 	externalCustomerFilter := ""
-	if params.ExternalCustomerID != "" {
+	if params.ExternalCustomerID != "" || len(params.ExternalCustomerIDs) > 0 {
 		externalCustomerFilter = buildExternalCustomerFilter(params)
 	}
 
@@ -558,7 +558,7 @@ func (a *LatestAggregator) GetQuery(ctx context.Context, params *events.UsagePar
 	}
 
 	externalCustomerFilter := ""
-	if params.ExternalCustomerID != "" {
+	if params.ExternalCustomerID != "" || len(params.ExternalCustomerIDs) > 0 {
 		externalCustomerFilter = buildExternalCustomerFilter(params)
 	}
 
@@ -618,7 +618,7 @@ func (a *SumWithMultiAggregator) GetQuery(ctx context.Context, params *events.Us
 	}
 
 	externalCustomerFilter := ""
-	if params.ExternalCustomerID != "" {
+	if params.ExternalCustomerID != "" || len(params.ExternalCustomerIDs) > 0 {
 		externalCustomerFilter = buildExternalCustomerFilter(params)
 	}
 
@@ -700,7 +700,7 @@ func (a *MaxAggregator) getNonWindowedQuery(ctx context.Context, params *events.
 	}
 
 	externalCustomerFilter := ""
-	if params.ExternalCustomerID != "" {
+	if params.ExternalCustomerID != "" || len(params.ExternalCustomerIDs) > 0 {
 		externalCustomerFilter = buildExternalCustomerFilter(params)
 	}
 
@@ -749,7 +749,7 @@ func (a *MaxAggregator) getWindowedQuery(ctx context.Context, params *events.Usa
 	bucketWindow := formatWindowSizeWithBillingAnchor(params.BucketSize, params.BillingAnchor)
 
 	externalCustomerFilter := ""
-	if params.ExternalCustomerID != "" {
+	if params.ExternalCustomerID != "" || len(params.ExternalCustomerIDs) > 0 {
 		externalCustomerFilter = buildExternalCustomerFilter(params)
 	}
 
@@ -858,7 +858,7 @@ func (a *WeightedSumAggregator) GetQuery(ctx context.Context, params *events.Usa
 	}
 
 	externalCustomerFilter := ""
-	if params.ExternalCustomerID != "" {
+	if params.ExternalCustomerID != "" || len(params.ExternalCustomerIDs) > 0 {
 		externalCustomerFilter = buildExternalCustomerFilter(params)
 	}
 
