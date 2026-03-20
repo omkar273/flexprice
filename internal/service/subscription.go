@@ -5070,11 +5070,15 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 	if subscription.SubscriptionType == types.SubscriptionTypeParent {
 		inheritedSubs, ihErr := s.getInheritedSubscriptions(ctx, subscription.ID)
 		if ihErr != nil {
-			s.Logger.Warnw("failed to get inherited subs for usage aggregation", "error", ihErr)
-		} else {
-			for _, child := range inheritedSubs {
-				usageCustomerIDs = append(usageCustomerIDs, child.CustomerID)
-			}
+			return nil, ierr.WithError(ihErr).
+				WithHint("Failed to list inherited subscriptions for usage aggregation").
+				WithReportableDetails(map[string]interface{}{
+					"subscription_id": subscription.ID,
+				}).
+				Error()
+		}
+		for _, child := range inheritedSubs {
+			usageCustomerIDs = append(usageCustomerIDs, child.CustomerID)
 		}
 	}
 
@@ -6222,7 +6226,7 @@ func (s *subscriptionService) resolveUsageCustomerIDs(
 ) ([]string, error) {
 	// Explicitly provided (even empty array is valid). nil slice = field omitted in JSON.
 	if req.UsageCustomerIDs != nil {
-		ids := req.UsageCustomerIDs
+		ids := lo.Uniq(req.UsageCustomerIDs)
 		if len(ids) == 0 {
 			return ids, nil
 		}
