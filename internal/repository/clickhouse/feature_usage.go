@@ -2338,10 +2338,7 @@ func (r *FeatureUsageRepository) GetUsageForBucketedMeters(ctx context.Context, 
 func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *events.FeatureUsageParams) string {
 	bucketWindow := r.formatWindowSize(params.UsageParams.WindowSize, params.UsageParams.BillingAnchor)
 
-	externalCustomerFilter := ""
-	if params.UsageParams.ExternalCustomerID != "" {
-		externalCustomerFilter = fmt.Sprintf("AND external_customer_id = '%s'", params.ExternalCustomerID)
-	}
+	externalCustomerFilter := buildExternalCustomerFilter(params.UsageParams)
 
 	featureFilter := ""
 	if params.FeatureID != "" {
