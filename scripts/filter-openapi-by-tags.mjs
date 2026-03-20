@@ -86,9 +86,12 @@ function main() {
         delete pathItem[method];
         removed++;
       } else {
-        // Force MCP tool name to operationId-only (kebab-case), excluding tag prefix
+        // Preserve x-speakeasy-mcp from overlay (scopes, hints), but override name to operationId-only (kebab-case)
         const existing = op['x-speakeasy-mcp'] && typeof op['x-speakeasy-mcp'] === 'object' ? op['x-speakeasy-mcp'] : {};
-        op['x-speakeasy-mcp'] = { ...existing, name: toKebab(op.operationId) };
+        op['x-speakeasy-mcp'] = { 
+          ...existing,  // Preserve scopes, readOnlyHint, destructiveHint, etc. from overlay
+          name: toKebab(op.operationId)  // Override name only
+        };
         kept++;
       }
     }

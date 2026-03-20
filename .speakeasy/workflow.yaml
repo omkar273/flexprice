@@ -8,7 +8,9 @@ sources:
             location: registry.speakeasyapi.dev/flexprice/prod/swagger-json
     swagger-json-mcp:
         inputs:
-            - location: docs/swagger/swagger-3-0-mcp.json
+            - location: docs/swagger/swagger-3-0.json
+        overlays:
+            - location: .speakeasy/overlays/scopes.yaml
 targets:
     flexprice-go:
         target: go
