@@ -586,9 +586,9 @@ func registerRouterHandlers(
 	cfg *config.Configuration,
 	includeProcessingHandlers bool,
 ) {
-	onboardingService.RegisterHandler(router)
 
 	if includeProcessingHandlers {
+		onboardingService.RegisterHandler(router)
 		webhookService.RegisterHandler(router)
 		eventConsumptionSvc.RegisterHandler(router, cfg)
 		eventConsumptionSvc.RegisterHandlerLazy(router, cfg)

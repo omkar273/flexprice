@@ -2,15 +2,12 @@ package config
 
 import (
 	"time"
-
-	"github.com/flexprice/flexprice/internal/types"
 )
 
 // Webhook represents the configuration for the webhook system
 type Webhook struct {
 	Enabled         bool                           `mapstructure:"enabled"`
 	Topic           string                         `mapstructure:"topic" default:"system_events"`
-	PubSub          types.PubSubType               `mapstructure:"pubsub" default:"kafka"`
 	ConsumerGroup   string                         `mapstructure:"consumer_group" default:"system-events-consumer"`
 	RateLimit       int64                          `mapstructure:"rate_limit" default:"5"`
 	MaxRetries      int                            `mapstructure:"max_retries" default:"3"`
