@@ -329,6 +329,20 @@ type GetUsageAnalyticsRequest struct {
 	Expand             []string         `json:"expand,omitempty"` // allowed values: "price", "meter", "feature", "subscription_line_item","plan","addon"
 	// Property filters to filter the events by the keys in `properties` field of the event
 	PropertyFilters map[string][]string `json:"property_filters,omitempty"`
+	// IncludeChildCustomersBreakdown when true returns per-child-customer analytics alongside the aggregated result.
+	// Default: false (no breaking change). Only applies when ExternalCustomerID is set (customer-level) or
+	// when querying tenant-level analytics (V2, no ExternalCustomerID).
+	IncludeChildCustomersBreakdown bool `json:"include_child_customers_breakdown,omitempty"`
+}
+
+// ChildBreakdownItem holds analytics for a single child customer in a hierarchy breakdown.
+type ChildBreakdownItem struct {
+	CustomerID         string              `json:"customer_id"`
+	ExternalCustomerID string              `json:"external_customer_id"`
+	CustomerName       string              `json:"customer_name,omitempty"`
+	TotalCost          decimal.Decimal     `json:"total_cost" swaggertype:"string"`
+	Currency           string              `json:"currency"`
+	Items              []UsageAnalyticItem `json:"items"`
 }
 
 // GetUsageAnalyticsResponse represents the response for the usage analytics API
@@ -337,6 +351,10 @@ type GetUsageAnalyticsResponse struct {
 	Currency        string               `json:"currency"`
 	Items           []UsageAnalyticItem  `json:"items"`
 	CustomAnalytics []CustomAnalyticItem `json:"custom_analytics,omitempty"`
+	// ChildBreakdowns is populated only when include_child_customers_breakdown=true.
+	// For customer-level requests: one entry per direct child customer.
+	// For tenant-level requests (V2): one entry per customer in the tenant.
+	ChildBreakdowns []ChildBreakdownItem `json:"child_breakdowns,omitempty"`
 }
 
 // UsageAnalyticItem represents a single analytic item in the response

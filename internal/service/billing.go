@@ -3194,6 +3194,50 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 		resp.Features = append(resp.Features, featureSummary)
 	}
 
+	// 7. Optionally attach per-child-customer usage breakdown.
+	// We call GetCustomerUsageSummary recursively for each direct child (flag=false to prevent
+	// further recursion). For INHERITED subscriptions GetAggregatedCustomerIDs correctly scopes
+	// usage to only that child's external ID, so results are accurate per child.
+	if req.IncludeChildCustomersBreakdown {
+		childFilter := types.NewNoLimitCustomerFilter()
+		childFilter.ParentCustomerIDs = []string{customerID}
+		children, err := s.CustomerRepo.List(ctx, childFilter)
+		if err != nil {
+			s.Logger.WarnwCtx(ctx, "failed to list child customers for usage breakdown",
+				"customer_id", customerID, "error", err)
+		} else if len(children) > 0 {
+			childBreakdowns := make([]dto.ChildUsageSummaryItem, 0, len(children))
+			for _, child := range children {
+				childReq := &dto.GetCustomerUsageSummaryRequest{
+					CustomerID:                     child.ID,
+					FeatureIDs:                     req.FeatureIDs,
+					FeatureLookupKeys:              req.FeatureLookupKeys,
+					SubscriptionIDs:                req.SubscriptionIDs,
+					IncludeChildCustomersBreakdown: false, // prevent recursion
+				}
+				childResp, err := s.GetCustomerUsageSummary(ctx, child.ID, childReq)
+				if err != nil {
+					s.Logger.WarnwCtx(ctx, "failed to get usage summary for child customer, using empty entry",
+						"child_customer_id", child.ID, "error", err)
+					childBreakdowns = append(childBreakdowns, dto.ChildUsageSummaryItem{
+						CustomerID:   child.ID,
+						ExternalID:   child.ExternalID,
+						CustomerName: child.Name,
+						Features:     []*dto.FeatureUsageSummary{},
+					})
+					continue
+				}
+				childBreakdowns = append(childBreakdowns, dto.ChildUsageSummaryItem{
+					CustomerID:   child.ID,
+					ExternalID:   child.ExternalID,
+					CustomerName: child.Name,
+					Features:     childResp.Features,
+				})
+			}
+			resp.ChildBreakdowns = childBreakdowns
+		}
+	}
+
 	return resp, nil
 }
 
