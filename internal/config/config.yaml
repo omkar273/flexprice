@@ -43,6 +43,7 @@ clickhouse:
   password: flexprice123
   database: flexprice
   max_memory_usage: 50
+  debug: false # enable via FLEXPRICE_CLICKHOUSE_DEBUG=true for local SQL inspection only
 
 postgres:
   host: 127.0.0.1 # For local mode

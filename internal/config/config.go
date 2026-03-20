@@ -123,6 +123,7 @@ type ClickHouseConfig struct {
 	Password       string `mapstructure:"password" validate:"required"`
 	Database       string `mapstructure:"database" validate:"required"`
 	MaxMemoryUsage int64  `mapstructure:"max_memory_usage" validate:"required"`
+	Debug          bool   `mapstructure:"debug" default:"false"`
 }
 
 type LoggingConfig struct {
@@ -432,6 +433,10 @@ func (c ClickHouseConfig) GetClientOptions() *clickhouse.Options {
 			Password: c.Password,
 		},
 		ConnOpenStrategy: clickhouse.ConnOpenInOrder,
+		Debug:            c.Debug,
+		// Suppress driver-level per-fragment query logs (e.g. "PREWHERE ...", "AND ...").
+		// Structured query observability is handled via Sentry spans in tracedConn.
+		Debugf: func(format string, v ...any) {},
 	}
 	if c.TLS {
 		options.TLS = &tls.Config{}
