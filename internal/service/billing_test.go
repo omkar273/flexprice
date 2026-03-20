@@ -4649,3 +4649,70 @@ func (s *BillingServiceSuite) TestMultiCadence_SingleQuarterlyLine() {
 		s.True(total.Equal(decimal.NewFromInt(int64(pr.total))), "E.14.3: invoice %d expected $100", i+1)
 	}
 }
+
+// TestGetCustomerEntitlementsIgnoresInheritedSubscriptions ensures inherited child subs do not
+// double-count plan entitlements (metered limits are summed across contributing subscriptions).
+func (s *BillingServiceSuite) TestGetCustomerEntitlementsIgnoresInheritedSubscriptions() {
+	ctx := s.GetContext()
+	s.setupTestData()
+
+	testFeature := &feature.Feature{
+		ID:          "feat_ent_customer_inherited",
+		Name:        "Ent Test Feature",
+		Description: "For customer entitlements inherited filter",
+		Type:        types.FeatureTypeMetered,
+		MeterID:     s.testData.meters.apiCalls.ID,
+		BaseModel:   types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().FeatureRepo.Create(ctx, testFeature))
+
+	ent := &entitlement.Entitlement{
+		ID:               "ent_customer_inherited_test",
+		EntityType:       types.ENTITLEMENT_ENTITY_TYPE_PLAN,
+		EntityID:         s.testData.plan.ID,
+		FeatureID:        testFeature.ID,
+		FeatureType:      types.FeatureTypeMetered,
+		IsEnabled:        true,
+		UsageLimit:       lo.ToPtr(int64(1000)),
+		UsageResetPeriod: types.ENTITLEMENT_USAGE_RESET_PERIOD_MONTHLY,
+		IsSoftLimit:      false,
+		BaseModel:        types.GetDefaultBaseModel(ctx),
+	}
+	_, err := s.GetStores().EntitlementRepo.Create(ctx, ent)
+	s.NoError(err)
+
+	parent := s.testData.subscription
+	parent.SubscriptionType = types.SubscriptionTypeParent
+	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, parent))
+
+	inherited := &subscription.Subscription{
+		ID:                   "sub_inherited_ent_customer_test",
+		PlanID:               s.testData.plan.ID,
+		CustomerID:           s.testData.customer.ID,
+		StartDate:            parent.StartDate,
+		CurrentPeriodStart:   parent.CurrentPeriodStart,
+		CurrentPeriodEnd:     parent.CurrentPeriodEnd,
+		Currency:             parent.Currency,
+		BillingPeriod:        parent.BillingPeriod,
+		BillingPeriodCount:   parent.BillingPeriodCount,
+		SubscriptionStatus:   types.SubscriptionStatusActive,
+		SubscriptionType:     types.SubscriptionTypeInherited,
+		ParentSubscriptionID: lo.ToPtr(parent.ID),
+		BaseModel:            types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, inherited, []*subscription.SubscriptionLineItem{}))
+
+	resp, err := s.service.GetCustomerEntitlements(ctx, s.testData.customer.ID, &dto.GetCustomerEntitlementsRequest{})
+	s.NoError(err)
+	s.Require().Len(resp.Features, 1)
+	s.Require().NotNil(resp.Features[0].Entitlement)
+	s.Require().NotNil(resp.Features[0].Entitlement.UsageLimit)
+	s.Equal(int64(1000), *resp.Features[0].Entitlement.UsageLimit,
+		"inherited sub must not duplicate plan entitlement aggregation (would be 2000 if both counted)")
+
+	onlyInherited, err := s.service.GetCustomerEntitlements(ctx, s.testData.customer.ID, &dto.GetCustomerEntitlementsRequest{
+		SubscriptionIDs: []string{inherited.ID},
+	})
+	s.NoError(err)
+	s.Empty(onlyInherited.Features, "explicit inherited subscription id should be ignored")
+}

@@ -1789,6 +1789,17 @@ func (s *featureUsageTrackingService) GetDetailedUsageAnalytics(ctx context.Cont
 		}
 	}
 
+	// 5. Optionally aggregate children into the total and include parent in breakdowns
+	if req.IncludeChildren && data.Customer != nil {
+		children, err := s.fetchChildCustomers(ctx, data.Customer.ID)
+		if err != nil {
+			s.Logger.WarnwCtx(ctx, "failed to fetch child customers for include_children aggregation, returning parent-only",
+				"customer_id", data.Customer.ID, "error", err)
+		} else {
+			response = s.buildAggregatedAnalyticsWithChildren(ctx, data, children, req)
+		}
+	}
+
 	return response, nil
 }
 
@@ -1999,6 +2010,105 @@ func (s *featureUsageTrackingService) buildChildAnalyticsBreakdowns(
 		})
 	}
 	return breakdowns
+}
+
+// buildAggregatedAnalyticsWithChildren merges parent + all children analytics into a single
+// total response and builds a breakdown list where the parent is the first item followed by
+// each child — ensuring sum(breakdowns) == total.
+func (s *featureUsageTrackingService) buildAggregatedAnalyticsWithChildren(
+	ctx context.Context,
+	parentData *AnalyticsData,
+	children []*customer.Customer,
+	req *dto.GetUsageAnalyticsRequest,
+) *dto.GetUsageAnalyticsResponse {
+	// 1. Fetch per-child analytics data (non-fatal per child).
+	childDataSlices := make([]*AnalyticsData, len(children))
+	for i, child := range children {
+		childReq := *req
+		childReq.ExternalCustomerID = child.ExternalID
+		childReq.IncludeChildren = false
+		childReq.IncludeChildCustomersBreakdown = false
+		d, err := s.fetchAnalyticsData(ctx, &childReq)
+		if err != nil {
+			s.Logger.WarnwCtx(ctx, "skipping child for include_children aggregation",
+				"child_id", child.ID, "error", err)
+			continue
+		}
+		childDataSlices[i] = d
+	}
+
+	// 2. Merge all analytics slices: parent first, then each child.
+	mergedAnalytics := make([]*events.DetailedUsageAnalytic, 0, len(parentData.Analytics))
+	mergedAnalytics = append(mergedAnalytics, parentData.Analytics...)
+	for _, cd := range childDataSlices {
+		if cd != nil {
+			mergedAnalytics = append(mergedAnalytics, cd.Analytics...)
+		}
+	}
+	mergedData := *parentData
+	mergedData.Analytics = mergedAnalytics
+
+	// 3. Build aggregated total response from merged data.
+	totalResp, err := s.buildAnalyticsResponse(ctx, &mergedData, req)
+	if err != nil || totalResp == nil {
+		s.Logger.WarnwCtx(ctx, "failed to build aggregated analytics response, falling back to parent-only",
+			"customer_id", parentData.Customer.ID, "error", err)
+		r, _ := s.buildAnalyticsResponse(ctx, parentData, req)
+		return r
+	}
+
+	// 4. Build breakdowns: parent item first, then each child.
+	breakdowns := make([]dto.ChildBreakdownItem, 0, 1+len(children))
+
+	parentResp, _ := s.buildAnalyticsResponse(ctx, parentData, req)
+	if parentResp != nil {
+		breakdowns = append(breakdowns, dto.ChildBreakdownItem{
+			CustomerID:         parentData.Customer.ID,
+			ExternalCustomerID: parentData.Customer.ExternalID,
+			CustomerName:       parentData.Customer.Name,
+			TotalCost:          parentResp.TotalCost,
+			Currency:           parentResp.Currency,
+			Items:              parentResp.Items,
+		})
+	}
+
+	for i, child := range children {
+		cd := childDataSlices[i]
+		if cd == nil {
+			breakdowns = append(breakdowns, dto.ChildBreakdownItem{
+				CustomerID:         child.ID,
+				ExternalCustomerID: child.ExternalID,
+				CustomerName:       child.Name,
+				Items:              []dto.UsageAnalyticItem{},
+			})
+			continue
+		}
+		childReq := *req
+		childReq.ExternalCustomerID = child.ExternalID
+		childReq.IncludeChildren = false
+		childReq.IncludeChildCustomersBreakdown = false
+		cr, err := s.buildAnalyticsResponse(ctx, cd, &childReq)
+		if err != nil || cr == nil {
+			breakdowns = append(breakdowns, dto.ChildBreakdownItem{
+				CustomerID:         child.ID,
+				ExternalCustomerID: child.ExternalID,
+				CustomerName:       child.Name,
+				Items:              []dto.UsageAnalyticItem{},
+			})
+			continue
+		}
+		breakdowns = append(breakdowns, dto.ChildBreakdownItem{
+			CustomerID:         child.ID,
+			ExternalCustomerID: child.ExternalID,
+			CustomerName:       child.Name,
+			TotalCost:          cr.TotalCost,
+			Currency:           cr.Currency,
+			Items:              cr.Items,
+		})
+	}
+
+	totalResp.ChildBreakdowns = breakdowns
+	return totalResp
 }
 
 // fetchAnalyticsData fetches all required data sequentially

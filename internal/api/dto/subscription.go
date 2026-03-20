@@ -1596,6 +1596,10 @@ type GetUsageBySubscriptionRequest struct {
 	// Source indicates the caller context. When "invoice_creation", ClickHouse queries use FINAL.
 	// Optional; omit for default (no FINAL).
 	Source string `json:"-"`
+	// OverrideCustomerIDs, when non-empty, replaces the auto-detected customer ID list used for
+	// usage aggregation. Intended for internal use only (e.g. per-child breakdown within a PARENT
+	// subscription). Not exposed via the HTTP API.
+	OverrideCustomerIDs []string `json:"-"`
 }
 
 type GetUsageBySubscriptionResponse struct {

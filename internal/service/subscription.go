@@ -5246,15 +5246,23 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 	opts := &events.GetFeatureUsageBySubscriptionOpts{
 		Source: types.UsageSource(req.Source),
 	}
-	// Determine customer IDs for usage query: for PARENT subs, include all child customer IDs
-	usageCustomerIDs := []string{customer.ID}
-	if subscription.SubscriptionType == types.SubscriptionTypeParent {
-		inheritedSubs, ihErr := s.getInheritedSubscriptions(ctx, subscription.ID)
-		if ihErr != nil {
-			return nil, ihErr
-		}
-		for _, child := range inheritedSubs {
-			usageCustomerIDs = append(usageCustomerIDs, child.CustomerID)
+	// Determine customer IDs for usage query.
+	// If the caller explicitly provides OverrideCustomerIDs (e.g. per-child breakdown), use those
+	// directly. Otherwise auto-detect: for PARENT subs include all inherited children; for all
+	// other types scope to the subscription's own customer.
+	var usageCustomerIDs []string
+	if len(req.OverrideCustomerIDs) > 0 {
+		usageCustomerIDs = req.OverrideCustomerIDs
+	} else {
+		usageCustomerIDs = []string{customer.ID}
+		if subscription.SubscriptionType == types.SubscriptionTypeParent {
+			inheritedSubs, ihErr := s.getInheritedSubscriptions(ctx, subscription.ID)
+			if ihErr != nil {
+				return nil, ihErr
+			}
+			for _, child := range inheritedSubs {
+				usageCustomerIDs = append(usageCustomerIDs, child.CustomerID)
+			}
 		}
 	}
 
@@ -6118,6 +6126,15 @@ func (s *subscriptionService) GetUpcomingCreditGrantApplications(ctx context.Con
 	response.Pagination.Total = len(upcomingItems)
 
 	return response, nil
+}
+
+// SubscriptionsForCustomerEntitlementResolution returns subscriptions that should contribute
+// to customer-level entitlement aggregation (standalone and parent). Inherited child skeleton
+// subscriptions are excluded because plan entitlements are resolved on the parent subscription.
+func SubscriptionsForCustomerEntitlementResolution(subs []*subscription.Subscription) []*subscription.Subscription {
+	return lo.Filter(subs, func(sub *subscription.Subscription, _ int) bool {
+		return sub != nil && sub.SubscriptionType != types.SubscriptionTypeInherited
+	})
 }
 
 // ListByCustomerID retrieves all active subscriptions for a customer

@@ -2792,6 +2792,8 @@ func (s *billingService) GetCustomerEntitlements(ctx context.Context, customerID
 		return nil, err
 	}
 
+	subscriptions = SubscriptionsForCustomerEntitlementResolution(subscriptions)
+
 	// Filter subscriptions if IDs are specified
 	if len(req.SubscriptionIDs) > 0 {
 		filteredSubscriptions := make([]*subscription.Subscription, 0)
@@ -2800,7 +2802,7 @@ func (s *billingService) GetCustomerEntitlements(ctx context.Context, customerID
 				filteredSubscriptions = append(filteredSubscriptions, sub)
 			}
 		}
-		subscriptions = filteredSubscriptions
+		subscriptions = SubscriptionsForCustomerEntitlementResolution(filteredSubscriptions)
 	}
 
 	// Return empty response if no subscriptions found
@@ -3195,9 +3197,9 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 	}
 
 	// 7. Optionally attach per-child-customer usage breakdown.
-	// We call GetCustomerUsageSummary recursively for each direct child (flag=false to prevent
-	// further recursion). For INHERITED subscriptions GetAggregatedCustomerIDs correctly scopes
-	// usage to only that child's external ID, so results are accurate per child.
+	// call GetFeatureUsageBySubscription with the parent subscription ID and restrict the
+	// customer list to a single child via OverrideCustomerIDs. This returns that child's share
+	// of the parent's feature_usage records with all the same reset-period logic applied.
 	if req.IncludeChildCustomersBreakdown {
 		childFilter := types.NewNoLimitCustomerFilter()
 		childFilter.ParentCustomerIDs = []string{customerID}
@@ -3208,17 +3210,26 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 		} else if len(children) > 0 {
 			childBreakdowns := make([]dto.ChildUsageSummaryItem, 0, len(children))
 			for _, child := range children {
-				childReq := &dto.GetCustomerUsageSummaryRequest{
-					CustomerID:                     child.ID,
-					FeatureIDs:                     req.FeatureIDs,
-					FeatureLookupKeys:              req.FeatureLookupKeys,
-					SubscriptionIDs:                req.SubscriptionIDs,
-					IncludeChildCustomersBreakdown: false, // prevent recursion
+				// Resolve the parent subscription for this child: list the child's subscriptions,
+				// find the INHERITED one whose ParentSubscriptionID is in subscriptionMap, then use
+				// that parent sub ID to query feature_usage (records are stored under the parent sub).
+				var parentSubForChild *subscription.Subscription
+				childSubs, childSubErr := subscriptionService.ListByCustomerID(ctx, child.ID)
+				if childSubErr != nil {
+					return nil, childSubErr
 				}
-				childResp, err := s.GetCustomerUsageSummary(ctx, child.ID, childReq)
-				if err != nil {
-					s.Logger.WarnwCtx(ctx, "failed to get usage summary for child customer, using empty entry",
-						"child_customer_id", child.ID, "error", err)
+				for _, cs := range childSubs {
+					if cs.ParentSubscriptionID != nil {
+						if ps, ok := subscriptionMap[*cs.ParentSubscriptionID]; ok {
+							parentSubForChild = ps
+							break
+						}
+					}
+				}
+
+				if parentSubForChild == nil {
+					s.Logger.WarnwCtx(ctx, "no parent subscription found for child breakdown, skipping usage",
+						"child_customer_id", child.ID, "parent_customer_id", customerID)
 					childBreakdowns = append(childBreakdowns, dto.ChildUsageSummaryItem{
 						CustomerID:   child.ID,
 						ExternalID:   child.ExternalID,
@@ -3227,13 +3238,121 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 					})
 					continue
 				}
+
+				// Query the parent subscription's feature_usage filtered to this child only.
+				childUsageReq := &dto.GetUsageBySubscriptionRequest{
+					SubscriptionID:      parentSubForChild.ID,
+					Source:              string(types.UsageSourceAnalytics),
+					OverrideCustomerIDs: []string{child.ID},
+				}
+				childUsage, err := subscriptionService.GetFeatureUsageBySubscription(ctx, childUsageReq)
+				if err != nil {
+					s.Logger.WarnwCtx(ctx, "failed to get usage for child customer breakdown, using empty entry",
+						"child_customer_id", child.ID,
+						"parent_subscription_id", parentSubForChild.ID,
+						"error", err)
+					childBreakdowns = append(childBreakdowns, dto.ChildUsageSummaryItem{
+						CustomerID:   child.ID,
+						ExternalID:   child.ExternalID,
+						CustomerName: child.Name,
+						Features:     []*dto.FeatureUsageSummary{},
+					})
+					continue
+				}
+
+				// Build per-child usage map from the charge results (meterID → usage).
+				childUsageByFeature := make(map[string]decimal.Decimal)
+				for _, charge := range childUsage.Charges {
+					if featureID, ok := meterFeatureMap[charge.MeterID]; ok {
+						childUsageByFeature[featureID] = childUsageByFeature[featureID].Add(decimal.NewFromFloat(charge.Quantity))
+					}
+				}
+
+				// Re-use the parent's feature/entitlement metadata but with the child's usage.
+				childFeatures := make([]*dto.FeatureUsageSummary, 0, len(features))
+				for _, feature := range features {
+					featureID := feature.Feature.ID
+					childCurrentUsage := childUsageByFeature[featureID] // zero if not present
+					childFeatures = append(childFeatures, &dto.FeatureUsageSummary{
+						Feature:          feature.Feature,
+						TotalLimit:       feature.Entitlement.UsageLimit,
+						IsUnlimited:      feature.Entitlement.UsageLimit == nil,
+						CurrentUsage:     childCurrentUsage,
+						UsagePercent:     s.getUsagePercent(childCurrentUsage, feature.Entitlement.UsageLimit),
+						IsEnabled:        feature.Entitlement.IsEnabled,
+						IsSoftLimit:      feature.Entitlement.IsSoftLimit,
+						Sources:          feature.Sources,
+						NextUsageResetAt: featureNextUsageResetAtMap[featureID],
+					})
+				}
+
 				childBreakdowns = append(childBreakdowns, dto.ChildUsageSummaryItem{
 					CustomerID:   child.ID,
 					ExternalID:   child.ExternalID,
 					CustomerName: child.Name,
-					Features:     childResp.Features,
+					Features:     childFeatures,
 				})
 			}
+
+			// Add the parent customer's own contribution so that sum(breakdowns) == total.
+			// Find the PARENT-type subscription in subscriptionMap to scope the query to just the
+			// parent customer's own events (OverrideCustomerIDs = [customerID]).
+			var parentSubForSelf *subscription.Subscription
+			for _, sub := range subscriptionMap {
+				if sub != nil && sub.SubscriptionType == types.SubscriptionTypeParent {
+					parentSubForSelf = sub
+					break
+				}
+			}
+			if parentSubForSelf != nil {
+				selfUsageReq := &dto.GetUsageBySubscriptionRequest{
+					SubscriptionID:      parentSubForSelf.ID,
+					Source:              string(types.UsageSourceAnalytics),
+					OverrideCustomerIDs: []string{customerID},
+				}
+				selfUsage, selfErr := subscriptionService.GetFeatureUsageBySubscription(ctx, selfUsageReq)
+				if selfErr != nil {
+					s.Logger.WarnwCtx(ctx, "failed to get parent own usage for breakdown",
+						"customer_id", customerID, "error", selfErr)
+				} else {
+					selfUsageByFeature := make(map[string]decimal.Decimal)
+					for _, charge := range selfUsage.Charges {
+						if featureID, ok := meterFeatureMap[charge.MeterID]; ok {
+							selfUsageByFeature[featureID] = selfUsageByFeature[featureID].Add(decimal.NewFromFloat(charge.Quantity))
+						}
+					}
+					selfFeatures := make([]*dto.FeatureUsageSummary, 0, len(features))
+					for _, feature := range features {
+						featureID := feature.Feature.ID
+						selfCurrentUsage := selfUsageByFeature[featureID]
+						selfFeatures = append(selfFeatures, &dto.FeatureUsageSummary{
+							Feature:          feature.Feature,
+							TotalLimit:       feature.Entitlement.UsageLimit,
+							IsUnlimited:      feature.Entitlement.UsageLimit == nil,
+							CurrentUsage:     selfCurrentUsage,
+							UsagePercent:     s.getUsagePercent(selfCurrentUsage, feature.Entitlement.UsageLimit),
+							IsEnabled:        feature.Entitlement.IsEnabled,
+							IsSoftLimit:      feature.Entitlement.IsSoftLimit,
+							Sources:          feature.Sources,
+							NextUsageResetAt: featureNextUsageResetAtMap[featureID],
+						})
+					}
+					parentCust, custErr := s.CustomerRepo.Get(ctx, customerID)
+					if custErr != nil {
+						s.Logger.WarnwCtx(ctx, "failed to get parent customer for breakdown",
+							"customer_id", customerID, "error", custErr)
+					} else {
+						// Prepend parent so it appears first in the breakdown list.
+						childBreakdowns = append([]dto.ChildUsageSummaryItem{{
+							CustomerID:   parentCust.ID,
+							ExternalID:   parentCust.ExternalID,
+							CustomerName: parentCust.Name,
+							Features:     selfFeatures,
+						}}, childBreakdowns...)
+					}
+				}
+			}
+
 			resp.ChildBreakdowns = childBreakdowns
 		}
 	}
