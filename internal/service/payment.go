@@ -464,7 +464,7 @@ func (s *paymentService) DeletePayment(ctx context.Context, id string) error {
 	return s.PaymentRepo.Delete(ctx, id) // Repository already using ierr
 }
 
-func (s *paymentService) publishWebhookEvent(ctx context.Context, eventName string, paymentID string) {
+func (s *paymentService) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, paymentID string) {
 	webhookPayload, err := json.Marshal(webhookDto.InternalPaymentEvent{
 		PaymentID: paymentID,
 		TenantID:  types.GetTenantID(ctx),

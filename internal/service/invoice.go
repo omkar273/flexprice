@@ -55,7 +55,7 @@ type InvoiceService interface {
 	CalculateUsageBreakdown(ctx context.Context, inv *dto.InvoiceResponse, groupBy []string, forceRealtimeRecalculation bool) (map[string][]dto.UsageBreakdownItem, error)
 	GetInvoiceWithBreakdown(ctx context.Context, req dto.GetInvoiceWithBreakdownRequest) (*dto.InvoiceResponse, error)
 	TriggerCommunication(ctx context.Context, id string) error
-	TriggerWebhook(ctx context.Context, invoiceID string, eventName string) error
+	TriggerWebhook(ctx context.Context, invoiceID string, eventName types.WebhookEventName) error
 	HandleIncompleteSubscriptionPayment(ctx context.Context, invoice *invoice.Invoice) error
 
 	// Cron methods
@@ -2558,7 +2558,7 @@ func (s *invoiceService) RecalculateInvoiceAmounts(ctx context.Context, invoiceI
 	return nil
 }
 
-func (s *invoiceService) publishInternalWebhookEvent(ctx context.Context, eventName string, invoiceID string) {
+func (s *invoiceService) publishInternalWebhookEvent(ctx context.Context, eventName types.WebhookEventName, invoiceID string) {
 	webhookPayload, err := json.Marshal(struct {
 		InvoiceID string `json:"invoice_id"`
 		TenantID  string `json:"tenant_id"`
@@ -3058,9 +3058,9 @@ func (s *invoiceService) TriggerCommunication(ctx context.Context, id string) er
 
 // TriggerWebhook manually triggers a webhook event for an invoice
 // This is useful for debugging or replaying missed webhook events
-func (s *invoiceService) TriggerWebhook(ctx context.Context, invoiceID string, eventName string) error {
+func (s *invoiceService) TriggerWebhook(ctx context.Context, invoiceID string, eventName types.WebhookEventName) error {
 	// Validate event name
-	validEvents := []string{
+	validEvents := []types.WebhookEventName{
 		types.WebhookEventInvoiceCreateDraft,
 		types.WebhookEventInvoiceUpdateFinalized,
 		types.WebhookEventInvoiceUpdatePayment,

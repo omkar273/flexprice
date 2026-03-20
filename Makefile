@@ -368,7 +368,23 @@ speakeasy-clean:
 # Allowed tags: .speakeasy/mcp/allowed-tags.yaml
 .PHONY: filter-mcp-spec
 filter-mcp-spec:
-	@node scripts/filter-openapi-by-tags.mjs
+	@echo "Applying scope overlay to base spec..."
+	@speakeasy overlay apply \
+		-s docs/swagger/swagger-3-0.json \
+		-o .speakeasy/overlays/scopes.yaml \
+		> docs/swagger/swagger-3-0-with-scopes.yaml
+	@echo "Converting YAML to JSON..."
+	@python3 -c "import yaml, json; print(json.dumps(yaml.safe_load(open('docs/swagger/swagger-3-0-with-scopes.yaml')), indent=2))" \
+		> docs/swagger/swagger-3-0-with-scopes.json 2>/dev/null || \
+	(pip3 install --break-system-packages pyyaml > /dev/null 2>&1 && \
+	 python3 -c "import yaml, json; print(json.dumps(yaml.safe_load(open('docs/swagger/swagger-3-0-with-scopes.yaml')), indent=2))" \
+		> docs/swagger/swagger-3-0-with-scopes.json)
+	@echo "Filtering spec by allowed tags..."
+	@node scripts/filter-openapi-by-tags.mjs \
+		--spec docs/swagger/swagger-3-0-with-scopes.json \
+		--out docs/swagger/swagger-3-0-mcp.json
+	@rm -f docs/swagger/swagger-3-0-with-scopes.yaml docs/swagger/swagger-3-0-with-scopes.json
+	@echo "MCP spec created with scopes at docs/swagger/swagger-3-0-mcp.json"
 
 # Copy central gen (.speakeasy/gen/*.yaml) into api/<lang>/.speakeasy/gen.yaml so Speakeasy CLI finds config.
 .PHONY: sync-gen-to-output

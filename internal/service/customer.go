@@ -644,7 +644,7 @@ func (s *customerService) validateParentCustomerAssignment(ctx context.Context, 
 	return nil
 }
 
-func (s *customerService) publishWebhookEvent(ctx context.Context, eventName string, customerID string) {
+func (s *customerService) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, customerID string) {
 	webhookPayload, err := json.Marshal(webhookDto.InternalCustomerEvent{
 		CustomerID: customerID,
 		TenantID:   types.GetTenantID(ctx),

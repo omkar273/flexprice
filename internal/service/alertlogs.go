@@ -302,7 +302,7 @@ func (s *alertLogsService) ListAlertsByEntity(ctx context.Context, entityType ty
 
 // WebhookEventMapping represents the mapping configuration for alert types and statuses to webhook events
 type WebhookEventMapping struct {
-	WebhookEvent string `json:"webhook_event"`
+	WebhookEvent types.WebhookEventName `json:"webhook_event"`
 }
 
 // alertWebhookMapping defines the mapping from alert types and statuses to specific webhook events
@@ -345,7 +345,7 @@ var alertWebhookMapping = map[types.AlertType]map[types.AlertState]WebhookEventM
 }
 
 // getWebhookEventName determines the appropriate webhook event name based on alert type and status
-func (s *alertLogsService) getWebhookEventName(alertType types.AlertType, alertStatus types.AlertState) string {
+func (s *alertLogsService) getWebhookEventName(alertType types.AlertType, alertStatus types.AlertState) types.WebhookEventName {
 	// Check if we have a mapping for this alert type
 	if alertTypeMapping, exists := alertWebhookMapping[alertType]; exists {
 		// Check if we have a mapping for this alert status
@@ -358,7 +358,7 @@ func (s *alertLogsService) getWebhookEventName(alertType types.AlertType, alertS
 	return ""
 }
 
-func (s *alertLogsService) publishWebhookEvent(ctx context.Context, eventName string, alertLog *alertlogs.AlertLog, alertType types.AlertType) error {
+func (s *alertLogsService) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, alertLog *alertlogs.AlertLog, alertType types.AlertType) error {
 	var webhookPayload []byte
 	var err error
 

@@ -424,7 +424,7 @@ func (s *featureService) DeleteFeature(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *featureService) publishWebhookEvent(ctx context.Context, eventName string, featureID string) {
+func (s *featureService) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, featureID string) {
 	webhookPayload, err := json.Marshal(webhookDto.InternalFeatureEvent{
 		FeatureID: featureID,
 		TenantID:  types.GetTenantID(ctx),

@@ -3693,7 +3693,7 @@ func (s *subscriptionService) calculateBillingImpact(
 	return impact, nil
 }
 
-func (s *subscriptionService) publishInternalWebhookEvent(ctx context.Context, eventName string, subscriptionID string) {
+func (s *subscriptionService) publishInternalWebhookEvent(ctx context.Context, eventName types.WebhookEventName, subscriptionID string) {
 
 	eventPayload := webhookDto.InternalSubscriptionEvent{
 		SubscriptionID: subscriptionID,
