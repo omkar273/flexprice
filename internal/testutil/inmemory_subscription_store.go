@@ -66,6 +66,27 @@ func subscriptionFilterFn(ctx context.Context, sub *subscription.Subscription, f
 		return false
 	}
 
+	// Exclude subscription statuses (matches ent subscription repository)
+	if len(f.SubscriptionStatusNotIn) > 0 && lo.Contains(f.SubscriptionStatusNotIn, sub.SubscriptionStatus) {
+		return false
+	}
+
+	// Filter by entity status (published vs deleted)
+	if f.Status != nil && sub.Status != *f.Status {
+		return false
+	}
+
+	// Filter by subscription type (standalone / parent / inherited); empty type is treated as standalone
+	if len(f.SubscriptionTypes) > 0 {
+		existingType := sub.SubscriptionType
+		if existingType == "" {
+			existingType = types.SubscriptionTypeStandalone
+		}
+		if !lo.Contains(f.SubscriptionTypes, existingType) {
+			return false
+		}
+	}
+
 	// Filter by billing cadence
 	if len(f.BillingCadence) > 0 && !lo.Contains(f.BillingCadence, sub.BillingCadence) {
 		return false

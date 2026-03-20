@@ -591,7 +591,6 @@ func (s *customerService) GetCustomerByLookupKey(ctx context.Context, lookupKey 
 	return &dto.CustomerResponse{Customer: customer}, nil
 }
 
-
 func (s *customerService) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, customerID string) {
 	webhookPayload, err := json.Marshal(webhookDto.InternalCustomerEvent{
 		CustomerID: customerID,

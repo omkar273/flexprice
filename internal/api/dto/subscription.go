@@ -410,6 +410,38 @@ type UpdateSubscriptionRequest struct {
 
 	// ParentSubscriptionID sets or clears the parent subscription. Omit to leave unchanged; send "" to clear.
 	ParentSubscriptionID *string `json:"parent_subscription_id,omitempty"`
+
+	// UsageCustomerIDs updates the set of child customers whose usage is aggregated on this
+	// subscription. Omit the field (nil) to leave the current set unchanged. Provide a non-nil
+	// slice to declare the full desired set — all currently tracked customers must be present or
+	// an error is returned (removals require cancelling the subscription). Include additional IDs
+	// to add new children; duplicate IDs are silently deduplicated.
+	UsageCustomerIDs *[]string `json:"usage_customer_ids,omitempty"`
+}
+
+// Validate checks UpdateSubscriptionRequest fields for basic structural validity.
+func (r *UpdateSubscriptionRequest) Validate() error {
+	if r.UsageCustomerIDs == nil {
+		return nil
+	}
+	for _, id := range *r.UsageCustomerIDs {
+		if strings.TrimSpace(id) == "" {
+			return ierr.NewError("usage_customer_ids contains an empty or blank customer ID").
+				WithHint("All entries in usage_customer_ids must be non-empty customer IDs").
+				Mark(ierr.ErrValidation)
+		}
+	}
+	// Duplicate detection (advisory only — service deduplicates via lo.Uniq, but surface early for clarity)
+	seen := make(map[string]struct{}, len(*r.UsageCustomerIDs))
+	for _, id := range *r.UsageCustomerIDs {
+		if _, exists := seen[id]; exists {
+			return ierr.NewError("usage_customer_ids contains duplicate customer ID: "+id).
+				WithHint("Each customer ID must appear at most once in usage_customer_ids").
+				Mark(ierr.ErrValidation)
+		}
+		seen[id] = struct{}{}
+	}
+	return nil
 }
 
 // CancelSubscriptionRequest represents the enhanced cancellation request

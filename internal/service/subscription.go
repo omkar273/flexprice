@@ -1596,6 +1596,11 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 
 	logger.Info("updating subscription")
 
+	// Validate the request before any DB reads
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
 	// Get the current subscription
 	subscription, err := s.SubRepo.Get(ctx, subscriptionID)
 	if err != nil {
@@ -1641,12 +1646,38 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 
 	subscription.CancelAtPeriodEnd = req.CancelAtPeriodEnd
 
-	// Update the subscription in the database
-	err = s.SubRepo.Update(ctx, subscription)
+	// --- usage_customer_ids: add new child customers to an existing subscription ---
+	// Omitting the field (nil) leaves the current set unchanged.
+	// Providing a non-nil slice declares the full desired set; any existing customer
+	// not present in the new list is rejected — removals require cancellation.
+	var addedCustomerIDs []string
+	if req.UsageCustomerIDs != nil {
+		addedCustomerIDs, err = s.resolveUsageCustomerIDsUpdate(ctx, subscription, *req.UsageCustomerIDs)
+		if err != nil {
+			return nil, err
+		}
+		// If there are new children, the subscription must become (or stay) PARENT type.
+		if len(addedCustomerIDs) > 0 {
+			subscription.SubscriptionType = types.SubscriptionTypeParent
+		}
+	}
+
+	// Persist parent update + create any new inherited subscriptions atomically.
+	err = s.DB.WithTx(ctx, func(ctx context.Context) error {
+		if err := s.SubRepo.Update(ctx, subscription); err != nil {
+			return ierr.WithError(err).
+				WithHint("Failed to update subscription").
+				Mark(ierr.ErrDatabase)
+		}
+		if len(addedCustomerIDs) > 0 {
+			if err := s.createInheritedSubscriptions(ctx, subscription, addedCustomerIDs); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("Failed to update subscription").
-			Mark(ierr.ErrDatabase)
+		return nil, err
 	}
 
 	logger.Info("successfully updated subscription")
@@ -1655,6 +1686,117 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 
 	// Return the updated subscription
 	return s.GetSubscription(ctx, subscriptionID)
+}
+
+// resolveUsageCustomerIDsUpdate validates a desired usage_customer_ids list against the current
+// state of the parent subscription and returns the slice of net-new customer IDs to onboard.
+//
+// Rules:
+//   - Subscription must be ACTIVE or TRIALING.
+//   - Every customer in desiredIDs must exist, be Published, and be a direct child of the
+//     subscription's owner customer.
+//   - Any customer currently tracked by an inherited subscription that is absent from desiredIDs
+//     is a removal attempt → hard error (use cancellation instead).
+//   - Duplicate IDs in desiredIDs are silently deduplicated.
+//   - Returns the net-new customer IDs (desiredIDs minus already-inherited).
+func (s *subscriptionService) resolveUsageCustomerIDsUpdate(
+	ctx context.Context,
+	sub *subscription.Subscription,
+	desiredIDs []string,
+) ([]string, error) {
+	// 1. Subscription must be live.
+	switch sub.SubscriptionStatus {
+	case types.SubscriptionStatusActive, types.SubscriptionStatusTrialing:
+		// allowed
+	default:
+		return nil, ierr.NewError(fmt.Sprintf(
+			"cannot update usage_customer_ids on a subscription with status %q", sub.SubscriptionStatus)).
+			WithHint("usage_customer_ids can only be updated on active or trialing subscriptions").
+			WithReportableDetails(map[string]interface{}{
+				"subscription_id":     sub.ID,
+				"subscription_status": sub.SubscriptionStatus,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// 2. Deduplicate the caller's list.
+	desiredIDs = lo.Uniq(desiredIDs)
+
+	// 3. Validate each desired customer: must exist, be Published, and be a direct child.
+	if len(desiredIDs) > 0 {
+		cf := types.NewNoLimitCustomerFilter()
+		cf.CustomerIDs = desiredIDs
+		cf.Status = lo.ToPtr(types.StatusPublished)
+		found, err := s.CustomerRepo.List(ctx, cf)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Failed to look up usage customers").
+				Mark(ierr.ErrDatabase)
+		}
+		byID := lo.SliceToMap(found, func(c *customer.Customer) (string, *customer.Customer) {
+			return c.ID, c
+		})
+		for _, id := range desiredIDs {
+			child, ok := byID[id]
+			if !ok {
+				return nil, ierr.NewError("usage customer not found").
+					WithHint("Each usage_customer_id must be a valid, published customer").
+					WithReportableDetails(map[string]interface{}{"customer_id": id}).
+					Mark(ierr.ErrValidation)
+			}
+			if child.ParentCustomerID == nil || *child.ParentCustomerID != sub.CustomerID {
+				return nil, ierr.NewError("usage customer is not a child of the subscription customer").
+					WithHint("Each usage_customer_id must be a direct child of the subscription's owner customer").
+					WithReportableDetails(map[string]interface{}{
+						"usage_customer_id":        id,
+						"subscription_customer_id": sub.CustomerID,
+					}).
+					Mark(ierr.ErrValidation)
+			}
+		}
+	}
+
+	// 4. Fetch the existing inherited subscriptions to determine current tracked customers.
+	existingInherited, err := s.getInheritedSubscriptions(ctx, sub.ID)
+	if err != nil {
+		return nil, err
+	}
+	existingCustomerIDs := make([]string, 0, len(existingInherited))
+	for _, inh := range existingInherited {
+		existingCustomerIDs = append(existingCustomerIDs, inh.CustomerID)
+	}
+
+	// 5. Detect removals: any existing customer not present in desiredIDs is a removal attempt.
+	desiredSet := lo.SliceToMap(desiredIDs, func(id string) (string, struct{}) { return id, struct{}{} })
+	for _, existingID := range existingCustomerIDs {
+		if _, kept := desiredSet[existingID]; !kept {
+			return nil, ierr.NewError("removing a usage customer requires cancelling the subscription").
+				WithHint("To remove child customers from usage aggregation, cancel the subscription and recreate it with the updated usage_customer_ids").
+				WithReportableDetails(map[string]interface{}{
+					"subscription_id":             sub.ID,
+					"removed_usage_customer_id": existingID,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	}
+
+	// 6. Compute net-new customers (desired minus already tracked).
+	existingSet := lo.SliceToMap(existingCustomerIDs, func(id string) (string, struct{}) { return id, struct{}{} })
+	addedIDs := make([]string, 0)
+	for _, id := range desiredIDs {
+		if _, alreadyTracked := existingSet[id]; !alreadyTracked {
+			addedIDs = append(addedIDs, id)
+		}
+	}
+
+	// 7. Validate new additions won't conflict with their existing subscription types.
+	if len(addedIDs) > 0 {
+		if err := s.validateCustomerSubscriptionWorkflow(ctx, sub.CustomerID, types.SubscriptionTypeParent, addedIDs); err != nil {
+			return nil, err
+		}
+	}
+
+	return addedIDs, nil
 }
 
 // CancelSubscription provides enhanced cancellation with proration support

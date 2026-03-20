@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	domainCustomer "github.com/flexprice/flexprice/internal/domain/customer"
@@ -348,6 +349,75 @@ func (s *CustomerServiceSuite) TestUpdateCustomer() {
 			}
 		})
 	}
+}
+
+func (s *CustomerServiceSuite) TestUpdateCustomer_ParentCustomerID() {
+	now := time.Now().UTC()
+	baseCustomer := func(id string) *domainCustomer.Customer {
+		return &domainCustomer.Customer{
+			ID:             id,
+			Name:           "Test",
+			Email:          id + "@example.com",
+			AddressCountry: "US",
+			BaseModel: types.BaseModel{
+				Status: types.StatusPublished,
+			},
+		}
+	}
+	baseSub := func(id, customerID string, subType types.SubscriptionType, subStatus types.SubscriptionStatus) *subscription.Subscription {
+		return &subscription.Subscription{
+			ID:                 id,
+			CustomerID:         customerID,
+			PlanID:             "plan-x",
+			SubscriptionStatus: subStatus,
+			SubscriptionType:   subType,
+			Currency:           "usd",
+			BillingAnchor:        now,
+			StartDate:            now,
+			CurrentPeriodStart:   now,
+			CurrentPeriodEnd:     now.Add(24 * time.Hour),
+			BillingCadence:       types.BILLING_CADENCE_RECURRING,
+			BillingPeriod:        types.BILLING_PERIOD_MONTHLY,
+			BillingPeriodCount:   1,
+			BillingCycle:         types.BillingCycleAnniversary,
+			BaseModel: types.BaseModel{
+				Status: types.StatusPublished,
+			},
+		}
+	}
+
+	s.Run("standalone_active_subscription_allows_parent_change", func() {
+		s.SetupTest()
+		s.NoError(s.GetStores().CustomerRepo.Create(s.ctx, baseCustomer("parent-h")))
+		s.NoError(s.GetStores().CustomerRepo.Create(s.ctx, baseCustomer("child-h")))
+		s.NoError(s.GetStores().SubscriptionRepo.Create(s.ctx, baseSub("sub-sa", "child-h", "", types.SubscriptionStatusActive)))
+
+		resp, err := s.service.UpdateCustomer(s.ctx, "child-h", dto.UpdateCustomerRequest{
+			ParentCustomerID: lo.ToPtr("parent-h"),
+		})
+		s.NoError(err)
+		s.NotNil(resp)
+		s.NotNil(resp.Customer.ParentCustomerID)
+		s.Equal("parent-h", *resp.Customer.ParentCustomerID)
+	})
+
+	s.Run("inherited_active_subscription_blocks_parent_change", func() {
+		s.SetupTest()
+		s.NoError(s.GetStores().CustomerRepo.Create(s.ctx, baseCustomer("parent-i")))
+		s.NoError(s.GetStores().CustomerRepo.Create(s.ctx, baseCustomer("child-i")))
+		parentSubID := "sub-parent-inh"
+		s.NoError(s.GetStores().SubscriptionRepo.Create(s.ctx, baseSub(parentSubID, "parent-i", types.SubscriptionTypeParent, types.SubscriptionStatusActive)))
+		inh := baseSub("sub-inh", "child-i", types.SubscriptionTypeInherited, types.SubscriptionStatusActive)
+		inh.ParentSubscriptionID = lo.ToPtr(parentSubID)
+		s.NoError(s.GetStores().SubscriptionRepo.Create(s.ctx, inh))
+
+		_, err := s.service.UpdateCustomer(s.ctx, "child-i", dto.UpdateCustomerRequest{
+			ParentCustomerID: lo.ToPtr("parent-i"),
+		})
+		s.Error(err)
+		s.True(ierr.IsInvalidOperation(err))
+		s.Contains(err.Error(), "inherited")
+	})
 }
 
 func (s *CustomerServiceSuite) TestDeleteCustomer() {
