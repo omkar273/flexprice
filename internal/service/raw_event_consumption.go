@@ -23,8 +23,13 @@ import (
 
 // RawEventConsumptionService handles consuming raw event batches from Kafka and transforming them
 type RawEventConsumptionService interface {
-	// Register message handler with the router
+	// RegisterHandler registers the message handler with the router (consumer side)
 	RegisterHandler(router *pubsubRouter.Router, cfg *config.Configuration)
+
+	// BulkIngestRawEvents publishes a batch of raw Bento-format event payloads directly
+	// to the raw_events Kafka topic. The consumer (processMessage) will pick them up
+	// exactly as it would if Bento had written them.
+	BulkIngestRawEvents(ctx context.Context, events []json.RawMessage) error
 }
 
 type rawEventConsumptionService struct {
@@ -289,6 +294,43 @@ func (s *rawEventConsumptionService) processMessage(msg *message.Message) error 
 		return fmt.Errorf("failed to process %d events in batch, retrying entire batch", errorCount)
 	}
 
+	return nil
+}
+
+// BulkIngestRawEvents publishes a batch of raw Bento-format event payloads to the
+// raw_events Kafka topic. The consumer picks them up in the same format as events
+// produced by the Bento collector — there is no difference from the consumer's perspective.
+func (s *rawEventConsumptionService) BulkIngestRawEvents(ctx context.Context, events []json.RawMessage) error {
+	tenantID := types.GetTenantID(ctx)
+	environmentID := types.GetEnvironmentID(ctx)
+
+	batch := RawEventBatch{
+		Data:          events,
+		TenantID:      tenantID,
+		EnvironmentID: environmentID,
+	}
+
+	payload, err := json.Marshal(batch)
+	if err != nil {
+		return fmt.Errorf("failed to marshal raw event batch: %w", err)
+	}
+
+	uniqueID := fmt.Sprintf("%s-%d-%d", types.GenerateUUID(), time.Now().UnixNano(), rand.Int63())
+	msg := message.NewMessage(uniqueID, payload)
+	msg.Metadata.Set("tenant_id", tenantID)
+	msg.Metadata.Set("environment_id", environmentID)
+
+	topic := s.Config.RawEventConsumption.Topic
+	if err := s.pubSub.Publish(ctx, topic, msg); err != nil {
+		return fmt.Errorf("failed to publish raw event batch: %w", err)
+	}
+
+	s.Logger.Infow("published raw event batch to kafka",
+		"batch_size", len(events),
+		"tenant_id", tenantID,
+		"environment_id", environmentID,
+		"topic", topic,
+	)
 	return nil
 }
 

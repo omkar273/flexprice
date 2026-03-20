@@ -2,6 +2,7 @@ package dto
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"strings"
 	"time"
@@ -42,6 +43,27 @@ type BulkIngestEventRequest struct {
 
 func (r *BulkIngestEventRequest) Validate() error {
 	return validator.ValidateRequest(r)
+}
+
+// BulkIngestRawEventRequest is the request body for POST /v1/events/raw/bulk.
+// Each element in Events is a raw Bento-format event JSON object — the same
+// format that the Bento collector writes to the raw_events Kafka topic.
+type BulkIngestRawEventRequest struct {
+	Events []json.RawMessage `json:"events" validate:"required,min=1,max=1000"`
+}
+
+func (r *BulkIngestRawEventRequest) Validate() error {
+	if len(r.Events) == 0 {
+		return ierr.NewError("events is required").
+			WithHint("Provide at least one raw event").
+			Mark(ierr.ErrValidation)
+	}
+	if len(r.Events) > 1000 {
+		return ierr.NewError("too many events").
+			WithHint("Maximum 1000 events per batch").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
 }
 
 func (r *IngestEventRequest) ToEvent(ctx context.Context) *events.Event {
