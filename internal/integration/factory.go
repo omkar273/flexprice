@@ -433,12 +433,14 @@ func (f *Factory) GetPaddleIntegration(ctx context.Context) (*PaddleIntegration,
 		f.invoiceRepo,
 		f.entityIntegrationMappingRepo,
 		f.logger,
+		f.config.Auth.Secret,
 	)
 
 	paymentSvc := paddle.NewPaymentService(f.logger)
 
 	webhookHandler := paddlewebhook.NewHandler(
 		paymentSvc,
+		customerSvc,
 		f.entityIntegrationMappingRepo,
 		f.logger,
 	)

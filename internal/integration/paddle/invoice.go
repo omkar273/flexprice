@@ -3,6 +3,7 @@ package paddle
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
@@ -12,6 +13,7 @@ import (
 	"github.com/flexprice/flexprice/internal/interfaces"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
@@ -30,6 +32,7 @@ type InvoiceSyncService struct {
 	invoiceRepo                  invoice.Repository
 	entityIntegrationMappingRepo entityintegrationmapping.Repository
 	logger                       *logger.Logger
+	authSecret                   string
 }
 
 // NewInvoiceSyncService creates a new Paddle invoice sync service
@@ -39,6 +42,7 @@ func NewInvoiceSyncService(
 	invoiceRepo invoice.Repository,
 	entityIntegrationMappingRepo entityintegrationmapping.Repository,
 	logger *logger.Logger,
+	authSecret string,
 ) *InvoiceSyncService {
 	return &InvoiceSyncService{
 		client:                       client,
@@ -46,6 +50,7 @@ func NewInvoiceSyncService(
 		invoiceRepo:                  invoiceRepo,
 		entityIntegrationMappingRepo: entityIntegrationMappingRepo,
 		logger:                       logger,
+		authSecret:                   authSecret,
 	}
 }
 
@@ -82,6 +87,7 @@ func (s *InvoiceSyncService) SyncInvoiceToPaddle(
 			"invoice_id", req.InvoiceID,
 			"paddle_transaction_id", existingMapping.ProviderEntityID)
 		resp := s.buildResponseFromMapping(existingMapping)
+		s.appendCheckoutToken(ctx, resp)
 		if err := s.updateFlexPriceInvoiceFromPaddle(ctx, flexInvoice, resp); err != nil {
 			s.logger.Warnw("failed to update FlexPrice invoice metadata with Paddle URLs",
 				"error", err,
@@ -151,15 +157,17 @@ func (s *InvoiceSyncService) SyncInvoiceToPaddle(
 		"invoice_id", req.InvoiceID,
 		"paddle_transaction_id", txn.ID)
 
-	if err := s.createInvoiceMapping(ctx, req.InvoiceID, txn, flexInvoice.EnvironmentID); err != nil {
+	// Update FlexPrice invoice metadata with Paddle checkout URL (for Temporal activity - self-contained like Moyasar)
+	syncResp := s.buildSyncResponse(txn)
+	s.appendCheckoutToken(ctx, syncResp)
+
+	if err := s.createInvoiceMapping(ctx, req.InvoiceID, txn, flexInvoice.EnvironmentID, syncResp); err != nil {
 		s.logger.Errorw("failed to create invoice mapping",
 			"error", err,
 			"invoice_id", req.InvoiceID,
 			"paddle_transaction_id", txn.ID)
 	}
 
-	// Update FlexPrice invoice metadata with Paddle checkout URL (for Temporal activity - self-contained like Moyasar)
-	syncResp := s.buildSyncResponse(txn)
 	if err := s.updateFlexPriceInvoiceFromPaddle(ctx, flexInvoice, syncResp); err != nil {
 		s.logger.Warnw("failed to update FlexPrice invoice metadata with Paddle URLs",
 			"error", err,
@@ -356,13 +364,19 @@ func (s *InvoiceSyncService) createInvoiceMapping(
 	flexInvoiceID string,
 	txn *paddle.Transaction,
 	environmentID string,
+	syncResp *PaddleInvoiceSyncResponse,
 ) error {
 	metadata := map[string]interface{}{
 		"paddle_transaction_id": txn.ID,
 		"synced_at":             txn.CreatedAt,
 	}
-	if txn.Checkout != nil && lo.FromPtrOr(txn.Checkout.URL, "") != "" {
-		metadata["paddle_checkout_url"] = lo.FromPtrOr(txn.Checkout.URL, "")
+	// Use final payment link (with _success appended) from syncResp, fallback to raw URL
+	checkoutURL := syncResp.CheckoutURL
+	if checkoutURL == "" && txn.Checkout != nil {
+		checkoutURL = lo.FromPtrOr(txn.Checkout.URL, "")
+	}
+	if checkoutURL != "" {
+		metadata["paddle_checkout_url"] = checkoutURL
 	}
 	if txn.InvoiceNumber != nil {
 		metadata["invoice_number"] = *txn.InvoiceNumber
@@ -407,6 +421,51 @@ func (s *InvoiceSyncService) buildSyncResponse(txn *paddle.Transaction) *PaddleI
 		}
 	}
 	return resp
+}
+
+// appendCheckoutToken generates a JWT containing client_side_token and success_url, then appends
+// it as &token=<JWT> to the CheckoutURL. The frontend decodes the JWT to initialize Paddle.js
+// and open the overlay checkout.
+func (s *InvoiceSyncService) appendCheckoutToken(ctx context.Context, syncResp *PaddleInvoiceSyncResponse) {
+	if syncResp == nil || syncResp.CheckoutURL == "" {
+		return
+	}
+
+	paddleConfig, err := s.client.GetPaddleConfig(ctx)
+	if err != nil || paddleConfig == nil || paddleConfig.ClientSideToken == "" {
+		s.logger.Debugw("skipping checkout token: client_side_token not configured")
+		return
+	}
+
+	conn, err := s.client.GetConnection(ctx)
+	if err != nil || conn == nil || conn.Metadata == nil {
+		return
+	}
+	successURL, _ := conn.Metadata["redirect_url"].(string)
+
+	claims := jwt.MapClaims{
+		"client_side_token": paddleConfig.ClientSideToken,
+		"success_url":       successURL,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString([]byte(s.authSecret))
+	if err != nil {
+		s.logger.Warnw("failed to sign Paddle checkout token", "error", err)
+		return
+	}
+
+	parsed, err := url.Parse(syncResp.CheckoutURL)
+	if err != nil {
+		s.logger.Warnw("failed to parse Paddle checkout URL for token append",
+			"error", err,
+			"checkout_url", syncResp.CheckoutURL)
+		return
+	}
+	q := parsed.Query()
+	q.Set("token", signedToken)
+	parsed.RawQuery = q.Encode()
+	syncResp.CheckoutURL = parsed.String()
+	s.logger.Debugw("appended checkout token to Paddle checkout URL")
 }
 
 func (s *InvoiceSyncService) buildResponseFromMapping(mapping *entityintegrationmapping.EntityIntegrationMapping) *PaddleInvoiceSyncResponse {

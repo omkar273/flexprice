@@ -1159,22 +1159,20 @@ func (h *WebhookHandler) HandlePaddleWebhook(c *gin.Context) {
 
 	h.logger.Infow("processing Paddle webhook", "event_type", payload.EventType)
 
-	if payload.EventType == "transaction.completed" {
-		serviceDeps := &paddlewebhook.ServiceDependencies{
-			CustomerService:                 h.customerService,
-			PaymentService:                  h.paymentService,
-			InvoiceService:                  h.invoiceService,
-			PlanService:                     h.planService,
-			SubscriptionService:             h.subscriptionService,
-			EntityIntegrationMappingService: h.entityIntegrationMappingService,
-			DB:                              h.db,
-		}
+	serviceDeps := &paddlewebhook.ServiceDependencies{
+		CustomerService:                 h.customerService,
+		PaymentService:                  h.paymentService,
+		InvoiceService:                  h.invoiceService,
+		PlanService:                     h.planService,
+		SubscriptionService:             h.subscriptionService,
+		EntityIntegrationMappingService: h.entityIntegrationMappingService,
+		DB:                              h.db,
+	}
 
-		err = paddleIntegration.WebhookHandler.HandleWebhookEvent(ctx, payload.EventType, body, environmentID, serviceDeps)
-		if err != nil {
-			h.logger.Errorw("failed to handle Paddle webhook event",
-				"error", err,
-				"event_type", payload.EventType)
-		}
+	err = paddleIntegration.WebhookHandler.HandleWebhookEvent(ctx, payload.EventType, body, environmentID, serviceDeps)
+	if err != nil {
+		h.logger.Errorw("failed to handle Paddle webhook event",
+			"error", err,
+			"event_type", payload.EventType)
 	}
 }

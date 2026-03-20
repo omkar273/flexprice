@@ -324,6 +324,13 @@ func (s *connectionService) encryptMetadata(encryptedSecretData types.Connection
 			APIKey:        encryptedAPIKey,
 			WebhookSecret: encryptedWebhookSecret,
 		}
+		if encryptedSecretData.Paddle.ClientSideToken != "" {
+			encryptedClientSideToken, err := s.encryptionService.Encrypt(encryptedSecretData.Paddle.ClientSideToken)
+			if err != nil {
+				return types.ConnectionMetadata{}, err
+			}
+			encryptedMetadata.Paddle.ClientSideToken = encryptedClientSideToken
+		}
 
 	default:
 		// For other providers or unknown types, use generic format

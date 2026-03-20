@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/PaddleHQ/paddle-go-sdk/v4"
+	"github.com/PaddleHQ/paddle-go-sdk/v4/pkg/paddlenotification"
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/customer"
 	"github.com/flexprice/flexprice/internal/domain/entityintegrationmapping"
@@ -19,6 +20,7 @@ type PaddleCustomerService interface {
 	EnsureCustomerSyncedToPaddle(ctx context.Context, customerID string, customerService interfaces.CustomerService) (*customer.Customer, error)
 	SyncCustomerToPaddle(ctx context.Context, flexpriceCustomer *customer.Customer) (string, error)
 	GetPaddleCustomerID(ctx context.Context, customerID string) (string, error)
+	CreateCustomerFromPaddle(ctx context.Context, paddleCustomer *paddlenotification.CustomerNotification, customerService interfaces.CustomerService) error
 }
 
 // CustomerService handles Paddle customer operations
@@ -293,6 +295,116 @@ func (s *CustomerService) GetPaddleCustomerID(ctx context.Context, customerID st
 	}
 
 	return mappings[0].ProviderEntityID, nil
+}
+
+// CreateCustomerFromPaddle creates a FlexPrice customer from Paddle webhook data (customer.created).
+func (s *CustomerService) CreateCustomerFromPaddle(ctx context.Context, paddleCustomer *paddlenotification.CustomerNotification, customerService interfaces.CustomerService) error {
+	paddleCustomerID := paddleCustomer.ID
+
+	// Idempotency: check if mapping already exists
+	filter := &types.EntityIntegrationMappingFilter{
+		ProviderTypes:     []string{string(types.SecretProviderPaddle)},
+		ProviderEntityIDs: []string{paddleCustomerID},
+		EntityType:        types.IntegrationEntityTypeCustomer,
+	}
+	mappings, err := s.entityIntegrationMappingRepo.List(ctx, filter)
+	if err != nil {
+		s.logger.Errorw("failed to check Paddle customer mapping",
+			"error", err,
+			"paddle_customer_id", paddleCustomerID)
+		return err
+	}
+	if len(mappings) > 0 {
+		s.logger.Infow("FlexPrice customer already exists for Paddle customer, skipping creation",
+			"flexprice_customer_id", mappings[0].EntityID,
+			"paddle_customer_id", paddleCustomerID)
+		return nil
+	}
+
+	// Deduplication by email: if customer exists by email, create mapping and skip creation
+	if paddleCustomer.Email != "" {
+		emailFilter := &types.CustomerFilter{
+			Email:       paddleCustomer.Email,
+			QueryFilter: types.NewDefaultQueryFilter(),
+		}
+		existingCustomers, err := customerService.GetCustomers(ctx, emailFilter)
+		if err == nil && existingCustomers != nil && len(existingCustomers.Items) > 0 {
+			existingCustomer := existingCustomers.Items[0]
+			s.logger.Infow("customer with same email already exists, creating mapping",
+				"customer_id", existingCustomer.ID,
+				"paddle_customer_id", paddleCustomerID)
+
+			mapping := &entityintegrationmapping.EntityIntegrationMapping{
+				ID:               types.GenerateUUIDWithPrefix(types.UUID_PREFIX_ENTITY_INTEGRATION_MAPPING),
+				EntityID:         existingCustomer.ID,
+				EntityType:       types.IntegrationEntityTypeCustomer,
+				ProviderType:     string(types.SecretProviderPaddle),
+				ProviderEntityID: paddleCustomerID,
+				Metadata: map[string]interface{}{
+					"created_via":           "provider_to_flexprice",
+					"paddle_customer_email": paddleCustomer.Email,
+					"synced_at":             time.Now().UTC().Format(time.RFC3339),
+				},
+				EnvironmentID: types.GetEnvironmentID(ctx),
+				BaseModel:     types.GetDefaultBaseModel(ctx),
+			}
+			if err := s.entityIntegrationMappingRepo.Create(ctx, mapping); err != nil {
+				s.logger.Warnw("failed to create mapping for existing customer",
+					"error", err,
+					"customer_id", existingCustomer.ID,
+					"paddle_customer_id", paddleCustomerID)
+			}
+			return nil
+		}
+	}
+
+	// Create new customer
+	name := paddleCustomerID
+	if paddleCustomer.Name != nil && *paddleCustomer.Name != "" {
+		name = *paddleCustomer.Name
+	} else if paddleCustomer.Email != "" {
+		name = paddleCustomer.Email
+	}
+
+	createReq := dto.CreateCustomerRequest{
+		ExternalID:            paddleCustomerID,
+		Name:                  name,
+		Email:                 paddleCustomer.Email,
+		SkipOnboardingWorkflow: true,
+		Metadata: map[string]string{
+			"paddle_customer_id": paddleCustomerID,
+		},
+	}
+
+	customerResp, err := customerService.CreateCustomer(ctx, createReq)
+	if err != nil {
+		return err
+	}
+
+	// Create entity mapping
+	mapping := &entityintegrationmapping.EntityIntegrationMapping{
+		ID:               types.GenerateUUIDWithPrefix(types.UUID_PREFIX_ENTITY_INTEGRATION_MAPPING),
+		EntityID:         customerResp.ID,
+		EntityType:       types.IntegrationEntityTypeCustomer,
+		ProviderType:     string(types.SecretProviderPaddle),
+		ProviderEntityID: paddleCustomerID,
+		Metadata: map[string]interface{}{
+			"created_via":           "provider_to_flexprice",
+			"paddle_customer_email": paddleCustomer.Email,
+			"synced_at":             time.Now().UTC().Format(time.RFC3339),
+		},
+		EnvironmentID: types.GetEnvironmentID(ctx),
+		BaseModel:     types.GetDefaultBaseModel(ctx),
+	}
+
+	if err := s.entityIntegrationMappingRepo.Create(ctx, mapping); err != nil {
+		s.logger.Warnw("failed to create mapping for new customer",
+			"error", err,
+			"customer_id", customerResp.ID,
+			"paddle_customer_id", paddleCustomerID)
+	}
+
+	return nil
 }
 
 // mergeCustomerMetadata merges new metadata with existing customer metadata
