@@ -91,8 +91,9 @@ func (r *IngestEventRequest) ToEvent(ctx context.Context) *events.Event {
 }
 
 type GetUsageRequest struct {
-	ExternalCustomerID string                `form:"external_customer_id" json:"external_customer_id" example:"customer456"`
-	CustomerID         string                `form:"customer_id" json:"customer_id" example:"customer456"`
+	ExternalCustomerID  string                `form:"external_customer_id" json:"external_customer_id" example:"customer456"`
+	ExternalCustomerIDs []string              `form:"external_customer_ids" json:"external_customer_ids" example:"customer456,customer789"`
+	CustomerID          string                `form:"customer_id" json:"customer_id" example:"customer456"`
 	EventName          string                `form:"event_name" json:"event_name" binding:"required" required:"true" example:"api_request"`
 	PropertyName       string                `form:"property_name" json:"property_name" example:"request_size"` // will be empty/ignored in case of COUNT
 	AggregationType    types.AggregationType `form:"aggregation_type" json:"aggregation_type" binding:"required"`
@@ -131,6 +132,7 @@ type GetUsageByMeterRequest struct {
 	PriceID            string              `form:"-" json:"-"` // this is just for internal use to store the price id
 	Meter              *meter.Meter        `form:"-" json:"-"` // caller can set this in case already fetched from db to avoid extra db call
 	ExternalCustomerID string              `form:"external_customer_id" json:"external_customer_id" example:"user_5"`
+	ExternalCustomerIDs []string           `form:"external_customer_ids" json:"external_customer_ids" example:"user_5,user_6"`
 	CustomerID         string              `form:"customer_id" json:"customer_id" example:"customer456"`
 	StartTime          time.Time           `form:"start_time" json:"start_time" example:"2024-11-09T00:00:00Z"`
 	EndTime            time.Time           `form:"end_time" json:"end_time" example:"2024-12-09T00:00:00Z"`
@@ -255,19 +257,20 @@ func (r *GetUsageRequest) ToUsageParams() *events.UsageParams {
 	}
 
 	return &events.UsageParams{
-		ExternalCustomerID: r.ExternalCustomerID,
-		CustomerID:         r.CustomerID,
-		EventName:          r.EventName,
-		PropertyName:       r.PropertyName,
-		AggregationType:    types.AggregationType(strings.ToUpper(string(r.AggregationType))),
-		StartTime:          r.StartTime,
-		EndTime:            r.EndTime,
-		WindowSize:         r.WindowSize,
-		BucketSize:         r.BucketSize,
-		Filters:            r.Filters,
-		Multiplier:         r.Multiplier,
-		BillingAnchor:      r.BillingAnchor,
-		GroupByProperty:    r.GroupByProperty,
+		ExternalCustomerID:  r.ExternalCustomerID,
+		ExternalCustomerIDs: r.ExternalCustomerIDs,
+		CustomerID:          r.CustomerID,
+		EventName:           r.EventName,
+		PropertyName:        r.PropertyName,
+		AggregationType:     types.AggregationType(strings.ToUpper(string(r.AggregationType))),
+		StartTime:           r.StartTime,
+		EndTime:             r.EndTime,
+		WindowSize:          r.WindowSize,
+		BucketSize:          r.BucketSize,
+		Filters:             r.Filters,
+		Multiplier:          r.Multiplier,
+		BillingAnchor:       r.BillingAnchor,
+		GroupByProperty:     r.GroupByProperty,
 	}
 }
 
