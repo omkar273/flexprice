@@ -337,6 +337,9 @@ func convertConnectionMetadataToMap(encryptedSecretData types.ConnectionMetadata
 			if encryptedSecretData.Paddle.WebhookSecret != "" {
 				data["webhook_secret"] = encryptedSecretData.Paddle.WebhookSecret
 			}
+			if encryptedSecretData.Paddle.ClientSideToken != "" {
+				data["client_side_token"] = encryptedSecretData.Paddle.ClientSideToken
+			}
 			return data
 		}
 	default:

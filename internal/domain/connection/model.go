@@ -217,6 +217,9 @@ func convertMapToConnectionMetadata(metadata map[string]interface{}, providerTyp
 		if webhookSecret, ok := metadata["webhook_secret"].(string); ok {
 			paddleMetadata.WebhookSecret = webhookSecret
 		}
+		if clientSideToken, ok := metadata["client_side_token"].(string); ok {
+			paddleMetadata.ClientSideToken = clientSideToken
+		}
 		return types.ConnectionMetadata{
 			Paddle: paddleMetadata,
 		}

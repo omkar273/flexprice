@@ -35,8 +35,9 @@ type PaddleClient interface {
 
 // PaddleConfig holds decrypted Paddle connection configuration
 type PaddleConfig struct {
-	APIKey        string
-	WebhookSecret string
+	APIKey          string
+	WebhookSecret   string
+	ClientSideToken string
 }
 
 // Client handles Paddle API client setup and configuration
@@ -101,6 +102,9 @@ func (c *Client) GetDecryptedPaddleConfig(conn *connection.Connection) (*PaddleC
 	if webhookSecret, exists := decryptedMetadata["webhook_secret"]; exists {
 		config.WebhookSecret = webhookSecret
 	}
+	if clientSideToken, exists := decryptedMetadata["client_side_token"]; exists {
+		config.ClientSideToken = clientSideToken
+	}
 
 	return config, nil
 }
@@ -126,9 +130,18 @@ func (c *Client) decryptConnectionMetadata(conn *connection.Connection) (types.M
 		}
 	}
 
+	var clientSideToken string
+	if conn.EncryptedSecretData.Paddle.ClientSideToken != "" {
+		clientSideToken, err = c.encryptionService.Decrypt(conn.EncryptedSecretData.Paddle.ClientSideToken)
+		if err != nil {
+			c.logger.Warnw("failed to decrypt Paddle client_side_token", "connection_id", conn.ID, "error", err)
+		}
+	}
+
 	return types.Metadata{
-		"api_key":         apiKey,
-		"webhook_secret":  webhookSecret,
+		"api_key":           apiKey,
+		"webhook_secret":    webhookSecret,
+		"client_side_token": clientSideToken,
 	}, nil
 }
 

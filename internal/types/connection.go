@@ -229,8 +229,9 @@ func (m *MoyasarConnectionMetadata) Validate() error {
 
 // PaddleConnectionMetadata represents Paddle-specific connection metadata
 type PaddleConnectionMetadata struct {
-	APIKey        string `json:"api_key"`        // Paddle API Key (encrypted)
-	WebhookSecret string `json:"webhook_secret"` // Paddle webhook secret (encrypted)
+	APIKey          string `json:"api_key"`            // Paddle API Key (encrypted)
+	WebhookSecret   string `json:"webhook_secret"`     // Paddle webhook secret (encrypted)
+	ClientSideToken string `json:"client_side_token"`  // Paddle.js client-side token (optional, encrypted)
 }
 
 // Validate validates the Paddle connection metadata
