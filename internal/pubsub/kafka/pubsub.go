@@ -36,13 +36,13 @@ func NewPubSubFromConfig(
 	logger *logger.Logger,
 	consumerGroupID string,
 ) (pubsub.PubSub, error) {
-	producer, err := NewProducer(config)
+	producer, err := NewProducer(config, logger)
 	if err != nil {
 		logger.Fatalw("failed to create producer", "error", err)
 		return nil, err
 	}
 
-	consumer, err := NewConsumer(config, consumerGroupID)
+	consumer, err := NewConsumer(config, consumerGroupID, logger)
 	if err != nil {
 		logger.Fatalw("failed to create consumer", "error", err)
 		return nil, err

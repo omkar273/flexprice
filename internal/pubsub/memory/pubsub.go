@@ -3,7 +3,6 @@ package memory
 import (
 	"context"
 
-	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
@@ -34,7 +33,7 @@ func NewPubSub(
 			// Buffer size for output channel
 			OutputChannelBuffer: 100,
 		},
-		watermill.NewStdLogger(true, false),
+		logger.GetWatermillLogger(),
 	)
 
 	return &PubSub{

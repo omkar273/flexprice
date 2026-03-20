@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill"
 	watermillKafka "github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
@@ -27,7 +26,7 @@ type Router struct {
 func NewRouter(cfg *config.Configuration, logger *logger.Logger, sentry *sentry.Service) (*Router, error) {
 	router, err := message.NewRouter(
 		message.RouterConfig{},
-		watermill.NewStdLogger(true, false),
+		logger.GetWatermillLogger(),
 	)
 	if err != nil {
 		return nil, err
@@ -48,7 +47,7 @@ func NewRouter(cfg *config.Configuration, logger *logger.Logger, sentry *sentry.
 		logger.Infow("DLQ enabled with Kafka", "dlq_topic", cfg.Kafka.TopicDLQ)
 	} else {
 		// Use in-memory DLQ (original behavior) when not configured
-		poisonQueuePublisher = getTempDLQ()
+		poisonQueuePublisher = getTempDLQ(logger)
 		dlqTopicName = "poison_queue"
 		logger.Infow("DLQ using in-memory queue (no topic_dlq configured)")
 	}
@@ -71,7 +70,7 @@ func NewRouter(cfg *config.Configuration, logger *logger.Logger, sentry *sentry.
 			Multiplier:          2.0,
 			MaxElapsedTime:      2 * time.Minute,
 			RandomizationFactor: 0.5,
-			Logger:              watermill.NewStdLogger(true, false),
+			Logger:              logger.GetWatermillLogger(),
 			OnRetryHook: func(retryNum int, delay time.Duration) {
 				logger.Infow("retrying message",
 					"retry_number", retryNum,
@@ -104,7 +103,7 @@ func createDLQPublisher(cfg *config.Configuration, logger *logger.Logger) (messa
 			Marshaler:             watermillKafka.DefaultMarshaler{},
 			OverwriteSaramaConfig: saramaConfig,
 		},
-		watermill.NewStdLogger(false, false),
+		logger.GetWatermillLogger(),
 	)
 	if err != nil {
 		return nil, err
@@ -160,11 +159,11 @@ func (r *Router) Close() error {
 }
 
 // getTempDLQ returns a temporary in-memory DLQ (original behavior when topic_dlq not configured)
-func getTempDLQ() *gochannel.GoChannel {
+func getTempDLQ(log *logger.Logger) *gochannel.GoChannel {
 	return gochannel.NewGoChannel(
 		gochannel.Config{
 			Persistent: false,
 		},
-		watermill.NewStdLogger(true, false),
+		log.GetWatermillLogger(),
 	)
 }

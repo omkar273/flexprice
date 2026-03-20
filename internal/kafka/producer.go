@@ -1,19 +1,16 @@
 package kafka
 
 import (
-	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/flexprice/flexprice/internal/config"
-	"github.com/flexprice/flexprice/internal/types"
+	"github.com/flexprice/flexprice/internal/logger"
 )
 
 type Producer struct {
 	*kafka.Publisher
 }
 
-func NewProducer(cfg *config.Configuration) (*Producer, error) {
-	enableDebugLogs := cfg.Logging.Level == types.LogLevelDebug
-
+func NewProducer(cfg *config.Configuration, log *logger.Logger) (*Producer, error) {
 	saramaConfig := GetSaramaConfig(cfg)
 	if saramaConfig != nil {
 		// add producer configs
@@ -27,7 +24,7 @@ func NewProducer(cfg *config.Configuration) (*Producer, error) {
 			Marshaler:             kafka.DefaultMarshaler{},
 			OverwriteSaramaConfig: saramaConfig,
 		},
-		watermill.NewStdLogger(enableDebugLogs, enableDebugLogs),
+		log.GetWatermillLogger(),
 	)
 	if err != nil {
 		return nil, err

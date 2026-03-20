@@ -4,11 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/flexprice/flexprice/internal/config"
-	"github.com/flexprice/flexprice/internal/types"
+	"github.com/flexprice/flexprice/internal/logger"
 )
 
 type MessageConsumer interface {
@@ -21,9 +20,7 @@ type Consumer struct {
 	cfg        *config.Configuration
 }
 
-func NewConsumer(cfg *config.Configuration) (MessageConsumer, error) {
-	enableDebugLogs := cfg.Logging.Level == types.LogLevelDebug
-
+func NewConsumer(cfg *config.Configuration, log *logger.Logger) (MessageConsumer, error) {
 	saramaConfig := GetSaramaConfig(cfg)
 	if saramaConfig != nil {
 		// Optimize consumer configs for throughput
@@ -44,7 +41,7 @@ func NewConsumer(cfg *config.Configuration) (MessageConsumer, error) {
 			OverwriteSaramaConfig: saramaConfig,
 			ReconnectRetrySleep:   time.Second,
 		},
-		watermill.NewStdLogger(enableDebugLogs, enableDebugLogs),
+		log.GetWatermillLogger(),
 	)
 	if err != nil {
 		return nil, err
