@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/flexprice/flexprice/internal/domain/customer"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
@@ -55,19 +56,37 @@ func (s *subscriptionInheritanceService) ListInheritedChildExternalCustomerIDs(
 	if err != nil {
 		return nil, err
 	}
-
-	childCustomerIDs := make([]string, 0, len(inheritedSubs))
-	for _, sub := range inheritedSubs {
-		childCustomer, err := s.CustomerRepo.Get(ctx, sub.CustomerID)
-		if err != nil {
-			s.Logger.Warnw("failed to get child customer",
-				"customer_id", sub.CustomerID, "error", err)
-			continue
-		}
-		childCustomerIDs = append(childCustomerIDs, childCustomer.ExternalID)
+	if len(inheritedSubs) == 0 {
+		return []string{}, nil
 	}
 
-	return childCustomerIDs, nil
+	customerIDs := lo.Uniq(lo.Map(inheritedSubs, func(sub *subscription.Subscription, _ int) string {
+		return sub.CustomerID
+	}))
+
+	custFilter := types.NewNoLimitCustomerFilter()
+	custFilter.CustomerIDs = customerIDs
+	customers, err := s.CustomerRepo.List(ctx, custFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	idToExternal := lo.SliceToMap(customers, func(c *customer.Customer) (string, string) {
+		return c.ID, c.ExternalID
+	})
+
+	externalIDs := make([]string, 0, len(inheritedSubs))
+	for _, sub := range inheritedSubs {
+		ext, ok := idToExternal[sub.CustomerID]
+		if !ok {
+			return nil, ierr.NewError("customer not found").
+				WithReportableDetails(map[string]any{"customer_id": sub.CustomerID}).
+				Mark(ierr.ErrNotFound)
+		}
+		externalIDs = append(externalIDs, ext)
+	}
+
+	return externalIDs, nil
 }
 
 func (s *subscriptionInheritanceService) ListParentSubscriptionIDsForInheritedCustomer(
