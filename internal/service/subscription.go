@@ -6388,7 +6388,7 @@ func (s *subscriptionService) cascadePauseToInherited(ctx context.Context, paren
 	for _, child := range children {
 		child.SubscriptionStatus = parentSub.SubscriptionStatus
 		child.PauseStatus = parentSub.PauseStatus
-		child.ActivePauseID = parentSub.ActivePauseID
+		child.ActivePauseID = nil
 		if err := s.SubRepo.Update(ctx, child); err != nil {
 			s.Logger.Errorw("failed to cascade pause to inherited sub",
 				"child_sub_id", child.ID, "parent_sub_id", parentSub.ID, "error", err)
