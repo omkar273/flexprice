@@ -579,9 +579,10 @@ func (s *featureUsageTrackingService) prepareProcessedEvents(ctx context.Context
 				types.SubscriptionStatusTrialing,
 			}
 			parentList, pErr := subscriptionService.ListSubscriptions(ctx, parentFilter)
-			if pErr == nil {
-				subscriptions = parentList.Items
+			if pErr != nil {
+				return results, pErr
 			}
+			subscriptions = parentList.Items
 		}
 	}
 
