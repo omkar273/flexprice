@@ -333,7 +333,7 @@ Most operations get automatic scope assignment based on HTTP method (GET→read,
    // @Summary Get customer
    // @ID getCustomer
    // @Tags Customers
-   // @x-scope read
+   // @x-scope "read"
    // @Router /customers/{id} [get]
    ```
 
@@ -342,13 +342,13 @@ Most operations get automatic scope assignment based on HTTP method (GET→read,
    // @Summary Query customers (POST for complex query body, but read-only)
    // @ID queryCustomer
    // @Tags Customers
-   // @x-scope read  // Override POST→write default
+   // @x-scope "read"  // Override POST→write default
    // @Router /customers/search [post]
    
    // @Summary Finalize invoice (POST but destructive/irreversible)
    // @ID finalizeInvoice
    // @Tags Invoices
-   // @x-scope delete  // Override POST→write default
+   // @x-scope "delete"  // Override POST→write default
    // @Router /invoices/{id}/finalize [post]
    ```
 
