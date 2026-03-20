@@ -2180,7 +2180,7 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 		"optimization_enabled", distinctEventNames != nil,
 		"meters_skipped", len(priceIDs)-len(meterUsageRequests))
 
-	usageMap, err := eventService.BulkGetUsageByMeter(ctx, meterUsageRequests)
+	usageMap, err := eventService.BulkGetUsageByMeterSync(ctx, meterUsageRequests)
 	if err != nil {
 		return nil, err
 	}
