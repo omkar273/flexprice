@@ -372,6 +372,16 @@ type CreateSubscriptionRequest struct {
 
 	// Enable Commitment True Up Fee
 	EnableTrueUp bool `json:"enable_true_up"`
+
+	// UsageCustomerIDs specifies which child customers' usage should be aggregated
+	// on this subscription. When set the subscription becomes a PARENT type and
+	// skeleton INHERITED subscriptions are created for each listed customer.
+	// Mutually exclusive with InvoiceBilling/InvoicingCustomerID.
+	// nil slice = JSON omitted (auto-detect children); non-nil = explicit list (empty slice allowed).
+	UsageCustomerIDs []string `json:"usage_customer_ids,omitempty"`
+
+	// SubscriptionType is set internally by the service layer.
+	SubscriptionType types.SubscriptionType `json:"-"`
 }
 
 // AddAddonRequest is used by body-based endpoint /subscriptions/addon
@@ -1088,6 +1098,7 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 		InvoicingCustomerID:    r.InvoicingCustomerID,
 		ParentSubscriptionID:   r.ParentSubscriptionID,
 		PaymentTerms:           r.PaymentTerms,
+		SubscriptionType:       r.SubscriptionType,
 	}
 
 	// Set commitment amount, duration, and overage factor if provided
