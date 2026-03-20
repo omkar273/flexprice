@@ -189,7 +189,7 @@ func (s *subscriptionPhaseService) DeleteSubscriptionPhase(ctx context.Context, 
 	return nil
 }
 
-func (s *subscriptionPhaseService) publishWebhookEvent(ctx context.Context, eventName string, phaseID string) {
+func (s *subscriptionPhaseService) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, phaseID string) {
 	webhookPayload, err := json.Marshal(webhookDto.InternalSubscriptionPhaseEvent{
 		PhaseID:  phaseID,
 		TenantID: types.GetTenantID(ctx),

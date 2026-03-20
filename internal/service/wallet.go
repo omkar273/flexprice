@@ -85,7 +85,7 @@ type WalletService interface {
 	UpdateWalletAlertState(ctx context.Context, walletID string, state types.AlertState) error
 
 	// PublishEvent publishes a webhook event for a wallet
-	PublishEvent(ctx context.Context, eventName string, w *wallet.Wallet) error
+	PublishEvent(ctx context.Context, eventName types.WebhookEventName, w *wallet.Wallet) error
 
 	// CheckBalanceThresholds checks if wallet balance is below threshold and triggers alerts
 	CheckBalanceThresholds(ctx context.Context, w *wallet.Wallet, balance *dto.WalletBalanceResponse) error
@@ -1810,7 +1810,7 @@ func (s *walletService) shouldSkipCreditExpiryDueToActiveSubscriptionOrInvoice(c
 	return types.CreditExpirySkipReasonNone, nil
 }
 
-func (s *walletService) publishInternalWalletWebhookEvent(ctx context.Context, eventName string, walletID string) {
+func (s *walletService) publishInternalWalletWebhookEvent(ctx context.Context, eventName types.WebhookEventName, walletID string) {
 
 	webhookPayload, err := json.Marshal(webhookDto.InternalWalletEvent{
 		WalletID:  walletID,
@@ -1845,7 +1845,7 @@ func (s *walletService) GetWalletTransactionByID(ctx context.Context, transactio
 	return dto.FromWalletTransaction(tx), nil
 }
 
-func (s *walletService) publishInternalTransactionWebhookEvent(ctx context.Context, eventName string, transactionID string) {
+func (s *walletService) publishInternalTransactionWebhookEvent(ctx context.Context, eventName types.WebhookEventName, transactionID string) {
 
 	webhookPayload, err := json.Marshal(webhookDto.InternalTransactionEvent{
 		TransactionID: transactionID,
@@ -1978,7 +1978,7 @@ func (s *walletService) UpdateWalletAlertState(ctx context.Context, walletID str
 }
 
 // PublishEvent publishes a webhook event for a wallet
-func (s *walletService) PublishEvent(ctx context.Context, eventName string, w *wallet.Wallet) error {
+func (s *walletService) PublishEvent(ctx context.Context, eventName types.WebhookEventName, w *wallet.Wallet) error {
 	if s.WebhookPublisher == nil {
 		s.Logger.Warnw("webhook publisher not initialized", "event", eventName)
 		return nil
@@ -2060,7 +2060,7 @@ func (s *walletService) PublishEvent(ctx context.Context, eventName string, w *w
 	return s.WebhookPublisher.PublishWebhook(ctx, webhookEvent)
 }
 
-func getAlertType(eventName string) string {
+func getAlertType(eventName types.WebhookEventName) string {
 	switch eventName {
 	case types.WebhookEventWalletCreditBalanceDropped, types.WebhookEventWalletCreditBalanceRecovered:
 		return string(types.AlertTypeLowCreditBalance)

@@ -599,7 +599,7 @@ func (h *InvoiceHandler) TriggerWebhook(c *gin.Context) {
 		return
 	}
 
-	if err := h.invoiceService.TriggerWebhook(c.Request.Context(), id, eventName); err != nil {
+	if err := h.invoiceService.TriggerWebhook(c.Request.Context(), id, types.WebhookEventName(eventName)); err != nil {
 		h.logger.Errorw("failed to trigger webhook", "error", err, "invoice_id", id, "event_name", eventName)
 		c.Error(err)
 		return

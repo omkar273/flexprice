@@ -770,7 +770,7 @@ func (p *paymentProcessor) createNewAttempt(ctx context.Context, paymentObj *pay
 	return attempt, nil
 }
 
-func (p *paymentProcessor) publishWebhookEvent(ctx context.Context, eventName string, paymentID string) {
+func (p *paymentProcessor) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, paymentID string) {
 	webhookPayload, err := json.Marshal(webhookDto.InternalPaymentEvent{
 		PaymentID: paymentID,
 		TenantID:  types.GetTenantID(ctx),

@@ -716,7 +716,7 @@ func (s *entitlementService) GetAddonEntitlements(ctx context.Context, addonID s
 	return s.ListEntitlements(ctx, filter)
 }
 
-func (s *entitlementService) publishWebhookEvent(ctx context.Context, eventName string, entitlementID string) {
+func (s *entitlementService) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, entitlementID string) {
 	webhookPayload, err := json.Marshal(webhookDto.InternalEntitlementEvent{
 		EntitlementID: entitlementID,
 		TenantID:      types.GetTenantID(ctx),
