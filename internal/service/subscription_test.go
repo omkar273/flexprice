@@ -5526,6 +5526,67 @@ func (s *SubscriptionServiceSuite) TestUpdateBillingPeriodsWithInvoicingCustomer
 	s.True(updatedSub.CurrentPeriodEnd.After(periodEnd), "Period end should be updated")
 }
 
+// TestUpdateBillingPeriodsSkipsInheritedSubscriptions ensures cron billing period rollforward only lists parent and standalone subs.
+func (s *SubscriptionServiceSuite) TestUpdateBillingPeriodsSkipsInheritedSubscriptions() {
+	ctx := s.GetContext()
+	now := time.Now().UTC()
+	periodStart := now.AddDate(0, 0, -2)
+	periodEnd := now.AddDate(0, 0, -1)
+
+	parentID := "sub_parent_for_inherited_billing_skip"
+	inheritedID := "sub_inherited_billing_skip_rollfwd"
+
+	parent := &subscription.Subscription{
+		ID:                 parentID,
+		PlanID:             s.testData.plan.ID,
+		CustomerID:         s.testData.customer.ID,
+		StartDate:          periodStart,
+		CurrentPeriodStart: periodStart,
+		CurrentPeriodEnd:   periodEnd,
+		Currency:           "usd",
+		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+		BillingPeriodCount: 1,
+		SubscriptionStatus: types.SubscriptionStatusActive,
+		SubscriptionType:   types.SubscriptionTypeParent,
+		BaseModel:          types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, parent, []*subscription.SubscriptionLineItem{}))
+
+	inherited := &subscription.Subscription{
+		ID:                   inheritedID,
+		PlanID:               s.testData.plan.ID,
+		CustomerID:           s.testData.customer.ID,
+		StartDate:            periodStart,
+		CurrentPeriodStart:   periodStart,
+		CurrentPeriodEnd:     periodEnd,
+		Currency:             "usd",
+		BillingPeriod:        types.BILLING_PERIOD_MONTHLY,
+		BillingPeriodCount:   1,
+		SubscriptionStatus:   types.SubscriptionStatusActive,
+		SubscriptionType:     types.SubscriptionTypeInherited,
+		ParentSubscriptionID: lo.ToPtr(parentID),
+		BaseModel:            types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, inherited, []*subscription.SubscriptionLineItem{}))
+
+	subService := s.service.(*subscriptionService)
+	response, err := subService.UpdateBillingPeriods(ctx)
+	s.NoError(err)
+
+	for _, item := range response.Items {
+		s.NotEqual(inheritedID, item.SubscriptionID, "inherited subscription must not be processed by UpdateBillingPeriods")
+	}
+
+	parentFound := false
+	for _, item := range response.Items {
+		if item.SubscriptionID == parentID {
+			parentFound = true
+			break
+		}
+	}
+	s.True(parentFound, "parent subscription should be included in billing period batch")
+}
+
 // TestMultiCadence_ProrationMutualExclusion_Creation implements PRD E.3.1: subscription creation with mixed billing periods.
 // Mixed periods + none -> success; mixed periods + create_prorations -> error.
 func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Creation() {
@@ -5676,4 +5737,381 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Can
 	cancelReqNone.Validate()
 	_, errCancelNone := s.service.CancelSubscription(ctx, resp.ID, cancelReqNone)
 	s.NoError(errCancelNone, "E.3.2: cancel with mixed + none should succeed")
+}
+
+// ---------------------------------------------------------------------------
+// TestUpdateSubscription_UsageCustomerIDs
+// ---------------------------------------------------------------------------
+// Tests covering all edge cases for adding child customers via UpdateSubscription.
+// ---------------------------------------------------------------------------
+
+// uciHelpers creates a parent customer, N child customers (all pointing to the parent),
+// and an ACTIVE STANDALONE subscription owned by the parent.
+// Returns (parentCustomer, childCustomers, subscription).
+func (s *SubscriptionServiceSuite) uciSetup(
+	ctx context.Context,
+	tag string,
+	numChildren int,
+	subStatus types.SubscriptionStatus,
+) (*customer.Customer, []*customer.Customer, *subscription.Subscription) {
+	now := time.Now().UTC()
+
+	parentCust := &customer.Customer{
+		ID:        types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+		Name:      "UCI Parent " + tag,
+		Email:     tag + "-parent@test.com",
+		BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.Require().NoError(s.GetStores().CustomerRepo.Create(ctx, parentCust))
+
+	children := make([]*customer.Customer, numChildren)
+	for i := 0; i < numChildren; i++ {
+		c := &customer.Customer{
+			ID:               types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+			Name:             fmt.Sprintf("UCI Child %s %d", tag, i),
+			Email:            fmt.Sprintf("%s-child%d@test.com", tag, i),
+			ParentCustomerID: &parentCust.ID,
+			BaseModel:        types.GetDefaultBaseModel(ctx),
+		}
+		s.Require().NoError(s.GetStores().CustomerRepo.Create(ctx, c))
+		children[i] = c
+	}
+
+	sub := &subscription.Subscription{
+		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
+		PlanID:             s.testData.plan.ID,
+		CustomerID:         parentCust.ID,
+		StartDate:          now.AddDate(0, -1, 0),
+		CurrentPeriodStart: now.AddDate(0, 0, -1),
+		CurrentPeriodEnd:   now.AddDate(0, 0, 6),
+		BillingAnchor:      now.AddDate(0, -1, 0),
+		Currency:           "usd",
+		BillingCycle:       types.BillingCycleAnniversary,
+		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+		BillingPeriodCount: 1,
+		BillingCadence:     types.BILLING_CADENCE_RECURRING,
+		SubscriptionStatus: subStatus,
+		SubscriptionType:   types.SubscriptionTypeStandalone,
+		BaseModel:          types.GetDefaultBaseModel(ctx),
+	}
+	s.Require().NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, sub, []*subscription.SubscriptionLineItem{}))
+	return parentCust, children, sub
+}
+
+// uciListInherited lists all INHERITED subscriptions whose parent is parentSubID.
+func (s *SubscriptionServiceSuite) uciListInherited(ctx context.Context, parentSubID string) []*subscription.Subscription {
+	filter := types.NewNoLimitSubscriptionFilter()
+	filter.ParentSubscriptionIDs = []string{parentSubID}
+	filter.SubscriptionTypes = []types.SubscriptionType{types.SubscriptionTypeInherited}
+	filter.SubscriptionStatus = []types.SubscriptionStatus{
+		types.SubscriptionStatusActive,
+		types.SubscriptionStatusTrialing,
+		types.SubscriptionStatusDraft,
+		types.SubscriptionStatusPaused,
+	}
+	subs, err := s.GetStores().SubscriptionRepo.List(ctx, filter)
+	s.Require().NoError(err)
+	return subs
+}
+
+func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
+	ctx := s.GetContext()
+	// Reset to a clean slate for this test method (avoids interference from other test methods).
+	s.ClearStores()
+	s.setupTestData()
+
+	// -------------------------------------------------------------------------
+	// Case 1: nil field — no-op, nothing changes
+	// -------------------------------------------------------------------------
+	s.Run("nil_field_no_op", func() {
+		_, children, sub := s.uciSetup(ctx, "nil-noop", 2, types.SubscriptionStatusActive)
+		_ = children
+
+		req := dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: nil, // explicitly omit
+		}
+		resp, err := s.service.UpdateSubscription(ctx, sub.ID, req)
+		s.Require().NoError(err)
+		s.Require().NotNil(resp)
+
+		// No inherited subscriptions should have been created.
+		inherited := s.uciListInherited(ctx, sub.ID)
+		s.Empty(inherited, "no inherited subs should be created when UsageCustomerIDs is nil")
+
+		// Subscription type must remain STANDALONE.
+		updated, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
+		s.Require().NoError(err)
+		s.Equal(types.SubscriptionTypeStandalone, updated.SubscriptionType)
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 2: STANDALONE → PARENT (add C1 and C2)
+	// -------------------------------------------------------------------------
+	s.Run("standalone_to_parent", func() {
+		_, children, sub := s.uciSetup(ctx, "to-parent", 2, types.SubscriptionStatusActive)
+
+		ids := []string{children[0].ID, children[1].ID}
+		req := dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		}
+		resp, err := s.service.UpdateSubscription(ctx, sub.ID, req)
+		s.Require().NoError(err)
+		s.Require().NotNil(resp)
+
+		// Two inherited subscriptions should have been created.
+		inherited := s.uciListInherited(ctx, sub.ID)
+		s.Len(inherited, 2, "two inherited subs should be created")
+
+		// Parent subscription type must be PARENT.
+		updated, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
+		s.Require().NoError(err)
+		s.Equal(types.SubscriptionTypeParent, updated.SubscriptionType)
+
+		// Each inherited sub must have SubscriptionType=INHERITED and correct CustomerID.
+		childIDSet := map[string]bool{children[0].ID: true, children[1].ID: true}
+		for _, inh := range inherited {
+			s.Equal(types.SubscriptionTypeInherited, inh.SubscriptionType)
+			s.True(childIDSet[inh.CustomerID], "inherited sub customer should be one of the requested children")
+			s.Equal(sub.ID, lo.FromPtr(inh.ParentSubscriptionID), "inherited sub must link back to parent")
+		}
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 3: PARENT + add one more child
+	// -------------------------------------------------------------------------
+	s.Run("parent_add_one_child", func() {
+		_, children, sub := s.uciSetup(ctx, "add-child", 2, types.SubscriptionStatusActive)
+
+		// First add C0 to make it PARENT.
+		ids0 := []string{children[0].ID}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids0,
+		})
+		s.Require().NoError(err)
+		s.Len(s.uciListInherited(ctx, sub.ID), 1, "one inherited sub after first update")
+
+		// Now add C1 as well (must include C0 to avoid removal error).
+		ids01 := []string{children[0].ID, children[1].ID}
+		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids01,
+		})
+		s.Require().NoError(err)
+		s.Require().NotNil(resp)
+
+		// Should now have two inherited subs.
+		inherited := s.uciListInherited(ctx, sub.ID)
+		s.Len(inherited, 2, "two inherited subs after adding second child")
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 4: Duplicate IDs in request — silently deduped, same result as unique
+	// -------------------------------------------------------------------------
+	s.Run("duplicate_ids_deduped", func() {
+		_, children, sub := s.uciSetup(ctx, "dedup", 2, types.SubscriptionStatusActive)
+
+		// Provide C0 twice.
+		ids := []string{children[0].ID, children[1].ID, children[0].ID}
+		req := dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		}
+		resp, err := s.service.UpdateSubscription(ctx, sub.ID, req)
+		// Validate() will return error for duplicates before service logic runs.
+		// So this should error with ErrValidation.
+		s.Require().Error(err)
+		s.True(ierr.IsValidation(err), "duplicate IDs should produce a validation error")
+		s.Contains(err.Error(), "duplicate", "error message should mention duplicate")
+		_ = resp
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 5: Remove attempted — hard error
+	// -------------------------------------------------------------------------
+	s.Run("remove_attempted_error", func() {
+		_, children, sub := s.uciSetup(ctx, "remove-attempt", 2, types.SubscriptionStatusActive)
+
+		// First add both children.
+		both := []string{children[0].ID, children[1].ID}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &both,
+		})
+		s.Require().NoError(err)
+
+		// Now try to pass only C0 (omitting C1 = removal attempt).
+		onlyC0 := []string{children[0].ID}
+		_, err = s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &onlyC0,
+		})
+		s.Require().Error(err)
+		s.True(ierr.IsValidation(err), "removal attempt should return validation error")
+		s.Contains(err.Error(), "removing a usage customer", "error must mention removal")
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 6: Empty slice — all existing children would be removed → error
+	// -------------------------------------------------------------------------
+	s.Run("empty_slice_with_existing_children_error", func() {
+		_, children, sub := s.uciSetup(ctx, "empty-slice", 1, types.SubscriptionStatusActive)
+
+		// Add the one child first.
+		ids := []string{children[0].ID}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().NoError(err)
+
+		// Now pass an empty slice — all existing children removed → error.
+		empty := []string{}
+		_, err = s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &empty,
+		})
+		s.Require().Error(err)
+		s.True(ierr.IsValidation(err), "empty slice with existing children should be validation error")
+		s.Contains(err.Error(), "removing a usage customer")
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 7: Empty slice on a sub with NO inherited subs — no-op (OK)
+	// -------------------------------------------------------------------------
+	s.Run("empty_slice_no_children_noop", func() {
+		_, _, sub := s.uciSetup(ctx, "empty-noop", 0, types.SubscriptionStatusActive)
+
+		empty := []string{}
+		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &empty,
+		})
+		s.Require().NoError(err)
+		s.Require().NotNil(resp)
+
+		inherited := s.uciListInherited(ctx, sub.ID)
+		s.Empty(inherited)
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 8: Non-child customer (unrelated) → error
+	// -------------------------------------------------------------------------
+	s.Run("non_child_customer_error", func() {
+		_, _, sub := s.uciSetup(ctx, "non-child", 0, types.SubscriptionStatusActive)
+
+		// Create a separate customer that is NOT a child of sub's parent.
+		unrelated := &customer.Customer{
+			ID:        types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+			Name:      "Unrelated Customer",
+			Email:     "unrelated@test.com",
+			BaseModel: types.GetDefaultBaseModel(ctx),
+		}
+		s.Require().NoError(s.GetStores().CustomerRepo.Create(ctx, unrelated))
+
+		ids := []string{unrelated.ID}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().Error(err)
+		s.True(ierr.IsValidation(err))
+		s.Contains(err.Error(), "not a child")
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 9: Non-existent customer ID → error
+	// -------------------------------------------------------------------------
+	s.Run("non_existent_customer_error", func() {
+		_, _, sub := s.uciSetup(ctx, "ghost", 0, types.SubscriptionStatusActive)
+
+		ghost := "cust_does_not_exist_xyz"
+		ids := []string{ghost}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().Error(err)
+		s.True(ierr.IsValidation(err))
+		s.Contains(err.Error(), "usage customer not found")
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 10: CANCELLED subscription → error
+	// -------------------------------------------------------------------------
+	s.Run("cancelled_sub_error", func() {
+		_, children, sub := s.uciSetup(ctx, "cancelled", 1, types.SubscriptionStatusCancelled)
+
+		ids := []string{children[0].ID}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().Error(err)
+		s.True(ierr.IsValidation(err))
+		s.Contains(err.Error(), "cannot update usage_customer_ids")
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 11: DRAFT subscription → error
+	// -------------------------------------------------------------------------
+	s.Run("draft_sub_error", func() {
+		_, children, sub := s.uciSetup(ctx, "draft", 1, types.SubscriptionStatusDraft)
+
+		ids := []string{children[0].ID}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().Error(err)
+		s.True(ierr.IsValidation(err))
+		s.Contains(err.Error(), "cannot update usage_customer_ids")
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 12: No-op when same list is re-submitted (all already inherited)
+	// -------------------------------------------------------------------------
+	s.Run("same_list_noop", func() {
+		_, children, sub := s.uciSetup(ctx, "same-list", 1, types.SubscriptionStatusActive)
+
+		// Add C0.
+		ids := []string{children[0].ID}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().NoError(err)
+		s.Len(s.uciListInherited(ctx, sub.ID), 1)
+
+		// Submit the same list again — should be a no-op.
+		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().NoError(err)
+		s.Require().NotNil(resp)
+
+		// Still only one inherited sub.
+		s.Len(s.uciListInherited(ctx, sub.ID), 1, "re-submitting same list must not create duplicate inherited subs")
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 13: TRIALING subscription — should succeed (same as ACTIVE)
+	// -------------------------------------------------------------------------
+	s.Run("trialing_sub_succeeds", func() {
+		_, children, sub := s.uciSetup(ctx, "trialing", 1, types.SubscriptionStatusTrialing)
+
+		ids := []string{children[0].ID}
+		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().NoError(err)
+		s.Require().NotNil(resp)
+
+		inherited := s.uciListInherited(ctx, sub.ID)
+		s.Len(inherited, 1)
+		s.Equal(types.SubscriptionTypeInherited, inherited[0].SubscriptionType)
+	})
+
+	// -------------------------------------------------------------------------
+	// Case 14: Empty string in list → DTO Validate() error
+	// -------------------------------------------------------------------------
+	s.Run("empty_string_in_list_error", func() {
+		_, _, sub := s.uciSetup(ctx, "blank-id", 0, types.SubscriptionStatusActive)
+
+		blank := ""
+		ids := []string{blank}
+		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
+			UsageCustomerIDs: &ids,
+		})
+		s.Require().Error(err)
+		s.True(ierr.IsValidation(err))
+		s.Contains(err.Error(), "empty")
+	})
 }

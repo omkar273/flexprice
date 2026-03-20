@@ -87,6 +87,21 @@ func subscriptionFilterFn(ctx context.Context, sub *subscription.Subscription, f
 		}
 	}
 
+	// Filter by multiple customer IDs (hierarchy lookups)
+	if len(f.CustomerIDs) > 0 && !lo.Contains(f.CustomerIDs, sub.CustomerID) {
+		return false
+	}
+
+	// Filter by parent subscription IDs (inherited subscription lookups)
+	if len(f.ParentSubscriptionIDs) > 0 {
+		if sub.ParentSubscriptionID == nil {
+			return false
+		}
+		if !lo.Contains(f.ParentSubscriptionIDs, *sub.ParentSubscriptionID) {
+			return false
+		}
+	}
+
 	// Filter by billing cadence
 	if len(f.BillingCadence) > 0 && !lo.Contains(f.BillingCadence, sub.BillingCadence) {
 		return false
@@ -302,10 +317,15 @@ func (s *InMemorySubscriptionStore) ListAll(ctx context.Context, filter *types.S
 		CustomerID:              filter.CustomerID,
 		PlanID:                  filter.PlanID,
 		SubscriptionStatus:      filter.SubscriptionStatus,
+		SubscriptionTypes:       filter.SubscriptionTypes,
 		BillingCadence:          filter.BillingCadence,
 		BillingPeriod:           filter.BillingPeriod,
 		SubscriptionStatusNotIn: filter.SubscriptionStatusNotIn,
 		ActiveAt:                filter.ActiveAt,
+		ParentSubscriptionIDs:   filter.ParentSubscriptionIDs,
+		SubscriptionIDs:         filter.SubscriptionIDs,
+		CustomerIDs:             filter.CustomerIDs,
+		InvoicingCustomerIDs:    filter.InvoicingCustomerIDs,
 	}
 
 	return s.List(ctx, unlimitedFilter)

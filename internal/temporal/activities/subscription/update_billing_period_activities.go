@@ -59,6 +59,12 @@ func (s *BillingActivities) CheckDraftSubscriptionActivity(
 		}, nil
 	}
 
+	if sub.SubscriptionType == types.SubscriptionTypeInherited {
+		return &subscriptionModels.CheckDraftSubscriptionActivityOutput{
+			IsInherited: true,
+		}, nil
+	}
+
 	return &subscriptionModels.CheckDraftSubscriptionActivityOutput{
 		IsDraft: false,
 	}, nil
@@ -166,7 +172,7 @@ func (s *BillingActivities) UpdateCurrentPeriodActivity(
 		"new_period_start", input.PeriodStart,
 		"new_period_end", input.PeriodEnd)
 
-    // TODO: Think on this later, if we need to cascade the period update to inherited child subscriptions
+	// TODO: Think on this later, if we need to cascade the period update to inherited child subscriptions
 	// Cascade period update to INHERITED child subscriptions
 	// if sub.SubscriptionType == types.SubscriptionTypeParent {
 	// 	inheritedFilter := types.NewNoLimitSubscriptionFilter()

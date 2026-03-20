@@ -1773,7 +1773,7 @@ func (s *subscriptionService) resolveUsageCustomerIDsUpdate(
 			return nil, ierr.NewError("removing a usage customer requires cancelling the subscription").
 				WithHint("To remove child customers from usage aggregation, cancel the subscription and recreate it with the updated usage_customer_ids").
 				WithReportableDetails(map[string]interface{}{
-					"subscription_id":             sub.ID,
+					"subscription_id":           sub.ID,
 					"removed_usage_customer_id": existingID,
 				}).
 				Mark(ierr.ErrValidation)
@@ -1789,10 +1789,38 @@ func (s *subscriptionService) resolveUsageCustomerIDsUpdate(
 		}
 	}
 
-	// 7. Validate new additions won't conflict with their existing subscription types.
+	// 7. Validate that neither the parent customer nor the new child customers have
+	// conflicting existing subscriptions.  We must EXCLUDE the subscription being updated
+	// (sub.ID) from this check — it is the subscription being promoted from STANDALONE →
+	// PARENT, so listing it as a STANDALONE conflict would be a false positive.
 	if len(addedIDs) > 0 {
-		if err := s.validateCustomerSubscriptionWorkflow(ctx, sub.CustomerID, types.SubscriptionTypeParent, addedIDs); err != nil {
-			return nil, err
+		allCustomerIDs := lo.Uniq(append([]string{sub.CustomerID}, addedIDs...))
+		cfSub := types.NewNoLimitSubscriptionFilter()
+		cfSub.CustomerIDs = allCustomerIDs
+		cfSub.SubscriptionStatus = []types.SubscriptionStatus{
+			types.SubscriptionStatusActive,
+			types.SubscriptionStatusTrialing,
+			types.SubscriptionStatusDraft,
+		}
+		candidateSubs, listErr := s.SubRepo.List(ctx, cfSub)
+		if listErr != nil {
+			return nil, ierr.WithError(listErr).
+				WithHint("Failed to list subscriptions for hierarchy conflict check").
+				Mark(ierr.ErrDatabase)
+		}
+		for _, candidate := range candidateSubs {
+			if candidate.ID == sub.ID {
+				// Skip the subscription we are currently updating — its type will change
+				// to PARENT as part of this operation.
+				continue
+			}
+			existingType := candidate.SubscriptionType
+			if existingType == "" {
+				existingType = types.SubscriptionTypeStandalone
+			}
+			if err := validateHierarchyWorkflowConflict(sub.CustomerID, candidate.CustomerID, types.SubscriptionTypeParent, existingType); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -2652,6 +2680,10 @@ func (s *subscriptionService) UpdateBillingPeriods(ctx context.Context) (*dto.Su
 				Status: lo.ToPtr(types.StatusPublished),
 			},
 			SubscriptionStatus: []types.SubscriptionStatus{types.SubscriptionStatusActive},
+			SubscriptionTypes: []types.SubscriptionType{
+				types.SubscriptionTypeStandalone,
+				types.SubscriptionTypeParent,
+			},
 			TimeRangeFilter: &types.TimeRangeFilter{
 				EndTime: &now,
 			},
@@ -2737,6 +2769,13 @@ func (s *subscriptionService) processSubscriptionPeriod(ctx context.Context, sub
 	// Skip processing for draft subscriptions
 	if s.isDraftSubscription(sub) {
 		s.Logger.InfowCtx(ctx, "skipping period processing for draft subscription",
+			"subscription_id", sub.ID)
+		return nil
+	}
+
+	// Skip inherited subscriptions; billing period rollforward runs on parent or standalone only
+	if sub.SubscriptionType == types.SubscriptionTypeInherited {
+		s.Logger.InfowCtx(ctx, "skipping period processing for inherited subscription",
 			"subscription_id", sub.ID)
 		return nil
 	}
