@@ -562,12 +562,34 @@ func (s *featureUsageTrackingService) prepareProcessedEvents(ctx context.Context
 	}
 
 	subscriptions := subscriptionsList.Items
+
+	// V1 hierarchy fallback: if no direct subscriptions, check for INHERITED subs
+	if len(subscriptions) == 0 {
+		parentSubIDs, resolveErr := s.resolveParentSubscriptionIDs(ctx, customer.ID)
+		if resolveErr != nil {
+			s.Logger.Errorw("failed to resolve parent subscription IDs", "error", resolveErr)
+		}
+		if len(parentSubIDs) > 0 {
+			parentFilter := types.NewSubscriptionFilter()
+			parentFilter.SubscriptionIDs = parentSubIDs
+			parentFilter.WithLineItems = true
+			parentFilter.Expand = lo.ToPtr(string(types.ExpandPrices) + "," + string(types.ExpandMeters))
+			parentFilter.SubscriptionStatus = []types.SubscriptionStatus{
+				types.SubscriptionStatusActive,
+				types.SubscriptionStatusTrialing,
+			}
+			parentList, pErr := subscriptionService.ListSubscriptions(ctx, parentFilter)
+			if pErr == nil {
+				subscriptions = parentList.Items
+			}
+		}
+	}
+
 	if len(subscriptions) == 0 {
 		s.Logger.DebugwCtx(ctx, "no active subscriptions found for customer, skipping",
 			"event_id", event.ID,
 			"customer_id", customer.ID,
 		)
-		// TODO: add sentry span for no active subscriptions found
 		return results, nil
 	}
 
@@ -968,6 +990,16 @@ func (s *featureUsageTrackingService) prepareProcessedEventsV2(ctx context.Conte
 			"meter_ids", meterIDs,
 		)
 		return results, err
+	}
+
+	// STEP 4a: Hierarchy fallback – if no direct line items, check INHERITED subs
+	if len(lineItems) == 0 {
+		lineItems, err = s.resolveHierarchyLineItems(ctx, customer.ID, meterIDs, &event.Timestamp)
+		if err != nil {
+			s.Logger.Errorw("failed hierarchy line item resolution",
+				"error", err, "event_id", event.ID, "customer_id", customer.ID)
+			return results, err
+		}
 	}
 
 	if len(lineItems) == 0 {
@@ -4767,4 +4799,61 @@ func (s *featureUsageTrackingService) handleMissingFeature(
 	)
 
 	return createdFeature, nil
+}
+
+// resolveHierarchyLineItems looks up INHERITED subscriptions for a child customer
+// and returns the parent subscription's line items that match the given meter IDs.
+func (s *featureUsageTrackingService) resolveHierarchyLineItems(
+	ctx context.Context,
+	customerID string,
+	meterIDs []string,
+	eventTimestamp *time.Time,
+) ([]*subscription.SubscriptionLineItem, error) {
+	parentSubIDs, err := s.resolveParentSubscriptionIDs(ctx, customerID)
+	if err != nil || len(parentSubIDs) == 0 {
+		return nil, err
+	}
+
+	// Get line items from the parent subscription(s) filtered by meter IDs
+	lineItemFilter := types.NewNoLimitSubscriptionLineItemFilter()
+	lineItemFilter.MeterIDs = meterIDs
+	lineItemFilter.SubscriptionIDs = parentSubIDs
+	lineItemFilter.ActiveFilter = true
+	if eventTimestamp != nil {
+		lineItemFilter.CurrentPeriodStart = eventTimestamp
+	}
+
+	return s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
+}
+
+// resolveParentSubscriptionIDs finds INHERITED subscriptions for a child customer
+// and returns the parent subscription IDs.
+func (s *featureUsageTrackingService) resolveParentSubscriptionIDs(
+	ctx context.Context,
+	customerID string,
+) ([]string, error) {
+	inheritedFilter := types.NewNoLimitSubscriptionFilter()
+	inheritedFilter.CustomerID = customerID
+	inheritedFilter.SubscriptionTypes = []types.SubscriptionType{types.SubscriptionTypeInherited}
+	inheritedFilter.Status = lo.ToPtr(types.StatusPublished)
+	inheritedFilter.SubscriptionStatus = []types.SubscriptionStatus{
+		types.SubscriptionStatusActive,
+		types.SubscriptionStatusTrialing,
+	}
+
+	inheritedSubs, err := s.SubRepo.List(ctx, inheritedFilter)
+	if err != nil {
+		return nil, err
+	}
+	if len(inheritedSubs) == 0 {
+		return nil, nil
+	}
+
+	parentIDs := make([]string, 0, len(inheritedSubs))
+	for _, inherited := range inheritedSubs {
+		if inherited.ParentSubscriptionID != nil && lo.FromPtr(inherited.ParentSubscriptionID) != "" {
+			parentIDs = append(parentIDs, lo.FromPtr(inherited.ParentSubscriptionID))
+		}
+	}
+	return lo.Uniq(parentIDs), nil
 }

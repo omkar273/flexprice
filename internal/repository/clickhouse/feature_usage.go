@@ -1995,7 +1995,7 @@ func (r *FeatureUsageRepository) getAnalyticsPoints(
 
 // GetFeatureUsageBySubscription gets usage data for a subscription using a single optimized query.
 // When opts.Source is InvoiceCreation, the query uses FINAL for correct ReplacingMergeTree deduplication.
-func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Context, subscriptionID, customerID string, startTime, endTime time.Time, aggTypes []types.AggregationType, opts *events.GetFeatureUsageBySubscriptionOpts) (map[string]*events.UsageByFeatureResult, error) {
+func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Context, subscriptionID string, customerIDs []string, startTime, endTime time.Time, aggTypes []types.AggregationType, opts *events.GetFeatureUsageBySubscriptionOpts) (map[string]*events.UsageByFeatureResult, error) {
 	// Extract tenantID and environmentID from context
 	tenantID := types.GetTenantID(ctx)
 	environmentID := types.GetEnvironmentID(ctx)
@@ -2003,7 +2003,7 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 	// Start a span for this repository operation
 	span := StartRepositorySpan(ctx, "feature_usage", "get_usage_by_subscription_v2", map[string]interface{}{
 		"subscription_id": subscriptionID,
-		"customer_id":     customerID,
+		"customer_ids":    customerIDs,
 		"environment_id":  environmentID,
 		"tenant_id":       tenantID,
 		"start_time":      startTime,
@@ -2021,6 +2021,22 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 
 	r.logger.Debugw("subscription usage query", "aggColumns", aggColumns, "tableRef", tableRef, "opts", opts)
 
+	// Build customer_id filter: single = for one ID, IN for multiple
+	customerFilter := "customer_id = ?"
+	args := []interface{}{subscriptionID}
+	if len(customerIDs) == 1 {
+		args = append(args, customerIDs[0])
+	} else {
+		placeholders := make([]string, len(customerIDs))
+		for i, cid := range customerIDs {
+			placeholders[i] = "?"
+			args = append(args, cid)
+		}
+		customerFilter = fmt.Sprintf("customer_id IN (%s)", strings.Join(placeholders, ", "))
+	}
+
+	args = append(args, environmentID, tenantID, startTime, endTime)
+
 	query := fmt.Sprintf(`
 		SELECT 
 			sub_line_item_id,
@@ -2031,33 +2047,33 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 		FROM %s
 		WHERE 
 			subscription_id = ?
-			AND customer_id = ?
+			AND %s
 			AND environment_id = ?
 			AND tenant_id = ?
 			AND "timestamp" >= ?
 			AND "timestamp" < ?
 			AND sign != 0
 		GROUP BY sub_line_item_id, feature_id, meter_id, price_id
-	`, strings.Join(aggColumns, ",\n\t\t\t"), tableRef)
+	`, strings.Join(aggColumns, ",\n\t\t\t"), tableRef, customerFilter)
 
 	r.logger.Debugw("executing subscription usage query",
 		"subscription_id", subscriptionID,
-		"customer_id", customerID,
+		"customer_ids", customerIDs,
 		"environment_id", environmentID,
 		"start_time", startTime,
 		"end_time", endTime,
 	)
 
-	r.logger.Debugw("subscription usage query", "query", query, "params", []interface{}{subscriptionID, customerID, environmentID, tenantID, startTime, endTime})
+	r.logger.Debugw("subscription usage query", "query", query, "params", args)
 
-	rows, err := r.store.GetConn().Query(ctx, query, subscriptionID, customerID, environmentID, tenantID, startTime, endTime)
+	rows, err := r.store.GetConn().Query(ctx, query, args...)
 	if err != nil {
 		SetSpanError(span, err)
 		return nil, ierr.WithError(err).
 			WithHint("Failed to execute optimized subscription usage query").
 			WithReportableDetails(map[string]interface{}{
 				"subscription_id": subscriptionID,
-				"customer_id":     customerID,
+				"customer_ids":    customerIDs,
 			}).
 			Mark(ierr.ErrDatabase)
 	}

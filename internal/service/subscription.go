@@ -135,6 +135,23 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 		}
 	}
 
+	// --- Customer hierarchy: resolve usage_customer_ids and set SubscriptionType ---
+	usageCustomerIDs, err := s.resolveUsageCustomerIDs(ctx, customer, &req)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(usageCustomerIDs) > 0 {
+		req.SubscriptionType = types.SubscriptionTypeParent
+	} else {
+		req.SubscriptionType = types.SubscriptionTypeStandalone
+	}
+
+	// Validate that none of the involved customers conflict with existing subscription workflows
+	if err := s.validateCustomerSubscriptionWorkflow(ctx, customer.ID, req.SubscriptionType, usageCustomerIDs); err != nil {
+		return nil, err
+	}
+
 	// Get and validate plan
 	plan, err := s.PlanRepo.Get(ctx, req.PlanID)
 	if err != nil {
@@ -330,6 +347,14 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 		if err = s.SubRepo.CreateWithLineItems(ctx, sub, sub.LineItems); err != nil {
 			return err
 		}
+
+		// Create INHERITED skeleton subscriptions for each usage customer
+		if sub.SubscriptionType == types.SubscriptionTypeParent && len(usageCustomerIDs) > 0 {
+			if err = s.createInheritedSubscriptions(ctx, sub, usageCustomerIDs); err != nil {
+				return err
+			}
+		}
+
 		if len(req.Addons) > 0 {
 			if err = s.handleSubscriptionAddons(ctx, sub, req.Addons); err != nil {
 				return err
@@ -1803,6 +1828,13 @@ func (s *subscriptionService) CancelSubscription(
 			Mark(ierr.ErrDatabase)
 	}
 
+	// Cascade cancellation to INHERITED child subscriptions
+	if subscription.SubscriptionType == types.SubscriptionTypeParent {
+		if err := s.cascadeCancelToInherited(ctx, subscription, req); err != nil {
+			logger.Errorw("failed to cascade cancellation to inherited subs", "error", err)
+		}
+	}
+
 	if !req.SuppressWebhook {
 		// Step 10: Publish events
 		s.publishCancellationEvents(ctx, subscription)
@@ -3220,6 +3252,13 @@ func (s *subscriptionService) PauseSubscription(
 		return nil, err
 	}
 
+	// Cascade pause to INHERITED child subscriptions
+	if sub.SubscriptionType == types.SubscriptionTypeParent {
+		if err := s.cascadePauseToInherited(ctx, sub); err != nil {
+			s.Logger.Errorw("failed to cascade pause to inherited subs", "error", err)
+		}
+	}
+
 	response := dto.NewSubscriptionPauseResponse(sub, pause)
 	response.BillingImpact = impact
 
@@ -3373,6 +3412,13 @@ func (s *subscriptionService) ResumeSubscription(
 	sub, activePause, err = s.executeResume(ctx, sub, activePause, req)
 	if err != nil {
 		return nil, err
+	}
+
+	// Cascade resume to INHERITED child subscriptions
+	if sub.SubscriptionType == types.SubscriptionTypeParent {
+		if err := s.cascadeResumeToInherited(ctx, sub); err != nil {
+			s.Logger.Errorw("failed to cascade resume to inherited subs", "error", err)
+		}
 	}
 
 	// Publish webhook event
@@ -5019,7 +5065,20 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 	opts := &events.GetFeatureUsageBySubscriptionOpts{
 		Source: types.UsageSource(req.Source),
 	}
-	usageResults, err := s.FeatureUsageRepo.GetFeatureUsageBySubscription(ctx, req.SubscriptionID, customer.ID, usageStartTime, usageEndTime, aggTypes, opts)
+	// Determine customer IDs for usage query: for PARENT subs, include all child customer IDs
+	usageCustomerIDs := []string{customer.ID}
+	if subscription.SubscriptionType == types.SubscriptionTypeParent {
+		inheritedSubs, ihErr := s.getInheritedSubscriptions(ctx, subscription.ID)
+		if ihErr != nil {
+			s.Logger.Warnw("failed to get inherited subs for usage aggregation", "error", ihErr)
+		} else {
+			for _, child := range inheritedSubs {
+				usageCustomerIDs = append(usageCustomerIDs, child.CustomerID)
+			}
+		}
+	}
+
+	usageResults, err := s.FeatureUsageRepo.GetFeatureUsageBySubscription(ctx, req.SubscriptionID, usageCustomerIDs, usageStartTime, usageEndTime, aggTypes, opts)
 
 	if err != nil {
 		return nil, err
@@ -6149,4 +6208,259 @@ func (s *subscriptionService) TriggerSubscriptionWorkflow(ctx context.Context, s
 	}
 
 	return response, nil
+}
+
+// resolveUsageCustomerIDs determines the set of child customer IDs whose usage
+// should be aggregated on the parent subscription.
+//   - If req.UsageCustomerIDs is explicitly provided (even as an empty slice), use it.
+//   - Otherwise, auto-detect children from customer hierarchy.
+//   - Returns nil/empty when the subscription should be STANDALONE.
+func (s *subscriptionService) resolveUsageCustomerIDs(
+	ctx context.Context,
+	cust *customer.Customer,
+	req *dto.CreateSubscriptionRequest,
+) ([]string, error) {
+	// Explicitly provided (even empty array is valid). nil slice = field omitted in JSON.
+	if req.UsageCustomerIDs != nil {
+		ids := req.UsageCustomerIDs
+		if len(ids) == 0 {
+			return ids, nil
+		}
+
+		cf := types.NewNoLimitCustomerFilter()
+		cf.CustomerIDs = ids
+		cf.Status = lo.ToPtr(types.StatusPublished)
+		children, err := s.CustomerRepo.List(ctx, cf)
+		if err != nil {
+			return nil, err
+		}
+		byID := lo.SliceToMap(children, func(c *customer.Customer) (string, *customer.Customer) {
+			return c.ID, c
+		})
+
+		for _, childID := range ids {
+			child, ok := byID[childID]
+			if !ok {
+				return nil, ierr.NewError("usage customer not found").
+					WithHint("Each usage_customer_id must be a valid customer").
+					WithReportableDetails(map[string]any{"customer_id": childID}).
+					Mark(ierr.ErrValidation)
+			}
+			if child.ParentCustomerID == nil || *child.ParentCustomerID != cust.ID {
+				return nil, ierr.NewError("usage customer is not a child of the subscription customer").
+					WithHint("Each usage_customer_id must be a direct child of the subscription customer").
+					WithReportableDetails(map[string]any{
+						"usage_customer_id":        childID,
+						"subscription_customer_id": cust.ID,
+					}).
+					Mark(ierr.ErrValidation)
+			}
+		}
+		return ids, nil
+	}
+
+	// Auto-detect: find children of this customer
+	childFilter := types.NewNoLimitCustomerFilter()
+	childFilter.ParentCustomerIDs = []string{cust.ID}
+	childFilter.Status = lo.ToPtr(types.StatusPublished)
+	children, err := s.CustomerRepo.List(ctx, childFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(children) == 0 {
+		return nil, nil // No children → STANDALONE
+	}
+
+	ids := make([]string, 0, len(children))
+	for _, child := range children {
+		ids = append(ids, child.ID)
+	}
+	return ids, nil
+}
+
+// validateCustomerSubscriptionWorkflow ensures a customer is not mixing STANDALONE
+// subscriptions with hierarchy-based subscriptions (PARENT or INHERITED).
+func (s *subscriptionService) validateCustomerSubscriptionWorkflow(
+	ctx context.Context,
+	parentCustomerID string,
+	newSubType types.SubscriptionType,
+	usageCustomerIDs []string,
+) error {
+	allCustomerIDs := lo.Uniq(append([]string{parentCustomerID}, usageCustomerIDs...))
+
+	filter := types.NewNoLimitSubscriptionFilter()
+	filter.CustomerIDs = allCustomerIDs
+	filter.SubscriptionStatus = []types.SubscriptionStatus{
+		types.SubscriptionStatusActive,
+		types.SubscriptionStatusTrialing,
+		types.SubscriptionStatusDraft,
+	}
+
+	existingSubs, err := s.SubRepo.List(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	// One pass: each row is already scoped to parent or usage customers via CustomerIDs filter.
+	for _, existing := range existingSubs {
+		existingType := existing.SubscriptionType
+		if existingType == "" {
+			existingType = types.SubscriptionTypeStandalone
+		}
+		cid := existing.CustomerID
+
+		if cid == parentCustomerID {
+			if newSubType == types.SubscriptionTypeParent && existingType == types.SubscriptionTypeStandalone {
+				return ierr.NewError("customer already has standalone subscriptions").
+					WithHint("A customer cannot have both standalone and hierarchy-based subscriptions; cancel existing subscriptions first").
+					WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
+					Mark(ierr.ErrInvalidOperation)
+			}
+			if newSubType == types.SubscriptionTypeStandalone && (existingType == types.SubscriptionTypeParent || existingType == types.SubscriptionTypeInherited) {
+				return ierr.NewError("customer already participates in a subscription hierarchy").
+					WithHint("A customer cannot have both standalone and hierarchy-based subscriptions; cancel existing subscriptions first").
+					WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
+					Mark(ierr.ErrInvalidOperation)
+			}
+			continue
+		}
+
+		// Usage customer (any non-parent ID in the batch is a child we care about)
+		if existingType == types.SubscriptionTypeStandalone {
+			return ierr.NewError("child customer already has standalone subscriptions").
+				WithHint("A customer cannot have both standalone and inherited subscriptions; cancel existing subscriptions first").
+				WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
+				Mark(ierr.ErrInvalidOperation)
+		}
+		if existingType == types.SubscriptionTypeParent {
+			return ierr.NewError("child customer is already a parent in another hierarchy").
+				WithHint("A customer cannot be both a parent and an inherited child").
+				WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
+				Mark(ierr.ErrInvalidOperation)
+		}
+	}
+	return nil
+}
+
+// createInheritedSubscriptions creates skeleton INHERITED subscriptions for each
+// child customer in the hierarchy, linking them to the parent subscription.
+func (s *subscriptionService) createInheritedSubscriptions(
+	ctx context.Context,
+	parentSub *subscription.Subscription,
+	childCustomerIDs []string,
+) error {
+	for _, childID := range childCustomerIDs {
+		inheritedSub := &subscription.Subscription{
+			ID:                   types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
+			CustomerID:           childID,
+			PlanID:               parentSub.PlanID,
+			Currency:             parentSub.Currency,
+			LookupKey:            "",
+			SubscriptionStatus:   parentSub.SubscriptionStatus,
+			BillingAnchor:        parentSub.BillingAnchor,
+			BillingCycle:         parentSub.BillingCycle,
+			StartDate:            parentSub.StartDate,
+			EndDate:              parentSub.EndDate,
+			CurrentPeriodStart:   parentSub.CurrentPeriodStart,
+			CurrentPeriodEnd:     parentSub.CurrentPeriodEnd,
+			BillingCadence:       parentSub.BillingCadence,
+			BillingPeriod:        parentSub.BillingPeriod,
+			BillingPeriodCount:   parentSub.BillingPeriodCount,
+			Version:              1,
+			EnvironmentID:        parentSub.EnvironmentID,
+			PauseStatus:          parentSub.PauseStatus,
+			PaymentBehavior:      parentSub.PaymentBehavior,
+			CollectionMethod:     parentSub.CollectionMethod,
+			CustomerTimezone:     parentSub.CustomerTimezone,
+			ProrationBehavior:    parentSub.ProrationBehavior,
+			ParentSubscriptionID: &parentSub.ID,
+			SubscriptionType:     types.SubscriptionTypeInherited,
+			BaseModel:            parentSub.BaseModel,
+		}
+
+		if err := s.SubRepo.Create(ctx, inheritedSub); err != nil {
+			return ierr.WithError(err).
+				WithHint("Failed to create inherited subscription for child customer").
+				WithReportableDetails(map[string]any{
+					"parent_subscription_id": parentSub.ID,
+					"child_customer_id":      childID,
+				}).
+				Mark(ierr.ErrDatabase)
+		}
+	}
+	return nil
+}
+
+// getInheritedSubscriptions retrieves all INHERITED child subscriptions for a parent subscription.
+func (s *subscriptionService) getInheritedSubscriptions(ctx context.Context, parentSubID string) ([]*subscription.Subscription, error) {
+	filter := types.NewNoLimitSubscriptionFilter()
+	filter.ParentSubscriptionIDs = []string{parentSubID}
+	filter.SubscriptionTypes = []types.SubscriptionType{types.SubscriptionTypeInherited}
+	filter.SubscriptionStatus = []types.SubscriptionStatus{
+		types.SubscriptionStatusActive,
+		types.SubscriptionStatusTrialing,
+		types.SubscriptionStatusDraft,
+		types.SubscriptionStatusPaused,
+	}
+
+	return s.SubRepo.List(ctx, filter)
+}
+
+// cascadeCancelToInherited cancels all INHERITED child subscriptions when the parent is cancelled.
+func (s *subscriptionService) cascadeCancelToInherited(ctx context.Context, parentSub *subscription.Subscription, req *dto.CancelSubscriptionRequest) error {
+	children, err := s.getInheritedSubscriptions(ctx, parentSub.ID)
+	if err != nil {
+		return err
+	}
+	for _, child := range children {
+		child.SubscriptionStatus = parentSub.SubscriptionStatus
+		child.CancelledAt = parentSub.CancelledAt
+		child.CancelAt = parentSub.CancelAt
+		child.CancelAtPeriodEnd = parentSub.CancelAtPeriodEnd
+		child.EndDate = parentSub.EndDate
+		if err := s.SubRepo.Update(ctx, child); err != nil {
+			s.Logger.Errorw("failed to cascade cancel to inherited sub",
+				"child_sub_id", child.ID, "parent_sub_id", parentSub.ID, "error", err)
+		}
+	}
+	return nil
+}
+
+// cascadePauseToInherited mirrors pause status on all INHERITED child subscriptions.
+func (s *subscriptionService) cascadePauseToInherited(ctx context.Context, parentSub *subscription.Subscription) error {
+	children, err := s.getInheritedSubscriptions(ctx, parentSub.ID)
+	if err != nil {
+		return err
+	}
+	for _, child := range children {
+		child.SubscriptionStatus = parentSub.SubscriptionStatus
+		child.PauseStatus = parentSub.PauseStatus
+		child.ActivePauseID = parentSub.ActivePauseID
+		if err := s.SubRepo.Update(ctx, child); err != nil {
+			s.Logger.Errorw("failed to cascade pause to inherited sub",
+				"child_sub_id", child.ID, "parent_sub_id", parentSub.ID, "error", err)
+		}
+	}
+	return nil
+}
+
+// cascadeResumeToInherited mirrors resume on all INHERITED child subscriptions.
+func (s *subscriptionService) cascadeResumeToInherited(ctx context.Context, parentSub *subscription.Subscription) error {
+	children, err := s.getInheritedSubscriptions(ctx, parentSub.ID)
+	if err != nil {
+		return err
+	}
+	for _, child := range children {
+		child.SubscriptionStatus = parentSub.SubscriptionStatus
+		child.PauseStatus = parentSub.PauseStatus
+		child.ActivePauseID = nil
+		child.CurrentPeriodStart = parentSub.CurrentPeriodStart
+		child.CurrentPeriodEnd = parentSub.CurrentPeriodEnd
+		if err := s.SubRepo.Update(ctx, child); err != nil {
+			s.Logger.Errorw("failed to cascade resume to inherited sub",
+				"child_sub_id", child.ID, "parent_sub_id", parentSub.ID, "error", err)
+		}
+	}
+	return nil
 }

@@ -25,8 +25,9 @@ type FeatureUsageRepository interface {
 	// GetDetailedUsageAnalytics provides comprehensive usage analytics with filtering, grouping, and time-series data
 	GetDetailedUsageAnalytics(ctx context.Context, params *UsageAnalyticsParams, maxBucketFeatures map[string]*MaxBucketFeatureInfo, sumBucketFeatures map[string]*SumBucketFeatureInfo) ([]*DetailedUsageAnalytic, error)
 
-	// Get feature usage by subscription. opts.Source controls whether ClickHouse uses FINAL (e.g. invoice_creation).
-	GetFeatureUsageBySubscription(ctx context.Context, subscriptionID, customerID string, startTime, endTime time.Time, aggTypes []types.AggregationType, opts *GetFeatureUsageBySubscriptionOpts) (map[string]*UsageByFeatureResult, error)
+	// Get feature usage by subscription. customerIDs may contain one or more IDs
+	// (parent + children in a hierarchy). opts.Source controls whether ClickHouse uses FINAL.
+	GetFeatureUsageBySubscription(ctx context.Context, subscriptionID string, customerIDs []string, startTime, endTime time.Time, aggTypes []types.AggregationType, opts *GetFeatureUsageBySubscriptionOpts) (map[string]*UsageByFeatureResult, error)
 
 	// GetFeatureUsageForExport gets feature usage data for export in batches
 	GetFeatureUsageForExport(ctx context.Context, startTime, endTime time.Time, batchSize int, offset int) ([]*FeatureUsage, error)
