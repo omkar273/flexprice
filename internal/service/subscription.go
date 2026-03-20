@@ -42,6 +42,23 @@ func NewSubscriptionService(params ServiceParams) SubscriptionService {
 	}
 }
 
+// listSubscriptionLineItemsForUsageWindow returns line items for usage metering aligned with the
+// requested window: all published items for lifetime usage; otherwise items active as of usageStartTime
+// (not subscription.CurrentPeriodStart, which may have advanced past historical queries).
+func (s *subscriptionService) listSubscriptionLineItemsForUsageWindow(ctx context.Context, subscriptionID string, usageStartTime time.Time, lifetime bool) ([]*subscription.SubscriptionLineItem, error) {
+	filter := types.NewNoLimitSubscriptionLineItemFilter()
+	filter.SubscriptionIDs = []string{subscriptionID}
+	if lifetime {
+		filter.ActiveFilter = false
+		// applyActiveLineItemFilter normally restricts to published; keep the same when skipping date scope.
+		filter.QueryFilter.Status = lo.ToPtr(types.StatusPublished)
+	} else {
+		filter.ActiveFilter = true
+		filter.CurrentPeriodStart = &usageStartTime
+	}
+	return s.SubscriptionLineItemRepo.List(ctx, filter)
+}
+
 func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.CreateSubscriptionRequest) (*dto.SubscriptionResponse, error) {
 	if req.BillingCycle == "" {
 		req.BillingCycle = types.BillingCycleAnniversary
@@ -2043,6 +2060,11 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 	if req.LifetimeUsage {
 		usageStartTime = time.Time{}
 		usageEndTime = time.Now().UTC()
+	}
+
+	lineItems, err = s.listSubscriptionLineItemsForUsageWindow(ctx, subscription.ID, usageStartTime, req.LifetimeUsage)
+	if err != nil {
+		return nil, err
 	}
 
 	// Collect all price IDs
@@ -4924,6 +4946,11 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 	if req.LifetimeUsage {
 		usageStartTime = time.Time{}
 		usageEndTime = time.Now().UTC()
+	}
+
+	lineItems, err = s.listSubscriptionLineItemsForUsageWindow(ctx, subscription.ID, usageStartTime, req.LifetimeUsage)
+	if err != nil {
+		return nil, err
 	}
 
 	// Collect all price IDs and build meter to price mapping

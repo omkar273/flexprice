@@ -16,7 +16,7 @@ type InMemorySubscriptionStore struct {
 	lineItems     map[string][]*subscription.SubscriptionLineItem // map[subscriptionID][]lineItems (initial batch from CreateWithLineItems)
 	lineItemStore *InMemorySubscriptionLineItemStore              // optional: when set, GetWithLineItems merges in line items created via SubscriptionLineItemRepo.Create
 	pauses        map[string][]*subscription.SubscriptionPause    // map[subscriptionID][]pauses
-	pauseByID     map[string]*subscription.SubscriptionPause     // map[pauseID]pause
+	pauseByID     map[string]*subscription.SubscriptionPause      // map[pauseID]pause
 }
 
 func NewInMemorySubscriptionStore() *InMemorySubscriptionStore {
@@ -303,6 +303,23 @@ func (s *InMemorySubscriptionStore) CreateWithLineItems(ctx context.Context, sub
 	}
 	s.lineItems[sub.ID] = items
 	sub.LineItems = items
+	// Mirror DB behavior: line items must be visible to SubscriptionLineItemRepo (e.g. billing reload).
+	if s.lineItemStore != nil {
+		for _, item := range items {
+			if item == nil {
+				continue
+			}
+			if item.SubscriptionID == "" {
+				item.SubscriptionID = sub.ID
+			}
+			if item.ID == "" {
+				item.ID = types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM)
+			}
+			if err := s.lineItemStore.Create(ctx, item); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -312,21 +329,28 @@ func (s *InMemorySubscriptionStore) SetLineItemStore(store *InMemorySubscription
 }
 
 // GetWithLineItems gets a subscription with its line items.
-// Returns the initial batch from CreateWithLineItems plus any line items added later via SubscriptionLineItemRepo.Create when lineItemStore is set.
+// When lineItemStore is set, line items come from SubscriptionLineItemRepo only (mirrors DB + supports Update).
+// Otherwise returns the batch from CreateWithLineItems.
 func (s *InMemorySubscriptionStore) GetWithLineItems(ctx context.Context, id string) (*subscription.Subscription, []*subscription.SubscriptionLineItem, error) {
 	sub, err := s.Get(ctx, id)
 	if err != nil {
 		return nil, nil, err
 	}
+	if s.lineItemStore != nil {
+		filter := types.NewNoLimitSubscriptionLineItemFilter()
+		filter.SubscriptionIDs = []string{id}
+		filter.ActiveFilter = true
+		filter.CurrentPeriodStart = &sub.CurrentPeriodStart
+		items, lerr := s.lineItemStore.List(ctx, filter)
+		if lerr != nil {
+			return nil, nil, lerr
+		}
+		sub.LineItems = items
+		return sub, items, nil
+	}
 	items := s.lineItems[id]
 	if items == nil {
 		items = []*subscription.SubscriptionLineItem{}
-	}
-	if s.lineItemStore != nil {
-		added, err := s.lineItemStore.List(ctx, &types.SubscriptionLineItemFilter{SubscriptionIDs: []string{id}})
-		if err == nil && len(added) > 0 {
-			items = append(items, added...)
-		}
 	}
 	sub.LineItems = items
 	return sub, items, nil

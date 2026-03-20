@@ -72,37 +72,38 @@ func (s *BillingServiceSuite) setupService() {
 	s.invoiceRepo = s.GetStores().InvoiceRepo.(*testutil.InMemoryInvoiceStore)
 
 	s.service = NewBillingService(ServiceParams{
-		Logger:                s.GetLogger(),
-		Config:                s.GetConfig(),
-		DB:                    s.GetDB(),
-		SubRepo:               s.GetStores().SubscriptionRepo,
-		PlanRepo:              s.GetStores().PlanRepo,
-		PriceRepo:             s.GetStores().PriceRepo,
-		EventRepo:             s.GetStores().EventRepo,
-		MeterRepo:             s.GetStores().MeterRepo,
-		CustomerRepo:          s.GetStores().CustomerRepo,
-		InvoiceRepo:           s.GetStores().InvoiceRepo,
-		EntitlementRepo:       s.GetStores().EntitlementRepo,
-		EnvironmentRepo:       s.GetStores().EnvironmentRepo,
-		FeatureRepo:           s.GetStores().FeatureRepo,
-		TenantRepo:            s.GetStores().TenantRepo,
-		UserRepo:              s.GetStores().UserRepo,
-		AuthRepo:              s.GetStores().AuthRepo,
-		WalletRepo:            s.GetStores().WalletRepo,
-		PaymentRepo:           s.GetStores().PaymentRepo,
-		CouponAssociationRepo: s.GetStores().CouponAssociationRepo,
-		CouponRepo:            s.GetStores().CouponRepo,
-		CouponApplicationRepo: s.GetStores().CouponApplicationRepo,
-		AddonAssociationRepo:  s.GetStores().AddonAssociationRepo,
-		TaxRateRepo:           s.GetStores().TaxRateRepo,
-		TaxAssociationRepo:    s.GetStores().TaxAssociationRepo,
-		TaxAppliedRepo:        s.GetStores().TaxAppliedRepo,
-		SettingsRepo:          s.GetStores().SettingsRepo,
-		EventPublisher:        s.GetPublisher(),
-		WebhookPublisher:      s.GetWebhookPublisher(),
-		ProrationCalculator:   s.GetCalculator(),
-		AlertLogsRepo:         s.GetStores().AlertLogsRepo,
-		FeatureUsageRepo:      s.GetStores().FeatureUsageRepo,
+		Logger:                   s.GetLogger(),
+		Config:                   s.GetConfig(),
+		DB:                       s.GetDB(),
+		SubRepo:                  s.GetStores().SubscriptionRepo,
+		SubscriptionLineItemRepo: s.GetStores().SubscriptionLineItemRepo,
+		PlanRepo:                 s.GetStores().PlanRepo,
+		PriceRepo:                s.GetStores().PriceRepo,
+		EventRepo:                s.GetStores().EventRepo,
+		MeterRepo:                s.GetStores().MeterRepo,
+		CustomerRepo:             s.GetStores().CustomerRepo,
+		InvoiceRepo:              s.GetStores().InvoiceRepo,
+		EntitlementRepo:          s.GetStores().EntitlementRepo,
+		EnvironmentRepo:          s.GetStores().EnvironmentRepo,
+		FeatureRepo:              s.GetStores().FeatureRepo,
+		TenantRepo:               s.GetStores().TenantRepo,
+		UserRepo:                 s.GetStores().UserRepo,
+		AuthRepo:                 s.GetStores().AuthRepo,
+		WalletRepo:               s.GetStores().WalletRepo,
+		PaymentRepo:              s.GetStores().PaymentRepo,
+		CouponAssociationRepo:    s.GetStores().CouponAssociationRepo,
+		CouponRepo:               s.GetStores().CouponRepo,
+		CouponApplicationRepo:    s.GetStores().CouponApplicationRepo,
+		AddonAssociationRepo:     s.GetStores().AddonAssociationRepo,
+		TaxRateRepo:              s.GetStores().TaxRateRepo,
+		TaxAssociationRepo:       s.GetStores().TaxAssociationRepo,
+		TaxAppliedRepo:           s.GetStores().TaxAppliedRepo,
+		SettingsRepo:             s.GetStores().SettingsRepo,
+		EventPublisher:           s.GetPublisher(),
+		WebhookPublisher:         s.GetWebhookPublisher(),
+		ProrationCalculator:      s.GetCalculator(),
+		AlertLogsRepo:            s.GetStores().AlertLogsRepo,
+		FeatureUsageRepo:         s.GetStores().FeatureUsageRepo,
 	})
 }
 
@@ -654,6 +655,45 @@ func (s *BillingServiceSuite) TestPrepareSubscriptionInvoiceRequest() {
 			}
 		})
 	}
+}
+
+func (s *BillingServiceSuite) TestPrepareSubscriptionInvoiceRequest_IncludesHistoricalLineItemsWhenSubscriptionAdvanced() {
+	ctx := s.GetContext()
+	oldStart := s.testData.subscription.CurrentPeriodStart
+	oldEnd := s.testData.subscription.CurrentPeriodEnd
+
+	apiLI := s.testData.subscription.LineItems[1]
+	s.Equal(s.testData.prices.apiCalls.ID, apiLI.PriceID)
+	apiLI.EndDate = oldStart.Add(48 * time.Hour)
+	s.NoError(s.GetStores().SubscriptionLineItemRepo.Update(ctx, apiLI))
+
+	s.testData.subscription.CurrentPeriodStart = oldEnd
+	s.testData.subscription.CurrentPeriodEnd = oldEnd.Add(30 * 24 * time.Hour)
+	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, s.testData.subscription))
+
+	sub, lineItemsFromGet, err := s.GetStores().SubscriptionRepo.GetWithLineItems(ctx, s.testData.subscription.ID)
+	s.NoError(err)
+	foundAPI := false
+	for _, li := range lineItemsFromGet {
+		if li.PriceID == s.testData.prices.apiCalls.ID {
+			foundAPI = true
+			break
+		}
+	}
+	s.False(foundAPI, "GetWithLineItems should omit line item whose EndDate is before new CurrentPeriodStart")
+
+	req, err := s.service.PrepareSubscriptionInvoiceRequest(ctx, sub, oldStart, oldEnd, types.ReferencePointPeriodEnd)
+	s.NoError(err)
+	s.NotNil(req)
+
+	hasAPI := false
+	for _, li := range req.LineItems {
+		if lo.FromPtr(li.PriceID) == s.testData.prices.apiCalls.ID {
+			hasAPI = true
+			break
+		}
+	}
+	s.True(hasAPI, "PrepareSubscriptionInvoiceRequest for historical period should still bill API usage")
 }
 
 // Helper methods for specific validations
@@ -2033,28 +2073,29 @@ func (s *BillingServiceSuite) TestCalculateUsageChargesWithEntitlements() {
 
 	// Initialize billing service
 	s.service = NewBillingService(ServiceParams{
-		Logger:               s.GetLogger(),
-		Config:               s.GetConfig(),
-		DB:                   s.GetDB(),
-		SubRepo:              s.GetStores().SubscriptionRepo,
-		PlanRepo:             s.GetStores().PlanRepo,
-		PriceRepo:            s.GetStores().PriceRepo,
-		EventRepo:            s.GetStores().EventRepo,
-		MeterRepo:            s.GetStores().MeterRepo,
-		CustomerRepo:         s.GetStores().CustomerRepo,
-		InvoiceRepo:          s.GetStores().InvoiceRepo,
-		EntitlementRepo:      s.GetStores().EntitlementRepo,
-		EnvironmentRepo:      s.GetStores().EnvironmentRepo,
-		FeatureRepo:          s.GetStores().FeatureRepo,
-		TenantRepo:           s.GetStores().TenantRepo,
-		UserRepo:             s.GetStores().UserRepo,
-		AuthRepo:             s.GetStores().AuthRepo,
-		WalletRepo:           s.GetStores().WalletRepo,
-		PaymentRepo:          s.GetStores().PaymentRepo,
-		AddonAssociationRepo: s.GetStores().AddonAssociationRepo,
-		EventPublisher:       s.GetPublisher(),
-		ProrationCalculator:  s.GetCalculator(),
-		FeatureUsageRepo:     s.GetStores().FeatureUsageRepo,
+		Logger:                   s.GetLogger(),
+		Config:                   s.GetConfig(),
+		DB:                       s.GetDB(),
+		SubRepo:                  s.GetStores().SubscriptionRepo,
+		SubscriptionLineItemRepo: s.GetStores().SubscriptionLineItemRepo,
+		PlanRepo:                 s.GetStores().PlanRepo,
+		PriceRepo:                s.GetStores().PriceRepo,
+		EventRepo:                s.GetStores().EventRepo,
+		MeterRepo:                s.GetStores().MeterRepo,
+		CustomerRepo:             s.GetStores().CustomerRepo,
+		InvoiceRepo:              s.GetStores().InvoiceRepo,
+		EntitlementRepo:          s.GetStores().EntitlementRepo,
+		EnvironmentRepo:          s.GetStores().EnvironmentRepo,
+		FeatureRepo:              s.GetStores().FeatureRepo,
+		TenantRepo:               s.GetStores().TenantRepo,
+		UserRepo:                 s.GetStores().UserRepo,
+		AuthRepo:                 s.GetStores().AuthRepo,
+		WalletRepo:               s.GetStores().WalletRepo,
+		PaymentRepo:              s.GetStores().PaymentRepo,
+		AddonAssociationRepo:     s.GetStores().AddonAssociationRepo,
+		EventPublisher:           s.GetPublisher(),
+		ProrationCalculator:      s.GetCalculator(),
+		FeatureUsageRepo:         s.GetStores().FeatureUsageRepo,
 	})
 
 	tests := []struct {
@@ -3456,9 +3497,9 @@ func (s *BillingServiceSuite) TestApplyProrationToLineItem_RuntimeSafetyNet_Mixe
 	}
 	s.NoError(s.GetStores().CustomerRepo.Create(ctx, cust))
 	pl := &plan.Plan{
-		ID:          "plan_e34",
-		Name:        "E34 Plan",
-		BaseModel:   types.GetDefaultBaseModel(ctx),
+		ID:        "plan_e34",
+		Name:      "E34 Plan",
+		BaseModel: types.GetDefaultBaseModel(ctx),
 	}
 	s.NoError(s.GetStores().PlanRepo.Create(ctx, pl))
 
@@ -3762,9 +3803,9 @@ func (s *BillingServiceSuite) setupMultiCadenceSubMQH(ctx context.Context, start
 
 	prices := make([]*price.Price, 3)
 	for i, spec := range []struct {
-		id string
-		period types.BillingPeriod
-		amount int
+		id      string
+		period  types.BillingPeriod
+		amount  int
 		cadence types.InvoiceCadence
 	}{
 		{"price_mqh_m", types.BILLING_PERIOD_MONTHLY, amtM, cadM},
@@ -3975,9 +4016,9 @@ func (s *BillingServiceSuite) setupMultiCadenceSubMQA(ctx context.Context, start
 
 	prices := make([]*price.Price, 3)
 	for i, spec := range []struct {
-		id     string
-		period types.BillingPeriod
-		amount int
+		id      string
+		period  types.BillingPeriod
+		amount  int
 		cadence types.InvoiceCadence
 	}{
 		{"price_mqa_m", types.BILLING_PERIOD_MONTHLY, amtM, cadM},
