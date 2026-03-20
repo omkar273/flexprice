@@ -18,6 +18,7 @@ type CustomerService interface {
 	CreateCustomer(ctx context.Context, req dto.CreateCustomerRequest) (*dto.CustomerResponse, error)
 	GetCustomer(ctx context.Context, id string) (*dto.CustomerResponse, error)
 	GetCustomers(ctx context.Context, filter *types.CustomerFilter) (*dto.ListCustomersResponse, error)
+	ListChildCustomers(ctx context.Context, parentCustomerID string, filter *types.CustomerFilter) (*dto.ListCustomersResponse, error)
 	UpdateCustomer(ctx context.Context, id string, req dto.UpdateCustomerRequest) (*dto.CustomerResponse, error)
 	DeleteCustomer(ctx context.Context, id string) error
 	GetCustomerByLookupKey(ctx context.Context, lookupKey string) (*dto.CustomerResponse, error)
