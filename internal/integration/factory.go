@@ -414,6 +414,19 @@ func (f *Factory) GetQuickBooksIntegration(ctx context.Context) (*QuickBooksInte
 
 // GetPaddleIntegration returns a complete Paddle integration setup
 func (f *Factory) GetPaddleIntegration(ctx context.Context) (*PaddleIntegration, error) {
+	// Verify a Paddle connection exists for this environment before building the integration.
+	// This allows callers (e.g. Temporal activities) to detect ErrNotFound early and stop
+	// retrying a permanent configuration problem.
+	conn, err := f.connectionRepo.GetByProvider(ctx, types.SecretProviderPaddle)
+	if err != nil {
+		return nil, err
+	}
+	if conn == nil || conn.Status != types.StatusPublished {
+		return nil, ierr.NewError("Connection with provider paddle is not configured in this environment").
+			WithHint("Paddle connection must be configured and published before use").
+			Mark(ierr.ErrNotFound)
+	}
+
 	paddleClient := paddle.NewClient(
 		f.connectionRepo,
 		f.encryptionService,
