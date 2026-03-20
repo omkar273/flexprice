@@ -171,7 +171,8 @@ func validateHierarchyWorkflowConflict(
 	cid := subscriptionCustomerID
 
 	if cid == parentCustomerID {
-		if newSubType == types.SubscriptionTypeParent && existingType == types.SubscriptionTypeStandalone {
+		if newSubType == types.SubscriptionTypeParent &&
+			(existingType == types.SubscriptionTypeStandalone || existingType == types.SubscriptionTypeInherited) {
 			return ierr.NewError("customer already has standalone subscriptions").
 				WithHint("A customer cannot have both standalone and hierarchy-based subscriptions; cancel existing subscriptions first").
 				WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
