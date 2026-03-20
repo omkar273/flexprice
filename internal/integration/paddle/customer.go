@@ -180,8 +180,7 @@ func (s *CustomerService) SyncCustomerToPaddle(ctx context.Context, flexpriceCus
 	}
 
 	s.logger.Infow("creating customer in Paddle",
-		"customer_id", flexpriceCustomer.ID,
-		"email", flexpriceCustomer.Email)
+		"customer_id", flexpriceCustomer.ID)
 
 	paddleCustomer, err := s.client.CreateCustomer(ctx, createCustomerReq)
 	if err != nil {
@@ -259,11 +258,30 @@ func (s *CustomerService) SyncCustomerToPaddle(ctx context.Context, flexpriceCus
 
 	err = s.entityIntegrationMappingRepo.Create(ctx, mapping)
 	if err != nil {
+		if ierr.IsAlreadyExists(err) {
+			// Concurrent race: another goroutine created the mapping between our check and now.
+			// The mapping that won the race is the authoritative one — return its Paddle customer
+			// ID so the caller does not overwrite metadata with the ID of a duplicate Paddle customer.
+			existingMappings, listErr := s.entityIntegrationMappingRepo.List(ctx, &types.EntityIntegrationMappingFilter{
+				EntityID:      flexpriceCustomer.ID,
+				EntityType:    types.IntegrationEntityTypeCustomer,
+				ProviderTypes: []string{string(types.SecretProviderPaddle)},
+			})
+			if listErr == nil && len(existingMappings) > 0 {
+				s.logger.Warnw("Paddle customer mapping already exists (concurrent creation), using existing mapping",
+					"customer_id", flexpriceCustomer.ID,
+					"existing_paddle_customer_id", existingMappings[0].ProviderEntityID,
+					"discarded_paddle_customer_id", paddleCustomerID)
+				return existingMappings[0].ProviderEntityID, nil
+			}
+		}
 		s.logger.Errorw("failed to store Paddle customer mapping",
 			"error", err,
 			"customer_id", flexpriceCustomer.ID,
 			"paddle_customer_id", paddleCustomerID)
-		// Don't fail - customer was created successfully in Paddle
+		// Don't fail for non-conflict errors: the Paddle customer was created successfully and the
+		// caller will write paddle_customer_id to customer metadata, which acts as the idempotency
+		// guard for future retries (EnsureCustomerSyncedToPaddle checks metadata first).
 	} else {
 		s.logger.Infow("stored Paddle customer mapping",
 			"customer_id", flexpriceCustomer.ID,

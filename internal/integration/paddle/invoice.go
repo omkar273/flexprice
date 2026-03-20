@@ -96,6 +96,20 @@ func (s *InvoiceSyncService) SyncInvoiceToPaddle(
 		return resp, nil
 	}
 
+	// Secondary idempotency guard: if the mapping save previously failed but the invoice
+	// metadata update succeeded, we can recover the transaction ID from invoice metadata and
+	// avoid creating a duplicate Paddle transaction on retry.
+	if paddleTxnID := flexInvoice.Metadata["paddle_transaction_id"]; paddleTxnID != "" {
+		s.logger.Infow("invoice already has Paddle transaction ID in metadata (mapping may have been lost), skipping transaction creation",
+			"invoice_id", req.InvoiceID,
+			"paddle_transaction_id", paddleTxnID)
+		resp := &PaddleInvoiceSyncResponse{
+			PaddleTransactionID: paddleTxnID,
+			CheckoutURL:         flexInvoice.Metadata["paddle_checkout_url"],
+		}
+		return resp, nil
+	}
+
 	flexpriceCustomer, err := s.customerSvc.EnsureCustomerSyncedToPaddle(ctx, flexInvoice.CustomerID, customerService)
 	if err != nil {
 		s.logger.Errorw("invoice and customer not synced to Paddle: customer sync failed",
@@ -157,21 +171,25 @@ func (s *InvoiceSyncService) SyncInvoiceToPaddle(
 		"invoice_id", req.InvoiceID,
 		"paddle_transaction_id", txn.ID)
 
-	// Update FlexPrice invoice metadata with Paddle checkout URL (for Temporal activity - self-contained like Moyasar)
 	syncResp := s.buildSyncResponse(txn)
 	s.appendCheckoutToken(ctx, syncResp)
+
+	// Write invoice metadata FIRST so that if the mapping save below fails and Temporal retries,
+	// the secondary idempotency guard above catches paddle_transaction_id and skips re-creation.
+	if err := s.updateFlexPriceInvoiceFromPaddle(ctx, flexInvoice, syncResp); err != nil {
+		s.logger.Warnw("failed to update FlexPrice invoice metadata with Paddle URLs",
+			"error", err,
+			"invoice_id", req.InvoiceID)
+	}
 
 	if err := s.createInvoiceMapping(ctx, req.InvoiceID, txn, flexInvoice.EnvironmentID, syncResp); err != nil {
 		s.logger.Errorw("failed to create invoice mapping",
 			"error", err,
 			"invoice_id", req.InvoiceID,
 			"paddle_transaction_id", txn.ID)
-	}
-
-	if err := s.updateFlexPriceInvoiceFromPaddle(ctx, flexInvoice, syncResp); err != nil {
-		s.logger.Warnw("failed to update FlexPrice invoice metadata with Paddle URLs",
-			"error", err,
-			"invoice_id", req.InvoiceID)
+		return nil, ierr.WithError(err).
+			WithHint("Invoice was synced to Paddle but the local mapping could not be saved. Retry will recover from invoice metadata.").
+			Mark(ierr.ErrDatabase)
 	}
 
 	return syncResp, nil
