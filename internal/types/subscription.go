@@ -40,6 +40,45 @@ func (i InvoiceBilling) Validate() error {
 	return nil
 }
 
+// SubscriptionType categorises a subscription within a customer hierarchy.
+type SubscriptionType string
+
+const (
+	// SubscriptionTypeStandalone is a regular subscription with no hierarchy relationship.
+	SubscriptionTypeStandalone SubscriptionType = "standalone"
+
+	// SubscriptionTypeParent is the primary subscription that owns line items and aggregates
+	// usage from child (inherited) subscriptions.
+	SubscriptionTypeParent SubscriptionType = "parent"
+
+	// SubscriptionTypeInherited is a skeleton subscription created for each child customer
+	// in a hierarchy. It carries no line items; events are matched via the parent subscription.
+	SubscriptionTypeInherited SubscriptionType = "inherited"
+)
+
+var SubscriptionTypeValues = []SubscriptionType{
+	SubscriptionTypeStandalone,
+	SubscriptionTypeParent,
+	SubscriptionTypeInherited,
+}
+
+func (t SubscriptionType) String() string {
+	return string(t)
+}
+
+func (t SubscriptionType) Validate() error {
+	if !lo.Contains(SubscriptionTypeValues, t) {
+		return ierr.NewError("invalid subscription type").
+			WithHint("Subscription type must be standalone, parent, or inherited").
+			WithReportableDetails(map[string]any{
+				"subscription_type": t,
+				"allowed_values":    SubscriptionTypeValues,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
 // SubscriptionLineItemEntityType is the type of the source of a subscription line item
 // It is optional and can be used to differentiate between plan and addon line items
 type SubscriptionLineItemEntityType string
@@ -196,7 +235,7 @@ func (p PaymentTerms) Validate() error {
 		return ierr.NewError("invalid payment_terms").
 			WithHint("Payment terms must be one of: 15 NET, 30 NET, 45 NET, 60 NET, 75 NET, 90 NET").
 			WithReportableDetails(map[string]any{
-				"payment_terms":   p,
+				"payment_terms":  p,
 				"allowed_values": AllPaymentTerms,
 			}).
 			Mark(ierr.ErrValidation)
@@ -302,6 +341,12 @@ type SubscriptionFilter struct {
 	// ActiveAt filters subscriptions that are active at the given time
 	ActiveAt *time.Time `json:"active_at,omitempty" form:"active_at"`
 
+	// SubscriptionTypes filters by subscription type (standalone, parent, inherited)
+	SubscriptionTypes []SubscriptionType `json:"subscription_types,omitempty" form:"subscription_types"`
+
+	// CustomerIDs filters by multiple customer IDs (used for hierarchy lookups)
+	CustomerIDs []string `json:"customer_ids,omitempty" form:"customer_ids"`
+
 	// WithLineItems includes line items in the response
 	WithLineItems bool `json:"with_line_items,omitempty" form:"with_line_items"`
 }
@@ -351,6 +396,13 @@ func (f SubscriptionFilter) Validate() error {
 	// Validate billing period values
 	for _, period := range f.BillingPeriod {
 		if err := period.Validate(); err != nil {
+			return err
+		}
+	}
+
+	// Validate subscription type values
+	for _, subType := range f.SubscriptionTypes {
+		if err := subType.Validate(); err != nil {
 			return err
 		}
 	}
