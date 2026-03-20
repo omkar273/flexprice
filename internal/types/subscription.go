@@ -67,6 +67,10 @@ func (t SubscriptionType) String() string {
 }
 
 func (t SubscriptionType) Validate() error {
+	if t == "" {
+		return nil
+	}
+
 	if !lo.Contains(SubscriptionTypeValues, t) {
 		return ierr.NewError("invalid subscription type").
 			WithHint("Subscription type must be standalone, parent, or inherited").
