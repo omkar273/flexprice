@@ -26,7 +26,7 @@ type SubscriptionInheritanceService interface {
 	// ValidateCustomerHierarchyConflicts ensures customers do not mix STANDALONE with PARENT/INHERITED
 	// in ways that violate the hierarchy workflow. parentCustomerID is the billing parent; customerIDs
 	// must include the parent and any usage child IDs (same set used for listing existing subscriptions).
-	ValidateCustomerHierarchyConflicts(ctx context.Context, parentCustomerID string, customerIDs []string, newSubType types.SubscriptionType) error
+	ValidateCustomerHierarchyConflicts(ctx context.Context, parentCustomerID string, usageCustomerIds []string, newSubType types.SubscriptionType) error
 }
 
 type subscriptionInheritanceService struct {
