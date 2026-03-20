@@ -12,6 +12,9 @@ type Repository interface {
 	// Core invoice operations
 	Create(ctx context.Context, inv *Invoice) error
 	Get(ctx context.Context, id string) (*Invoice, error)
+	// GetForUpdate retrieves an invoice with a row-level lock (SELECT FOR UPDATE).
+	// Must be called within a transaction so the lock is held until commit/rollback.
+	GetForUpdate(ctx context.Context, id string) (*Invoice, error)
 	Update(ctx context.Context, inv *Invoice) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter *types.InvoiceFilter) ([]*Invoice, error)
@@ -29,6 +32,8 @@ type Repository interface {
 
 	// Period validation
 	ExistsForPeriod(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time) (bool, error)
+	// GetForPeriod returns the non-voided invoice for the given subscription period, or ErrNotFound if none exists.
+	GetForPeriod(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time) (*Invoice, error)
 
 	// GetNextInvoiceNumber generates and returns the next invoice number for a tenant
 	// Format: INV-YYYYMM-XXXXX

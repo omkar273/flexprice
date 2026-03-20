@@ -133,6 +133,8 @@ const (
 	InvoiceStatusFinalized InvoiceStatus = "FINALIZED"
 	// InvoiceStatusVoided indicates invoice has been voided and is no longer valid for payment
 	InvoiceStatusVoided InvoiceStatus = "VOIDED"
+	// InvoiceStatusSkipped indicates a zero-dollar draft; no invoice number, no finalization, no vendor sync, no payment
+	InvoiceStatusSkipped InvoiceStatus = "SKIPPED"
 )
 
 func (s InvoiceStatus) String() string {
@@ -144,6 +146,7 @@ func (s InvoiceStatus) Validate() error {
 		InvoiceStatusDraft,
 		InvoiceStatusFinalized,
 		InvoiceStatusVoided,
+		InvoiceStatusSkipped,
 	}
 
 	if s != "" && !lo.Contains(allowed, s) {

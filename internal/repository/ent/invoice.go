@@ -434,6 +434,63 @@ func (r *invoiceRepository) Get(ctx context.Context, id string) (*domainInvoice.
 	return invoiceData, nil
 }
 
+// GetForUpdate retrieves an invoice with a row-level lock (SELECT FOR UPDATE).
+// Must be called within a transaction so the lock is held until commit/rollback.
+func (r *invoiceRepository) GetForUpdate(ctx context.Context, id string) (*domainInvoice.Invoice, error) {
+	span := StartRepositorySpan(ctx, "invoice", "get_for_update", map[string]interface{}{
+		"invoice_id": id,
+	})
+	defer FinishSpan(span)
+
+	client := r.client.Writer(ctx)
+	tenantID := types.GetTenantID(ctx)
+	environmentID := types.GetEnvironmentID(ctx)
+
+	// Acquire row-level lock so concurrent workers cannot update the same invoice
+	lockQuery := `SELECT id FROM invoices WHERE id = $1 AND tenant_id = $2 AND environment_id = $3 FOR UPDATE`
+	rows, err := client.QueryContext(ctx, lockQuery, id, tenantID, environmentID)
+	if err != nil {
+		return nil, ierr.WithError(err).WithHint("invoice lock failed").Mark(ierr.ErrDatabase)
+	}
+	// Must check and close rows BEFORE running another query on the same connection
+	hasRow := rows.Next()
+	rowErr := rows.Err()
+	rows.Close() // Close immediately, not deferred
+	if rowErr != nil {
+		return nil, ierr.WithError(rowErr).WithHint("invoice lock failed").Mark(ierr.ErrDatabase)
+	}
+	if !hasRow {
+		return nil, ierr.NewError("invoice not found").
+			WithHint("invoice not found: " + id).
+			WithReportableDetails(map[string]any{"id": id}).
+			Mark(ierr.ErrNotFound)
+	}
+
+	// Load invoice with line items (same connection holds the lock)
+	inv, err := client.Invoice.Query().
+		Where(
+			invoice.ID(id),
+			invoice.TenantID(tenantID),
+			invoice.EnvironmentID(environmentID),
+		).
+		WithLineItems(func(q *ent.InvoiceLineItemQuery) {
+			q.Where(invoicelineitem.Status(string(types.StatusPublished)))
+		}).
+		Only(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, ierr.
+				WithError(err).
+				WithHintf("invoice %s not found", id).
+				WithReportableDetails(map[string]any{"id": id}).
+				Mark(ierr.ErrNotFound)
+		}
+		return nil, ierr.WithError(err).WithHint("getting invoice failed").Mark(ierr.ErrDatabase)
+	}
+
+	return domainInvoice.FromEnt(inv), nil
+}
+
 func (r *invoiceRepository) Update(ctx context.Context, inv *domainInvoice.Invoice) error {
 	// Start a span for this repository operation
 	span := StartRepositorySpan(ctx, "invoice", "update", map[string]interface{}{
@@ -475,6 +532,8 @@ func (r *invoiceRepository) Update(ctx context.Context, inv *domainInvoice.Invoi
 		SetRefundedAmount(inv.RefundedAmount).
 		SetTotalPrepaidCreditsApplied(inv.TotalPrepaidCreditsApplied).
 		SetNillableRecalculatedInvoiceID(inv.RecalculatedInvoiceID).
+		SetNillableInvoiceNumber(inv.InvoiceNumber).
+		SetNillableBillingSequence(inv.BillingSequence).
 		SetUpdatedAt(time.Now()).
 		SetUpdatedBy(types.GetUserID(ctx)).
 		SetTotal(inv.Total).
@@ -696,6 +755,41 @@ func (r *invoiceRepository) ExistsForPeriod(ctx context.Context, subscriptionID 
 	}
 
 	return exists, nil
+}
+
+func (r *invoiceRepository) GetForPeriod(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time) (*domainInvoice.Invoice, error) {
+	span := StartRepositorySpan(ctx, "invoice", "get_for_period", map[string]interface{}{
+		"subscription_id": subscriptionID,
+		"period_start":    periodStart,
+		"period_end":      periodEnd,
+	})
+	defer FinishSpan(span)
+
+	inv, err := r.client.Reader(ctx).Invoice.Query().
+		Where(
+			invoice.And(
+				invoice.TenantID(types.GetTenantID(ctx)),
+				invoice.EnvironmentID(types.GetEnvironmentID(ctx)),
+				invoice.SubscriptionIDEQ(subscriptionID),
+				invoice.PeriodStartEQ(periodStart),
+				invoice.PeriodEndEQ(periodEnd),
+				invoice.StatusEQ(string(types.StatusPublished)),
+				invoice.InvoiceStatusNEQ(types.InvoiceStatusVoided),
+			),
+		).
+		First(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, ierr.WithError(err).WithHint("invoice not found for period").Mark(ierr.ErrNotFound)
+		}
+		return nil, ierr.WithError(err).WithHint("get for period failed").WithReportableDetails(map[string]any{
+			"subscription_id": subscriptionID,
+			"period_start":    periodStart.String(),
+			"period_end":      periodEnd.String(),
+		}).Mark(ierr.ErrDatabase)
+	}
+
+	return domainInvoice.FromEnt(inv), nil
 }
 
 func (r *invoiceRepository) getYearMonth(format types.InvoiceNumberFormat, timezone string) string {

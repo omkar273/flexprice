@@ -160,6 +160,11 @@ func (s *InMemoryInvoiceStore) Get(ctx context.Context, id string) (*invoice.Inv
 	return copyInvoice(inv), nil
 }
 
+// GetForUpdate returns the invoice; in-memory store has no row locking.
+func (s *InMemoryInvoiceStore) GetForUpdate(ctx context.Context, id string) (*invoice.Invoice, error) {
+	return s.Get(ctx, id)
+}
+
 func (s *InMemoryInvoiceStore) Update(ctx context.Context, inv *invoice.Invoice) error {
 	if inv == nil {
 		return ierr.NewError("invoice cannot be nil").WithHint("invoice cannot be nil").Mark(ierr.ErrValidation)
@@ -222,6 +227,27 @@ func (s *InMemoryInvoiceStore) ExistsForPeriod(ctx context.Context, subscription
 	}
 
 	return false, nil
+}
+
+func (s *InMemoryInvoiceStore) GetForPeriod(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time) (*invoice.Invoice, error) {
+	filter := types.NewNoLimitInvoiceFilter()
+	filter.SubscriptionID = subscriptionID
+	invoices, err := s.List(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, inv := range invoices {
+		if inv.InvoiceStatus == types.InvoiceStatusVoided {
+			continue
+		}
+		if inv.PeriodStart != nil && inv.PeriodEnd != nil &&
+			periodStart.Equal(*inv.PeriodStart) && periodEnd.Equal(*inv.PeriodEnd) {
+			return copyInvoice(inv), nil
+		}
+	}
+
+	return nil, ierr.NewError("invoice not found").WithHint("invoice not found for period").Mark(ierr.ErrNotFound)
 }
 
 func (s *InMemoryInvoiceStore) GetNextInvoiceNumber(ctx context.Context, invoiceConfig *types.InvoiceConfig) (string, error) {

@@ -114,6 +114,13 @@ type CreateInvoiceRequest struct {
 
 	// invoice_pdf_url is the URL where customers can download the PDF version of this invoice
 	InvoicePDFURL *string `json:"invoice_pdf_url,omitempty"`
+
+	// skip_invoice_number when true creates a draft without assigning an invoice number (assigned during populate).
+	// Used for draft-first flow. Not exposed in API.
+	SkipInvoiceNumber bool `json:"-"`
+
+	// suppress_webhook when true skips publishing webhook on create. Used for draft creation. Not exposed in API.
+	SuppressWebhook bool `json:"-"`
 }
 
 // CreateProrationInvoiceRequest represents the request for creating a proration invoice
@@ -203,14 +210,17 @@ func (r *CreateInvoiceRequest) Validate() error {
 		return err
 	}
 
-	// Allow negative amount_due for credit invoices, but not for other types
-	if r.AmountDue.IsNegative() && r.InvoiceType != types.InvoiceTypeCredit {
-		return ierr.NewError("amount_due must be non-negative for non-credit invoices").
-			WithHint("amount due is negative for non-credit invoice").
-			WithReportableDetails(map[string]any{
-				"amount_due":   r.AmountDue.String(),
-				"invoice_type": r.InvoiceType,
-			}).Mark(ierr.ErrValidation)
+	// Allow zero amounts when creating a draft without invoice number (draft-first flow)
+	if !r.SkipInvoiceNumber {
+		// Allow negative amount_due for credit invoices, but not for other types
+		if r.AmountDue.IsNegative() && r.InvoiceType != types.InvoiceTypeCredit {
+			return ierr.NewError("amount_due must be non-negative for non-credit invoices").
+				WithHint("amount due is negative for non-credit invoice").
+				WithReportableDetails(map[string]any{
+					"amount_due":   r.AmountDue.String(),
+					"invoice_type": r.InvoiceType,
+				}).Mark(ierr.ErrValidation)
+		}
 	}
 
 	// Validate total_prepaid_applied if provided

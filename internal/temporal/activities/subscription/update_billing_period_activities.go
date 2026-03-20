@@ -112,14 +112,12 @@ func (s *BillingActivities) CreateDraftInvoicesActivity(
 
 	invoices := make([]string, 0)
 	for _, period := range input.Periods {
-		invoice, err := subscriptionService.CreateDraftInvoiceForSubscription(ctx, input.SubscriptionID, period)
+		draft, err := subscriptionService.CreateDraftInvoiceForSubscription(ctx, input.SubscriptionID, period)
 		if err != nil {
 			return nil, err
 		}
-		// Skip nil invoices (zero-amount invoices)
-		if invoice != nil {
-			invoices = append(invoices, invoice.ID)
-		}
+		// Always append draft ID (zero-dollar drafts are populated later and may be marked SKIPPED)
+		invoices = append(invoices, draft.ID)
 	}
 
 	return &subscriptionModels.CreateInvoicesActivityOutput{

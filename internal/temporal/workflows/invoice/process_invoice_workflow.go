@@ -12,6 +12,7 @@ const (
 	// Workflow name - must match the function name
 	WorkflowProcessInvoice = "ProcessInvoiceWorkflow"
 	// Activity names - must match the registered method names
+	ActivityPopulateDraftInvoice   = "PopulateDraftInvoiceActivity"
 	ActivityFinalizeInvoice        = "FinalizeInvoiceActivity"
 	ActivitySyncInvoiceToVendor    = "SyncInvoiceToVendorActivity"
 	ActivityAttemptInvoicePayment  = "AttemptInvoicePaymentActivity"
@@ -20,7 +21,8 @@ const (
 
 // ProcessInvoiceWorkflow processes a single invoice
 // This workflow orchestrates invoice processing:
-// 1. Finalize the invoice
+// 0. Populate draft (line items, assign number or mark SKIPPED)
+// 1. Finalize the invoice (skipped if invoice was SKIPPED)
 // 2. Sync invoice to external vendors
 // 3. Attempt payment for the invoice
 func ProcessInvoiceWorkflow(
@@ -52,6 +54,37 @@ func ProcessInvoiceWorkflow(
 	ctx = workflow.WithActivityOptions(ctx, activityOptions)
 
 	// ================================================================================
+	// STEP 0: Populate draft invoice (assign number or mark SKIPPED if zero)
+	// ================================================================================
+	logger.Info("Step 0: Populating draft invoice",
+		"invoice_id", input.InvoiceID)
+
+	var populateOutput invoiceModels.PopulateDraftInvoiceActivityOutput
+	populateInput := invoiceModels.PopulateDraftInvoiceActivityInput{
+		InvoiceID:     input.InvoiceID,
+		TenantID:      input.TenantID,
+		EnvironmentID: input.EnvironmentID,
+		UserID:        input.UserID,
+	}
+
+	err := workflow.ExecuteActivity(ctx, ActivityPopulateDraftInvoice, populateInput).Get(ctx, &populateOutput)
+	if err != nil {
+		logger.Error("Failed to populate draft invoice",
+			"error", err,
+			"invoice_id", input.InvoiceID)
+		return nil, err
+	}
+
+	if populateOutput.Skipped {
+		logger.Info("Invoice is zero-dollar, marked SKIPPED; skipping finalize/sync/payment",
+			"invoice_id", input.InvoiceID)
+		return &invoiceModels.ProcessInvoiceWorkflowResult{
+			Success:     true,
+			CompletedAt: workflow.Now(ctx),
+		}, nil
+	}
+
+	// ================================================================================
 	// STEP 1: Finalize Invoice
 	// ================================================================================
 	logger.Info("Step 1: Finalizing invoice",
@@ -64,7 +97,7 @@ func ProcessInvoiceWorkflow(
 		EnvironmentID: input.EnvironmentID,
 	}
 
-	err := workflow.ExecuteActivity(ctx, ActivityFinalizeInvoice, finalizeInput).Get(ctx, &finalizeOutput)
+	err = workflow.ExecuteActivity(ctx, ActivityFinalizeInvoice, finalizeInput).Get(ctx, &finalizeOutput)
 	if err != nil {
 		logger.Error("Failed to finalize invoice",
 			"error", err,

@@ -5777,39 +5777,11 @@ func (s *subscriptionService) CalculateBillingPeriods(ctx context.Context, subsc
 	return periods, nil
 }
 
-// Create Draft Invoice for Subscription
+// CreateDraftInvoiceForSubscription creates a zero-dollar draft for the period (no invoice number).
+// Always returns a draft; PopulateDraftInvoice later assigns number or marks SKIPPED. Delegates to invoice service.
 func (s *subscriptionService) CreateDraftInvoiceForSubscription(ctx context.Context, subscriptionID string, period dto.Period) (*dto.InvoiceResponse, error) {
-	sub, _, err := s.SubRepo.GetWithLineItems(ctx, subscriptionID)
-	if err != nil {
-		return nil, err
-	}
-
-	billingService := NewBillingService(s.ServiceParams)
 	invoiceService := NewInvoiceService(s.ServiceParams)
-
-	// Prepare Invoice Request
-	invoiceReq, err := billingService.PrepareSubscriptionInvoiceRequest(
-		ctx,
-		sub,
-		period.Start,
-		period.End,
-		types.ReferencePointPeriodEnd,
-	)
-	if err != nil {
-		return nil, err
-	}
-	// Check if the invoice is zeroAmountInvoice
-	if invoiceReq.Subtotal.IsZero() {
-		return nil, nil
-	}
-
-	// Create Invoice
-	inv, err := invoiceService.CreateInvoice(ctx, *invoiceReq)
-	if err != nil {
-		return nil, err
-	}
-
-	return inv, nil
+	return invoiceService.CreateDraftInvoiceForSubscription(ctx, subscriptionID, period.Start, period.End, types.ReferencePointPeriodEnd)
 }
 
 // subscriptionOriginalState holds the original subscription state before cancellation

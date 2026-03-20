@@ -43,6 +43,41 @@ type ProcessInvoiceWorkflowResult struct {
 	CompletedAt time.Time `json:"completed_at"`
 }
 
+// ===================== Populate Draft Invoice Activity Models =====================
+
+// PopulateDraftInvoiceActivityInput represents the input for populating a draft invoice
+type PopulateDraftInvoiceActivityInput struct {
+	InvoiceID     string `json:"invoice_id"`
+	TenantID      string `json:"tenant_id"`
+	EnvironmentID string `json:"environment_id"`
+	UserID        string `json:"user_id"`
+}
+
+// Validate validates the populate draft invoice activity input
+func (i *PopulateDraftInvoiceActivityInput) Validate() error {
+	if i.InvoiceID == "" {
+		return ierr.NewError("invoice_id is required").
+			WithHint("Invoice ID is required").
+			Mark(ierr.ErrValidation)
+	}
+	if i.TenantID == "" {
+		return ierr.NewError("tenant_id is required").
+			WithHint("Tenant ID is required").
+			Mark(ierr.ErrValidation)
+	}
+	if i.EnvironmentID == "" {
+		return ierr.NewError("environment_id is required").
+			WithHint("Environment ID is required").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
+// PopulateDraftInvoiceActivityOutput represents the output (Skipped true = zero-dollar, no finalize/sync/payment)
+type PopulateDraftInvoiceActivityOutput struct {
+	Skipped bool `json:"skipped"`
+}
+
 // ===================== Finalize Invoice Activity Models =====================
 
 // FinalizeInvoiceActivityInput represents the input for finalizing an invoice

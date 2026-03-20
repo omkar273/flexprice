@@ -26,6 +26,34 @@ func NewInvoiceActivities(
 	}
 }
 
+// PopulateDraftInvoiceActivity populates a draft invoice (line items, number or SKIPPED). Returns Skipped=true if zero-dollar.
+func (s *InvoiceActivities) PopulateDraftInvoiceActivity(
+	ctx context.Context,
+	input invoiceModels.PopulateDraftInvoiceActivityInput,
+) (*invoiceModels.PopulateDraftInvoiceActivityOutput, error) {
+	if err := input.Validate(); err != nil {
+		return nil, err
+	}
+	ctx = types.SetTenantID(ctx, input.TenantID)
+	ctx = types.SetEnvironmentID(ctx, input.EnvironmentID)
+	ctx = types.SetUserID(ctx, input.UserID)
+	invoiceService := service.NewInvoiceService(s.serviceParams)
+	// Pass nil for subscription invoices - coupons/taxes come from billing service
+	skipped, err := invoiceService.PopulateDraftInvoice(ctx, input.InvoiceID, nil)
+	if err != nil {
+		s.logger.Errorw("failed to populate draft invoice",
+			"invoice_id", input.InvoiceID,
+			"error", err)
+		return nil, err
+	}
+	s.logger.Infow("populated draft invoice",
+		"invoice_id", input.InvoiceID,
+		"skipped", skipped)
+	return &invoiceModels.PopulateDraftInvoiceActivityOutput{
+		Skipped: skipped,
+	}, nil
+}
+
 // FinalizeInvoiceActivity finalizes an invoice
 func (s *InvoiceActivities) FinalizeInvoiceActivity(
 	ctx context.Context,
