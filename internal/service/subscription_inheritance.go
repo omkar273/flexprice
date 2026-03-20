@@ -11,13 +11,13 @@ import (
 
 // SubscriptionInheritanceService centralizes subscription hierarchy lookups and validation.
 type SubscriptionInheritanceService interface {
-	// ResolveChildCustomerIDs returns external customer IDs for active INHERITED subscriptions
+	// ListInheritedChildExternalCustomerIDs returns external customer IDs for active INHERITED subscriptions
 	// under the given parent subscription.
-	ResolveChildCustomerIDs(ctx context.Context, parentSubscriptionID string) ([]string, error)
+	ListInheritedChildExternalCustomerIDs(ctx context.Context, parentSubscriptionID string) ([]string, error)
 
-	// ResolveParentSubscriptionIDs returns parent subscription IDs for a child customer
+	// ListParentSubscriptionIDsForInheritedCustomer returns parent subscription IDs for a child customer
 	// via their INHERITED subscriptions.
-	ResolveParentSubscriptionIDs(ctx context.Context, childCustomerID string) ([]string, error)
+	ListParentSubscriptionIDsForInheritedCustomer(ctx context.Context, childCustomerID string) ([]string, error)
 
 	// GetAggregatedCustomerIDs returns external customer IDs to aggregate usage for a subscription:
 	// PARENT includes the subscription customer plus all hierarchy children; other types only that customer.
@@ -39,7 +39,7 @@ func NewSubscriptionInheritanceService(params ServiceParams) SubscriptionInherit
 	}
 }
 
-func (s *subscriptionInheritanceService) ResolveChildCustomerIDs(
+func (s *subscriptionInheritanceService) ListInheritedChildExternalCustomerIDs(
 	ctx context.Context,
 	parentSubscriptionID string,
 ) ([]string, error) {
@@ -70,7 +70,7 @@ func (s *subscriptionInheritanceService) ResolveChildCustomerIDs(
 	return childCustomerIDs, nil
 }
 
-func (s *subscriptionInheritanceService) ResolveParentSubscriptionIDs(
+func (s *subscriptionInheritanceService) ListParentSubscriptionIDsForInheritedCustomer(
 	ctx context.Context,
 	childCustomerID string,
 ) ([]string, error) {
@@ -121,7 +121,7 @@ func (s *subscriptionInheritanceService) GetAggregatedCustomerIDs(
 	}
 
 	if subType == types.SubscriptionTypeParent {
-		childIDs, err := s.ResolveChildCustomerIDs(ctx, sub.ID)
+		childIDs, err := s.ListInheritedChildExternalCustomerIDs(ctx, sub.ID)
 		if err != nil {
 			return nil, err
 		}
