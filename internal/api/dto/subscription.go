@@ -421,26 +421,19 @@ type UpdateSubscriptionRequest struct {
 
 // Validate checks UpdateSubscriptionRequest fields for basic structural validity.
 func (r *UpdateSubscriptionRequest) Validate() error {
-	if r.UsageCustomerIDs == nil {
-		return nil
+
+	if err := validator.ValidateRequest(r); err != nil {
+		return err
 	}
-	for _, id := range *r.UsageCustomerIDs {
+
+	for _, id := range lo.FromPtr(r.UsageCustomerIDs) {
 		if strings.TrimSpace(id) == "" {
 			return ierr.NewError("usage_customer_ids contains an empty or blank customer ID").
 				WithHint("All entries in usage_customer_ids must be non-empty customer IDs").
 				Mark(ierr.ErrValidation)
 		}
 	}
-	// Duplicate detection (advisory only — service deduplicates via lo.Uniq, but surface early for clarity)
-	seen := make(map[string]struct{}, len(*r.UsageCustomerIDs))
-	for _, id := range *r.UsageCustomerIDs {
-		if _, exists := seen[id]; exists {
-			return ierr.NewError("usage_customer_ids contains duplicate customer ID: "+id).
-				WithHint("Each customer ID must appear at most once in usage_customer_ids").
-				Mark(ierr.ErrValidation)
-		}
-		seen[id] = struct{}{}
-	}
+
 	return nil
 }
 

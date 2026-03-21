@@ -94,17 +94,17 @@ type GetUsageRequest struct {
 	ExternalCustomerID  string                `form:"external_customer_id" json:"external_customer_id" example:"customer456"`
 	ExternalCustomerIDs []string              `form:"external_customer_ids" json:"external_customer_ids" example:"customer456,customer789"`
 	CustomerID          string                `form:"customer_id" json:"customer_id" example:"customer456"`
-	EventName          string                `form:"event_name" json:"event_name" binding:"required" required:"true" example:"api_request"`
-	PropertyName       string                `form:"property_name" json:"property_name" example:"request_size"` // will be empty/ignored in case of COUNT
-	AggregationType    types.AggregationType `form:"aggregation_type" json:"aggregation_type" binding:"required"`
-	StartTime          time.Time             `form:"start_time" json:"start_time" example:"2024-03-13T00:00:00Z"`
-	EndTime            time.Time             `form:"end_time" json:"end_time" example:"2024-03-20T00:00:00Z"`
-	WindowSize         types.WindowSize      `form:"window_size" json:"window_size"`
-	BucketSize         types.WindowSize      `form:"bucket_size" json:"bucket_size,omitempty" example:"HOUR"` // Optional, only used for MAX aggregation with windowing
-	Filters            map[string][]string   `form:"filters,omitempty" json:"filters,omitempty"`
-	PriceID            string                `form:"-" json:"-"` // this is just for internal use to store the price id
-	MeterID            string                `form:"-" json:"-"` // this is just for internal use to store the meter id
-	Multiplier         *decimal.Decimal      `form:"multiplier" json:"multiplier,omitempty" swaggertype:"string"`
+	EventName           string                `form:"event_name" json:"event_name" binding:"required" required:"true" example:"api_request"`
+	PropertyName        string                `form:"property_name" json:"property_name" example:"request_size"` // will be empty/ignored in case of COUNT
+	AggregationType     types.AggregationType `form:"aggregation_type" json:"aggregation_type" binding:"required"`
+	StartTime           time.Time             `form:"start_time" json:"start_time" example:"2024-03-13T00:00:00Z"`
+	EndTime             time.Time             `form:"end_time" json:"end_time" example:"2024-03-20T00:00:00Z"`
+	WindowSize          types.WindowSize      `form:"window_size" json:"window_size"`
+	BucketSize          types.WindowSize      `form:"bucket_size" json:"bucket_size,omitempty" example:"HOUR"` // Optional, only used for MAX aggregation with windowing
+	Filters             map[string][]string   `form:"filters,omitempty" json:"filters,omitempty"`
+	PriceID             string                `form:"-" json:"-"` // this is just for internal use to store the price id
+	MeterID             string                `form:"-" json:"-"` // this is just for internal use to store the meter id
+	Multiplier          *decimal.Decimal      `form:"multiplier" json:"multiplier,omitempty" swaggertype:"string"`
 	// BillingAnchor enables custom monthly billing periods for usage aggregation.
 	//
 	// When to use:
@@ -128,17 +128,17 @@ type GetUsageRequest struct {
 }
 
 type GetUsageByMeterRequest struct {
-	MeterID            string              `form:"meter_id" json:"meter_id" binding:"required" example:"123"`
-	PriceID            string              `form:"-" json:"-"` // this is just for internal use to store the price id
-	Meter              *meter.Meter        `form:"-" json:"-"` // caller can set this in case already fetched from db to avoid extra db call
-	ExternalCustomerID string              `form:"external_customer_id" json:"external_customer_id" example:"user_5"`
-	ExternalCustomerIDs []string           `form:"external_customer_ids" json:"external_customer_ids" example:"user_5,user_6"`
-	CustomerID         string              `form:"customer_id" json:"customer_id" example:"customer456"`
-	StartTime          time.Time           `form:"start_time" json:"start_time" example:"2024-11-09T00:00:00Z"`
-	EndTime            time.Time           `form:"end_time" json:"end_time" example:"2024-12-09T00:00:00Z"`
-	WindowSize         types.WindowSize    `form:"window_size" json:"window_size"`
-	BucketSize         types.WindowSize    `form:"bucket_size" json:"bucket_size,omitempty" example:"HOUR"` // Optional, only used for MAX aggregation with windowing
-	Filters            map[string][]string `form:"filters,omitempty" json:"filters,omitempty"`
+	MeterID             string              `form:"meter_id" json:"meter_id" binding:"required" example:"123"`
+	PriceID             string              `form:"-" json:"-"` // this is just for internal use to store the price id
+	Meter               *meter.Meter        `form:"-" json:"-"` // caller can set this in case already fetched from db to avoid extra db call
+	ExternalCustomerID  string              `form:"external_customer_id" json:"external_customer_id" example:"user_5"`
+	ExternalCustomerIDs []string            `form:"external_customer_ids" json:"external_customer_ids" example:"user_5,user_6"`
+	CustomerID          string              `form:"customer_id" json:"customer_id" example:"customer456"`
+	StartTime           time.Time           `form:"start_time" json:"start_time" example:"2024-11-09T00:00:00Z"`
+	EndTime             time.Time           `form:"end_time" json:"end_time" example:"2024-12-09T00:00:00Z"`
+	WindowSize          types.WindowSize    `form:"window_size" json:"window_size"`
+	BucketSize          types.WindowSize    `form:"bucket_size" json:"bucket_size,omitempty" example:"HOUR"` // Optional, only used for MAX aggregation with windowing
+	Filters             map[string][]string `form:"filters,omitempty" json:"filters,omitempty"`
 	// BillingAnchor enables custom monthly billing periods for meter usage aggregation.
 	//
 	// Usage guidelines:
@@ -356,8 +356,6 @@ type GetUsageAnalyticsResponse struct {
 	Items           []UsageAnalyticItem  `json:"items"`
 	CustomAnalytics []CustomAnalyticItem `json:"custom_analytics,omitempty"`
 	// ChildBreakdowns is populated only when include_child_customers_breakdown=true.
-	// For customer-level requests: one entry per direct child customer.
-	// For tenant-level requests (V2): one entry per customer in the tenant.
 	ChildBreakdowns []ChildBreakdownItem `json:"child_breakdowns,omitempty"`
 }
 
@@ -382,7 +380,7 @@ type UsageAnalyticItem struct {
 	UnitPlural           string                             `json:"unit_plural,omitempty"`
 	AggregationType      types.AggregationType              `json:"aggregation_type,omitempty"`
 	TotalUsage           decimal.Decimal                    `json:"total_usage" swaggertype:"string"`
-	TotalUsageDisplay    string                             `json:"total_usage_display"` // Empty string when feature has no reporting unit; otherwise the value in reporting units
+	TotalUsageDisplay    string                             `json:"total_usage_display"`      // Empty string when feature has no reporting unit; otherwise the value in reporting units
 	ReportingUnit        *types.ReportingUnit               `json:"reporting_unit,omitempty"` // Present when total_usage_display is set (unit_singular, unit_plural, conversion_rate)
 	TotalCost            decimal.Decimal                    `json:"total_cost" swaggertype:"string"`
 	Currency             string                             `json:"currency,omitempty"`
@@ -393,7 +391,7 @@ type UsageAnalyticItem struct {
 	AddOnID              string                             `json:"add_on_id,omitempty"`
 	PlanID               string                             `json:"plan_id,omitempty"`
 	WindowSize           types.WindowSize                   `json:"window_size,omitempty"` // Window size for bucketed meters (only set if meter is bucketed)
-	Group                *group.Group                       `json:"group,omitempty"`      // Group when the feature belongs to a group (object includes id)
+	Group                *group.Group                       `json:"group,omitempty"`       // Group when the feature belongs to a group (object includes id)
 }
 
 // CustomAnalyticItem represents a custom analytics calculation result
