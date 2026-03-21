@@ -1835,6 +1835,18 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 		return nil, err
 	}
 
+	// Line items loaded via GetWithLineItems are filtered by sub.CurrentPeriodStart; for historical
+	// periods (recalculation, past invoices) reload using the invoice billing period start.
+	lineItemFilter := types.NewNoLimitSubscriptionLineItemFilter()
+	lineItemFilter.SubscriptionIDs = []string{sub.ID}
+	lineItemFilter.ActiveFilter = true
+	lineItemFilter.CurrentPeriodStart = &periodStart
+	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
+	if err != nil {
+		return nil, err
+	}
+	sub.LineItems = lineItems
+
 	// nothing to invoice default response 0$ invoice
 	zeroAmountInvoice, err := s.CreateInvoiceRequestForCharges(ctx,
 		sub, nil, periodStart, periodEnd, "", types.Metadata{})

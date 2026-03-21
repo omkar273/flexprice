@@ -85,15 +85,32 @@ func lineItemFilterFn(ctx context.Context, item *subscription.SubscriptionLineIt
 		return false
 	}
 
+	if st := f.GetStatus(); st != "" && string(item.Status) != st {
+		return false
+	}
+
+	// Match ent applyActiveLineItemFilter: published, EndDate nil or EndDate >= reference
+	if f.ActiveFilter && f.CurrentPeriodStart != nil {
+		if item.Status != types.StatusPublished {
+			return false
+		}
+		if !item.EndDate.IsZero() && item.EndDate.Before(*f.CurrentPeriodStart) {
+			return false
+		}
+	}
+
 	return true
 }
 
-// lineItemSortFn implements sorting logic for subscription line items
+// lineItemSortFn implements sorting logic for subscription line items (oldest first, consistent with CreateWithLineItems order).
 func lineItemSortFn(i, j *subscription.SubscriptionLineItem) bool {
 	if i == nil || j == nil {
 		return false
 	}
-	return i.CreatedAt.After(j.CreatedAt)
+	if i.CreatedAt.Equal(j.CreatedAt) {
+		return i.ID < j.ID
+	}
+	return i.CreatedAt.Before(j.CreatedAt)
 }
 
 // Create creates a new subscription line item
