@@ -2321,28 +2321,33 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 		"end_time", usageEndTime,
 		"metered_line_items", len(priceIDs))
 
-	// Performance optimization: Get distinct event names for this customer
+	// For PARENT-type subscriptions, aggregate usage from all child customers as well
+	inheritanceSvc := NewSubscriptionInheritanceService(s.ServiceParams)
+	aggregatedExternalIDs, err := inheritanceSvc.GetAggregatedCustomerIDs(ctx, subscription)
+	if err != nil {
+		s.Logger.WarnwCtx(ctx, "failed to get aggregated customer IDs, falling back to owner only",
+			"error", err,
+			"subscription_id", req.SubscriptionID)
+		aggregatedExternalIDs = []string{customer.ExternalID}
+	}
+
+	// Performance optimization: Get distinct event names across all relevant customers
 	// to filter out meters that have no events, reducing processing from potentially
 	// 400-500 meters down to only 5-7 that have actual usage
-	distinctEventNames, err := s.EventRepo.GetDistinctEventNames(ctx, customer.ExternalID, usageStartTime, usageEndTime)
-	if err != nil {
-		s.Logger.WarnwCtx(ctx, "failed to get distinct event names, proceeding without optimization",
-			"error", err,
-			"external_customer_id", customer.ExternalID)
-		distinctEventNames = nil // Fallback: process all meters if optimization fails
+	distinctEventNameSet := make(map[string]bool)
+	for _, extID := range aggregatedExternalIDs {
+		names, derr := s.EventRepo.GetDistinctEventNames(ctx, extID, usageStartTime, usageEndTime)
+		if derr != nil {
+			s.Logger.WarnwCtx(ctx, "failed to get distinct event names, proceeding without optimization",
+				"error", derr,
+				"external_customer_id", extID)
+			distinctEventNameSet = nil // signal: skip optimization
+			break
+		}
+		for _, n := range names {
+			distinctEventNameSet[n] = true
+		}
 	}
-
-	// Create a map for fast event name lookup
-	eventNameExists := make(map[string]bool, len(distinctEventNames))
-	for _, eventName := range distinctEventNames {
-		eventNameExists[eventName] = true
-	}
-
-	s.Logger.DebugwCtx(ctx, "distinct event names optimization",
-		"external_customer_id", customer.ExternalID,
-		"total_distinct_events", len(distinctEventNames),
-		"total_line_items", len(lineItems),
-		"distinct_event_names", distinctEventNames)
 
 	meterUsageRequests := make([]*dto.GetUsageByMeterRequest, 0, len(lineItems))
 	for _, lineItem := range lineItems {
@@ -2359,12 +2364,8 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 			continue
 		}
 
-		if len(distinctEventNames) == 0 {
-			// skip all usage items if distinct event names is nil
-			// which means there is no event data in the database
-			// this is a fallback to ensure that we don't process all meters
-			// if the event data is not available
-
+		if distinctEventNameSet != nil && len(distinctEventNameSet) == 0 {
+			// No events found for any customer in the hierarchy
 			s.Logger.DebugwCtx(ctx, "skipping meter as there are no events",
 				"meter_id", lineItem.MeterID,
 				"event_name", meter.EventName,
@@ -2374,9 +2375,8 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 			continue
 		}
 
-		// Performance optimization: Skip meters that don't have any events for this customer
-		// Only skip if we successfully got distinct event names (not nil) and the event doesn't exist
-		if distinctEventNames != nil && !eventNameExists[meter.EventName] {
+		// Performance optimization: Skip meters that don't have any events for any customer
+		if distinctEventNameSet != nil && !distinctEventNameSet[meter.EventName] {
 			s.Logger.DebugwCtx(ctx, "skipping meter with no events",
 				"meter_id", lineItem.MeterID,
 				"event_name", meter.EventName,
@@ -2388,13 +2388,13 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 
 		meterID := lineItem.MeterID
 		usageRequest := &dto.GetUsageByMeterRequest{
-			MeterID:            meterID,
-			PriceID:            lineItem.PriceID,
-			Meter:              meter.ToMeter(),
-			ExternalCustomerID: customer.ExternalID,
-			StartTime:          lineItem.GetPeriodStart(usageStartTime),
-			EndTime:            lineItem.GetPeriodEnd(usageEndTime),
-			Filters:            make(map[string][]string),
+			MeterID:             meterID,
+			PriceID:             lineItem.PriceID,
+			Meter:               meter.ToMeter(),
+			ExternalCustomerIDs: aggregatedExternalIDs,
+			StartTime:           lineItem.GetPeriodStart(usageStartTime),
+			EndTime:             lineItem.GetPeriodEnd(usageEndTime),
+			Filters:             make(map[string][]string),
 		}
 
 		for _, filter := range meter.Filters {
@@ -2409,7 +2409,7 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 		"total_line_items", len(lineItems),
 		"total_usage_line_items", len(priceIDs),
 		"meters_with_events", len(meterUsageRequests),
-		"optimization_enabled", distinctEventNames != nil,
+		"optimization_enabled", distinctEventNameSet != nil,
 		"meters_skipped", len(priceIDs)-len(meterUsageRequests))
 
 	usageMap, err := eventService.BulkGetUsageByMeterSync(ctx, meterUsageRequests)
@@ -5826,18 +5826,15 @@ func (s *subscriptionService) GetAggregatedSubscriptionEntitlements(ctx context.
 		entitlements = filteredEntitlements
 	}
 
+	// Build entitlement -> subscription ID map (all from same subscription here)
+	entitlementSubIDMap := make(map[string]string, len(entitlements))
+	for _, ent := range entitlements {
+		entitlementSubIDMap[ent.ID] = subscriptionID
+	}
+
 	// Use the generic aggregation function from billing service
 	billingService := NewBillingService(s.ServiceParams)
-	aggregatedFeatures := billingService.AggregateEntitlements(entitlements, subscriptionID)
-
-	// Ensure subscription ID is set in all sources
-	for _, feature := range aggregatedFeatures {
-		for _, source := range feature.Sources {
-			if source.SubscriptionID == "" {
-				source.SubscriptionID = subscriptionID
-			}
-		}
-	}
+	aggregatedFeatures := billingService.AggregateEntitlements(entitlements, entitlementSubIDMap)
 
 	// Build final response
 	response := &dto.SubscriptionEntitlementsResponse{
