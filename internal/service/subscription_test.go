@@ -5654,6 +5654,10 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Cre
 	// Same plan, create_prorations -> must fail
 	reqProration := reqNone
 	reqProration.ProrationBehavior = types.ProrationBehaviorCreateProrations
+	// Refresh start date so Validate()'s proration + start-date check (calendar day) cannot fire
+	// before we reach mixed-period validation (e.g. UTC midnight between the two creates).
+	prorationStart := time.Now().UTC().Truncate(time.Millisecond)
+	reqProration.StartDate = &prorationStart
 	_, err2 := s.service.CreateSubscription(ctx, reqProration)
 	s.Require().Error(err2, "E.3.1: mixed periods + create_prorations must fail")
 	s.True(ierr.IsValidation(err2), "error should be validation")
@@ -5909,18 +5913,15 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 	s.Run("duplicate_ids_deduped", func() {
 		_, children, sub := s.uciSetup(ctx, "dedup", 2, types.SubscriptionStatusActive)
 
-		// Provide C0 twice.
+		// Provide C0 twice; UpdateSubscriptionRequest documents deduplication.
 		ids := []string{children[0].ID, children[1].ID, children[0].ID}
-		req := dto.UpdateSubscriptionRequest{
+		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
 			UsageCustomerIDs: &ids,
-		}
-		resp, err := s.service.UpdateSubscription(ctx, sub.ID, req)
-		// Validate() will return error for duplicates before service logic runs.
-		// So this should error with ErrValidation.
-		s.Require().Error(err)
-		s.True(ierr.IsValidation(err), "duplicate IDs should produce a validation error")
-		s.Contains(err.Error(), "duplicate", "error message should mention duplicate")
-		_ = resp
+		})
+		s.Require().NoError(err)
+		s.Require().NotNil(resp)
+		inherited := s.uciListInherited(ctx, sub.ID)
+		s.Len(inherited, 2, "deduped to two unique child IDs -> two inherited subs")
 	})
 
 	// -------------------------------------------------------------------------
