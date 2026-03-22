@@ -35,7 +35,9 @@ func (s *RawEventConsumptionSuite) SetupTest() {
 	s.BaseServiceTestSuite.SetupTest()
 
 	s.outputPubSub = testutil.NewInMemoryPubSub()
-	s.settingsRepo = s.GetStores().SettingsRepo.(*testutil.InMemorySettingsStore)
+	var ok bool
+	s.settingsRepo, ok = s.GetStores().SettingsRepo.(*testutil.InMemorySettingsStore)
+	require.True(s.T(), ok, "SettingsRepo must be *testutil.InMemorySettingsStore, got %T", s.GetStores().SettingsRepo)
 
 	params := ServiceParams{
 		Logger:       s.GetLogger(),
@@ -113,9 +115,9 @@ func (s *RawEventConsumptionSuite) publishedExternalIDs() []string {
 	ids := make([]string, 0, len(msgs))
 	for _, m := range msgs {
 		var evt events.Event
-		if err := json.Unmarshal(m.Payload, &evt); err == nil {
-			ids = append(ids, evt.ExternalCustomerID)
-		}
+		require.NoError(s.T(), json.Unmarshal(m.Payload, &evt),
+			"publishedExternalIDs: failed to unmarshal published payload: %s", string(m.Payload))
+		ids = append(ids, evt.ExternalCustomerID)
 	}
 	sort.Strings(ids)
 	return ids

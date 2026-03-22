@@ -251,7 +251,6 @@ func (s *rawEventConsumptionService) processMessage(msg *message.Message) error 
 			if _, ok := allowlist[transformedEvent.ExternalCustomerID]; !ok {
 				skipCount++
 				s.Logger.Debugw("event filtered by ingestion allowlist - skipped",
-					"external_customer_id", transformedEvent.ExternalCustomerID,
 					"batch_position", i+1,
 				)
 				continue
@@ -303,6 +302,10 @@ func (s *rawEventConsumptionService) processMessage(msg *message.Message) error 
 func (s *rawEventConsumptionService) BulkIngestRawEvents(ctx context.Context, events []json.RawMessage) error {
 	tenantID := types.GetTenantID(ctx)
 	environmentID := types.GetEnvironmentID(ctx)
+
+	if tenantID == "" || environmentID == "" {
+		return fmt.Errorf("BulkIngestRawEvents: tenant_id and environment_id must be set in context (got tenant=%q env=%q)", tenantID, environmentID)
+	}
 
 	batch := RawEventBatch{
 		Data:          events,

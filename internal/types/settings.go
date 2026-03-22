@@ -346,8 +346,15 @@ type EventIngestionFilterConfig struct {
 	AllowedExternalCustomerIDs []string `json:"allowed_external_customer_ids"`
 }
 
-// Validate implements SettingConfig interface
+// Validate implements SettingConfig interface.
+// It rejects the combination of Enabled=true with an empty allowlist because
+// that would silently drop every event — an almost certainly unintentional
+// configuration. Use Enabled=false to disable filtering entirely.
 func (c EventIngestionFilterConfig) Validate() error {
+	if c.Enabled && len(c.AllowedExternalCustomerIDs) == 0 {
+		return ierr.NewError("event_ingestion_filter: enabled is true but allowed_external_customer_ids is empty — this would block all events; set enabled=false to disable filtering").
+			Mark(ierr.ErrValidation)
+	}
 	return validator.ValidateRequest(c)
 }
 

@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"slices"
@@ -62,6 +63,15 @@ func (r *BulkIngestRawEventRequest) Validate() error {
 		return ierr.NewError("too many events").
 			WithHint("Maximum 1000 events per batch").
 			Mark(ierr.ErrValidation)
+	}
+	// Ensure every element is a JSON object — reject nulls, arrays, strings, etc.
+	for i, raw := range r.Events {
+		trimmed := bytes.TrimSpace(raw)
+		if len(trimmed) == 0 || trimmed[0] != '{' {
+			return ierr.NewErrorf("events[%d] is not a JSON object", i).
+				WithHint("Each event must be a JSON object {}").
+				Mark(ierr.ErrValidation)
+		}
 	}
 	return nil
 }
