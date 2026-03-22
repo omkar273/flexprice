@@ -43,6 +43,7 @@ coverage.html
 .env*
 !.env.project
 !.env.vault
+!.env.local
 .flaskenv*
 .secrets
 .secrets.git

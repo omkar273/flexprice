@@ -59,6 +59,35 @@ run-server-local: run-server
 .PHONY: run
 run: run-server
 
+# ---------------------------------------------------------------------------
+# Local development targets — load .env.local on top of .env so local Docker
+# infra overrides take effect without touching production config.
+# ---------------------------------------------------------------------------
+
+# Run API server locally (loads .env then .env.local)
+.PHONY: run-local-api
+run-local-api:
+	@set -a && [ -f .env ] && . ./.env; [ -f .env.local ] && . ./.env.local; set +a; \
+	FLEXPRICE_DEPLOYMENT_MODE=api go run cmd/server/main.go
+
+# Run Kafka consumer locally (loads .env then .env.local)
+.PHONY: run-local-consumer
+run-local-consumer:
+	@set -a && [ -f .env ] && . ./.env; [ -f .env.local ] && . ./.env.local; set +a; \
+	FLEXPRICE_DEPLOYMENT_MODE=consumer go run cmd/server/main.go
+
+# Run all services in a single process locally (loads .env then .env.local)
+.PHONY: run-local
+run-local:
+	@set -a && [ -f .env ] && . ./.env; [ -f .env.local ] && . ./.env.local; set +a; \
+	FLEXPRICE_DEPLOYMENT_MODE=local go run cmd/server/main.go
+
+# Run Ent schema migrations against local Docker postgres
+.PHONY: migrate-local
+migrate-local:
+	@set -a && [ -f .env.local ] && . ./.env.local; set +a; \
+	go run cmd/migrate/main.go
+
 .PHONY: test test-verbose test-coverage
 
 # Run all tests
