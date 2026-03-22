@@ -348,11 +348,8 @@ type RedisConfig struct {
 func NewConfig() (*Configuration, error) {
 	v := viper.New()
 
-	// Step 1: Load env files in order of increasing precedence.
-	// `.env` holds shared/production defaults; `.env.local` overrides them
-	// for local development without modifying tracked files.
+	// Step 1: Load `.env` if it exists
 	_ = godotenv.Load()
-	_ = godotenv.Overload(".env.local")
 
 	// Step 2: Initialize Viper
 	v.SetConfigName("config")

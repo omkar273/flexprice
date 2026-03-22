@@ -110,18 +110,9 @@ func (h *EventsHandler) BulkIngestEvent(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"message": "Events accepted for processing"})
 }
 
-// @Summary Bulk ingest raw events
-// @ID ingestRawEventsBulk
-// @Description Publishes a batch of raw Bento-format event payloads directly to the raw_events Kafka topic. The raw-event consumer processes them identically to events produced by the Bento collector — useful for testing, backfills, and retrying filtered events.
-// @Tags Events
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param request body dto.BulkIngestRawEventRequest true "Raw event batch"
-// @Success 202 {object} map[string]interface{} "message:Raw events accepted for processing"
-// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
-// @Failure 500 {object} ierr.ErrorResponse "Server error"
-// @Router /events/raw/bulk [post]
+// BulkIngestRawEvent publishes a batch of raw Bento-format event payloads directly to the
+// raw_events Kafka topic (POST /v1/events/raw/bulk). Intentionally excluded from Swagger/SDK
+// — this is an internal endpoint for testing and backfills, not part of the public API.
 func (h *EventsHandler) BulkIngestRawEvent(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req dto.BulkIngestRawEventRequest

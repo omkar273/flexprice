@@ -1,28 +1,32 @@
-# Local Testing Guide for AI Agents
+# Local Testing Guide
 
-Everything needed to run Flexprice locally and validate changes end-to-end.
-**No manual env var exports or configuration required** — `.env.local` is committed and wired in automatically.
-
----
-
-## Prerequisites
-
-- **OrbStack** (or Docker Desktop) installed
-- **Go 1.23+** installed
+Step-by-step guide to running Flexprice locally and validating changes end-to-end.
+Works for humans and AI agents alike — no manual env var configuration needed.
 
 ---
 
 ## Pre-configured Local API Key
 
-Use this key for all local API calls — no setup needed:
+Use this key for all local API calls — it's baked into `.env.local`:
 
 ```
-x-api-key: sk_local_flexprice_test_key
+x-api-key:        sk_local_flexprice_test_key
 x-environment-id: 00000000-0000-0000-0000-000000000000
 ```
 
-Tenant ID: `00000000-0000-0000-0000-000000000000` (Default Tenant)
-Environment ID: `00000000-0000-0000-0000-000000000000` (Sandbox)
+Tenant ID: `00000000-0000-0000-0000-000000000000` · Environment: Sandbox
+
+---
+
+## How local config works
+
+`.env.local` is a committed file that contains all local infrastructure settings.
+When you run via `make run-local*` targets, the Makefile sources `.env` first
+then `.env.local` on top — so local Docker endpoints override any production
+settings in `.env`, without modifying that file.
+
+**Never add** `godotenv.Load(".env.local")` to application code — that would
+affect production deployments.
 
 ---
 
@@ -38,15 +42,16 @@ open -a OrbStack && sleep 3
 
 ```bash
 docker compose up -d postgres kafka clickhouse
-sleep 10  # wait for Kafka to fully initialize
+sleep 10   # wait for Kafka to fully initialise
 ```
 
 ### 3. Create Kafka topics
 
-Run once (safe to repeat — fails gracefully if topics exist):
+Run once (idempotent — safe to repeat):
 
 ```bash
-for topic in raw_events events events_lazy events_post_processing events_backfill system_events onboarding_events balance_alert; do
+for topic in raw_events events events_lazy events_post_processing \
+             events_backfill system_events onboarding_events balance_alert; do
   docker compose exec kafka kafka-topics --bootstrap-server kafka:9092 \
     --create --topic $topic --partitions 3 --replication-factor 1 2>/dev/null || true
 done
@@ -55,50 +60,43 @@ done
 ### 4. Run migrations
 
 ```bash
-# PostgreSQL SQL migrations
+# Postgres SQL migrations (reads docker-compose defaults, safe to run as-is)
 make migrate-postgres
 
-# Ent schema migrations (local postgres — explicit overrides required!)
-FLEXPRICE_POSTGRES_HOST=localhost \
-FLEXPRICE_POSTGRES_PORT=5432 \
-FLEXPRICE_POSTGRES_USER=flexprice \
-FLEXPRICE_POSTGRES_PASSWORD=flexprice123 \
-FLEXPRICE_POSTGRES_DBNAME=flexprice \
-FLEXPRICE_POSTGRES_SSLMODE=disable \
-go run ./cmd/migrate/main.go
+# Ent schema migrations against local Postgres (uses .env.local)
+make migrate-local
 
 # ClickHouse migrations
 make migrate-clickhouse
 ```
 
-> **Warning:** `make migrate-ent` reads `.env` first and will run against production if that file points there. Always use `go run ./cmd/migrate/main.go` with explicit local overrides as shown above.
+> **Warning:** `make migrate-ent` reads `.env` and will run against production
+> if that file points there. Always use `make migrate-local` instead.
 
-### 5. Build and run
+### 5. Run the server
 
-**Terminal 1 — API server:**
+**Two separate terminals (mirrors production deployment):**
+
 ```bash
-go build -o /tmp/flexprice-local ./cmd/server/main.go
-FLEXPRICE_DEPLOYMENT_MODE=api /tmp/flexprice-local
+# Terminal 1 — API server
+make run-local-api
+
+# Terminal 2 — Kafka consumer
+make run-local-consumer
 ```
 
-**Terminal 2 — Consumer:**
-```bash
-FLEXPRICE_DEPLOYMENT_MODE=consumer /tmp/flexprice-local
-```
+**Or everything in one process (quickest for local dev):**
 
-Or run everything in a single process (API + consumer + worker):
 ```bash
-FLEXPRICE_DEPLOYMENT_MODE=local /tmp/flexprice-local
+make run-local
 ```
 
 ### 6. Verify
 
 ```bash
-# Health check
 curl http://localhost:8080/health
 # → {"status":"ok"}
 
-# Auth check
 curl http://localhost:8080/v1/meters \
   -H "x-api-key: sk_local_flexprice_test_key" \
   -H "x-environment-id: 00000000-0000-0000-0000-000000000000"
@@ -107,57 +105,19 @@ curl http://localhost:8080/v1/meters \
 
 ---
 
-## How `.env.local` Works
-
-`config.go` loads env files in this order (later wins):
-
-```
-.env          ← production/shared defaults (gitignored, contains real secrets)
-.env.local    ← local overrides (committed, safe — no real secrets)
-```
-
-`.env.local` overrides all infra endpoints to local Docker, disables Supabase/Sentry/email/DynamoDB, and wires the pre-configured API key. You never need to manually export env vars.
-
----
-
-## End-to-End Test Example
+## Shutdown
 
 ```bash
-BASE="http://localhost:8080/v1"
-KEY="sk_local_flexprice_test_key"
-ENV_HDR="x-environment-id: 00000000-0000-0000-0000-000000000000"
+# Stop Go processes (Ctrl+C in each terminal, or:)
+pkill -f "go run cmd/server"
 
-# 1. Create a customer
-curl -s -X POST $BASE/customers \
-  -H "x-api-key: $KEY" -H "$ENV_HDR" -H "Content-Type: application/json" \
-  -d '{"external_id": "org_test_001", "name": "Test Org"}'
-
-# 2. Configure event ingestion filter
-curl -s -X PUT $BASE/settings/event_ingestion_filter \
-  -H "x-api-key: $KEY" -H "$ENV_HDR" -H "Content-Type: application/json" \
-  -d '{"value": {"enabled": true, "allowed_external_customer_ids": ["org_test_001"]}}'
-
-# 3. Ingest raw events (Bento format → raw_events Kafka topic)
-curl -s -X POST $BASE/events/raw/bulk \
-  -H "x-api-key: $KEY" -H "$ENV_HDR" -H "Content-Type: application/json" \
-  -d '{
-    "events": [
-      {"id":"evt-001","orgId":"org_test_001","methodName":"api_call","providerName":"openai","createdAt":"2026-01-01T00:00:00Z","data":{}},
-      {"id":"evt-002","orgId":"org_blocked_001","methodName":"api_call","providerName":"openai","createdAt":"2026-01-01T00:00:00Z","data":{}}
-    ]
-  }'
-# → {"batch_size":2,"message":"Raw events accepted for processing"}
-# Consumer will process: success_count=1, skip_count=1
-
-# 4. Verify in ClickHouse — only the allowed org's event should appear
-docker compose exec clickhouse clickhouse-client \
-  --user=flexprice --password=flexprice123 --database=flexprice \
-  --query="SELECT id, external_customer_id, event_name FROM events ORDER BY timestamp DESC LIMIT 5 FORMAT PrettyCompact"
+# Stop Docker services
+docker compose down
 ```
 
 ---
 
-## Useful Commands
+## Useful DB Commands
 
 ```bash
 # PostgreSQL shell
@@ -167,12 +127,10 @@ docker compose exec postgres psql -U flexprice -d flexprice
 docker compose exec clickhouse clickhouse-client \
   --user=flexprice --password=flexprice123 --database=flexprice
 
-# Watch consumer logs (filter to signal lines)
-tail -f /tmp/consumer.log | grep -E "processing|completed|filter|error"
-
-# Stop everything
-pkill -f flexprice-local
-docker compose down
+# Quick ClickHouse queries
+docker compose exec clickhouse clickhouse-client \
+  --user=flexprice --password=flexprice123 --database=flexprice \
+  --query="SELECT id, external_customer_id, event_name FROM events ORDER BY timestamp DESC LIMIT 10 FORMAT PrettyCompact"
 ```
 
 ---
@@ -185,23 +143,11 @@ docker compose down
 | ClickHouse | `localhost:9000` | `flexprice` | `flexprice123` | `flexprice` |
 | Kafka | `localhost:29092` | — | — | — |
 
-| Entity | ID |
-|--------|----|
+| Seed record | ID |
+|-------------|----|
 | Default Tenant | `00000000-0000-0000-0000-000000000000` |
 | Sandbox Environment | `00000000-0000-0000-0000-000000000000` |
 | Production Environment | `00000000-0000-0000-0000-000000000001` |
-
----
-
-## Adding a New Local API Key
-
-```bash
-# 1. Pick any key string and compute its SHA-256
-echo -n "sk_my_new_key" | sha256sum | awk '{print $1}'
-
-# 2. Add to FLEXPRICE_AUTH_API_KEY_KEYS in .env.local:
-# {"<hash>": {"tenant_id": "00000000-...", "user_id": "dev", "name": "my-key", "is_active": true}}
-```
 
 ---
 
@@ -209,9 +155,15 @@ echo -n "sk_my_new_key" | sha256sum | awk '{print $1}'
 
 | Problem | Cause | Fix |
 |---------|-------|-----|
-| `make migrate-ent` hits production | Makefile loads `.env` before overrides | Use `go run ./cmd/migrate/main.go` with explicit env vars (Step 4) |
-| `listen tcp :8080: address already in use` | Another process on 8080 | `lsof -ti:8080 | xargs kill` or use `FLEXPRICE_SERVER_ADDRESS=":8081"` |
-| Consumer: `topic does not exist` errors | Topic not created yet | Run the topic creation loop in Step 3 |
-| `{"error":"Unauthorized"}` | API key not matching | Use `sk_local_flexprice_test_key` — it's pre-wired in `.env.local` |
-| ClickHouse `raw_events` table empty | Consumer doesn't write there | The consumer writes to ClickHouse `events`, not `raw_events` (Bento writes raw_events directly) |
-| Settings lookup fails with "not found" | Missing `x-environment-id` header | Always include `-H "x-environment-id: 00000000-0000-0000-0000-000000000000"` |
+| `make migrate-ent` or `make migrate-local` hits production | `.env` loaded, not `.env.local` | Always use `make migrate-local` |
+| `address already in use :8080` | Another process on 8080 | `lsof -ti:8080 \| xargs kill` |
+| Consumer: `topic does not exist` errors | Topic not created | Run the topic creation loop in Step 3 |
+| `{"error":"Unauthorized"}` | Wrong API key | Use `sk_local_flexprice_test_key` from `.env.local` |
+| ClickHouse `raw_events` table is empty | Consumer writes to `events`, not `raw_events` | Check the `events` table — that's where transformed events land |
+| Settings lookup fails | Missing `x-environment-id` header | Always send `-H "x-environment-id: 00000000-0000-0000-0000-000000000000"` |
+
+---
+
+## See also
+
+- [`SANITY_CHECK.md`](SANITY_CHECK.md) — standard pre-validation checklist to run before every PR
