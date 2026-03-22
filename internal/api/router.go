@@ -156,6 +156,8 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			events.POST("/benchmark/v2", handlers.Events.BenchmarkV2)
 			// Reprocess events endpoint
 			events.POST("/reprocess", handlers.Events.ReprocessEvents)
+			// Raw event ingestion (Bento-format, publishes directly to raw_events topic)
+			events.POST("/raw/bulk", permissionMW.RequirePermission("event", "write"), handlers.Events.BulkIngestRawEvent)
 			// Reprocess raw events endpoints
 			events.POST("/raw/reprocess/all", handlers.Events.ReprocessRawEvents)
 			events.POST("/raw/reprocess/pending", handlers.Events.ReprocessUnprocessedRawEvents)

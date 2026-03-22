@@ -769,6 +769,56 @@ func (s *SubscriptionServiceSuite) TestGetUsageBySubscription() {
 	}
 }
 
+func (s *SubscriptionServiceSuite) TestGetUsageBySubscription_IncludesHistoricalUsageLineItemAfterSubscriptionAdvanced() {
+	ctx := s.GetContext()
+	oldStart := s.testData.subscription.CurrentPeriodStart
+	oldEnd := s.testData.subscription.CurrentPeriodEnd
+
+	filter := types.NewNoLimitSubscriptionLineItemFilter()
+	filter.SubscriptionIDs = []string{s.testData.subscription.ID}
+	items, err := s.GetStores().SubscriptionLineItemRepo.List(ctx, filter)
+	s.NoError(err)
+	var apiLI *subscription.SubscriptionLineItem
+	for _, li := range items {
+		if li.PriceID == s.testData.prices.apiCalls.ID {
+			apiLI = li
+			break
+		}
+	}
+	s.NotNil(apiLI)
+	apiLI.EndDate = oldStart.Add(48 * time.Hour)
+	s.NoError(s.GetStores().SubscriptionLineItemRepo.Update(ctx, apiLI))
+
+	s.testData.subscription.CurrentPeriodStart = oldEnd
+	s.testData.subscription.CurrentPeriodEnd = oldEnd.Add(30 * 24 * time.Hour)
+	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, s.testData.subscription))
+
+	_, fromGet, err := s.GetStores().SubscriptionRepo.GetWithLineItems(ctx, s.testData.subscription.ID)
+	s.NoError(err)
+	for _, li := range fromGet {
+		if li.PriceID == s.testData.prices.apiCalls.ID {
+			s.Fail("GetWithLineItems should not return API usage line item after period advance")
+		}
+	}
+
+	req := &dto.GetUsageBySubscriptionRequest{
+		SubscriptionID: s.testData.subscription.ID,
+		StartTime:      s.testData.now.Add(-48 * time.Hour),
+		EndTime:        s.testData.now,
+	}
+	resp, err := s.service.GetUsageBySubscription(ctx, req)
+	s.NoError(err)
+	s.NotNil(resp)
+	found := false
+	for _, c := range resp.Charges {
+		if c.MeterDisplayName == s.testData.meters.apiCalls.Name {
+			found = true
+			break
+		}
+	}
+	s.True(found, "usage for historical window should still use ended API line item for meter discovery")
+}
+
 func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 	testCases := []struct {
 		name          string
@@ -1313,11 +1363,11 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithLineItems_Validatio
 				StartDate:          &start,
 				EndDate:            &end,
 				Currency:           "usd",
-				BillingCadence:      types.BILLING_CADENCE_RECURRING,
-				BillingPeriod:       types.BILLING_PERIOD_MONTHLY,
+				BillingCadence:     types.BILLING_CADENCE_RECURRING,
+				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
-				LineItems:           tt.lineItems,
+				LineItems:          tt.lineItems,
 			}
 			_, err := s.service.CreateSubscription(ctx, req)
 			s.Error(err)
@@ -1482,13 +1532,13 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			PlanID:             s.testData.plan.ID,
 			SubscriptionStatus: types.SubscriptionStatusActive,
 			StartDate:          s.testData.now.Add(-30 * 24 * time.Hour),
-			CurrentPeriodStart:  s.testData.now.Add(-24 * time.Hour),
-			CurrentPeriodEnd:    s.testData.now.Add(6 * 24 * time.Hour),
-			BillingPeriod:       types.BILLING_PERIOD_MONTHLY,
-			BillingPeriodCount:  1,
-			Currency:            "usd",
-			BaseModel:           types.GetDefaultBaseModel(ctx),
-			LineItems:           []*subscription.SubscriptionLineItem{},
+			CurrentPeriodStart: s.testData.now.Add(-24 * time.Hour),
+			CurrentPeriodEnd:   s.testData.now.Add(6 * 24 * time.Hour),
+			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+			BillingPeriodCount: 1,
+			Currency:           "usd",
+			BaseModel:          types.GetDefaultBaseModel(ctx),
+			LineItems:          []*subscription.SubscriptionLineItem{},
 		}
 		s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, subWithAddon, subWithAddon.LineItems))
 
@@ -4228,26 +4278,27 @@ func (s *SubscriptionServiceSuite) TestGetUsageBySubscriptionWithBucketedMaxAggr
 func (s *SubscriptionServiceSuite) TestFilterLineItemsWithEndDate() {
 	// Create billing service
 	billingService := NewBillingService(ServiceParams{
-		Logger:           s.GetLogger(),
-		Config:           s.GetConfig(),
-		DB:               s.GetDB(),
-		SubRepo:          s.GetStores().SubscriptionRepo,
-		PlanRepo:         s.GetStores().PlanRepo,
-		PriceRepo:        s.GetStores().PriceRepo,
-		EventRepo:        s.GetStores().EventRepo,
-		MeterRepo:        s.GetStores().MeterRepo,
-		CustomerRepo:     s.GetStores().CustomerRepo,
-		InvoiceRepo:      s.GetStores().InvoiceRepo,
-		EntitlementRepo:  s.GetStores().EntitlementRepo,
-		EnvironmentRepo:  s.GetStores().EnvironmentRepo,
-		FeatureRepo:      s.GetStores().FeatureRepo,
-		TenantRepo:       s.GetStores().TenantRepo,
-		UserRepo:         s.GetStores().UserRepo,
-		AuthRepo:         s.GetStores().AuthRepo,
-		WalletRepo:       s.GetStores().WalletRepo,
-		PaymentRepo:      s.GetStores().PaymentRepo,
-		EventPublisher:   s.GetPublisher(),
-		WebhookPublisher: s.GetWebhookPublisher(),
+		Logger:                   s.GetLogger(),
+		Config:                   s.GetConfig(),
+		DB:                       s.GetDB(),
+		SubRepo:                  s.GetStores().SubscriptionRepo,
+		SubscriptionLineItemRepo: s.GetStores().SubscriptionLineItemRepo,
+		PlanRepo:                 s.GetStores().PlanRepo,
+		PriceRepo:                s.GetStores().PriceRepo,
+		EventRepo:                s.GetStores().EventRepo,
+		MeterRepo:                s.GetStores().MeterRepo,
+		CustomerRepo:             s.GetStores().CustomerRepo,
+		InvoiceRepo:              s.GetStores().InvoiceRepo,
+		EntitlementRepo:          s.GetStores().EntitlementRepo,
+		EnvironmentRepo:          s.GetStores().EnvironmentRepo,
+		FeatureRepo:              s.GetStores().FeatureRepo,
+		TenantRepo:               s.GetStores().TenantRepo,
+		UserRepo:                 s.GetStores().UserRepo,
+		AuthRepo:                 s.GetStores().AuthRepo,
+		WalletRepo:               s.GetStores().WalletRepo,
+		PaymentRepo:              s.GetStores().PaymentRepo,
+		EventPublisher:           s.GetPublisher(),
+		WebhookPublisher:         s.GetWebhookPublisher(),
 	})
 
 	// Create subscription with end date in the past
@@ -5555,9 +5606,9 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Can
 	s.setupTestData()
 
 	planMQ := &plan.Plan{
-		ID:          types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PLAN),
-		Name:        "Plan M+Q Cancel",
-		BaseModel:   types.GetDefaultBaseModel(ctx),
+		ID:        types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PLAN),
+		Name:      "Plan M+Q Cancel",
+		BaseModel: types.GetDefaultBaseModel(ctx),
 	}
 	s.NoError(s.GetStores().PlanRepo.Create(ctx, planMQ))
 	priceM := &price.Price{
@@ -5608,7 +5659,7 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Can
 	s.Require().NotNil(resp)
 
 	cancelReq := &dto.CancelSubscriptionRequest{
-		CancellationType:   types.CancellationTypeImmediate,
+		CancellationType:  types.CancellationTypeImmediate,
 		ProrationBehavior: types.ProrationBehaviorCreateProrations,
 	}
 	cancelReq.Validate()
@@ -5619,7 +5670,7 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Can
 
 	// Same sub, cancel with none -> success (need a new sub since we didn't cancel the first with none first - actually first cancel failed so sub is still active)
 	cancelReqNone := &dto.CancelSubscriptionRequest{
-		CancellationType:   types.CancellationTypeImmediate,
+		CancellationType:  types.CancellationTypeImmediate,
 		ProrationBehavior: types.ProrationBehaviorNone,
 	}
 	cancelReqNone.Validate()

@@ -6,10 +6,8 @@ import (
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/pubsub"
 	"github.com/flexprice/flexprice/internal/pubsub/kafka"
-	"github.com/flexprice/flexprice/internal/pubsub/memory"
 	"github.com/flexprice/flexprice/internal/sentry"
 	"github.com/flexprice/flexprice/internal/service"
-	"github.com/flexprice/flexprice/internal/types"
 	"github.com/flexprice/flexprice/internal/webhook/handler"
 	"github.com/flexprice/flexprice/internal/webhook/payload"
 	"github.com/flexprice/flexprice/internal/webhook/publisher"
@@ -66,30 +64,18 @@ func providePubSub(
 	cfg *config.Configuration,
 	logger *logger.Logger,
 ) pubsub.PubSub {
-	switch cfg.Webhook.PubSub {
-	case types.KafkaPubSub:
-		pubSub, err := kafka.NewPubSubFromConfig(cfg, logger, cfg.Webhook.ConsumerGroup)
-		if err != nil {
-			logger.Fatalw("failed to create kafka pubsub for webhooks", "error", err)
-		}
-		return pubSub
-	case types.MemoryPubSub:
-		return memory.NewPubSub(cfg, logger)
-	default:
-		logger.Fatalw("unsupported webhook pubsub type", "type", cfg.Webhook.PubSub)
+	pubSub, err := kafka.NewPubSubFromConfig(cfg, logger, cfg.Webhook.ConsumerGroup)
+	if err != nil {
+		logger.Fatalw("failed to create kafka pubsub for webhooks", "error", err)
 	}
-	return nil
+	return pubSub
 }
 
-// provideWebhookPublisher returns a webhook publisher. When webhook.pubsub is kafka, uses the shared Kafka producer (publishing goes to Kafka); otherwise uses the in-memory PubSub.
+// provideWebhookPublisher returns a webhook publisher backed by shared Kafka producer.
 func provideWebhookPublisher(
 	cfg *config.Configuration,
 	logger *logger.Logger,
-	pubSub pubsub.PubSub,
 	producer *kafkaProducerPkg.Producer,
 ) (publisher.WebhookPublisher, error) {
-	if cfg.Webhook.PubSub == types.KafkaPubSub {
-		return publisher.NewPublisherFromProducer(producer, cfg, logger)
-	}
-	return publisher.NewPublisher(pubSub, cfg, logger)
+	return publisher.NewPublisherFromProducer(producer, cfg, logger)
 }

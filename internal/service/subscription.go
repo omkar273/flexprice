@@ -42,6 +42,23 @@ func NewSubscriptionService(params ServiceParams) SubscriptionService {
 	}
 }
 
+// listSubscriptionLineItemsForUsageWindow returns line items for usage metering aligned with the
+// requested window: all published items for lifetime usage; otherwise items active as of usageStartTime
+// (not subscription.CurrentPeriodStart, which may have advanced past historical queries).
+func (s *subscriptionService) listSubscriptionLineItemsForUsageWindow(ctx context.Context, subscriptionID string, usageStartTime time.Time, lifetime bool) ([]*subscription.SubscriptionLineItem, error) {
+	filter := types.NewNoLimitSubscriptionLineItemFilter()
+	filter.SubscriptionIDs = []string{subscriptionID}
+	if lifetime {
+		filter.ActiveFilter = false
+		// applyActiveLineItemFilter normally restricts to published; keep the same when skipping date scope.
+		filter.QueryFilter.Status = lo.ToPtr(types.StatusPublished)
+	} else {
+		filter.ActiveFilter = true
+		filter.CurrentPeriodStart = &usageStartTime
+	}
+	return s.SubscriptionLineItemRepo.List(ctx, filter)
+}
+
 func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.CreateSubscriptionRequest) (*dto.SubscriptionResponse, error) {
 	if req.BillingCycle == "" {
 		req.BillingCycle = types.BillingCycleAnniversary
@@ -2018,7 +2035,7 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 	priceService := NewPriceService(s.ServiceParams)
 
 	// Get subscription with line items
-	subscription, lineItems, err := s.SubRepo.GetWithLineItems(ctx, req.SubscriptionID)
+	subscription, err := s.SubRepo.Get(ctx, req.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -2044,6 +2061,13 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 		usageStartTime = time.Time{}
 		usageEndTime = time.Now().UTC()
 	}
+
+	lineItems, err := s.listSubscriptionLineItemsForUsageWindow(ctx, subscription.ID, usageStartTime, req.LifetimeUsage)
+	if err != nil {
+		return nil, err
+	}
+
+	subscription.LineItems = lineItems
 
 	// Collect all price IDs
 	priceIDs := make([]string, 0, len(lineItems))
@@ -2180,7 +2204,7 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 		"optimization_enabled", distinctEventNames != nil,
 		"meters_skipped", len(priceIDs)-len(meterUsageRequests))
 
-	usageMap, err := eventService.BulkGetUsageByMeter(ctx, meterUsageRequests)
+	usageMap, err := eventService.BulkGetUsageByMeterSync(ctx, meterUsageRequests)
 	if err != nil {
 		return nil, err
 	}
@@ -4900,7 +4924,7 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 	priceService := NewPriceService(s.ServiceParams)
 
 	// Get subscription with line items
-	subscription, lineItems, err := s.SubRepo.GetWithLineItems(ctx, req.SubscriptionID)
+	subscription, err := s.SubRepo.Get(ctx, req.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -4925,6 +4949,14 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 		usageStartTime = time.Time{}
 		usageEndTime = time.Now().UTC()
 	}
+
+	// Fetch line items for the usage window
+	lineItems, err := s.listSubscriptionLineItemsForUsageWindow(ctx, subscription.ID, usageStartTime, req.LifetimeUsage)
+	if err != nil {
+		return nil, err
+	}
+
+	subscription.LineItems = lineItems
 
 	// Collect all price IDs and build meter to price mapping
 	priceIDs := make([]string, 0, len(lineItems))
