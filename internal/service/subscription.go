@@ -71,20 +71,26 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 			Mark(ierr.ErrValidation)
 	}
 
-	// Handle InvoiceBilling to set InvoicingCustomerID internally
-	// The DTO layer ensures InvoiceBilling is always set (defaults to invoice_to_self)
-	// For invoice_to_self, we don't need to set InvoicingCustomerID as it defaults to subscription customer
-	if lo.FromPtr(req.InvoiceBilling) == types.InvoiceBillingInvoiceToParent {
-		if customer.ParentCustomerID == nil {
-			return nil, ierr.NewError("customer does not have a parent customer").
-				WithHint("The customer must have a parent customer to use invoice_to_parent").
-				WithReportableDetails(map[string]interface{}{"customer_id": req.CustomerID}).
-				Mark(ierr.ErrValidation)
+	// Resolve invoicing customer.
+	// Priority: invoicing_customer_external_id > invoicing_customer_id > deprecated invoice_billing fallback.
+	if req.InvoicingCustomerExternalID != nil && *req.InvoicingCustomerExternalID != "" {
+		// Resolve external ID to internal ID.
+		invoicingCustomer, err := s.CustomerRepo.GetByLookupKey(ctx, *req.InvoicingCustomerExternalID)
+		if err != nil {
+			return nil, err
 		}
-		req.InvoicingCustomerID = customer.ParentCustomerID
+		req.InvoicingCustomerID = lo.ToPtr(invoicingCustomer.ID)
+	} else if req.InvoicingCustomerID == nil || *req.InvoicingCustomerID == "" {
+		// Deprecated fallback: if invoice_to_parent was specified, attempt to resolve from the
+		// subscription customer's parent. This path exists only for backward compatibility and
+		// will be removed once invoice_billing is fully retired.
+		if lo.FromPtr(req.InvoiceBilling) == types.InvoiceBillingInvoiceToParent && customer.ParentCustomerID != nil {
+			req.InvoicingCustomerID = customer.ParentCustomerID
+		}
+		// If invoice_to_parent is set but no parent exists, silently fall back to invoice_to_self behavior.
 	}
 
-	// Validate that the invoicing customer exists and is active
+	// Validate that the resolved invoicing customer exists and is active.
 	if req.InvoicingCustomerID != nil && *req.InvoicingCustomerID != "" {
 		invoicingCustomer, err := s.CustomerRepo.Get(ctx, *req.InvoicingCustomerID)
 		if err != nil {
