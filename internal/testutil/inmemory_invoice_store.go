@@ -15,6 +15,7 @@ import (
 // InMemoryInvoiceStore implements invoice.Repository
 type InMemoryInvoiceStore struct {
 	*InMemoryStore[*invoice.Invoice]
+	lineItemStore *InMemoryInvoiceLineItemStore
 }
 
 // NewInMemoryInvoiceStore creates a new in-memory invoice store
@@ -22,6 +23,11 @@ func NewInMemoryInvoiceStore() *InMemoryInvoiceStore {
 	return &InMemoryInvoiceStore{
 		InMemoryStore: NewInMemoryStore[*invoice.Invoice](),
 	}
+}
+
+// SetLineItemStore wires the line item store for cross-store operations
+func (s *InMemoryInvoiceStore) SetLineItemStore(lineItemStore *InMemoryInvoiceLineItemStore) {
+	s.lineItemStore = lineItemStore
 }
 
 // Helper to copy invoice
@@ -122,7 +128,15 @@ func (s *InMemoryInvoiceStore) Create(ctx context.Context, inv *invoice.Invoice)
 }
 
 func (s *InMemoryInvoiceStore) CreateWithLineItems(ctx context.Context, inv *invoice.Invoice) error {
-	return s.Create(ctx, inv) // In memory store doesn't need special transaction handling
+	if err := s.Create(ctx, inv); err != nil {
+		return err
+	}
+	if s.lineItemStore != nil {
+		for _, item := range inv.LineItems {
+			_ = s.lineItemStore.Create(ctx, item)
+		}
+	}
+	return nil
 }
 
 func (s *InMemoryInvoiceStore) AddLineItems(ctx context.Context, invoiceID string, items []*invoice.InvoiceLineItem) error {
