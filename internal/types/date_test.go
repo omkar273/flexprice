@@ -1066,6 +1066,84 @@ func TestNextBillingDate_HalfYearly_Calendar(t *testing.T) {
 	}
 }
 
+// TestNextBillingDate_Quarterly_Calendar_EndDateCliff exercises the subscriptionEndDate
+// clamp branch inside the new early-return guard for QUARTERLY calendar billing.
+func TestNextBillingDate_Quarterly_Calendar_EndDateCliff(t *testing.T) {
+	tests := []struct {
+		name    string
+		current time.Time
+		anchor  time.Time
+		endDate time.Time
+		want    time.Time
+	}{
+		{
+			name:    "end date before anchor cliffs to end date",
+			current: time.Date(2026, time.March, 22, 0, 0, 0, 0, time.UTC),
+			anchor:  time.Date(2026, time.April, 1, 0, 0, 0, 0, time.UTC),
+			endDate: time.Date(2026, time.March, 28, 0, 0, 0, 0, time.UTC),
+			want:    time.Date(2026, time.March, 28, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:    "end date after anchor returns anchor",
+			current: time.Date(2026, time.March, 22, 0, 0, 0, 0, time.UTC),
+			anchor:  time.Date(2026, time.April, 1, 0, 0, 0, 0, time.UTC),
+			endDate: time.Date(2026, time.June, 30, 0, 0, 0, 0, time.UTC),
+			want:    time.Date(2026, time.April, 1, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NextBillingDate(tt.current, tt.anchor, 1, BILLING_PERIOD_QUARTER, &tt.endDate)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !got.Equal(tt.want) {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestNextBillingDate_HalfYearly_Calendar_EndDateCliff exercises the subscriptionEndDate
+// clamp branch inside the new early-return guard for HALF_YEAR calendar billing.
+func TestNextBillingDate_HalfYearly_Calendar_EndDateCliff(t *testing.T) {
+	tests := []struct {
+		name    string
+		current time.Time
+		anchor  time.Time
+		endDate time.Time
+		want    time.Time
+	}{
+		{
+			name:    "end date before anchor cliffs to end date",
+			current: time.Date(2026, time.March, 15, 0, 0, 0, 0, time.UTC),
+			anchor:  time.Date(2026, time.July, 1, 0, 0, 0, 0, time.UTC),
+			endDate: time.Date(2026, time.May, 31, 0, 0, 0, 0, time.UTC),
+			want:    time.Date(2026, time.May, 31, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:    "end date after anchor returns anchor",
+			current: time.Date(2026, time.March, 15, 0, 0, 0, 0, time.UTC),
+			anchor:  time.Date(2026, time.July, 1, 0, 0, 0, 0, time.UTC),
+			endDate: time.Date(2026, time.December, 31, 0, 0, 0, 0, time.UTC),
+			want:    time.Date(2026, time.July, 1, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NextBillingDate(tt.current, tt.anchor, 1, BILLING_PERIOD_HALF_YEAR, &tt.endDate)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !got.Equal(tt.want) {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 // Helper function to check if a string contains another string
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && s[0:len(substr)] == substr
