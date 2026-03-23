@@ -340,6 +340,13 @@ func (s *invoiceService) GetInvoice(ctx context.Context, id string) (*dto.Invoic
 		return nil, err
 	}
 
+	// Fetch line items separately (Get no longer eager-loads them)
+	lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	inv.LineItems = lineItems
+
 	for _, lineItem := range inv.LineItems {
 		s.Logger.DebugwCtx(ctx, "got invoice line item", "id", lineItem.ID, "display_name", lineItem.DisplayName)
 	}
@@ -2708,6 +2715,13 @@ func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, fi
 	if err != nil {
 		return nil, err
 	}
+
+	// Fetch line items separately (Get no longer eager-loads them)
+	lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	inv.LineItems = lineItems
 
 	// Validate invoice is in draft state
 	if inv.InvoiceStatus != types.InvoiceStatusDraft {
