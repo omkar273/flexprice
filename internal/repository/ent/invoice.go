@@ -413,9 +413,6 @@ func (r *invoiceRepository) Get(ctx context.Context, id string) (*domainInvoice.
 			invoice.TenantID(types.GetTenantID(ctx)),
 			invoice.EnvironmentID(types.GetEnvironmentID(ctx)),
 		).
-		WithLineItems(func(q *ent.InvoiceLineItemQuery) {
-			q.Where(invoicelineitem.Status(string(types.StatusPublished)))
-		}).
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -1213,51 +1210,3 @@ func (r *invoiceRepository) GetInvoicePaymentStatus(ctx context.Context) (*types
 	return &result, nil
 }
 
-// UpdateLineItem updates a single line item with credit adjustment information
-func (r *invoiceRepository) UpdateLineItem(ctx context.Context, item *domainInvoice.InvoiceLineItem) error {
-	// Start a span for this repository operation
-	span := StartRepositorySpan(ctx, "invoice_line_item", "update", map[string]interface{}{
-		"line_item_id": item.ID,
-	})
-	defer FinishSpan(span)
-
-	r.logger.Debugw("updating line item", "line_item_id", item.ID)
-
-	client := r.client.Writer(ctx)
-
-	_, err := client.InvoiceLineItem.UpdateOneID(item.ID).
-		Where(
-			invoicelineitem.TenantID(types.GetTenantID(ctx)),
-			invoicelineitem.EnvironmentID(types.GetEnvironmentID(ctx)),
-		).
-		SetPrepaidCreditsApplied(item.PrepaidCreditsApplied).
-		SetLineItemDiscount(item.LineItemDiscount).
-		SetInvoiceLevelDiscount(item.InvoiceLevelDiscount).
-		SetMetadata(item.Metadata).
-		SetStatus(string(item.Status)).
-		SetUpdatedAt(time.Now().UTC()).
-		SetUpdatedBy(types.GetUserID(ctx)).
-		Save(ctx)
-
-	if err != nil {
-		SetSpanError(span, err)
-		if ent.IsNotFound(err) {
-			return ierr.WithError(err).
-				WithHint("Invoice line item not found").
-				WithReportableDetails(map[string]interface{}{
-					"line_item_id": item.ID,
-				}).
-				Mark(ierr.ErrNotFound)
-		}
-		return ierr.WithError(err).
-			WithHint("Failed to update line item with credit adjustments").
-			WithReportableDetails(map[string]interface{}{
-				"line_item_id": item.ID,
-			}).
-			Mark(ierr.ErrDatabase)
-	}
-
-	r.DeleteCache(ctx, item.InvoiceID)
-	SetSpanSuccess(span)
-	return nil
-}
