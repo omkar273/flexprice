@@ -133,6 +133,10 @@ func (s *InMemoryInvoiceStore) CreateWithLineItems(ctx context.Context, inv *inv
 	}
 	if s.lineItemStore != nil {
 		for _, item := range inv.LineItems {
+			// Ensure InvoiceID is set on each line item (mirrors real DB behaviour)
+			if item.InvoiceID == "" {
+				item.InvoiceID = inv.ID
+			}
 			_ = s.lineItemStore.Create(ctx, item)
 		}
 	}
@@ -149,6 +153,9 @@ func (s *InMemoryInvoiceStore) AddLineItems(ctx context.Context, invoiceID strin
 		itemCopy := copyInvoice(&invoice.Invoice{LineItems: []*invoice.InvoiceLineItem{item}}).LineItems[0]
 		itemCopy.InvoiceID = invoiceID
 		inv.LineItems = append(inv.LineItems, itemCopy)
+		if s.lineItemStore != nil {
+			_ = s.lineItemStore.Create(ctx, itemCopy)
+		}
 	}
 	return s.Update(ctx, inv)
 }
