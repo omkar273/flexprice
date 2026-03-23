@@ -1835,6 +1835,18 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 		return nil, err
 	}
 
+	// Line items loaded via GetWithLineItems are filtered by sub.CurrentPeriodStart; for historical
+	// periods (recalculation, past invoices) reload using the invoice billing period start.
+	lineItemFilter := types.NewNoLimitSubscriptionLineItemFilter()
+	lineItemFilter.SubscriptionIDs = []string{sub.ID}
+	lineItemFilter.ActiveFilter = true
+	lineItemFilter.CurrentPeriodStart = &periodStart
+	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
+	if err != nil {
+		return nil, err
+	}
+	sub.LineItems = lineItems
+
 	// nothing to invoice default response 0$ invoice
 	zeroAmountInvoice, err := s.CreateInvoiceRequestForCharges(ctx,
 		sub, nil, periodStart, periodEnd, "", types.Metadata{})
@@ -1911,7 +1923,7 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 		}
 
 		// For current period arrear charges (feature_usage path for cumulative commitment support)
-		arrearResult, err := s.calculateFeatureUsageCharges(
+		arrearResult, err := s.CalculateCharges(
 			ctx,
 			sub,
 			arrearLineItems,
@@ -2804,7 +2816,7 @@ func (s *billingService) GetCustomerEntitlements(ctx context.Context, customerID
 		// Get all entitlements for this subscription (plan + addons)
 		subEntitlements, err := subscriptionService.GetSubscriptionEntitlements(ctx, sub.ID)
 		if err != nil {
-			s.Logger.Warnw("failed to get subscription entitlements, skipping",
+			s.Logger.WarnwCtx(ctx, "failed to get subscription entitlements, skipping",
 				"subscription_id", sub.ID,
 				"error", err)
 			continue
@@ -2905,7 +2917,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 	for _, subscriptionID := range subscriptionIDs {
 		sub, err := s.SubRepo.Get(ctx, subscriptionID)
 		if err != nil {
-			s.Logger.Warnw("failed to get subscription", "subscription_id", subscriptionID, "error", err)
+			s.Logger.WarnwCtx(ctx, "failed to get subscription", "subscription_id", subscriptionID, "error", err)
 			continue
 		}
 		subscriptionMap[subscriptionID] = sub
@@ -2935,7 +2947,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 
 		usage, err := subscriptionService.GetFeatureUsageBySubscription(ctx, usageReq)
 		if err != nil {
-			s.Logger.Warnw("failed to get usage for subscription", "subscription_id", subscriptionID, "error", err)
+			s.Logger.WarnwCtx(ctx, "failed to get usage for subscription", "subscription_id", subscriptionID, "error", err)
 			continue
 		}
 
@@ -2961,7 +2973,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 					// Get usage data with daily windows
 					usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
 					if err != nil {
-						s.Logger.Warnw("failed to get daily usage for feature",
+						s.Logger.WarnwCtx(ctx, "failed to get daily usage for feature",
 							"feature_id", featureID,
 							"meter_id", meterID,
 							"subscription_id", subscriptionID,
@@ -2982,7 +2994,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 							dailyUsage = lastBucket.Value
 						}
 
-						s.Logger.Debugw("using daily usage for feature summary",
+						s.Logger.DebugwCtx(ctx, "using daily usage for feature summary",
 							"customer_id", customerID,
 							"external_customer_id", customer.ExternalID,
 							"feature_id", featureID,
@@ -3013,7 +3025,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 					// Get usage data for current month
 					usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
 					if err != nil {
-						s.Logger.Warnw("failed to get monthly usage for feature",
+						s.Logger.WarnwCtx(ctx, "failed to get monthly usage for feature",
 							"feature_id", featureID,
 							"meter_id", meterID,
 							"subscription_id", subscriptionID,
@@ -3043,7 +3055,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 						}
 					}
 
-					s.Logger.Debugw("using monthly usage for feature summary",
+					s.Logger.DebugwCtx(ctx, "using monthly usage for feature summary",
 						"customer_id", customerID,
 						"external_customer_id", customer.ExternalID,
 						"feature_id", featureID,
@@ -3068,7 +3080,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 
 					totalUsageResult, err := eventService.GetUsageByMeter(ctx, totalUsageRequest)
 					if err != nil {
-						s.Logger.Warnw("failed to get total usage for never reset feature",
+						s.Logger.WarnwCtx(ctx, "failed to get total usage for never reset feature",
 							"feature_id", featureID,
 							"meter_id", meterID,
 							"subscription_id", subscriptionID,
@@ -3079,7 +3091,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 					// Calculate total cumulative usage from subscription start
 					usageByFeature[featureID] = totalUsageResult.Value
 
-					s.Logger.Debugw("using cumulative usage for never reset feature summary",
+					s.Logger.DebugwCtx(ctx, "using cumulative usage for never reset feature summary",
 						"customer_id", customerID,
 						"external_customer_id", customer.ExternalID,
 						"feature_id", featureID,
@@ -3111,7 +3123,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 			}
 			nextUsageResetAt, err := types.GetNextUsageResetAt(currentTime, sub.StartDate, sub.EndDate, sub.BillingAnchor, resetPeriod)
 			if err != nil {
-				s.Logger.Warnw("failed to get next usage reset at for feature",
+				s.Logger.WarnwCtx(ctx, "failed to get next usage reset at for feature",
 					"feature_id", featureID,
 					"subscription_id", sub.ID,
 					"error", err)

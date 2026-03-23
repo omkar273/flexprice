@@ -122,7 +122,7 @@ func (s *customerService) CreateCustomer(ctx context.Context, req dto.CreateCust
 					// Get Stripe integration
 					stripeIntegration, err := s.IntegrationFactory.GetStripeIntegration(ctx)
 					if err != nil {
-						s.Logger.Warnw("failed to get Stripe integration for metadata update",
+						s.Logger.WarnwCtx(ctx, "failed to get Stripe integration for metadata update",
 							"error", err,
 							"customer_id", cust.ID)
 						// Don't fail the entire operation, just log the error
@@ -132,7 +132,7 @@ func (s *customerService) CreateCustomer(ctx context.Context, req dto.CreateCust
 					// Update Stripe customer metadata with FlexPrice customer information
 					err = stripeIntegration.CustomerSvc.UpdateStripeCustomerMetadata(ctx, mapping.ID, cust)
 					if err != nil {
-						s.Logger.Warnw("failed to update Stripe customer metadata",
+						s.Logger.WarnwCtx(ctx, "failed to update Stripe customer metadata",
 							"error", err,
 							"stripe_customer_id", mapping.ID,
 							"customer_id", cust.ID)
@@ -194,10 +194,10 @@ func (s *customerService) CreateCustomer(ctx context.Context, req dto.CreateCust
 	// This flag is used when a customer is created via a workflow to prevent infinite loops
 	if !req.SkipOnboardingWorkflow {
 		if err := s.handleCustomerOnboarding(ctx, cust); err != nil {
-			s.Logger.Errorw("failed to handle customer onboarding workflow", "customer_id", cust.ID, "error", err)
+			s.Logger.ErrorwCtx(ctx, "failed to handle customer onboarding workflow", "customer_id", cust.ID, "error", err)
 		}
 	} else {
-		s.Logger.Debugw("skipping customer onboarding workflow",
+		s.Logger.DebugwCtx(ctx, "skipping customer onboarding workflow",
 			"customer_id", cust.ID,
 			"external_id", cust.ExternalID,
 			"reason", "skip_onboarding_workflow flag is true")
@@ -302,7 +302,7 @@ func (s *customerService) GetCustomers(ctx context.Context, filter *types.Custom
 				parentCustomersByID[pc.ID] = &dto.CustomerResponse{Customer: pc}
 			}
 
-			s.Logger.Debugw("fetched parent customers for customers", "count", len(parentCustomers))
+			s.Logger.DebugwCtx(ctx, "fetched parent customers for customers", "count", len(parentCustomers))
 		}
 	}
 
@@ -484,7 +484,7 @@ func (s *customerService) UpdateCustomer(ctx context.Context, id string, req dto
 				// Get Stripe integration
 				stripeIntegration, err := s.IntegrationFactory.GetStripeIntegration(ctx)
 				if err != nil {
-					s.Logger.Warnw("failed to get Stripe integration for metadata update",
+					s.Logger.WarnwCtx(ctx, "failed to get Stripe integration for metadata update",
 						"error", err,
 						"customer_id", cust.ID)
 					// Don't fail the entire operation, just log the error
@@ -494,7 +494,7 @@ func (s *customerService) UpdateCustomer(ctx context.Context, id string, req dto
 				// Update Stripe customer metadata with FlexPrice customer information
 				err = stripeIntegration.CustomerSvc.UpdateStripeCustomerMetadata(ctx, mapping.ID, cust)
 				if err != nil {
-					s.Logger.Warnw("failed to update Stripe customer metadata",
+					s.Logger.WarnwCtx(ctx, "failed to update Stripe customer metadata",
 						"error", err,
 						"stripe_customer_id", mapping.ID,
 						"customer_id", cust.ID)
@@ -644,14 +644,14 @@ func (s *customerService) validateParentCustomerAssignment(ctx context.Context, 
 	return nil
 }
 
-func (s *customerService) publishWebhookEvent(ctx context.Context, eventName string, customerID string) {
+func (s *customerService) publishWebhookEvent(ctx context.Context, eventName types.WebhookEventName, customerID string) {
 	webhookPayload, err := json.Marshal(webhookDto.InternalCustomerEvent{
 		CustomerID: customerID,
 		TenantID:   types.GetTenantID(ctx),
 	})
 
 	if err != nil {
-		s.Logger.Errorw("failed to marshal webhook payload", "error", err)
+		s.Logger.ErrorwCtx(ctx, "failed to marshal webhook payload", "error", err)
 		return
 	}
 
@@ -665,7 +665,7 @@ func (s *customerService) publishWebhookEvent(ctx context.Context, eventName str
 		Payload:       json.RawMessage(webhookPayload),
 	}
 	if err := s.WebhookPublisher.PublishWebhook(ctx, webhookEvent); err != nil {
-		s.Logger.Errorf("failed to publish %s event: %v", webhookEvent.EventName, err)
+		s.Logger.ErrorfCtx(ctx, "failed to publish %s event: %v", webhookEvent.EventName, err)
 	}
 }
 
@@ -719,7 +719,7 @@ func (s *customerService) GetUpcomingCreditGrantApplications(ctx context.Context
 }
 
 func (s *customerService) handleCustomerOnboarding(ctx context.Context, customer *customer.Customer) error {
-	s.Logger.Infow("handling customer onboarding", "customer_id", customer.ID)
+	s.Logger.InfowCtx(ctx, "handling customer onboarding", "customer_id", customer.ID)
 
 	// Get customer onboarding workflow config
 	settingsService := &settingsService{
@@ -731,13 +731,13 @@ func (s *customerService) handleCustomerOnboarding(ctx context.Context, customer
 	}
 
 	if workflowConfig == nil {
-		s.Logger.Infow("workflow config is nil, skipping customer onboarding", "customer_id", customer.ID)
+		s.Logger.InfowCtx(ctx, "workflow config is nil, skipping customer onboarding", "customer_id", customer.ID)
 		return nil
 	}
 
 	// If there are no actions, return
 	if len(workflowConfig.Actions) == 0 {
-		s.Logger.Infow("no actions found for customer onboarding", "customer_id", customer.ID)
+		s.Logger.InfowCtx(ctx, "no actions found for customer onboarding", "customer_id", customer.ID)
 		return nil
 	}
 
@@ -746,7 +746,7 @@ func (s *customerService) handleCustomerOnboarding(ctx context.Context, customer
 	envID := types.GetEnvironmentID(ctx)
 	userID := types.GetUserID(ctx)
 
-	s.Logger.Infow("executing customer onboarding workflow",
+	s.Logger.InfowCtx(ctx, "executing customer onboarding workflow",
 		"customer_id", customer.ID,
 		"tenant_id", tenantID,
 		"environment_id", envID,
@@ -766,7 +766,7 @@ func (s *customerService) handleCustomerOnboarding(ctx context.Context, customer
 
 	// Validate input
 	if err := input.Validate(); err != nil {
-		s.Logger.Errorw("invalid workflow input for customer onboarding",
+		s.Logger.ErrorwCtx(ctx, "invalid workflow input for customer onboarding",
 			"error", err,
 			"customer_id", customer.ID)
 		return ierr.WithError(err).
@@ -795,7 +795,7 @@ func (s *customerService) handleCustomerOnboarding(ctx context.Context, customer
 		input,
 	)
 	if err != nil {
-		s.Logger.Errorw("failed to start customer onboarding workflow",
+		s.Logger.ErrorwCtx(ctx, "failed to start customer onboarding workflow",
 			"error", err,
 			"customer_id", customer.ID)
 		return ierr.WithError(err).
@@ -806,7 +806,7 @@ func (s *customerService) handleCustomerOnboarding(ctx context.Context, customer
 			Mark(ierr.ErrInternal)
 	}
 
-	s.Logger.Infow("customer onboarding workflow started successfully",
+	s.Logger.InfowCtx(ctx, "customer onboarding workflow started successfully",
 		"customer_id", customer.ID,
 		"workflow_id", workflowRun.GetID(),
 		"run_id", workflowRun.GetRunID())
