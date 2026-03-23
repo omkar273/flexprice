@@ -71,6 +71,40 @@ func (s *InMemoryInvoiceLineItemStore) ListByInvoiceID(ctx context.Context, invo
 	return result, nil
 }
 
+func (s *InMemoryInvoiceLineItemStore) List(ctx context.Context, filter *types.InvoiceLineItemFilter) ([]*invoice.InvoiceLineItem, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var result []*invoice.InvoiceLineItem
+	for _, item := range s.data {
+		if filter != nil && len(filter.InvoiceIDs) > 0 {
+			found := false
+			for _, id := range filter.InvoiceIDs {
+				if item.InvoiceID == id {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+		if filter != nil && len(filter.SubscriptionIDs) > 0 && item.SubscriptionID != nil {
+			found := false
+			for _, id := range filter.SubscriptionIDs {
+				if *item.SubscriptionID == id {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
+		result = append(result, item)
+	}
+	return result, nil
+}
+
 func (s *InMemoryInvoiceLineItemStore) Clear() {
 	s.mu.Lock()
 	defer s.mu.Unlock()

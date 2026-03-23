@@ -17,9 +17,10 @@ import (
 const invoiceLineItemBatchSize = 1000
 
 type invoiceLineItemRepository struct {
-	client postgres.IClient
-	log    *logger.Logger
-	cache  cache.Cache
+	client    postgres.IClient
+	log       *logger.Logger
+	cache     cache.Cache
+	queryOpts InvoiceLineItemQueryOptions
 }
 
 // NewInvoiceLineItemRepository creates a new invoice line item repository.
@@ -28,7 +29,7 @@ func NewInvoiceLineItemRepository(
 	log *logger.Logger,
 	c cache.Cache,
 ) domaininvoice.LineItemRepository {
-	return &invoiceLineItemRepository{client: client, log: log, cache: c}
+	return &invoiceLineItemRepository{client: client, log: log, cache: c, queryOpts: InvoiceLineItemQueryOptions{}}
 }
 
 // Cache helpers
@@ -407,6 +408,124 @@ func (r *invoiceLineItemRepository) ListByInvoiceID(ctx context.Context, invoice
 		result[i] = domaininvoice.LineItemFromEnt(item)
 	}
 
+	SetSpanSuccess(span)
+	return result, nil
+}
+
+// InvoiceLineItemQuery type alias for better readability.
+type InvoiceLineItemQuery = *ent.InvoiceLineItemQuery
+
+// InvoiceLineItemQueryOptions implements BaseQueryOptions for invoice line item queries.
+type InvoiceLineItemQueryOptions struct{}
+
+func (o InvoiceLineItemQueryOptions) ApplyTenantFilter(ctx context.Context, query InvoiceLineItemQuery) InvoiceLineItemQuery {
+	return query.Where(invoicelineitem.TenantID(types.GetTenantID(ctx)))
+}
+
+func (o InvoiceLineItemQueryOptions) ApplyEnvironmentFilter(ctx context.Context, query InvoiceLineItemQuery) InvoiceLineItemQuery {
+	return query.Where(invoicelineitem.EnvironmentID(types.GetEnvironmentID(ctx)))
+}
+
+func (o InvoiceLineItemQueryOptions) ApplyStatusFilter(query InvoiceLineItemQuery, status string) InvoiceLineItemQuery {
+	if status != "" {
+		return query.Where(invoicelineitem.Status(status))
+	}
+	return query
+}
+
+func (o InvoiceLineItemQueryOptions) ApplySortFilter(query InvoiceLineItemQuery, field string, order string) InvoiceLineItemQuery {
+	if field != "" {
+		if order == "desc" {
+			query = query.Order(ent.Desc(o.GetFieldName(field)))
+		} else {
+			query = query.Order(ent.Asc(o.GetFieldName(field)))
+		}
+	}
+	return query
+}
+
+func (o InvoiceLineItemQueryOptions) ApplyPaginationFilter(query InvoiceLineItemQuery, limit int, offset int) InvoiceLineItemQuery {
+	return query.Limit(limit).Offset(offset)
+}
+
+// GetFieldName returns the ent field name for invoice_line_item; delegates to ent's ValidColumn so new schema fields are supported automatically.
+func (o InvoiceLineItemQueryOptions) GetFieldName(field string) string {
+	if invoicelineitem.ValidColumn(field) {
+		return field
+	}
+	return ""
+}
+
+// applyEntityQueryOptions applies invoice line item-specific filters to the query.
+func (o *InvoiceLineItemQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.InvoiceLineItemFilter, query InvoiceLineItemQuery) (InvoiceLineItemQuery, error) {
+	if len(f.InvoiceIDs) > 0 {
+		query = query.Where(invoicelineitem.InvoiceIDIn(f.InvoiceIDs...))
+	}
+	if len(f.CustomerIDs) > 0 {
+		query = query.Where(invoicelineitem.CustomerIDIn(f.CustomerIDs...))
+	}
+	if len(f.SubscriptionIDs) > 0 {
+		query = query.Where(invoicelineitem.SubscriptionIDIn(f.SubscriptionIDs...))
+	}
+	if len(f.PriceIDs) > 0 {
+		query = query.Where(invoicelineitem.PriceIDIn(f.PriceIDs...))
+	}
+	if len(f.MeterIDs) > 0 {
+		query = query.Where(invoicelineitem.MeterIDIn(f.MeterIDs...))
+	}
+	if len(f.Currencies) > 0 {
+		query = query.Where(invoicelineitem.CurrencyIn(f.Currencies...))
+	}
+	if len(f.EntityIDs) > 0 {
+		query = query.Where(invoicelineitem.EntityIDIn(f.EntityIDs...))
+	}
+	if f.EntityType != nil {
+		query = query.Where(invoicelineitem.EntityType(types.InvoiceLineItemEntityType(*f.EntityType)))
+	}
+	if f.PeriodStart != nil {
+		query = query.Where(invoicelineitem.PeriodStartGTE(*f.PeriodStart))
+	}
+	if f.PeriodEnd != nil {
+		query = query.Where(invoicelineitem.PeriodEndLTE(*f.PeriodEnd))
+	}
+	return query, nil
+}
+
+// List retrieves invoice line items matching the filter.
+func (r *invoiceLineItemRepository) List(ctx context.Context, filter *types.InvoiceLineItemFilter) ([]*domaininvoice.InvoiceLineItem, error) {
+	if filter == nil {
+		filter = types.NewDefaultInvoiceLineItemFilter()
+	}
+	if err := filter.Validate(); err != nil {
+		return nil, ierr.WithError(err).WithHint("Invalid filter parameters").Mark(ierr.ErrValidation)
+	}
+
+	span := StartRepositorySpan(ctx, "invoice_line_item", "list", map[string]interface{}{
+		"invoice_ids":      filter.InvoiceIDs,
+		"subscription_ids": filter.SubscriptionIDs,
+	})
+	defer FinishSpan(span)
+
+	query := r.client.Reader(ctx).InvoiceLineItem.Query()
+
+	query, err := r.queryOpts.applyEntityQueryOptions(ctx, filter, query)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, err
+	}
+
+	query = ApplyQueryOptions(ctx, query, filter, r.queryOpts)
+
+	items, err := query.All(ctx)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).WithHint("listing invoice line items failed").Mark(ierr.ErrDatabase)
+	}
+
+	result := make([]*domaininvoice.InvoiceLineItem, len(items))
+	for i, item := range items {
+		result[i] = domaininvoice.LineItemFromEnt(item)
+	}
 	SetSpanSuccess(span)
 	return result, nil
 }
