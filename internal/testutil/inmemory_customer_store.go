@@ -49,7 +49,6 @@ func copyCustomer(c *customer.Customer) *customer.Customer {
 		AddressCountry:    c.AddressCountry,
 		Metadata:          lo.Assign(map[string]string{}, c.Metadata),
 		EnvironmentID:     c.EnvironmentID,
-		ParentCustomerID:  c.ParentCustomerID,
 		BaseModel: types.BaseModel{
 			TenantID:  c.TenantID,
 			Status:    c.Status,
@@ -122,10 +121,7 @@ func (s *InMemoryCustomerStore) List(ctx context.Context, filter *types.Customer
 // parent customer's PARENT subscriptions -> INHERITED child subscriptions -> distinct child customer IDs.
 func (s *InMemoryCustomerStore) ListChildrenFromInheritedSubscriptions(ctx context.Context, parentCustomerID string) ([]*customer.Customer, error) {
 	if s.subscriptionStore == nil {
-		// Backward-compatible fallback if the store is not wired by a custom test.
-		filter := types.NewNoLimitCustomerFilter()
-		filter.ParentCustomerIDs = []string{parentCustomerID}
-		return s.List(ctx, filter)
+		return []*customer.Customer{}, nil
 	}
 
 	parentFilter := types.NewNoLimitSubscriptionFilter()
@@ -219,16 +215,6 @@ func customerFilterFn(ctx context.Context, c *customer.Customer, filter interfac
 	// Apply external ID filter
 	if f.ExternalID != "" && c.ExternalID != f.ExternalID {
 		return false
-	}
-
-	// Apply parent customer ID filter
-	if len(f.ParentCustomerIDs) > 0 {
-		if c.ParentCustomerID == nil {
-			return false
-		}
-		if !lo.Contains(f.ParentCustomerIDs, *c.ParentCustomerID) {
-			return false
-		}
 	}
 
 	// Apply email filter

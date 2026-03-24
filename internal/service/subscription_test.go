@@ -5771,11 +5771,10 @@ func (s *SubscriptionServiceSuite) uciSetup(
 	children := make([]*customer.Customer, numChildren)
 	for i := 0; i < numChildren; i++ {
 		c := &customer.Customer{
-			ID:               types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
-			Name:             fmt.Sprintf("UCI Child %s %d", tag, i),
-			Email:            fmt.Sprintf("%s-child%d@test.com", tag, i),
-			ParentCustomerID: &parentCust.ID,
-			BaseModel:        types.GetDefaultBaseModel(ctx),
+			ID:        types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+			Name:      fmt.Sprintf("UCI Child %s %d", tag, i),
+			Email:     fmt.Sprintf("%s-child%d@test.com", tag, i),
+			BaseModel: types.GetDefaultBaseModel(ctx),
 		}
 		s.Require().NoError(s.GetStores().CustomerRepo.Create(ctx, c))
 		children[i] = c
