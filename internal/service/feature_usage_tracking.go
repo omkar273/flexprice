@@ -1766,30 +1766,91 @@ func (s *featureUsageTrackingService) GetDetailedUsageAnalytics(ctx context.Cont
 		return nil, err
 	}
 
-	// 2. Fetch all required data in parallel
-	data, err := s.fetchAnalyticsData(ctx, req)
-	if err != nil {
-		return nil, err
+	// 2. Resolve the flat list of external IDs to fetch (deduped union of both fields)
+	effectiveIDs := resolveEffectiveExternalIDs(req)
+
+	// 3. If IncludeChildren, expand the list with each customer's hierarchy children.
+	//    Children are resolved here — before the fetch loop — so we never append to a
+	//    slice while ranging over it.
+	//    NOTE: fetchCustomer is called once per parent here to get the internal ID for
+	//    fetchChildCustomers. fetchAnalyticsData will call it again internally. This is an
+	//    accepted N+1 (one extra DB lookup per parent) kept for code clarity; the call is cheap.
+	if req.IncludeChildren {
+		var childExternalIDs []string
+		for _, id := range effectiveIDs {
+			cust, err := s.fetchCustomer(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			children, err := s.fetchChildCustomers(ctx, cust.ID)
+			if err != nil {
+				s.Logger.WarnwCtx(ctx, "failed to fetch child customers, skipping children for this parent",
+					"external_customer_id", id, "error", err)
+				continue
+			}
+			for _, child := range children {
+				childExternalIDs = append(childExternalIDs, child.ExternalID)
+			}
+		}
+		effectiveIDs = lo.Uniq(append(effectiveIDs, childExternalIDs...))
 	}
 
-	// 3. Process and return response
-	response, err := s.buildAnalyticsResponse(ctx, data, req)
-	if err != nil {
-		return nil, err
-	}
+	// 4. Fetch and merge analytics for all resolved customers.
+	//    mergeAnalyticsData merges subscription/line-item/feature/meter/price lookup maps.
+	//    The Analytics slice is accumulated separately (mergeAnalyticsData does not touch it).
+	//    currency is tracked separately (like GetDetailedUsageAnalyticsV2) because
+	//    mergeAnalyticsData does not update aggregatedData.Currency for subsequent customers.
+	var aggregatedData *AnalyticsData
+	var allAnalytics []*events.DetailedUsageAnalytic
+	var currency string
 
-	// 4. Optionally aggregate children into the total
-	if req.IncludeChildren && data.Customer != nil {
-		children, err := s.fetchChildCustomers(ctx, data.Customer.ID)
+	for _, id := range effectiveIDs {
+		customerReq := *req
+		customerReq.ExternalCustomerID = id
+		customerReq.ExternalCustomerIDs = nil
+		customerReq.IncludeChildren = false
+
+		data, err := s.fetchAnalyticsData(ctx, &customerReq)
 		if err != nil {
-			s.Logger.WarnwCtx(ctx, "failed to fetch child customers for include_children aggregation, returning parent-only",
-				"customer_id", data.Customer.ID, "error", err)
+			s.Logger.WarnwCtx(ctx, "failed to fetch analytics data for customer, skipping",
+				"external_customer_id", id, "error", err)
+			continue
+		}
+
+		allAnalytics = append(allAnalytics, data.Analytics...)
+
+		if aggregatedData == nil {
+			aggregatedData = data
+			currency = data.Currency
 		} else {
-			response = s.buildAggregatedAnalyticsWithChildren(ctx, data, children, req)
+			if data.Currency != "" && currency != "" && data.Currency != currency {
+				return nil, ierr.NewError("multiple currencies detected across customers").
+					WithHint("Analytics is only supported when all customers use the same currency").
+					WithReportableDetails(map[string]interface{}{
+						"expected_currency":    currency,
+						"found_currency":       data.Currency,
+						"external_customer_id": id,
+					}).
+					Mark(ierr.ErrValidation)
+			}
+			s.mergeAnalyticsData(aggregatedData, data)
 		}
 	}
 
-	return response, nil
+	// 5. If all customers failed, return an empty response — no panic on nil aggregatedData.
+	if aggregatedData == nil {
+		return &dto.GetUsageAnalyticsResponse{
+			TotalCost: decimal.Zero,
+			Currency:  "",
+			Items:     []dto.UsageAnalyticItem{},
+		}, nil
+	}
+
+	// 6. Assign accumulated analytics and currency, then build the single aggregated response.
+	aggregatedData.Analytics = allAnalytics
+	aggregatedData.Currency = currency
+
+	return s.buildAnalyticsResponse(ctx, aggregatedData, req)
 }
 
 func (s *featureUsageTrackingService) GetDetailedUsageAnalyticsV2(ctx context.Context, req *dto.GetUsageAnalyticsRequest) (*dto.GetUsageAnalyticsResponse, error) {
@@ -1926,50 +1987,6 @@ func (s *featureUsageTrackingService) fetchChildCustomers(
 	return children, nil
 }
 
-// buildAggregatedAnalyticsWithChildren merges parent + all children analytics into a single
-// total response.
-func (s *featureUsageTrackingService) buildAggregatedAnalyticsWithChildren(
-	ctx context.Context,
-	parentData *AnalyticsData,
-	children []*customer.Customer,
-	req *dto.GetUsageAnalyticsRequest,
-) *dto.GetUsageAnalyticsResponse {
-	// 1. Fetch per-child analytics data (non-fatal per child).
-	childDataSlices := make([]*AnalyticsData, len(children))
-	for i, child := range children {
-		childReq := *req
-		childReq.ExternalCustomerID = child.ExternalID
-		childReq.IncludeChildren = false
-		d, err := s.fetchAnalyticsData(ctx, &childReq)
-		if err != nil {
-			s.Logger.WarnwCtx(ctx, "skipping child for include_children aggregation",
-				"child_id", child.ID, "error", err)
-			continue
-		}
-		childDataSlices[i] = d
-	}
-
-	// 2. Merge all analytics slices: parent first, then each child.
-	mergedAnalytics := make([]*events.DetailedUsageAnalytic, 0, len(parentData.Analytics))
-	mergedAnalytics = append(mergedAnalytics, parentData.Analytics...)
-	for _, cd := range childDataSlices {
-		if cd != nil {
-			mergedAnalytics = append(mergedAnalytics, cd.Analytics...)
-		}
-	}
-	mergedData := *parentData
-	mergedData.Analytics = mergedAnalytics
-
-	// 3. Build aggregated total response from merged data.
-	totalResp, err := s.buildAnalyticsResponse(ctx, &mergedData, req)
-	if err != nil || totalResp == nil {
-		s.Logger.WarnwCtx(ctx, "failed to build aggregated analytics response, falling back to parent-only",
-			"customer_id", parentData.Customer.ID, "error", err)
-		r, _ := s.buildAnalyticsResponse(ctx, parentData, req)
-		return r
-	}
-	return totalResp
-}
 
 // fetchAnalyticsData fetches all required data sequentially
 func (s *featureUsageTrackingService) fetchAnalyticsData(ctx context.Context, req *dto.GetUsageAnalyticsRequest) (*AnalyticsData, error) {
