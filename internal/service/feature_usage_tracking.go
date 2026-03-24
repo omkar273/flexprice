@@ -2179,7 +2179,11 @@ func (s *featureUsageTrackingService) fetchCustomer(ctx context.Context, externa
 	return customer, nil
 }
 
-// fetchSubscriptions fetches active subscriptions for a customer
+// fetchSubscriptions fetches active subscriptions for a customer.
+// If the customer has INHERITED subscriptions (i.e. is a child in a parent-child
+// hierarchy), the parent subscription(s) are also fetched and appended so that
+// their line items — which carry the actual pricing — are available for cost
+// calculation. Without this, inherited subs have empty line items and produce $0 cost.
 func (s *featureUsageTrackingService) fetchSubscriptions(ctx context.Context, customerID string) ([]*subscription.Subscription, error) {
 	subscriptionService := NewSubscriptionService(s.ServiceParams)
 	filter := types.NewSubscriptionFilter()
@@ -2205,6 +2209,45 @@ func (s *featureUsageTrackingService) fetchSubscriptions(ctx context.Context, cu
 	subscriptions := make([]*subscription.Subscription, len(subscriptionsList.Items))
 	for i, subResp := range subscriptionsList.Items {
 		subscriptions[i] = subResp.Subscription
+	}
+
+	// If any subscription is INHERITED, also fetch the parent subscription(s) so that
+	// their line items (which carry the actual pricing) are available for cost calculation.
+	hasInherited := false
+	for _, sub := range subscriptions {
+		if sub.SubscriptionType == types.SubscriptionTypeInherited {
+			hasInherited = true
+			break
+		}
+	}
+	if hasInherited {
+		parentSubIDs, pErr := listParentSubscriptionIDsForInheritedCustomer(ctx, s.ServiceParams, customerID)
+		if pErr != nil {
+			s.Logger.WarnwCtx(ctx, "failed to fetch parent subscription IDs for inherited customer; costs may be $0",
+				"error", pErr,
+				"customer_id", customerID,
+			)
+		} else {
+			seen := make(map[string]bool, len(subscriptions))
+			for _, sub := range subscriptions {
+				seen[sub.ID] = true
+			}
+			for _, parentSubID := range parentSubIDs {
+				if seen[parentSubID] {
+					continue
+				}
+				seen[parentSubID] = true
+				parentSubResp, pFetchErr := subscriptionService.GetSubscription(ctx, parentSubID)
+				if pFetchErr != nil {
+					s.Logger.WarnwCtx(ctx, "failed to fetch parent subscription for analytics",
+						"error", pFetchErr,
+						"parent_subscription_id", parentSubID,
+					)
+					continue
+				}
+				subscriptions = append(subscriptions, parentSubResp.Subscription)
+			}
+		}
 	}
 
 	return subscriptions, nil
