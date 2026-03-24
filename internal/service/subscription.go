@@ -4795,6 +4795,13 @@ func (s *subscriptionService) updateSubscriptionForCancellation(
 	effectiveDate time.Time,
 	reason string,
 ) error {
+	now := time.Now().UTC()
+
+	// Update cancellation fields
+	// For immediate cancellations, cancelled_at is the time of the subscription cancellation
+	// For scheduled cancellations, cancelled_at is the time when the cancellation was scheduled (not when it will be executed)
+	subscription.CancelledAt = &now
+
 	// Add cancellation metadata
 	if subscription.Metadata == nil {
 		subscription.Metadata = make(map[string]string)
