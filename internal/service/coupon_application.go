@@ -365,7 +365,7 @@ func (s *couponApplicationService) ApplyCouponsToInvoice(ctx context.Context, re
 		// Update line items with all discounts
 		for _, lineItem := range inv.LineItems {
 			if !lineItem.LineItemDiscount.IsZero() || !lineItem.InvoiceLevelDiscount.IsZero() {
-				if err := s.InvoiceRepo.UpdateLineItem(txCtx, lineItem); err != nil {
+				if err := s.InvoiceLineItemRepo.Update(txCtx, lineItem); err != nil {
 					s.Logger.ErrorwCtx(ctx, "failed to update line item with discount",
 						"line_item_id", lineItem.ID,
 						"line_item_discount", lineItem.LineItemDiscount,

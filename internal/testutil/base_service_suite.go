@@ -66,6 +66,7 @@ type Stores struct {
 	MeterRepo                    meter.Repository
 	CustomerRepo                 customer.Repository
 	InvoiceRepo                  invoice.Repository
+	InvoiceLineItemRepo          invoice.LineItemRepository
 	WalletRepo                   wallet.Repository
 	PaymentRepo                  payment.Repository
 	AuthRepo                     auth.Repository
@@ -194,6 +195,9 @@ func (s *BaseServiceTestSuite) setupStores() {
 	customerStore := NewInMemoryCustomerStore()
 	subStore.SetLineItemStore(lineItemStore)
 	customerStore.SetSubscriptionStore(subStore)
+	invLineItemStore := NewInMemoryInvoiceLineItemStore()
+	invoiceStore := NewInMemoryInvoiceStore()
+	invoiceStore.SetLineItemStore(invLineItemStore)
 	s.stores = Stores{
 		SubscriptionRepo:             subStore,
 		SubscriptionLineItemRepo:     lineItemStore,
@@ -205,7 +209,8 @@ func (s *BaseServiceTestSuite) setupStores() {
 		PriceUnitRepo:                NewInMemoryPriceUnitStore(),
 		MeterRepo:                    NewInMemoryMeterStore(),
 		CustomerRepo:                 customerStore,
-		InvoiceRepo:                  NewInMemoryInvoiceStore(),
+		InvoiceRepo:                  invoiceStore,
+		InvoiceLineItemRepo:          invLineItemStore,
 		WalletRepo:                   NewInMemoryWalletStore(),
 		PaymentRepo:                  NewInMemoryPaymentStore(),
 		AuthRepo:                     NewInMemoryAuthRepository(),
@@ -255,6 +260,7 @@ func (s *BaseServiceTestSuite) clearStores() {
 	s.stores.MeterRepo.(*InMemoryMeterStore).Clear()
 	s.stores.CustomerRepo.(*InMemoryCustomerStore).Clear()
 	s.stores.InvoiceRepo.(*InMemoryInvoiceStore).Clear()
+	s.stores.InvoiceLineItemRepo.(*InMemoryInvoiceLineItemStore).Clear()
 	s.stores.WalletRepo.(*InMemoryWalletStore).Clear()
 	s.stores.PaymentRepo.(*InMemoryPaymentStore).Clear()
 	s.stores.AuthRepo.(*InMemoryAuthRepository).Clear()

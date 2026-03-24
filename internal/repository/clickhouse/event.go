@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 
-	"log"
 	"strings"
 	"time"
 
@@ -265,7 +264,6 @@ func (r *EventRepository) GetUsage(ctx context.Context, params *events.UsagePara
 	}
 
 	query := aggregator.GetQuery(ctx, params)
-	log.Printf("Executing query: %s", query)
 
 	rows, err := r.store.GetConn().Query(ctx, query)
 	if err != nil {
