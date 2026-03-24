@@ -76,6 +76,7 @@ func (r *invoiceRepository) Create(ctx context.Context, inv *domainInvoice.Invoi
 		SetNillablePaidAt(inv.PaidAt).
 		SetNillableVoidedAt(inv.VoidedAt).
 		SetNillableFinalizedAt(inv.FinalizedAt).
+		SetNillableLastComputedAt(inv.LastComputedAt).
 		SetBillingPeriod(types.BillingPeriod(lo.FromPtr(inv.BillingPeriod))).
 		SetNillableInvoicePdfURL(inv.InvoicePDFURL).
 		SetBillingReason(inv.BillingReason).
@@ -180,6 +181,7 @@ func (r *invoiceRepository) CreateWithLineItems(ctx context.Context, inv *domain
 			SetNillablePaidAt(inv.PaidAt).
 			SetNillableVoidedAt(inv.VoidedAt).
 			SetNillableFinalizedAt(inv.FinalizedAt).
+			SetNillableLastComputedAt(inv.LastComputedAt).
 			SetNillableInvoicePdfURL(inv.InvoicePDFURL).
 			SetBillingPeriod(types.BillingPeriod(lo.FromPtr(inv.BillingPeriod))).
 			SetBillingReason(inv.BillingReason).
@@ -525,6 +527,7 @@ func (r *invoiceRepository) Update(ctx context.Context, inv *domainInvoice.Invoi
 		SetNillablePaidAt(inv.PaidAt).
 		SetNillableVoidedAt(inv.VoidedAt).
 		SetNillableFinalizedAt(inv.FinalizedAt).
+		SetNillableLastComputedAt(inv.LastComputedAt).
 		SetNillableInvoicePdfURL(inv.InvoicePDFURL).
 		SetBillingReason(string(inv.BillingReason)).
 		SetMetadata(inv.Metadata).
@@ -657,6 +660,55 @@ func (r *invoiceRepository) List(ctx context.Context, filter *types.InvoiceFilte
 	}
 
 	// Convert to domain model
+	result := make([]*domainInvoice.Invoice, len(invoices))
+	for i, inv := range invoices {
+		result[i] = domainInvoice.FromEnt(inv)
+	}
+
+	return result, nil
+}
+
+// ListAllTenant retrieves invoices across all tenants (skips tenant/environment filters).
+// NOTE: This is a potentially expensive operation — use only for scheduled jobs.
+func (r *invoiceRepository) ListAllTenant(ctx context.Context, filter *types.InvoiceFilter) ([]*domainInvoice.Invoice, error) {
+	span := StartRepositorySpan(ctx, "invoice", "list_all_tenant", map[string]interface{}{
+		"filter": filter,
+	})
+	defer FinishSpan(span)
+
+	if filter == nil {
+		filter = &types.InvoiceFilter{
+			QueryFilter: types.NewDefaultQueryFilter(),
+		}
+	}
+
+	if err := filter.Validate(); err != nil {
+		SetSpanError(span, err)
+		return nil, fmt.Errorf("invalid filter: %w", err)
+	}
+
+	client := r.client.Reader(ctx)
+	query := client.Invoice.Query()
+
+	// Apply entity-specific filters (status, type, etc.) but NOT tenant/environment
+	query, err := r.queryOpts.applyEntityQueryOptions(ctx, filter, query)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to apply query options").
+			Mark(ierr.ErrDatabase)
+	}
+
+	query = ApplySorting(query, filter, r.queryOpts)
+	query = ApplyPagination(query, filter, r.queryOpts)
+	query = r.queryOpts.ApplyStatusFilter(query, filter.GetStatus())
+
+	invoices, err := query.All(ctx)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).WithHint("invoice listing failed").Mark(ierr.ErrDatabase)
+	}
+
 	result := make([]*domainInvoice.Invoice, len(invoices))
 	for i, inv := range invoices {
 		result[i] = domainInvoice.FromEnt(inv)

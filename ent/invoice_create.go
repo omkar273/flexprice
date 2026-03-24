@@ -370,6 +370,20 @@ func (ic *InvoiceCreate) SetNillableFinalizedAt(t *time.Time) *InvoiceCreate {
 	return ic
 }
 
+// SetLastComputedAt sets the "last_computed_at" field.
+func (ic *InvoiceCreate) SetLastComputedAt(t time.Time) *InvoiceCreate {
+	ic.mutation.SetLastComputedAt(t)
+	return ic
+}
+
+// SetNillableLastComputedAt sets the "last_computed_at" field if the given value is not nil.
+func (ic *InvoiceCreate) SetNillableLastComputedAt(t *time.Time) *InvoiceCreate {
+	if t != nil {
+		ic.SetLastComputedAt(*t)
+	}
+	return ic
+}
+
 // SetBillingPeriod sets the "billing_period" field.
 func (ic *InvoiceCreate) SetBillingPeriod(tp types.BillingPeriod) *InvoiceCreate {
 	ic.mutation.SetBillingPeriod(tp)
@@ -889,6 +903,10 @@ func (ic *InvoiceCreate) createSpec() (*Invoice, *sqlgraph.CreateSpec) {
 	if value, ok := ic.mutation.FinalizedAt(); ok {
 		_spec.SetField(invoice.FieldFinalizedAt, field.TypeTime, value)
 		_node.FinalizedAt = &value
+	}
+	if value, ok := ic.mutation.LastComputedAt(); ok {
+		_spec.SetField(invoice.FieldLastComputedAt, field.TypeTime, value)
+		_node.LastComputedAt = &value
 	}
 	if value, ok := ic.mutation.BillingPeriod(); ok {
 		_spec.SetField(invoice.FieldBillingPeriod, field.TypeString, value)

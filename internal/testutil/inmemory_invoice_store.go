@@ -180,6 +180,10 @@ func (s *InMemoryInvoiceStore) List(ctx context.Context, filter *types.InvoiceFi
 	return s.InMemoryStore.List(ctx, filter, invoiceFilterFn, invoiceSortFn)
 }
 
+func (s *InMemoryInvoiceStore) ListAllTenant(ctx context.Context, filter *types.InvoiceFilter) ([]*invoice.Invoice, error) {
+	return s.List(ctx, filter)
+}
+
 func (s *InMemoryInvoiceStore) Count(ctx context.Context, filter *types.InvoiceFilter) (int, error) {
 	return s.InMemoryStore.Count(ctx, filter, invoiceFilterFn)
 }

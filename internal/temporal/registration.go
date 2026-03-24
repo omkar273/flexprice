@@ -269,13 +269,16 @@ func buildWorkerConfig(
 		workflowsList = append(
 			workflowsList,
 			invoiceWorkflows.ProcessInvoiceWorkflow,
+			invoiceWorkflows.ScheduleDraftFinalizationWorkflow,
 		)
 		activitiesList = append(activitiesList,
 			// Invoice workflow activities
-			invoiceActs.PopulateDraftInvoiceActivity,
+			invoiceActs.ComputeInvoiceActivity,
 			invoiceActs.FinalizeInvoiceActivity,
 			invoiceActs.SyncInvoiceToVendorActivity,
 			invoiceActs.AttemptInvoicePaymentActivity,
+			// Draft finalization cron activity
+			invoiceActs.FinalizeDueDraftsActivity,
 		)
 
 	case types.TemporalTaskQueueWorkflows:

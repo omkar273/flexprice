@@ -12,7 +12,7 @@ const (
 	// Workflow name - must match the function name
 	WorkflowProcessInvoice = "ProcessInvoiceWorkflow"
 	// Activity names - must match the registered method names
-	ActivityPopulateDraftInvoice   = "PopulateDraftInvoiceActivity"
+	ActivityComputeInvoice         = "ComputeInvoiceActivity"
 	ActivityFinalizeInvoice        = "FinalizeInvoiceActivity"
 	ActivitySyncInvoiceToVendor    = "SyncInvoiceToVendorActivity"
 	ActivityAttemptInvoicePayment  = "AttemptInvoicePaymentActivity"
@@ -21,8 +21,8 @@ const (
 
 // ProcessInvoiceWorkflow processes a single invoice
 // This workflow orchestrates invoice processing:
-// 0. Populate draft (line items, assign number or mark SKIPPED)
-// 1. Finalize the invoice (skipped if invoice was SKIPPED)
+// 0. Compute invoice (line items, coupons/taxes, or mark SKIPPED if zero-dollar)
+// 1. Finalize the invoice (assigns invoice number, skipped if SKIPPED)
 // 2. Sync invoice to external vendors
 // 3. Attempt payment for the invoice
 func ProcessInvoiceWorkflow(
@@ -48,34 +48,34 @@ func ProcessInvoiceWorkflow(
 			InitialInterval:    time.Second * 10,
 			BackoffCoefficient: 2.0,
 			MaximumInterval:    time.Minute * 5,
-			MaximumAttempts:    1,
+			MaximumAttempts:    3,
 		},
 	}
 	ctx = workflow.WithActivityOptions(ctx, activityOptions)
 
 	// ================================================================================
-	// STEP 0: Populate draft invoice (assign number or mark SKIPPED if zero)
+	// STEP 0: Compute invoice (line items, coupons/taxes, or mark SKIPPED if zero)
 	// ================================================================================
-	logger.Info("Step 0: Populating draft invoice",
+	logger.Info("Step 0: Computing invoice",
 		"invoice_id", input.InvoiceID)
 
-	var populateOutput invoiceModels.PopulateDraftInvoiceActivityOutput
-	populateInput := invoiceModels.PopulateDraftInvoiceActivityInput{
+	var computeOutput invoiceModels.ComputeInvoiceActivityOutput
+	computeInput := invoiceModels.ComputeInvoiceActivityInput{
 		InvoiceID:     input.InvoiceID,
 		TenantID:      input.TenantID,
 		EnvironmentID: input.EnvironmentID,
 		UserID:        input.UserID,
 	}
 
-	err := workflow.ExecuteActivity(ctx, ActivityPopulateDraftInvoice, populateInput).Get(ctx, &populateOutput)
+	err := workflow.ExecuteActivity(ctx, ActivityComputeInvoice, computeInput).Get(ctx, &computeOutput)
 	if err != nil {
-		logger.Error("Failed to populate draft invoice",
+		logger.Error("Failed to compute invoice",
 			"error", err,
 			"invoice_id", input.InvoiceID)
 		return nil, err
 	}
 
-	if populateOutput.Skipped {
+	if computeOutput.Skipped {
 		logger.Info("Invoice is zero-dollar, marked SKIPPED; skipping finalize/sync/payment",
 			"invoice_id", input.InvoiceID)
 		return &invoiceModels.ProcessInvoiceWorkflowResult{
@@ -103,6 +103,15 @@ func ProcessInvoiceWorkflow(
 			"error", err,
 			"invoice_id", input.InvoiceID)
 		return nil, err
+	}
+
+	if finalizeOutput.Skipped {
+		logger.Info("Finalization not yet due, exiting workflow; cron will finalize later",
+			"invoice_id", input.InvoiceID)
+		return &invoiceModels.ProcessInvoiceWorkflowResult{
+			Success:     true,
+			CompletedAt: workflow.Now(ctx),
+		}, nil
 	}
 
 	// ================================================================================

@@ -268,6 +268,7 @@ type InvoiceConfig struct {
 	InvoiceNumberSuffixLength              int                 `json:"suffix_length,omitempty" validate:"required,min=1,max=10"`
 	DueDateDays                            *int                `json:"due_date_days,omitempty" validate:"omitempty,min=0"` // Number of days after period end when payment is due
 	AutoCompletePurchasedCreditTransaction bool                `json:"auto_complete_purchased_credit_transaction,omitempty"`
+	FinalizationDelaySeconds               int                 `json:"finalization_delay_seconds,omitempty" validate:"omitempty,min=0"` // Seconds to wait after invoice creation before finalization. 0 = immediate.
 }
 
 // Validate implements SettingConfig interface

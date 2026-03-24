@@ -116,7 +116,10 @@ func (s *BillingActivities) CreateDraftInvoicesActivity(
 		if err != nil {
 			return nil, err
 		}
-		// Always append draft ID (zero-dollar drafts are populated later and may be marked SKIPPED)
+		if draft == nil {
+			return nil, fmt.Errorf("CreateDraftInvoiceForSubscription returned nil for subscription %s period %s-%s",
+				input.SubscriptionID, period.Start, period.End)
+		}
 		invoices = append(invoices, draft.ID)
 	}
 

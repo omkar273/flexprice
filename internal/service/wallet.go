@@ -828,33 +828,20 @@ func (s *walletService) handlePurchasedCreditInvoicedTransaction(ctx context.Con
 			PaymentStatus: lo.ToPtr(paymentStatus),
 			Metadata:      invoiceMetadata,
 		}
-		draft, err := invoiceService.CreateDraftInvoice(ctx, invReq)
+		// Use CreateInvoice which handles draft-first flow: create draft, compute, finalize, webhook
+		inv, err := invoiceService.CreateInvoice(ctx, invReq)
 		if err != nil {
 			return ierr.WithError(err).
-				WithHint("Failed to create draft invoice for purchased credits").
+				WithHint("Failed to create invoice for purchased credits").
 				Mark(ierr.ErrInternal)
 		}
 
-		// Populate the draft to assign invoice number (no coupons/taxes for credit purchase)
-		_, err = invoiceService.PopulateDraftInvoice(ctx, draft.ID, nil)
-		if err != nil {
-			return ierr.WithError(err).
-				WithHint("Failed to populate draft invoice for purchased credits").
-				Mark(ierr.ErrInternal)
-		}
-
-		if err := invoiceService.FinalizeInvoice(ctx, draft.ID); err != nil {
-			return ierr.WithError(err).
-				WithHint("Failed to finalize invoice for purchased credits").
-				Mark(ierr.ErrInternal)
-		}
-
-		invoiceID = draft.ID
+		invoiceID = inv.ID
 
 		if autoCompleteEnabled {
 			s.Logger.InfowCtx(ctx, "created auto-completed credit purchase",
 				"wallet_transaction_id", walletTransactionID,
-				"invoice_id", draft.ID,
+				"invoice_id", inv.ID,
 				"wallet_id", walletID,
 				"credits", req.CreditsToAdd.String(),
 				"amount", amount.String(),
@@ -863,7 +850,7 @@ func (s *walletService) handlePurchasedCreditInvoicedTransaction(ctx context.Con
 		} else {
 			s.Logger.InfowCtx(ctx, "created pending credit purchase",
 				"wallet_transaction_id", walletTransactionID,
-				"invoice_id", draft.ID,
+				"invoice_id", inv.ID,
 				"wallet_id", walletID,
 				"credits", req.CreditsToAdd.String(),
 				"amount", amount.String(),
