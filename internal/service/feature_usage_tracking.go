@@ -3746,21 +3746,29 @@ func (s *featureUsageTrackingService) fetchAddons(ctx context.Context, data *Ana
 
 // fetchCustomers fetches all customers when no external customer ID is provided
 func (s *featureUsageTrackingService) fetchCustomers(ctx context.Context, req *dto.GetUsageAnalyticsRequest) ([]*customer.Customer, error) {
-	if req.ExternalCustomerID != "" {
-		cust, err := s.fetchCustomer(ctx, req.ExternalCustomerID)
-		if err != nil {
-			return nil, err
-		}
-		return []*customer.Customer{cust}, nil
-	} else {
-		customers, err := s.CustomerRepo.List(ctx, types.NewNoLimitCustomerFilter())
-		if err != nil {
-			return nil, ierr.WithError(err).
-				WithHint("Failed to fetch customers").
-				Mark(ierr.ErrDatabase)
+	effectiveIDs := resolveEffectiveExternalIDs(req)
+	if len(effectiveIDs) > 0 {
+		// NOTE: fetchCustomer is called once per ID here. GetDetailedUsageAnalyticsV2 will
+		// call fetchAnalyticsData per customer which calls fetchCustomer again internally —
+		// an accepted N+1 (2N lookups total) kept for code clarity; the call is cheap.
+		customers := make([]*customer.Customer, 0, len(effectiveIDs))
+		for _, id := range effectiveIDs {
+			cust, err := s.fetchCustomer(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			customers = append(customers, cust)
 		}
 		return customers, nil
 	}
+	// No IDs specified — fetch all customers (existing behaviour for V2 aggregate-all path)
+	customers, err := s.CustomerRepo.List(ctx, types.NewNoLimitCustomerFilter())
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to fetch customers").
+			Mark(ierr.ErrDatabase)
+	}
+	return customers, nil
 }
 
 // mergeAnalyticsData merges additional analytics data into the aggregated data structure
