@@ -415,13 +415,6 @@ type UpdateSubscriptionRequest struct {
 
 	// ParentSubscriptionID sets or clears the parent subscription. Omit to leave unchanged; send "" to clear.
 	ParentSubscriptionID *string `json:"parent_subscription_id,omitempty"`
-
-	// CustomerIDsToInheritSubscription updates the set of customers that inherit this subscription.
-	// Omit the field (nil) to leave the current set unchanged. Provide a non-nil slice to declare
-	// the full desired set — all currently tracked customers must be present or an error is returned
-	// (removals require cancelling the subscription). Include additional IDs to add new inheriting
-	// customers; duplicate IDs are silently deduplicated.
-	CustomerIDsToInheritSubscription *[]string `json:"customer_ids_to_inherit_subscription,omitempty"`
 }
 
 // Validate checks UpdateSubscriptionRequest fields for basic structural validity.
@@ -429,14 +422,6 @@ func (r *UpdateSubscriptionRequest) Validate() error {
 
 	if err := validator.ValidateRequest(r); err != nil {
 		return err
-	}
-
-	for _, id := range lo.FromPtr(r.CustomerIDsToInheritSubscription) {
-		if strings.TrimSpace(id) == "" {
-			return ierr.NewError("customer_ids_to_inherit_subscription contains an empty or blank customer ID").
-				WithHint("All entries in customer_ids_to_inherit_subscription must be non-empty customer IDs").
-				Mark(ierr.ErrValidation)
-		}
 	}
 
 	return nil
@@ -1600,10 +1585,6 @@ type GetUsageBySubscriptionRequest struct {
 	// Source indicates the caller context. When "invoice_creation", ClickHouse queries use FINAL.
 	// Optional; omit for default (no FINAL).
 	Source string `json:"-"`
-	// CustomerIDs is the list of internal customer IDs whose usage to query.
-	// When set, the provided list is used directly instead of auto-detecting from subscription type.
-	// For internal use only; not exposed via the HTTP API.
-	CustomerIDs []string `json:"-"`
 }
 
 type GetUsageBySubscriptionResponse struct {

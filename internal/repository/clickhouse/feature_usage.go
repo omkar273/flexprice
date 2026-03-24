@@ -1995,52 +1995,52 @@ func (r *FeatureUsageRepository) getAnalyticsPoints(
 
 // GetFeatureUsageBySubscription gets usage data for a subscription using a single optimized query.
 // When opts.Source is InvoiceCreation, the query uses FINAL for correct ReplacingMergeTree deduplication.
-func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Context, subscriptionID string, customerIDs []string, startTime, endTime time.Time, aggTypes []types.AggregationType, opts *events.GetFeatureUsageBySubscriptionOpts) (map[string]*events.UsageByFeatureResult, error) {
+func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Context, params *events.GetFeatureUsageBySubscriptionParams) (map[string]*events.UsageByFeatureResult, error) {
 	// Extract tenantID and environmentID from context
 	tenantID := types.GetTenantID(ctx)
 	environmentID := types.GetEnvironmentID(ctx)
 
 	// Start a span for this repository operation
 	span := StartRepositorySpan(ctx, "feature_usage", "get_usage_by_subscription_v2", map[string]interface{}{
-		"subscription_id": subscriptionID,
-		"customer_ids":    customerIDs,
+		"subscription_id": params.SubscriptionID,
+		"customer_ids":    params.CustomerIDs,
 		"environment_id":  environmentID,
 		"tenant_id":       tenantID,
-		"start_time":      startTime,
-		"end_time":        endTime,
+		"start_time":      params.StartTime,
+		"end_time":        params.EndTime,
 	})
 	defer FinishSpan(span)
 
 	// Build conditional aggregation columns
-	aggColumns := buildConditionalAggregationColumnsForSubscription(aggTypes)
+	aggColumns := buildConditionalAggregationColumnsForSubscription(params.AggTypes)
 
 	tableRef := "feature_usage"
-	if opts != nil && opts.Source.UseFinal() {
+	if params.Opts != nil && params.Opts.Source.UseFinal() {
 		tableRef = "feature_usage FINAL"
 	}
 
-	r.logger.Debugw("subscription usage query", "aggColumns", aggColumns, "tableRef", tableRef, "opts", opts)
+	r.logger.Debugw("subscription usage query", "aggColumns", aggColumns, "tableRef", tableRef, "opts", params.Opts)
 
 	// Build customer_id filter: single = for one ID, IN for multiple.
 	// Guard against empty slice which would yield invalid SQL (IN ()) and misaligned arguments.
-	if len(customerIDs) == 0 {
+	if len(params.CustomerIDs) == 0 {
 		return map[string]*events.UsageByFeatureResult{}, nil
 	}
 
 	customerFilter := "customer_id = ?"
-	args := []interface{}{subscriptionID}
-	if len(customerIDs) == 1 {
-		args = append(args, customerIDs[0])
+	args := []interface{}{params.SubscriptionID}
+	if len(params.CustomerIDs) == 1 {
+		args = append(args, params.CustomerIDs[0])
 	} else {
-		placeholders := make([]string, len(customerIDs))
-		for i, cid := range customerIDs {
+		placeholders := make([]string, len(params.CustomerIDs))
+		for i, cid := range params.CustomerIDs {
 			placeholders[i] = "?"
 			args = append(args, cid)
 		}
 		customerFilter = fmt.Sprintf("customer_id IN (%s)", strings.Join(placeholders, ", "))
 	}
 
-	args = append(args, environmentID, tenantID, startTime, endTime)
+	args = append(args, environmentID, tenantID, params.StartTime, params.EndTime)
 
 	query := fmt.Sprintf(`
 		SELECT 
@@ -2062,11 +2062,11 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 	`, strings.Join(aggColumns, ",\n\t\t\t"), tableRef, customerFilter)
 
 	r.logger.Debugw("executing subscription usage query",
-		"subscription_id", subscriptionID,
-		"customer_ids", customerIDs,
+		"subscription_id", params.SubscriptionID,
+		"customer_ids", params.CustomerIDs,
 		"environment_id", environmentID,
-		"start_time", startTime,
-		"end_time", endTime,
+		"start_time", params.StartTime,
+		"end_time", params.EndTime,
 	)
 
 	r.logger.Debugw("subscription usage query", "query", query, "params", args)
@@ -2077,8 +2077,8 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 		return nil, ierr.WithError(err).
 			WithHint("Failed to execute optimized subscription usage query").
 			WithReportableDetails(map[string]interface{}{
-				"subscription_id": subscriptionID,
-				"customer_ids":    customerIDs,
+				"subscription_id": params.SubscriptionID,
+				"customer_ids":    params.CustomerIDs,
 			}).
 			Mark(ierr.ErrDatabase)
 	}
@@ -2120,7 +2120,7 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 
 	SetSpanSuccess(span)
 	r.logger.Debugw("optimized subscription usage query completed",
-		"subscription_id", subscriptionID,
+		"subscription_id", params.SubscriptionID,
 		"feature_count", len(results))
 
 	return results, nil

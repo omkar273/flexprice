@@ -1658,33 +1658,12 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 
 	subscription.CancelAtPeriodEnd = req.CancelAtPeriodEnd
 
-	// --- customer_ids_to_inherit_subscription: add new customers to inherit this subscription ---
-	// Omitting the field (nil) leaves the current set unchanged.
-	// Providing a non-nil slice declares the full desired set; any existing customer
-	// not present in the new list is rejected — removals require cancellation.
-	var newInheritCustomerIDs []string
-	if req.CustomerIDsToInheritSubscription != nil {
-		newInheritCustomerIDs, err = s.resolveUsageCustomerIDsUpdate(ctx, subscription, *req.CustomerIDsToInheritSubscription)
-		if err != nil {
-			return nil, err
-		}
-		// If there are new children, the subscription must become (or stay) PARENT type.
-		if len(newInheritCustomerIDs) > 0 {
-			subscription.SubscriptionType = types.SubscriptionTypeParent
-		}
-	}
-
-	// Persist update + create any new inherited subscriptions atomically.
+	// Persist update atomically.
 	err = s.DB.WithTx(ctx, func(ctx context.Context) error {
 		if err := s.SubRepo.Update(ctx, subscription); err != nil {
 			return ierr.WithError(err).
 				WithHint("Failed to update subscription").
 				Mark(ierr.ErrDatabase)
-		}
-		if len(newInheritCustomerIDs) > 0 {
-			if err := s.createInheritedSubscriptions(ctx, subscription, newInheritCustomerIDs); err != nil {
-				return err
-			}
 		}
 		return nil
 	})
@@ -5255,26 +5234,27 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 		Source: types.UsageSource(req.Source),
 	}
 	// Determine customer IDs for usage query.
-	// If the caller explicitly provides CustomerIDs, use those directly.
-	// Otherwise auto-detect: for PARENT subs include all inherited children; for all
-	// other types scope to the subscription's own customer.
-	var usageCustomerIDs []string
-	if len(req.CustomerIDs) > 0 {
-		usageCustomerIDs = req.CustomerIDs
-	} else {
-		usageCustomerIDs = []string{customer.ID}
-		if subscription.SubscriptionType == types.SubscriptionTypeParent {
-			inheritedSubs, ihErr := s.getInheritedSubscriptions(ctx, subscription.ID)
-			if ihErr != nil {
-				return nil, ihErr
-			}
-			for _, child := range inheritedSubs {
-				usageCustomerIDs = append(usageCustomerIDs, child.CustomerID)
-			}
+	// For PARENT subs include all inherited children; for all other types scope to the
+	// subscription's own customer.
+	usageCustomerIDs := []string{customer.ID}
+	if subscription.SubscriptionType == types.SubscriptionTypeParent {
+		inheritedSubs, ihErr := s.getInheritedSubscriptions(ctx, subscription.ID)
+		if ihErr != nil {
+			return nil, ihErr
+		}
+		for _, child := range inheritedSubs {
+			usageCustomerIDs = append(usageCustomerIDs, child.CustomerID)
 		}
 	}
 
-	usageResults, err := s.FeatureUsageRepo.GetFeatureUsageBySubscription(ctx, req.SubscriptionID, usageCustomerIDs, usageStartTime, usageEndTime, aggTypes, opts)
+	usageResults, err := s.FeatureUsageRepo.GetFeatureUsageBySubscription(ctx, &events.GetFeatureUsageBySubscriptionParams{
+		SubscriptionID: req.SubscriptionID,
+		CustomerIDs:    usageCustomerIDs,
+		StartTime:      usageStartTime,
+		EndTime:        usageEndTime,
+		AggTypes:       aggTypes,
+		Opts:           opts,
+	})
 
 	if err != nil {
 		return nil, err
