@@ -304,7 +304,7 @@ func (s *creditAdjustmentService) ApplyCreditsToInvoice(ctx context.Context, inv
 		for _, lineItem := range inv.LineItems {
 			if lineItem.PrepaidCreditsApplied.GreaterThan(decimal.Zero) {
 				totalAmountApplied = totalAmountApplied.Add(lineItem.PrepaidCreditsApplied)
-				if err := s.InvoiceRepo.UpdateLineItem(ctx, lineItem); err != nil {
+				if err := s.InvoiceLineItemRepo.Update(ctx, lineItem); err != nil {
 					return err
 				}
 			}
