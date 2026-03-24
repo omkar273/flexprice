@@ -411,6 +411,10 @@ type CancelSubscriptionRequest struct {
 	// Reason for cancellation (for audit and business intelligence)
 	Reason string `json:"reason,omitempty"`
 
+	// CancelAt is the custom date to cancel the subscription.
+	// Required when CancellationType is "scheduled_date". Must be in the future.
+	CancelAt *time.Time `json:"cancel_at,omitempty"`
+
 	//SuppressWebhook is an internal flag to suppress webhook events during cancellation.
 	SuppressWebhook bool `json:"-,omitempty"`
 }
@@ -452,6 +456,21 @@ func (r *CancelSubscriptionRequest) Validate() error {
 	if err := r.CancellationType.Validate(); err != nil {
 		return err
 	}
+
+	// Validate scheduled_date specific fields
+	if r.CancellationType == types.CancellationTypeScheduledDate {
+		if r.CancelAt == nil {
+			return ierr.NewError("cancel_at is required for scheduled_date cancellation type").
+				WithHint("Provide a future date in cancel_at when using scheduled_date cancellation type").
+				Mark(ierr.ErrValidation)
+		}
+		if !r.CancelAt.After(time.Now().UTC()) {
+			return ierr.NewError("cancel_at must be in the future").
+				WithHint("Provide a future date in cancel_at").
+				Mark(ierr.ErrValidation)
+		}
+	}
+
 	// Set default proration behavior if not provided
 	if r.ProrationBehavior == "" {
 		r.ProrationBehavior = types.ProrationBehaviorNone

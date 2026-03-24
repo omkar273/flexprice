@@ -1662,8 +1662,32 @@ func (s *subscriptionService) CancelSubscription(
 			Mark(ierr.ErrValidation)
 	}
 
+	// Step 3b: Additional validations for scheduled_date cancellations
+	if req.CancellationType == types.CancellationTypeScheduledDate {
+		// Reject if end_date is already set — avoid silent overwrites
+		if subscription.EndDate != nil {
+			return nil, ierr.NewError("subscription already has an end date set").
+				WithHint("The subscription already has an end date.").
+				WithReportableDetails(map[string]interface{}{
+					"subscription_id":   subscriptionID,
+					"existing_end_date": subscription.EndDate.Format(time.RFC3339),
+				}).
+				Mark(ierr.ErrValidation)
+		}
+		// Reject if cancel_at is already set — subscription is already scheduled to cancel
+		if subscription.CancelAt != nil {
+			return nil, ierr.NewError("subscription is already scheduled to cancel").
+				WithHint("The subscription already has a scheduled cancellation. Cancel the existing schedule before setting a new one.").
+				WithReportableDetails(map[string]interface{}{
+					"subscription_id":    subscriptionID,
+					"existing_cancel_at": subscription.CancelAt.Format(time.RFC3339),
+				}).
+				Mark(ierr.ErrValidation)
+		}
+	}
+
 	// Step 4: Determine effective cancellation date
-	effectiveDate, err := s.determineEffectiveDate(subscription, req.CancellationType)
+	effectiveDate, err := s.determineEffectiveDate(subscription, req.CancellationType, req.CancelAt)
 	if err != nil {
 		return nil, err
 	}
@@ -1673,6 +1697,11 @@ func (s *subscriptionService) CancelSubscription(
 
 	// Step 5: Execute in transaction
 	err = s.DB.WithTx(ctx, func(ctx context.Context) error {
+
+		// For scheduled_date cancellations, only mark end_date — skip all side-effects.
+		if req.CancellationType == types.CancellationTypeScheduledDate {
+			return s.updateSubscriptionForCancellation(ctx, subscription, req.CancellationType, effectiveDate, req.Reason)
+		}
 
 		// Step 6: Calculate proration using unified function
 		if req.ProrationBehavior == types.ProrationBehaviorCreateProrations {
@@ -4663,10 +4692,12 @@ func (s *subscriptionService) ProcessAutoCancellationSubscriptions(ctx context.C
 
 // Helper functions for enhanced cancellation
 
-// determineEffectiveDate calculates the actual effective date based on cancellation type
+// determineEffectiveDate calculates the actual effective date based on cancellation type.
+// customDate is used when cancellationType is CancellationTypeScheduledDate.
 func (s *subscriptionService) determineEffectiveDate(
 	subscription *subscription.Subscription,
 	cancellationType types.CancellationType,
+	customDate *time.Time,
 ) (time.Time, error) {
 	now := time.Now().UTC()
 
@@ -4676,6 +4707,10 @@ func (s *subscriptionService) determineEffectiveDate(
 
 	case types.CancellationTypeEndOfPeriod:
 		return subscription.CurrentPeriodEnd, nil
+
+	case types.CancellationTypeScheduledDate:
+		return customDate.UTC(), nil
+
 	default:
 		return time.Time{}, ierr.NewError("invalid cancellation type").
 			WithHintf("Unsupported cancellation type: %s", cancellationType).
@@ -4760,13 +4795,6 @@ func (s *subscriptionService) updateSubscriptionForCancellation(
 	effectiveDate time.Time,
 	reason string,
 ) error {
-	now := time.Now().UTC()
-
-	// Update cancellation fields
-	// For immediate cancellations, cancelled_at is the time of the subscription cancellation
-	// For scheduled cancellations, cancelled_at is the time when the cancellation was scheduled (not when it will be executed)
-	subscription.CancelledAt = &now
-
 	// Add cancellation metadata
 	if subscription.Metadata == nil {
 		subscription.Metadata = make(map[string]string)
@@ -4788,6 +4816,10 @@ func (s *subscriptionService) updateSubscriptionForCancellation(
 		subscription.CancelAtPeriodEnd = true
 		subscription.CancelAt = &effectiveDate
 		// EndDate should NOT be set - will be set when actually cancelled at period end
+
+	case types.CancellationTypeScheduledDate:
+		subscription.EndDate = &effectiveDate
+
 	default:
 		return ierr.NewError("invalid cancellation type").
 			WithHintf("Unsupported cancellation type: %s", cancellationType).
@@ -4835,6 +4867,9 @@ func (s *subscriptionService) generateCancellationMessage(
 	case types.CancellationTypeEndOfPeriod:
 		return fmt.Sprintf("Subscription will be cancelled at the end of the current period (%s)",
 			effectiveDate.Format("2006-01-02"))
+
+	case types.CancellationTypeScheduledDate:
+		return fmt.Sprintf("Subscription end date set to %s", effectiveDate.Format("2006-01-02"))
 
 	default:
 		return "Subscription cancelled successfully"

@@ -3477,6 +3477,220 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 	})
 }
 
+func (s *SubscriptionServiceSuite) TestCancelSubscriptionScheduledDate() {
+	ctx := s.GetContext()
+	futureDate := s.testData.now.Add(15 * 24 * time.Hour)
+
+	// newActiveSub creates and persists a clean active subscription with no end_date or cancel_at.
+	newActiveSub := func(id string) *subscription.Subscription {
+		sub := &subscription.Subscription{
+			ID:                 id,
+			CustomerID:         s.testData.customer.ID,
+			PlanID:             s.testData.plan.ID,
+			SubscriptionStatus: types.SubscriptionStatusActive,
+			StartDate:          s.testData.now.Add(-30 * 24 * time.Hour),
+			CurrentPeriodStart: s.testData.now.Add(-5 * 24 * time.Hour),
+			CurrentPeriodEnd:   s.testData.now.Add(25 * 24 * time.Hour),
+			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+			BillingPeriodCount: 1,
+			Currency:           "usd",
+			BaseModel:          types.GetDefaultBaseModel(ctx),
+		}
+		s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, sub, []*subscription.SubscriptionLineItem{}))
+		return sub
+	}
+
+	s.Run("sets only end_date, nothing else changes", func() {
+		sub := newActiveSub("sub_sched_basic")
+
+		_, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType: types.CancellationTypeScheduledDate,
+			CancelAt:         &futureDate,
+			Reason:           "downgrade",
+		})
+		s.NoError(err)
+
+		updated, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
+		s.NoError(err)
+		// Only end_date should be touched
+		s.NotNil(updated.EndDate, "end_date must be set")
+		s.WithinDuration(futureDate, *updated.EndDate, time.Second)
+		// Everything else must be untouched
+		s.Equal(types.SubscriptionStatusActive, updated.SubscriptionStatus, "status must stay active")
+		s.Nil(updated.CancelAt, "cancel_at must NOT be set")
+		s.Nil(updated.CancelledAt, "cancelled_at must NOT be set")
+		s.False(updated.CancelAtPeriodEnd, "cancel_at_period_end must be false")
+		s.T().Logf("✅ scheduled_date: only end_date is set, all other fields untouched")
+	})
+
+	s.Run("metadata records cancellation details but cancel_at stays nil", func() {
+		sub := newActiveSub("sub_sched_metadata")
+
+		_, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType: types.CancellationTypeScheduledDate,
+			CancelAt:         &futureDate,
+			Reason:           "user_request",
+		})
+		s.NoError(err)
+
+		updated, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
+		s.NoError(err)
+		s.Equal("scheduled_date", updated.Metadata["cancellation_type"])
+		s.Equal("user_request", updated.Metadata["cancellation_reason"])
+		s.NotEmpty(updated.Metadata["effective_date"])
+		// Scheduling must not flip cancel_at
+		s.Nil(updated.CancelAt, "cancel_at must remain nil after scheduled_date cancel")
+		s.T().Logf("✅ scheduled_date: metadata recorded, cancel_at remains nil")
+	})
+
+	s.Run("no invoice created for scheduled_date", func() {
+		sub := newActiveSub("sub_sched_no_invoice")
+
+		_, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType:               types.CancellationTypeScheduledDate,
+			CancelAt:                       &futureDate,
+			CancelImmediatelyInvoicePolicy: types.CancelImmediatelyInvoicePolicyGenerateInvoice,
+		})
+		s.NoError(err)
+
+		// Query the invoice store directly — no invoices should exist for this subscription
+		invoiceFilter := types.NewInvoiceFilter()
+		invoiceFilter.SubscriptionID = sub.ID
+		invoicesResp, err := s.GetStores().InvoiceRepo.List(ctx, invoiceFilter)
+		s.NoError(err)
+		s.Empty(invoicesResp, "no invoice should be generated for scheduled_date cancellation")
+		s.T().Logf("✅ scheduled_date: no invoice generated")
+	})
+
+	s.Run("validation rejects missing cancel_at", func() {
+		sub := newActiveSub("sub_sched_missing_date")
+
+		_, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType: types.CancellationTypeScheduledDate,
+			// CancelAt intentionally omitted
+		})
+		s.Error(err)
+		s.Contains(err.Error(), "cancel_at")
+		s.T().Logf("✅ scheduled_date: missing cancel_at rejected")
+	})
+
+	s.Run("validation rejects past cancel_at", func() {
+		sub := newActiveSub("sub_sched_past_date")
+		pastDate := s.testData.now.Add(-24 * time.Hour)
+
+		_, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType: types.CancellationTypeScheduledDate,
+			CancelAt:         &pastDate,
+		})
+		s.Error(err)
+		s.Contains(err.Error(), "future")
+		s.T().Logf("✅ scheduled_date: past cancel_at rejected")
+	})
+
+	s.Run("errors if end_date is already set", func() {
+		existingEndDate := s.testData.now.Add(10 * 24 * time.Hour)
+		sub := &subscription.Subscription{
+			ID:                 "sub_sched_existing_enddate",
+			CustomerID:         s.testData.customer.ID,
+			PlanID:             s.testData.plan.ID,
+			SubscriptionStatus: types.SubscriptionStatusActive,
+			StartDate:          s.testData.now.Add(-30 * 24 * time.Hour),
+			CurrentPeriodStart: s.testData.now.Add(-5 * 24 * time.Hour),
+			CurrentPeriodEnd:   s.testData.now.Add(25 * 24 * time.Hour),
+			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+			BillingPeriodCount: 1,
+			Currency:           "usd",
+			EndDate:            &existingEndDate, // already set
+			BaseModel:          types.GetDefaultBaseModel(ctx),
+		}
+		s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, sub, []*subscription.SubscriptionLineItem{}))
+
+		_, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType: types.CancellationTypeScheduledDate,
+			CancelAt:         &futureDate,
+		})
+		s.Error(err)
+		s.Contains(err.Error(), "end date")
+
+		// Confirm end_date was NOT overwritten
+		updated, fetchErr := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
+		s.NoError(fetchErr)
+		s.WithinDuration(existingEndDate, *updated.EndDate, time.Second, "existing end_date must not be overwritten")
+		s.T().Logf("✅ scheduled_date: existing end_date is protected from overwrite")
+	})
+
+	s.Run("errors if subscription is already scheduled to cancel (cancel_at set)", func() {
+		existingCancelAt := s.testData.now.Add(5 * 24 * time.Hour)
+		sub := &subscription.Subscription{
+			ID:                 "sub_sched_already_scheduled",
+			CustomerID:         s.testData.customer.ID,
+			PlanID:             s.testData.plan.ID,
+			SubscriptionStatus: types.SubscriptionStatusActive,
+			StartDate:          s.testData.now.Add(-30 * 24 * time.Hour),
+			CurrentPeriodStart: s.testData.now.Add(-5 * 24 * time.Hour),
+			CurrentPeriodEnd:   s.testData.now.Add(25 * 24 * time.Hour),
+			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+			BillingPeriodCount: 1,
+			Currency:           "usd",
+			CancelAt:           &existingCancelAt, // already scheduled
+			BaseModel:          types.GetDefaultBaseModel(ctx),
+		}
+		s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, sub, []*subscription.SubscriptionLineItem{}))
+
+		_, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType: types.CancellationTypeScheduledDate,
+			CancelAt:         &futureDate,
+		})
+		s.Error(err)
+		s.Contains(err.Error(), "already scheduled")
+
+		// Confirm cancel_at was NOT overwritten
+		updated, fetchErr := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
+		s.NoError(fetchErr)
+		s.WithinDuration(existingCancelAt, *updated.CancelAt, time.Second, "existing cancel_at must not be overwritten")
+		s.T().Logf("✅ scheduled_date: existing cancel_at is protected from overwrite")
+	})
+
+	s.Run("already cancelled subscription is rejected", func() {
+		sub := &subscription.Subscription{
+			ID:                 "sub_sched_already_cancelled",
+			CustomerID:         s.testData.customer.ID,
+			PlanID:             s.testData.plan.ID,
+			SubscriptionStatus: types.SubscriptionStatusCancelled,
+			StartDate:          s.testData.now.Add(-60 * 24 * time.Hour),
+			CurrentPeriodStart: s.testData.now.Add(-5 * 24 * time.Hour),
+			CurrentPeriodEnd:   s.testData.now.Add(25 * 24 * time.Hour),
+			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+			BillingPeriodCount: 1,
+			Currency:           "usd",
+			BaseModel:          types.GetDefaultBaseModel(ctx),
+		}
+		s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(ctx, sub, []*subscription.SubscriptionLineItem{}))
+
+		_, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType: types.CancellationTypeScheduledDate,
+			CancelAt:         &futureDate,
+		})
+		s.Error(err)
+		s.Contains(err.Error(), "already cancelled")
+		s.T().Logf("✅ scheduled_date: already-cancelled subscription rejected")
+	})
+
+	s.Run("response message contains formatted date", func() {
+		sub := newActiveSub("sub_sched_msg")
+
+		resp, err := s.service.CancelSubscription(ctx, sub.ID, &dto.CancelSubscriptionRequest{
+			CancellationType: types.CancellationTypeScheduledDate,
+			CancelAt:         &futureDate,
+		})
+		s.NoError(err)
+		s.Contains(resp.Message, futureDate.Format("2006-01-02"))
+		s.Equal(futureDate.UTC().Truncate(time.Second), resp.EffectiveDate.UTC().Truncate(time.Second))
+		s.Equal(types.CancellationTypeScheduledDate, resp.CancellationType)
+		s.T().Logf("✅ scheduled_date: response message and fields correct")
+	})
+}
+
 func (s *SubscriptionServiceSuite) TestListSubscriptions() {
 	// Create additional test subscriptions
 	testSubs := []*subscription.Subscription{
