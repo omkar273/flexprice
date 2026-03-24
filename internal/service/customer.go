@@ -307,33 +307,6 @@ func (s *customerService) GetCustomers(ctx context.Context, filter *types.Custom
 	}, nil
 }
 
-func (s *customerService) ListChildCustomers(
-	ctx context.Context,
-	parentCustomerID string,
-	filter *types.CustomerFilter,
-) (*dto.ListCustomersResponse, error) {
-	if parentCustomerID == "" {
-		return nil, ierr.NewError("customer ID is required").
-			WithHint("Customer ID is required").
-			Mark(ierr.ErrValidation)
-	}
-
-	if _, err := s.CustomerRepo.Get(ctx, parentCustomerID); err != nil {
-		return nil, err
-	}
-
-	if filter == nil {
-		filter = types.NewNoLimitCustomerFilter()
-	}
-	filter.ParentCustomerIDs = []string{parentCustomerID}
-	filter.Status = lo.ToPtr(types.StatusPublished)
-	if err := filter.Validate(); err != nil {
-		return nil, err
-	}
-
-	return s.GetCustomers(ctx, filter)
-}
-
 func (s *customerService) UpdateCustomer(ctx context.Context, id string, req dto.UpdateCustomerRequest) (*dto.CustomerResponse, error) {
 	if id == "" {
 		return nil, ierr.NewError("customer ID is required").

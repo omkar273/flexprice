@@ -107,48 +107,6 @@ func (h *CustomerHandler) ListCustomers(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// @Summary List child customers
-// @ID listChildCustomers
-// @Description Returns customers whose parent_customer_id is the given customer. Supports the same pagination, sort, and expand options as listing customers (parent_customer_ids in query is ignored; the path id is authoritative).
-// @Tags Customers
-// @x-scope "read"
-// @Produce json
-// @Security ApiKeyAuth
-// @Param id path string true "Parent customer ID"
-// @Param limit query int false "Page size"
-// @Param offset query int false "Offset"
-// @Param status query string false "Status filter"
-// @Param sort query string false "Sort field"
-// @Param order query string false "Sort order (asc or desc)"
-// @Param expand query string false "Comma-separated expands (e.g. parent_customer)"
-// @Success 200 {object} dto.ListCustomersResponse
-// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
-// @Failure 404 {object} ierr.ErrorResponse "Parent customer not found"
-// @Failure 500 {object} ierr.ErrorResponse "Server error"
-// @Router /customers/{id}/children [get]
-func (h *CustomerHandler) ListChildCustomers(c *gin.Context) {
-	parentID := c.Param("id")
-	var filter types.CustomerFilter
-	if err := c.ShouldBindQuery(&filter); err != nil {
-		c.Error(ierr.WithError(err).
-			WithHint("Invalid filter parameters").
-			Mark(ierr.ErrValidation))
-		return
-	}
-
-	if filter.GetLimit() == 0 {
-		filter.Limit = lo.ToPtr(types.GetDefaultFilter().Limit)
-	}
-
-	resp, err := h.service.ListChildCustomers(c.Request.Context(), parentID, &filter)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-
 // @Summary Update customer
 // @ID updateCustomer
 // @Description Use when updating customer details (e.g. name, email, or metadata). Identify by id or external_customer_id.

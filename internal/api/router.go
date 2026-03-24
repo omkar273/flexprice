@@ -214,7 +214,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			customer.GET("/external/:external_id", handlers.Customer.GetCustomerByLookupKey) // New route with external_id as path parameter
 
 			// New endpoints for entitlements and usage
-			customer.GET("/:id/children", handlers.Customer.ListChildCustomers)
 			customer.GET("/:id/entitlements", handlers.Customer.GetCustomerEntitlements)
 			customer.GET("/usage", handlers.Customer.GetCustomerUsageSummary)     // New route with query parameters (must come first!)
 			customer.GET("/:id/usage", handlers.Customer.GetCustomerUsageSummary) // Deprecated route with path parameter
