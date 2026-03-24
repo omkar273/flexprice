@@ -135,7 +135,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 		}
 	}
 
-	// --- Customer hierarchy: resolve usage_customer_ids and set SubscriptionType ---
+	// --- Customer hierarchy: resolve customer_ids_to_inherit_subscription and set SubscriptionType ---
 	usageCustomerIDs, err := s.resolveUsageCustomerIDs(ctx, customer, &req)
 	if err != nil {
 		return nil, err
@@ -1610,6 +1610,17 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 	}
 
 	// Handle parent_subscription_id: omit = unchanged, "" = clear, non-empty = set (validate exists and active)
+	// parent_subscription_id can only be changed on standalone subscriptions.
+	if req.ParentSubscriptionID != nil && lo.FromPtr(req.ParentSubscriptionID) != "" &&
+		subscription.SubscriptionType != types.SubscriptionTypeStandalone {
+		return nil, ierr.NewError("parent_subscription_id can only be set on standalone subscriptions").
+			WithHint("Convert the subscription to standalone before assigning a parent").
+			WithReportableDetails(map[string]interface{}{
+				"subscription_id":   subscriptionID,
+				"subscription_type": subscription.SubscriptionType,
+			}).
+			Mark(ierr.ErrInvalidOperation)
+	}
 	if req.ParentSubscriptionID != nil {
 		if lo.FromPtr(req.ParentSubscriptionID) == "" {
 			subscription.ParentSubscriptionID = nil
@@ -1646,31 +1657,31 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 
 	subscription.CancelAtPeriodEnd = req.CancelAtPeriodEnd
 
-	// --- usage_customer_ids: add new child customers to an existing subscription ---
+	// --- customer_ids_to_inherit_subscription: add new customers to inherit this subscription ---
 	// Omitting the field (nil) leaves the current set unchanged.
 	// Providing a non-nil slice declares the full desired set; any existing customer
 	// not present in the new list is rejected — removals require cancellation.
-	var addedCustomerIDs []string
-	if req.UsageCustomerIDs != nil {
-		addedCustomerIDs, err = s.resolveUsageCustomerIDsUpdate(ctx, subscription, *req.UsageCustomerIDs)
+	var newInheritCustomerIDs []string
+	if req.CustomerIDsToInheritSubscription != nil {
+		newInheritCustomerIDs, err = s.resolveUsageCustomerIDsUpdate(ctx, subscription, *req.CustomerIDsToInheritSubscription)
 		if err != nil {
 			return nil, err
 		}
 		// If there are new children, the subscription must become (or stay) PARENT type.
-		if len(addedCustomerIDs) > 0 {
+		if len(newInheritCustomerIDs) > 0 {
 			subscription.SubscriptionType = types.SubscriptionTypeParent
 		}
 	}
 
-	// Persist parent update + create any new inherited subscriptions atomically.
+	// Persist update + create any new inherited subscriptions atomically.
 	err = s.DB.WithTx(ctx, func(ctx context.Context) error {
 		if err := s.SubRepo.Update(ctx, subscription); err != nil {
 			return ierr.WithError(err).
 				WithHint("Failed to update subscription").
 				Mark(ierr.ErrDatabase)
 		}
-		if len(addedCustomerIDs) > 0 {
-			if err := s.createInheritedSubscriptions(ctx, subscription, addedCustomerIDs); err != nil {
+		if len(newInheritCustomerIDs) > 0 {
+			if err := s.createInheritedSubscriptions(ctx, subscription, newInheritCustomerIDs); err != nil {
 				return err
 			}
 		}
@@ -1688,13 +1699,12 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 	return s.GetSubscription(ctx, subscriptionID)
 }
 
-// resolveUsageCustomerIDsUpdate validates a desired usage_customer_ids list against the current
-// state of the parent subscription and returns the slice of net-new customer IDs to onboard.
+// resolveUsageCustomerIDsUpdate validates a desired customer_ids_to_inherit_subscription list against
+// the current state of the parent subscription and returns the slice of net-new customer IDs to onboard.
 //
 // Rules:
-//   - Subscription must be ACTIVE or TRIALING.
-//   - Every customer in desiredIDs must exist, be Published, and be a direct child of the
-//     subscription's owner customer.
+//   - Subscription must be ACTIVE, TRIALING, or DRAFT.
+//   - Every customer in desiredIDs must exist and be Published.
 //   - Any customer currently tracked by an inherited subscription that is absent from desiredIDs
 //     is a removal attempt → hard error (use cancellation instead).
 //   - Duplicate IDs in desiredIDs are silently deduplicated.
@@ -1704,14 +1714,14 @@ func (s *subscriptionService) resolveUsageCustomerIDsUpdate(
 	sub *subscription.Subscription,
 	desiredIDs []string,
 ) ([]string, error) {
-	// 1. Subscription must be live.
+	// 1. Subscription must be in an appropriate state.
 	switch sub.SubscriptionStatus {
-	case types.SubscriptionStatusActive, types.SubscriptionStatusTrialing:
+	case types.SubscriptionStatusActive, types.SubscriptionStatusTrialing, types.SubscriptionStatusDraft:
 		// allowed
 	default:
 		return nil, ierr.NewError(fmt.Sprintf(
-			"cannot update usage_customer_ids on a subscription with status %q", sub.SubscriptionStatus)).
-			WithHint("usage_customer_ids can only be updated on active or trialing subscriptions").
+			"cannot update customer_ids_to_inherit_subscription on a subscription with status %q", sub.SubscriptionStatus)).
+			WithHint("customer_ids_to_inherit_subscription can only be updated on active, trialing, or draft subscriptions").
 			WithReportableDetails(map[string]interface{}{
 				"subscription_id":     sub.ID,
 				"subscription_status": sub.SubscriptionStatus,
@@ -1771,7 +1781,7 @@ func (s *subscriptionService) resolveUsageCustomerIDsUpdate(
 	for _, existingID := range existingCustomerIDs {
 		if _, kept := desiredSet[existingID]; !kept {
 			return nil, ierr.NewError("removing a usage customer requires cancelling the subscription").
-				WithHint("To remove child customers from usage aggregation, cancel the subscription and recreate it with the updated usage_customer_ids").
+				WithHint("To remove customers from subscription inheritance, cancel the subscription and recreate it with the updated customer_ids_to_inherit_subscription").
 				WithReportableDetails(map[string]interface{}{
 					"subscription_id":           sub.ID,
 					"removed_usage_customer_id": existingID,
@@ -1991,7 +2001,7 @@ func (s *subscriptionService) CancelSubscription(
 		// Cascade cancellation to INHERITED child subscriptions
 		if subscription.SubscriptionType == types.SubscriptionTypeParent {
 			if err := s.cascadeCancelToInherited(ctx, subscription, req); err != nil {
-				logger.Errorw("failed to cascade cancellation to inherited subs", "error", err)
+				return err
 			}
 		}
 
@@ -2325,25 +2335,22 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 	inheritanceSvc := NewSubscriptionInheritanceService(s.ServiceParams)
 	aggregatedExternalIDs, err := inheritanceSvc.GetAggregatedCustomerIDs(ctx, subscription)
 	if err != nil {
-		s.Logger.WarnwCtx(ctx, "failed to get aggregated customer IDs, falling back to owner only",
-			"error", err,
-			"subscription_id", req.SubscriptionID)
-		aggregatedExternalIDs = []string{customer.ExternalID}
+		return nil, ierr.WithError(err).
+			WithHint("Failed to get aggregated customer IDs for subscription").
+			Mark(ierr.ErrInternal)
 	}
 
-	// Performance optimization: Get distinct event names across all relevant customers
-	// to filter out meters that have no events, reducing processing from potentially
-	// 400-500 meters down to only 5-7 that have actual usage
+	// Performance optimization: Get distinct event names across all relevant customers in
+	// a single query to filter out meters with no events, reducing processing from potentially
+	// 400-500 meters down to only 5-7 that have actual usage.
 	distinctEventNameSet := make(map[string]bool)
-	for _, extID := range aggregatedExternalIDs {
-		names, derr := s.EventRepo.GetDistinctEventNames(ctx, extID, usageStartTime, usageEndTime)
-		if derr != nil {
-			s.Logger.WarnwCtx(ctx, "failed to get distinct event names, proceeding without optimization",
-				"error", derr,
-				"external_customer_id", extID)
-			distinctEventNameSet = nil // signal: skip optimization
-			break
-		}
+	names, derr := s.EventRepo.GetDistinctEventNames(ctx, aggregatedExternalIDs, usageStartTime, usageEndTime)
+	if derr != nil {
+		s.Logger.WarnwCtx(ctx, "failed to get distinct event names, proceeding without optimization",
+			"error", derr,
+			"external_customer_id_count", len(aggregatedExternalIDs))
+		distinctEventNameSet = nil // signal: skip optimization
+	} else {
 		for _, n := range names {
 			distinctEventNameSet[n] = true
 		}
@@ -3436,7 +3443,7 @@ func (s *subscriptionService) PauseSubscription(
 	// Cascade pause to INHERITED child subscriptions
 	if sub.SubscriptionType == types.SubscriptionTypeParent {
 		if err := s.cascadePauseToInherited(ctx, sub); err != nil {
-			s.Logger.Errorw("failed to cascade pause to inherited subs", "error", err)
+			return nil, err
 		}
 	}
 
@@ -3598,7 +3605,7 @@ func (s *subscriptionService) ResumeSubscription(
 	// Cascade resume to INHERITED child subscriptions
 	if sub.SubscriptionType == types.SubscriptionTypeParent {
 		if err := s.cascadeResumeToInherited(ctx, sub); err != nil {
-			s.Logger.Errorw("failed to cascade resume to inherited subs", "error", err)
+			return nil, err
 		}
 	}
 
@@ -5247,12 +5254,12 @@ func (s *subscriptionService) GetFeatureUsageBySubscription(ctx context.Context,
 		Source: types.UsageSource(req.Source),
 	}
 	// Determine customer IDs for usage query.
-	// If the caller explicitly provides OverrideCustomerIDs (e.g. per-child breakdown), use those
-	// directly. Otherwise auto-detect: for PARENT subs include all inherited children; for all
+	// If the caller explicitly provides CustomerIDs, use those directly.
+	// Otherwise auto-detect: for PARENT subs include all inherited children; for all
 	// other types scope to the subscription's own customer.
 	var usageCustomerIDs []string
-	if len(req.OverrideCustomerIDs) > 0 {
-		usageCustomerIDs = req.OverrideCustomerIDs
+	if len(req.CustomerIDs) > 0 {
+		usageCustomerIDs = req.CustomerIDs
 	} else {
 		usageCustomerIDs = []string{customer.ID}
 		if subscription.SubscriptionType == types.SubscriptionTypeParent {
@@ -6404,9 +6411,9 @@ func (s *subscriptionService) TriggerSubscriptionWorkflow(ctx context.Context, s
 	return response, nil
 }
 
-// resolveUsageCustomerIDs determines the set of child customer IDs whose usage
+// resolveUsageCustomerIDs determines the set of customer IDs whose usage
 // should be aggregated on the parent subscription.
-//   - If req.UsageCustomerIDs is explicitly provided (even as an empty slice), use it.
+//   - If req.CustomerIDsToInheritSubscription is explicitly provided (even as an empty slice), use it.
 //   - Otherwise, auto-detect children from customer hierarchy.
 //   - Returns nil/empty when the subscription should be STANDALONE.
 func (s *subscriptionService) resolveUsageCustomerIDs(
@@ -6415,8 +6422,8 @@ func (s *subscriptionService) resolveUsageCustomerIDs(
 	req *dto.CreateSubscriptionRequest,
 ) ([]string, error) {
 	// Explicitly provided (even empty array is valid). nil slice = field omitted in JSON.
-	if req.UsageCustomerIDs != nil {
-		ids := lo.Uniq(req.UsageCustomerIDs)
+	if req.CustomerIDsToInheritSubscription != nil {
+		ids := lo.Uniq(req.CustomerIDsToInheritSubscription)
 		if len(ids) == 0 {
 			return ids, nil
 		}
@@ -6562,8 +6569,9 @@ func (s *subscriptionService) cascadeCancelToInherited(ctx context.Context, pare
 		child.CancelAtPeriodEnd = parentSub.CancelAtPeriodEnd
 		child.EndDate = parentSub.EndDate
 		if err := s.SubRepo.Update(ctx, child); err != nil {
-			s.Logger.Errorw("failed to cascade cancel to inherited sub",
-				"child_sub_id", child.ID, "parent_sub_id", parentSub.ID, "error", err)
+			return ierr.WithError(err).
+				WithHintf("Failed to cascade cancel to inherited subscription %s", child.ID).
+				Mark(ierr.ErrInternal)
 		}
 	}
 	return nil
@@ -6580,8 +6588,9 @@ func (s *subscriptionService) cascadePauseToInherited(ctx context.Context, paren
 		child.PauseStatus = parentSub.PauseStatus
 		child.ActivePauseID = nil
 		if err := s.SubRepo.Update(ctx, child); err != nil {
-			s.Logger.Errorw("failed to cascade pause to inherited sub",
-				"child_sub_id", child.ID, "parent_sub_id", parentSub.ID, "error", err)
+			return ierr.WithError(err).
+				WithHintf("Failed to cascade pause to inherited subscription %s", child.ID).
+				Mark(ierr.ErrInternal)
 		}
 	}
 	return nil
@@ -6600,8 +6609,9 @@ func (s *subscriptionService) cascadeResumeToInherited(ctx context.Context, pare
 		child.CurrentPeriodStart = parentSub.CurrentPeriodStart
 		child.CurrentPeriodEnd = parentSub.CurrentPeriodEnd
 		if err := s.SubRepo.Update(ctx, child); err != nil {
-			s.Logger.Errorw("failed to cascade resume to inherited sub",
-				"child_sub_id", child.ID, "parent_sub_id", parentSub.ID, "error", err)
+			return ierr.WithError(err).
+				WithHintf("Failed to cascade resume to inherited subscription %s", child.ID).
+				Mark(ierr.ErrInternal)
 		}
 	}
 	return nil

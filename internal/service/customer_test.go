@@ -401,7 +401,9 @@ func (s *CustomerServiceSuite) TestUpdateCustomer_ParentCustomerID() {
 		s.Equal("parent-h", *resp.Customer.ParentCustomerID)
 	})
 
-	s.Run("inherited_active_subscription_blocks_parent_change", func() {
+	s.Run("inherited_active_subscription_no_longer_blocks_parent_change", func() {
+		// Customer-level hierarchy validations are deprecated; updating parent_customer_id
+		// is always accepted regardless of subscription hierarchy state.
 		s.SetupTest()
 		s.NoError(s.GetStores().CustomerRepo.Create(s.ctx, baseCustomer("parent-i")))
 		s.NoError(s.GetStores().CustomerRepo.Create(s.ctx, baseCustomer("child-i")))
@@ -414,9 +416,7 @@ func (s *CustomerServiceSuite) TestUpdateCustomer_ParentCustomerID() {
 		_, err := s.service.UpdateCustomer(s.ctx, "child-i", dto.UpdateCustomerRequest{
 			ParentCustomerID: lo.ToPtr("parent-i"),
 		})
-		s.Error(err)
-		s.True(ierr.IsInvalidOperation(err))
-		s.Contains(err.Error(), "inherited")
+		s.NoError(err)
 	})
 }
 

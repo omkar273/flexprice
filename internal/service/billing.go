@@ -3203,8 +3203,8 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 	}
 
 	// 7. Optionally attach per-child-customer usage breakdown.
-	// call GetFeatureUsageBySubscription with the parent subscription ID and restrict the
-	// customer list to a single child via OverrideCustomerIDs. This returns that child's share
+	// Call GetFeatureUsageBySubscription with the parent subscription ID and restrict the
+	// customer list to a single child via CustomerIDs. This returns that child's share
 	// of the parent's feature_usage records with all the same reset-period logic applied.
 	if req.IncludeChildCustomersBreakdown {
 		childFilter := types.NewNoLimitCustomerFilter()
@@ -3332,7 +3332,7 @@ func (s *billingService) buildBreakdownFeatureUsage(
 		req := &dto.GetUsageBySubscriptionRequest{
 			SubscriptionID:      subID,
 			Source:              string(types.UsageSourceAnalytics),
-			OverrideCustomerIDs: []string{customerID},
+			CustomerIDs: []string{customerID},
 		}
 		result, err := subscriptionService.GetFeatureUsageBySubscription(ctx, req)
 		if err != nil {

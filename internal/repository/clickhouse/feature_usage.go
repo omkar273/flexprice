@@ -2022,14 +2022,9 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 	r.logger.Debugw("subscription usage query", "aggColumns", aggColumns, "tableRef", tableRef, "opts", opts)
 
 	// Build customer_id filter: single = for one ID, IN for multiple.
-	// Empty slice would yield invalid SQL (IN ()) and misaligned arguments.
+	// Guard against empty slice which would yield invalid SQL (IN ()) and misaligned arguments.
 	if len(customerIDs) == 0 {
-		return nil, ierr.NewError("at least one customer id is required").
-			WithHint("Provide one or more customer_ids when loading subscription feature usage").
-			WithReportableDetails(map[string]interface{}{
-				"subscription_id": subscriptionID,
-			}).
-			Mark(ierr.ErrValidation)
+		return map[string]*events.UsageByFeatureResult{}, nil
 	}
 
 	customerFilter := "customer_id = ?"

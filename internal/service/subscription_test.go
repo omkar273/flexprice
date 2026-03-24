@@ -5744,7 +5744,7 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Can
 }
 
 // ---------------------------------------------------------------------------
-// TestUpdateSubscription_UsageCustomerIDs
+// TestUpdateSubscription_CustomerIDsToInheritSubscription
 // ---------------------------------------------------------------------------
 // Tests covering all edge cases for adding child customers via UpdateSubscription.
 // ---------------------------------------------------------------------------
@@ -5818,7 +5818,7 @@ func (s *SubscriptionServiceSuite) uciListInherited(ctx context.Context, parentS
 	return subs
 }
 
-func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
+func (s *SubscriptionServiceSuite) TestUpdateSubscription_CustomerIDsToInheritSubscription() {
 	ctx := s.GetContext()
 	// Reset to a clean slate for this test method (avoids interference from other test methods).
 	s.ClearStores()
@@ -5832,7 +5832,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		_ = children
 
 		req := dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: nil, // explicitly omit
+			CustomerIDsToInheritSubscription: nil, // explicitly omit
 		}
 		resp, err := s.service.UpdateSubscription(ctx, sub.ID, req)
 		s.Require().NoError(err)
@@ -5840,7 +5840,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 
 		// No inherited subscriptions should have been created.
 		inherited := s.uciListInherited(ctx, sub.ID)
-		s.Empty(inherited, "no inherited subs should be created when UsageCustomerIDs is nil")
+		s.Empty(inherited, "no inherited subs should be created when CustomerIDsToInheritSubscription is nil")
 
 		// Subscription type must remain STANDALONE.
 		updated, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
@@ -5856,7 +5856,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 
 		ids := []string{children[0].ID, children[1].ID}
 		req := dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		}
 		resp, err := s.service.UpdateSubscription(ctx, sub.ID, req)
 		s.Require().NoError(err)
@@ -5889,7 +5889,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		// First add C0 to make it PARENT.
 		ids0 := []string{children[0].ID}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids0,
+			CustomerIDsToInheritSubscription: &ids0,
 		})
 		s.Require().NoError(err)
 		s.Len(s.uciListInherited(ctx, sub.ID), 1, "one inherited sub after first update")
@@ -5897,7 +5897,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		// Now add C1 as well (must include C0 to avoid removal error).
 		ids01 := []string{children[0].ID, children[1].ID}
 		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids01,
+			CustomerIDsToInheritSubscription: &ids01,
 		})
 		s.Require().NoError(err)
 		s.Require().NotNil(resp)
@@ -5916,7 +5916,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		// Provide C0 twice; UpdateSubscriptionRequest documents deduplication.
 		ids := []string{children[0].ID, children[1].ID, children[0].ID}
 		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().NoError(err)
 		s.Require().NotNil(resp)
@@ -5933,14 +5933,14 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		// First add both children.
 		both := []string{children[0].ID, children[1].ID}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &both,
+			CustomerIDsToInheritSubscription: &both,
 		})
 		s.Require().NoError(err)
 
 		// Now try to pass only C0 (omitting C1 = removal attempt).
 		onlyC0 := []string{children[0].ID}
 		_, err = s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &onlyC0,
+			CustomerIDsToInheritSubscription: &onlyC0,
 		})
 		s.Require().Error(err)
 		s.True(ierr.IsValidation(err), "removal attempt should return validation error")
@@ -5956,14 +5956,14 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		// Add the one child first.
 		ids := []string{children[0].ID}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().NoError(err)
 
 		// Now pass an empty slice — all existing children removed → error.
 		empty := []string{}
 		_, err = s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &empty,
+			CustomerIDsToInheritSubscription: &empty,
 		})
 		s.Require().Error(err)
 		s.True(ierr.IsValidation(err), "empty slice with existing children should be validation error")
@@ -5978,7 +5978,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 
 		empty := []string{}
 		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &empty,
+			CustomerIDsToInheritSubscription: &empty,
 		})
 		s.Require().NoError(err)
 		s.Require().NotNil(resp)
@@ -6004,7 +6004,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 
 		ids := []string{unrelated.ID}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().Error(err)
 		s.True(ierr.IsValidation(err))
@@ -6020,7 +6020,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		ghost := "cust_does_not_exist_xyz"
 		ids := []string{ghost}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().Error(err)
 		s.True(ierr.IsValidation(err))
@@ -6035,26 +6035,24 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 
 		ids := []string{children[0].ID}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().Error(err)
 		s.True(ierr.IsValidation(err))
-		s.Contains(err.Error(), "cannot update usage_customer_ids")
+		s.Contains(err.Error(), "cannot update customer_ids_to_inherit_subscription")
 	})
 
 	// -------------------------------------------------------------------------
-	// Case 11: DRAFT subscription → error
+	// Case 11: DRAFT subscription → allowed (draft is a valid status for hierarchy ops)
 	// -------------------------------------------------------------------------
 	s.Run("draft_sub_error", func() {
 		_, children, sub := s.uciSetup(ctx, "draft", 1, types.SubscriptionStatusDraft)
 
 		ids := []string{children[0].ID}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
-		s.Require().Error(err)
-		s.True(ierr.IsValidation(err))
-		s.Contains(err.Error(), "cannot update usage_customer_ids")
+		s.Require().NoError(err)
 	})
 
 	// -------------------------------------------------------------------------
@@ -6066,14 +6064,14 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		// Add C0.
 		ids := []string{children[0].ID}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().NoError(err)
 		s.Len(s.uciListInherited(ctx, sub.ID), 1)
 
 		// Submit the same list again — should be a no-op.
 		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().NoError(err)
 		s.Require().NotNil(resp)
@@ -6090,7 +6088,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 
 		ids := []string{children[0].ID}
 		resp, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().NoError(err)
 		s.Require().NotNil(resp)
@@ -6109,7 +6107,7 @@ func (s *SubscriptionServiceSuite) TestUpdateSubscription_UsageCustomerIDs() {
 		blank := ""
 		ids := []string{blank}
 		_, err := s.service.UpdateSubscription(ctx, sub.ID, dto.UpdateSubscriptionRequest{
-			UsageCustomerIDs: &ids,
+			CustomerIDsToInheritSubscription: &ids,
 		})
 		s.Require().Error(err)
 		s.True(ierr.IsValidation(err))

@@ -17,7 +17,10 @@ type Repository interface {
 	GetEventByID(ctx context.Context, eventID string) (*Event, error)
 	FindUnprocessedEvents(ctx context.Context, params *FindUnprocessedEventsParams) ([]*Event, error)
 	FindUnprocessedEventsFromFeatureUsage(ctx context.Context, params *FindUnprocessedEventsParams) ([]*Event, error)
-	GetDistinctEventNames(ctx context.Context, externalCustomerID string, startTime, endTime time.Time) ([]string, error)
+	// GetDistinctEventNames returns distinct event names for the given external customer IDs
+	// within the specified time range. Accepts a slice to support multi-customer (parent) subscriptions
+	// in a single query rather than N separate queries.
+	GetDistinctEventNames(ctx context.Context, externalCustomerIDs []string, startTime, endTime time.Time) ([]string, error)
 
 	// Monitoring methods
 	GetTotalEventCount(ctx context.Context, startTime, endTime time.Time, windowSize types.WindowSize) (*EventCountResult, error)
