@@ -8852,6 +8852,86 @@
         ]
       }
     },
+    "/subscriptions/{id}/inheritance/execute": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Execute subscription inheritance changes",
+        "description": "Adds new child customers to an existing PARENT subscription. Customers already inherited are silently skipped.",
+        "operationId": "executeSubscriptionInheritance",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Parent subscription ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Inheritance request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/dto.ExecuteSubscriptionInheritanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/dto.SubscriptionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-codegen-request-body-name": "request"
+      }
+    },
     "/subscriptions/{id}/lineitems": {
       "post": {
         "tags": [
@@ -15681,13 +15761,6 @@
             "type": "string",
             "description": "customer_id is the flexprice customer id\nand it is prioritized over external_customer_id in case both are provided."
           },
-          "customer_ids_to_inherit_subscription": {
-            "type": "array",
-            "description": "CustomerIDsToInheritSubscription specifies which customers should have inherited subscriptions\ncreated under this (parent) subscription for usage aggregation.\nWhen set the subscription becomes a PARENT type and skeleton INHERITED subscriptions are\ncreated for each listed customer. Mutually exclusive with InvoiceBilling/InvoicingCustomerID.\nnil slice = JSON omitted (auto-detect children); non-nil = explicit list (empty slice allowed).",
-            "items": {
-              "type": "string"
-            }
-          },
           "customer_timezone": {
             "type": "string",
             "description": "Timezone of the customer.\nIf not set, the default value is UTC."
@@ -15703,26 +15776,11 @@
             "type": "string",
             "description": "external_customer_id is the customer id in your DB\nand must be same as what you provided as external_id while creating the customer in flexprice."
           },
-          "external_customer_ids_to_inherit_subscription": {
-            "type": "array",
-            "description": "ExternalCustomerIDsToInheritSubscription is the external-ID variant of\ncustomer_ids_to_inherit_subscription. Values are resolved internally to customer IDs.\nMutually exclusive with customer_ids_to_inherit_subscription.",
-            "items": {
-              "type": "string"
-            }
-          },
           "gateway_payment_method_id": {
             "type": "string"
           },
-          "invoice_billing": {
-            "$ref": "#/components/schemas/types.InvoiceBilling"
-          },
-          "invoicing_customer_external_id": {
-            "type": "string",
-            "description": "invoicing_customer_external_id is the external ID of the customer to use for invoicing.\nResolved internally to an internal customer ID via external ID lookup.\nMutually exclusive with invoicing_customer_id."
-          },
-          "invoicing_customer_id": {
-            "type": "string",
-            "description": "invoicing_customer_id is the FlexPrice customer ID to use for invoicing.\nThis can differ from the subscription customer (e.g., a billing entity invoicing on behalf of another customer).\nMutually exclusive with invoicing_customer_external_id."
+          "inheritance": {
+            "$ref": "#/components/schemas/dto.SubscriptionInheritanceConfig"
           },
           "line_item_commitments": {
             "type": "object",
@@ -15773,10 +15831,6 @@
             "items": {
               "$ref": "#/components/schemas/dto.OverrideLineItemRequest"
             }
-          },
-          "parent_subscription_id": {
-            "type": "string",
-            "description": "ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)"
           },
           "payment_behavior": {
             "$ref": "#/components/schemas/types.PaymentBehavior"
@@ -16773,6 +16827,23 @@
           },
           "requestId": {
             "type": "string"
+          }
+        }
+      },
+      "dto.ExecuteSubscriptionInheritanceRequest": {
+        "type": "object",
+        "properties": {
+          "customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "external_customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -19435,6 +19506,35 @@
             "type": "string"
           },
           "subscription_id": {
+            "type": "string"
+          }
+        }
+      },
+      "dto.SubscriptionInheritanceConfig": {
+        "type": "object",
+        "properties": {
+          "customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "external_customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "invoice_billing": {
+            "$ref": "#/components/schemas/types.InvoiceBilling"
+          },
+          "invoicing_customer_external_id": {
+            "type": "string"
+          },
+          "invoicing_customer_id": {
+            "type": "string"
+          },
+          "parent_subscription_id": {
             "type": "string"
           }
         }

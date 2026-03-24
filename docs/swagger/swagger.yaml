@@ -1816,16 +1816,6 @@ definitions:
           customer_id is the flexprice customer id
           and it is prioritized over external_customer_id in case both are provided.
         type: string
-      customer_ids_to_inherit_subscription:
-        description: |-
-          CustomerIDsToInheritSubscription specifies which customers should have inherited subscriptions
-          created under this (parent) subscription for usage aggregation.
-          When set the subscription becomes a PARENT type and skeleton INHERITED subscriptions are
-          created for each listed customer. Mutually exclusive with InvoiceBilling/InvoicingCustomerID.
-          nil slice = JSON omitted (auto-detect children); non-nil = explicit list (empty slice allowed).
-        items:
-          type: string
-        type: array
       customer_timezone:
         description: |-
           Timezone of the customer.
@@ -1841,36 +1831,14 @@ definitions:
           external_customer_id is the customer id in your DB
           and must be same as what you provided as external_id while creating the customer in flexprice.
         type: string
-      external_customer_ids_to_inherit_subscription:
-        description: |-
-          ExternalCustomerIDsToInheritSubscription is the external-ID variant of
-          customer_ids_to_inherit_subscription. Values are resolved internally to customer IDs.
-          Mutually exclusive with customer_ids_to_inherit_subscription.
-        items:
-          type: string
-        type: array
       gateway_payment_method_id:
         type: string
-      invoice_billing:
+      inheritance:
         allOf:
-        - $ref: '#/definitions/types.InvoiceBilling'
+        - $ref: '#/definitions/dto.SubscriptionInheritanceConfig'
         description: |-
-          Deprecated: Use invoicing_customer_id or invoicing_customer_external_id instead.
-          invoice_billing determines which customer should receive invoices for a subscription.
-          Supported values: "invoice_to_parent" (uses the subscription customer's parent) or "invoice_to_self" (default).
-          Will be removed in a future version.
-      invoicing_customer_external_id:
-        description: |-
-          invoicing_customer_external_id is the external ID of the customer to use for invoicing.
-          Resolved internally to an internal customer ID via external ID lookup.
-          Mutually exclusive with invoicing_customer_id.
-        type: string
-      invoicing_customer_id:
-        description: |-
-          invoicing_customer_id is the FlexPrice customer ID to use for invoicing.
-          This can differ from the subscription customer (e.g., a billing entity invoicing on behalf of another customer).
-          Mutually exclusive with invoicing_customer_external_id.
-        type: string
+          Inheritance groups all customer-hierarchy fields.
+          When provided with at least one child ID, the subscription becomes a PARENT type.
       line_item_commitments:
         additionalProperties:
           $ref: '#/definitions/dto.LineItemCommitmentConfig'
@@ -1911,10 +1879,6 @@ definitions:
         items:
           $ref: '#/definitions/dto.OverrideLineItemRequest'
         type: array
-      parent_subscription_id:
-        description: ParentSubscriptionID is the parent subscription ID for hierarchy
-          (e.g. child subscription under a parent)
-        type: string
       payment_behavior:
         allOf:
         - $ref: '#/definitions/types.PaymentBehavior'
@@ -2708,6 +2672,17 @@ definitions:
         type: string
       requestId:
         type: string
+    type: object
+  dto.ExecuteSubscriptionInheritanceRequest:
+    properties:
+      customer_ids_to_inherit_subscription:
+        items:
+          type: string
+        type: array
+      external_customer_ids_to_inherit_subscription:
+        items:
+          type: string
+        type: array
     type: object
   dto.FeatureResponse:
     properties:
@@ -4784,6 +4759,25 @@ definitions:
       plan_id:
         type: string
       subscription_id:
+        type: string
+    type: object
+  dto.SubscriptionInheritanceConfig:
+    properties:
+      customer_ids_to_inherit_subscription:
+        items:
+          type: string
+        type: array
+      external_customer_ids_to_inherit_subscription:
+        items:
+          type: string
+        type: array
+      invoice_billing:
+        $ref: '#/definitions/types.InvoiceBilling'
+      invoicing_customer_external_id:
+        type: string
+      invoicing_customer_id:
+        type: string
+      parent_subscription_id:
         type: string
     type: object
   dto.SubscriptionLineItemLookupResult:
@@ -14285,6 +14279,49 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get upcoming credit grant applications
+      tags:
+      - Subscriptions
+  /subscriptions/{id}/inheritance/execute:
+    post:
+      consumes:
+      - application/json
+      description: Adds new child customers to an existing PARENT subscription. Customers
+        already inherited are silently skipped.
+      operationId: executeSubscriptionInheritance
+      parameters:
+      - description: Parent subscription ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Inheritance request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ExecuteSubscriptionInheritanceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SubscriptionResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "404":
+          description: Subscription not found
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Execute subscription inheritance changes
       tags:
       - Subscriptions
   /subscriptions/{id}/lineitems:
