@@ -2855,7 +2855,7 @@ func (s *billingService) GetCustomerEntitlements(ctx context.Context, customerID
 }
 
 func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID string, req *dto.GetCustomerUsageSummaryRequest) (*dto.CustomerUsageSummaryResponse, error) {
-	subscriptionService := NewSubscriptionService(s.ServiceParams)
+	subscriptionSvc := NewSubscriptionService(s.ServiceParams)
 	eventService := NewEventService(s.EventRepo, s.MeterRepo, s.EventPublisher, s.Logger, s.Config)
 
 	// get customer
@@ -2940,9 +2940,8 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 			}
 		}
 	}
-	service := NewSubscriptionInheritanceService(s.ServiceParams)
-
 	// Build map of subscription ID -> list of external customer IDs (parent + children for PARENT subs)
+	subscriptionHierarchySvc := &subscriptionService{ServiceParams: s.ServiceParams}
 	subscriptionCustomerIDsMap := make(map[string][]string)
 	for _, subscriptionID := range subscriptionIDs {
 		sub := subscriptionMap[subscriptionID]
@@ -2950,7 +2949,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 			continue
 		}
 
-		customerIDs, err := service.GetAggregatedCustomerIDs(ctx, sub)
+		customerIDs, err := subscriptionHierarchySvc.getAggregatedCustomerIDs(ctx, sub)
 
 		if err != nil {
 			return nil, err
@@ -2971,7 +2970,7 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 			Source:         string(types.UsageSourceAnalytics),
 		}
 
-		usage, err := subscriptionService.GetFeatureUsageBySubscription(ctx, usageReq)
+		usage, err := subscriptionSvc.GetFeatureUsageBySubscription(ctx, usageReq)
 		if err != nil {
 			s.Logger.WarnwCtx(ctx, "failed to get usage for subscription", "subscription_id", subscriptionID, "error", err)
 			continue

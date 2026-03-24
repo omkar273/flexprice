@@ -565,7 +565,7 @@ func (s *featureUsageTrackingService) prepareProcessedEvents(ctx context.Context
 
 	// V1 hierarchy fallback: if no direct subscriptions, check for INHERITED subs
 	if len(subscriptions) == 0 {
-		parentSubIDs, err := NewSubscriptionInheritanceService(s.ServiceParams).ListParentSubscriptionIDsForInheritedCustomer(ctx, customer.ID)
+		parentSubIDs, err := listParentSubscriptionIDsForInheritedCustomer(ctx, s.ServiceParams, customer.ID)
 		if err != nil {
 			s.Logger.ErrorwCtx(ctx, "failed to list parent subscription IDs for inherited customer",
 				"error", err,
@@ -4897,7 +4897,7 @@ func (s *featureUsageTrackingService) resolveHierarchyLineItems(
 	meterIDs []string,
 	eventTimestamp *time.Time,
 ) ([]*subscription.SubscriptionLineItem, error) {
-	parentSubIDs, err := NewSubscriptionInheritanceService(s.ServiceParams).ListParentSubscriptionIDsForInheritedCustomer(ctx, customerID)
+	parentSubIDs, err := listParentSubscriptionIDsForInheritedCustomer(ctx, s.ServiceParams, customerID)
 	if err != nil || len(parentSubIDs) == 0 {
 		return nil, err
 	}
