@@ -15681,6 +15681,13 @@
             "type": "string",
             "description": "customer_id is the flexprice customer id\nand it is prioritized over external_customer_id in case both are provided."
           },
+          "customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "description": "CustomerIDsToInheritSubscription specifies which customers should have inherited subscriptions\ncreated under this (parent) subscription for usage aggregation.\nWhen set the subscription becomes a PARENT type and skeleton INHERITED subscriptions are\ncreated for each listed customer. Mutually exclusive with InvoiceBilling/InvoicingCustomerID.\nnil slice = JSON omitted (auto-detect children); non-nil = explicit list (empty slice allowed).",
+            "items": {
+              "type": "string"
+            }
+          },
           "customer_timezone": {
             "type": "string",
             "description": "Timezone of the customer.\nIf not set, the default value is UTC."
@@ -15695,6 +15702,13 @@
           "external_customer_id": {
             "type": "string",
             "description": "external_customer_id is the customer id in your DB\nand must be same as what you provided as external_id while creating the customer in flexprice."
+          },
+          "external_customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "description": "ExternalCustomerIDsToInheritSubscription is the external-ID variant of\ncustomer_ids_to_inherit_subscription. Values are resolved internally to customer IDs.\nMutually exclusive with customer_ids_to_inherit_subscription.",
+            "items": {
+              "type": "string"
+            }
           },
           "gateway_payment_method_id": {
             "type": "string"
@@ -17150,9 +17164,6 @@
         }
       },
       "dto.GetUsageAnalyticsRequest": {
-        "required": [
-          "external_customer_id"
-        ],
         "type": "object",
         "properties": {
           "end_time": {
@@ -17166,7 +17177,15 @@
             }
           },
           "external_customer_id": {
-            "type": "string"
+            "type": "string",
+            "description": "ExternalCustomerID is the single external customer ID.\nOptional when ExternalCustomerIDs is provided; required otherwise."
+          },
+          "external_customer_ids": {
+            "type": "array",
+            "description": "ExternalCustomerIDs is a list of external customer IDs whose usage will be merged\ninto a single aggregated response. Unioned with ExternalCustomerID if both are set;\nduplicates are dropped. At least one of ExternalCustomerID or ExternalCustomerIDs\nmust be provided.",
+            "items": {
+              "type": "string"
+            }
           },
           "feature_ids": {
             "type": "array",
@@ -17180,6 +17199,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "include_children": {
+            "type": "boolean",
+            "description": "IncludeChildren when true folds child customers' usage into the single aggregated total.\nDefault: false."
           },
           "property_filters": {
             "type": "object",
@@ -17253,6 +17276,16 @@
           "external_customer_id": {
             "type": "string",
             "example": "user_5"
+          },
+          "external_customer_ids": {
+            "type": "array",
+            "example": [
+              "user_5",
+              "user_6"
+            ],
+            "items": {
+              "type": "string"
+            }
           },
           "filters": {
             "type": "object",
@@ -17377,6 +17410,16 @@
           "external_customer_id": {
             "type": "string",
             "example": "customer456"
+          },
+          "external_customer_ids": {
+            "type": "array",
+            "example": [
+              "customer456",
+              "customer789"
+            ],
+            "items": {
+              "type": "string"
+            }
           },
           "filters": {
             "type": "object",
@@ -19969,6 +20012,9 @@
           "subscription_status": {
             "$ref": "#/components/schemas/types.SubscriptionStatus"
           },
+          "subscription_type": {
+            "$ref": "#/components/schemas/types.SubscriptionType"
+          },
           "tenant_id": {
             "type": "string"
           },
@@ -20169,6 +20215,9 @@
           },
           "subscription_status": {
             "$ref": "#/components/schemas/types.SubscriptionStatus"
+          },
+          "subscription_type": {
+            "$ref": "#/components/schemas/types.SubscriptionType"
           },
           "tenant_id": {
             "type": "string"
@@ -24308,6 +24357,13 @@
             "type": "string",
             "description": "CustomerID filters by customer ID"
           },
+          "customer_ids": {
+            "type": "array",
+            "description": "CustomerIDs filters by multiple customer IDs (used for hierarchy lookups)",
+            "items": {
+              "type": "string"
+            }
+          },
           "end_time": {
             "type": "string"
           },
@@ -24381,6 +24437,13 @@
             "description": "SubscriptionStatus filters by subscription status",
             "items": {
               "$ref": "#/components/schemas/types.SubscriptionStatus"
+            }
+          },
+          "subscription_types": {
+            "type": "array",
+            "description": "SubscriptionTypes filters by subscription type (standalone, parent, inherited)",
+            "items": {
+              "$ref": "#/components/schemas/types.SubscriptionType"
             }
           },
           "with_line_items": {
@@ -25703,6 +25766,20 @@
           "type": "string"
         },
         "x-speakeasy-name-override": "Metadata"
+      },
+      "types.SubscriptionType": {
+        "type": "string",
+        "enum": [
+          "standalone",
+          "parent",
+          "inherited"
+        ],
+        "x-enum-varnames": [
+          "SubscriptionTypeStandalone",
+          "SubscriptionTypeParent",
+          "SubscriptionTypeInherited"
+        ],
+        "x-speakeasy-name-override": "SubscriptionType"
       },
       "webhookDto.AlertWebhookPayload": {
         "type": "object",

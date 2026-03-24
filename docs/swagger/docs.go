@@ -13853,6 +13853,13 @@ const docTemplate = `{
                     "description": "customer_id is the flexprice customer id\nand it is prioritized over external_customer_id in case both are provided.",
                     "type": "string"
                 },
+                "customer_ids_to_inherit_subscription": {
+                    "description": "CustomerIDsToInheritSubscription specifies which customers should have inherited subscriptions\ncreated under this (parent) subscription for usage aggregation.\nWhen set the subscription becomes a PARENT type and skeleton INHERITED subscriptions are\ncreated for each listed customer. Mutually exclusive with InvoiceBilling/InvoicingCustomerID.\nnil slice = JSON omitted (auto-detect children); non-nil = explicit list (empty slice allowed).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "customer_timezone": {
                     "description": "Timezone of the customer.\nIf not set, the default value is UTC.",
                     "type": "string"
@@ -13867,6 +13874,13 @@ const docTemplate = `{
                 "external_customer_id": {
                     "description": "external_customer_id is the customer id in your DB\nand must be same as what you provided as external_id while creating the customer in flexprice.",
                     "type": "string"
+                },
+                "external_customer_ids_to_inherit_subscription": {
+                    "description": "ExternalCustomerIDsToInheritSubscription is the external-ID variant of\ncustomer_ids_to_inherit_subscription. Values are resolved internally to customer IDs.\nMutually exclusive with customer_ids_to_inherit_subscription.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "gateway_payment_method_id": {
                     "type": "string"
@@ -15418,9 +15432,6 @@ const docTemplate = `{
         },
         "dto.GetUsageAnalyticsRequest": {
             "type": "object",
-            "required": [
-                "external_customer_id"
-            ],
             "properties": {
                 "end_time": {
                     "type": "string"
@@ -15433,7 +15444,15 @@ const docTemplate = `{
                     }
                 },
                 "external_customer_id": {
+                    "description": "ExternalCustomerID is the single external customer ID.\nOptional when ExternalCustomerIDs is provided; required otherwise.",
                     "type": "string"
+                },
+                "external_customer_ids": {
+                    "description": "ExternalCustomerIDs is a list of external customer IDs whose usage will be merged\ninto a single aggregated response. Unioned with ExternalCustomerID if both are set;\nduplicates are dropped. At least one of ExternalCustomerID or ExternalCustomerIDs\nmust be provided.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "feature_ids": {
                     "type": "array",
@@ -15447,6 +15466,10 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "include_children": {
+                    "description": "IncludeChildren when true folds child customers' usage into the single aggregated total.\nDefault: false.",
+                    "type": "boolean"
                 },
                 "property_filters": {
                     "description": "Property filters to filter the events by the keys in ` + "`" + `properties` + "`" + ` field of the event",
@@ -15526,6 +15549,16 @@ const docTemplate = `{
                 "external_customer_id": {
                     "type": "string",
                     "example": "user_5"
+                },
+                "external_customer_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "user_5",
+                        "user_6"
+                    ]
                 },
                 "filters": {
                     "type": "object",
@@ -15656,6 +15689,16 @@ const docTemplate = `{
                 "external_customer_id": {
                     "type": "string",
                     "example": "customer456"
+                },
+                "external_customer_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "customer456",
+                        "customer789"
+                    ]
                 },
                 "filters": {
                     "type": "object",
@@ -18440,6 +18483,14 @@ const docTemplate = `{
                 "subscription_status": {
                     "$ref": "#/definitions/types.SubscriptionStatus"
                 },
+                "subscription_type": {
+                    "description": "SubscriptionType categorises this subscription within a customer hierarchy.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionType"
+                        }
+                    ]
+                },
                 "tenant_id": {
                     "type": "string"
                 },
@@ -18666,6 +18717,14 @@ const docTemplate = `{
                 },
                 "subscription_status": {
                     "$ref": "#/definitions/types.SubscriptionStatus"
+                },
+                "subscription_type": {
+                    "description": "SubscriptionType categorises this subscription within a customer hierarchy.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionType"
+                        }
+                    ]
                 },
                 "tenant_id": {
                     "type": "string"
@@ -22842,6 +22901,13 @@ const docTemplate = `{
                     "description": "CustomerID filters by customer ID",
                     "type": "string"
                 },
+                "customer_ids": {
+                    "description": "CustomerIDs filters by multiple customer IDs (used for hierarchy lookups)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "end_time": {
                     "type": "string"
                 },
@@ -22915,6 +22981,13 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/types.SubscriptionStatus"
+                    }
+                },
+                "subscription_types": {
+                    "description": "SubscriptionTypes filters by subscription type (standalone, parent, inherited)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.SubscriptionType"
                     }
                 },
                 "with_line_items": {
@@ -24258,6 +24331,19 @@ const docTemplate = `{
             "additionalProperties": {
                 "type": "string"
             }
+        },
+        "types.SubscriptionType": {
+            "type": "string",
+            "enum": [
+                "standalone",
+                "parent",
+                "inherited"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionTypeStandalone",
+                "SubscriptionTypeParent",
+                "SubscriptionTypeInherited"
+            ]
         },
         "webhookDto.AlertWebhookPayload": {
             "type": "object",
