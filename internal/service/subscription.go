@@ -1804,7 +1804,7 @@ func (s *subscriptionService) CancelSubscription(
 
 	if !req.SuppressWebhook {
 		// Step 10: Publish events
-		s.publishCancellationEvents(ctx, subscription)
+		s.publishCancellationEvents(ctx, subscription, req.CancellationType)
 	}
 
 	// Step 11: Build response
@@ -4702,6 +4702,11 @@ func (s *subscriptionService) determineEffectiveDate(
 		return subscription.CurrentPeriodEnd, nil
 
 	case types.CancellationTypeScheduledDate:
+		if customDate == nil {
+			return time.Time{}, ierr.NewError("cancel_at is required for scheduled_date").
+				WithHint("Provide a future date in cancel_at").
+				Mark(ierr.ErrValidation)
+		}
 		return customDate.UTC(), nil
 
 	default:
@@ -4837,14 +4842,17 @@ func (s *subscriptionService) updateSubscriptionForCancellation(
 // publishCancellationEvents publishes webhook events for cancellation
 func (s *subscriptionService) publishCancellationEvents(
 	ctx context.Context,
-	subscription *subscription.Subscription,
+	sub *subscription.Subscription,
+	cancellationType types.CancellationType,
 ) {
-	// Publish standard subscription events
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventSubscriptionUpdated, subscription.ID)
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventSubscriptionCancelled, subscription.ID)
-
+	// Always emit updated — subscription state has changed regardless of cancellation type
+	s.publishInternalWebhookEvent(ctx, types.WebhookEventSubscriptionUpdated, sub.ID)
+	// scheduled_date only schedules a future cancellation; emit cancelled when it actually fires
+	if cancellationType != types.CancellationTypeScheduledDate {
+		s.publishInternalWebhookEvent(ctx, types.WebhookEventSubscriptionCancelled, sub.ID)
+	}
 	s.Logger.Debugw("subscription cancellation events published",
-		"subscription_id", subscription.ID)
+		"subscription_id", sub.ID)
 }
 
 // generateCancellationMessage creates a user-friendly message for the response
