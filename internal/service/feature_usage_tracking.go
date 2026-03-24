@@ -1872,11 +1872,12 @@ func (s *featureUsageTrackingService) GetDetailedUsageAnalyticsV2(ctx context.Co
 	return response, nil
 }
 
-// validateAnalyticsRequest validates the analytics request
+// validateAnalyticsRequest validates the analytics request.
+// At least one of ExternalCustomerID or ExternalCustomerIDs must be provided.
 func (s *featureUsageTrackingService) validateAnalyticsRequest(req *dto.GetUsageAnalyticsRequest) error {
-	if req.ExternalCustomerID == "" {
-		return ierr.NewError("external_customer_id is required").
-			WithHint("External customer ID is required").
+	if len(resolveEffectiveExternalIDs(req)) == 0 {
+		return ierr.NewError("external_customer_id or external_customer_ids is required").
+			WithHint("Provide at least one external customer ID").
 			Mark(ierr.ErrValidation)
 	}
 
@@ -1893,6 +1894,21 @@ func (s *featureUsageTrackingService) validateAnalyticsRequestV2(req *dto.GetUsa
 	}
 
 	return nil
+}
+
+// resolveEffectiveExternalIDs returns a deduplicated, ordered union of
+// req.ExternalCustomerID and req.ExternalCustomerIDs. Empty strings are dropped.
+func resolveEffectiveExternalIDs(req *dto.GetUsageAnalyticsRequest) []string {
+	seen := make(map[string]bool)
+	var ids []string
+	all := append([]string{req.ExternalCustomerID}, req.ExternalCustomerIDs...)
+	for _, id := range all {
+		if id != "" && !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	}
+	return ids
 }
 
 // fetchChildCustomers resolves child customers from inherited subscriptions under
