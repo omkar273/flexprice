@@ -427,6 +427,16 @@ func (r *invoiceRepository) Get(ctx context.Context, id string) (*domainInvoice.
 	}
 
 	invoiceData := domainInvoice.FromEnt(invoice)
+
+	// TODO: This is done to ensure backwards compatibility with the old repository.
+	// We should remove this once we migrate all callers to use the new repository.
+	invLineitemRepo := NewInvoiceLineItemRepository(r.client, r.logger, r.cache)
+	items, err := invLineitemRepo.ListByInvoiceID(ctx, id)
+	if err != nil {
+		r.logger.Error("failed to get invoice line items", "error", err)
+		return nil, ierr.WithError(err).WithHint("failed to get invoice line items").Mark(ierr.ErrDatabase)
+	}
+	invoiceData.LineItems = items
 	r.SetCache(ctx, invoiceData)
 	return invoiceData, nil
 }
@@ -1209,4 +1219,3 @@ func (r *invoiceRepository) GetInvoicePaymentStatus(ctx context.Context) (*types
 	SetSpanSuccess(span)
 	return &result, nil
 }
-
