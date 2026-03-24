@@ -15,8 +15,8 @@ const (
 )
 
 // ScheduleDraftFinalizationWorkflow scans all draft invoices system-wide, identifies those
-// whose finalization delay has elapsed, and triggers ProcessInvoiceWorkflow for each.
-// ProcessInvoiceWorkflow reuses existing activities: Compute → Finalize → Sync → Payment.
+// whose finalization delay has elapsed, and triggers FinalizeDraftInvoiceWorkflow for each.
+// FinalizeDraftInvoiceWorkflow skips Compute (already done) and runs: Finalize → Sync → Payment.
 func ScheduleDraftFinalizationWorkflow(
 	ctx workflow.Context,
 	input invoiceModels.ScheduleDraftFinalizationWorkflowInput,
@@ -61,26 +61,23 @@ func ScheduleDraftFinalizationWorkflow(
 		}, nil
 	}
 
-	// Step 2: Trigger ProcessInvoiceWorkflow for each due invoice (fire-and-forget child workflows)
-	childOpts := workflow.ChildWorkflowOptions{
-		TaskQueue:                string("invoice"),
-		WorkflowExecutionTimeout: 10 * time.Minute,
-		RetryPolicy: &temporal.RetryPolicy{
-			MaximumAttempts: 3,
-		},
-	}
-
+	// Step 2: Trigger FinalizeDraftInvoiceWorkflow for each due invoice (fire-and-forget child workflows).
+	// Uses FinalizeDraftInvoiceWorkflow (not ProcessInvoiceWorkflow) because the invoice is already
+	// computed — we only need Finalize → Sync → Payment, skipping the Compute step to avoid
+	// re-calculating usage after the billing period closed.
 	var triggeredCount, failedCount int
 	for _, inv := range scanOutput.DueInvoices {
 		childCtx := workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
-			WorkflowID:               fmt.Sprintf("process-invoice-%s", inv.InvoiceID),
-			TaskQueue:                childOpts.TaskQueue,
-			WorkflowExecutionTimeout: childOpts.WorkflowExecutionTimeout,
-			RetryPolicy:              childOpts.RetryPolicy,
-			ParentClosePolicy:        1, // ABANDON — child continues even if parent completes
+			WorkflowID:               fmt.Sprintf("finalize-draft-invoice-%s", inv.InvoiceID),
+			TaskQueue:                string("invoice"),
+			WorkflowExecutionTimeout: 10 * time.Minute,
+			RetryPolicy: &temporal.RetryPolicy{
+				MaximumAttempts: 3,
+			},
+			ParentClosePolicy: 1, // ABANDON — child continues even if parent completes
 		})
 
-		future := workflow.ExecuteChildWorkflow(childCtx, ProcessInvoiceWorkflow, invoiceModels.ProcessInvoiceWorkflowInput{
+		future := workflow.ExecuteChildWorkflow(childCtx, FinalizeDraftInvoiceWorkflow, invoiceModels.ProcessInvoiceWorkflowInput{
 			InvoiceID:     inv.InvoiceID,
 			TenantID:      inv.TenantID,
 			EnvironmentID: inv.EnvironmentID,
@@ -89,7 +86,7 @@ func ScheduleDraftFinalizationWorkflow(
 
 		// Fire-and-forget: just check if it started successfully
 		if err := future.GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-			logger.Error("Failed to trigger ProcessInvoiceWorkflow",
+			logger.Error("Failed to trigger FinalizeDraftInvoiceWorkflow",
 				"invoice_id", inv.InvoiceID, "error", err)
 			failedCount++
 			continue

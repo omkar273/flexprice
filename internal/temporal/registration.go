@@ -269,6 +269,7 @@ func buildWorkerConfig(
 		workflowsList = append(
 			workflowsList,
 			invoiceWorkflows.ProcessInvoiceWorkflow,
+			invoiceWorkflows.FinalizeDraftInvoiceWorkflow,
 			invoiceWorkflows.ScheduleDraftFinalizationWorkflow,
 		)
 		activitiesList = append(activitiesList,
