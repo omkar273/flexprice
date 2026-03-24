@@ -298,22 +298,6 @@ type CreateSubscriptionRequest struct {
 	// and must be same as what you provided as external_id while creating the customer in flexprice.
 	ExternalCustomerID string `json:"external_customer_id"`
 
-	// invoicing_customer_id is the FlexPrice customer ID to use for invoicing.
-	// This can differ from the subscription customer (e.g., a billing entity invoicing on behalf of another customer).
-	// Mutually exclusive with invoicing_customer_external_id.
-	InvoicingCustomerID *string `json:"invoicing_customer_id,omitempty"`
-
-	// invoicing_customer_external_id is the external ID of the customer to use for invoicing.
-	// Resolved internally to an internal customer ID via external ID lookup.
-	// Mutually exclusive with invoicing_customer_id.
-	InvoicingCustomerExternalID *string `json:"invoicing_customer_external_id,omitempty"`
-
-	// Deprecated: Use invoicing_customer_id or invoicing_customer_external_id instead.
-	// invoice_billing determines which customer should receive invoices for a subscription.
-	// Supported values: "invoice_to_parent" (uses the subscription customer's parent) or "invoice_to_self" (default).
-	// Will be removed in a future version.
-	InvoiceBilling *types.InvoiceBilling `json:"invoice_billing,omitempty"`
-
 	PlanID             string               `json:"plan_id" validate:"required"`
 	Currency           string               `json:"currency" validate:"required,len=3"`
 	LookupKey          string               `json:"lookup_key"`
@@ -400,26 +384,15 @@ type CreateSubscriptionRequest struct {
 	// If set to "draft", the subscription will be created as a draft (skips invoice creation and payment processing)
 	SubscriptionStatus types.SubscriptionStatus `json:"subscription_status,omitempty"`
 
-	// ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)
-	ParentSubscriptionID *string `json:"parent_subscription_id,omitempty"`
-
 	// PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end
 	PaymentTerms *types.PaymentTerms `json:"payment_terms,omitempty"`
 
 	// Enable Commitment True Up Fee
 	EnableTrueUp bool `json:"enable_true_up"`
 
-	// CustomerIDsToInheritSubscription specifies which customers should have inherited subscriptions
-	// created under this (parent) subscription for usage aggregation.
-	// When set the subscription becomes a PARENT type and skeleton INHERITED subscriptions are
-	// created for each listed customer. Mutually exclusive with InvoiceBilling/InvoicingCustomerID.
-	// nil slice = JSON omitted (auto-detect children); non-nil = explicit list (empty slice allowed).
-	CustomerIDsToInheritSubscription []string `json:"customer_ids_to_inherit_subscription,omitempty"`
-
-	// ExternalCustomerIDsToInheritSubscription is the external-ID variant of
-	// customer_ids_to_inherit_subscription. Values are resolved internally to customer IDs.
-	// Mutually exclusive with customer_ids_to_inherit_subscription.
-	ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
+	// Inheritance groups all customer-hierarchy fields.
+	// When provided with at least one child ID, the subscription becomes a PARENT type.
+	Inheritance *SubscriptionInheritanceConfig `json:"inheritance,omitempty"`
 
 	// SubscriptionType is set internally by the service layer.
 	SubscriptionType types.SubscriptionType `json:"-"`
@@ -611,20 +584,23 @@ func (r *CreateSubscriptionRequest) Validate() error {
 	}
 
 	// invoicing_customer_id and invoicing_customer_external_id are mutually exclusive
-	if r.InvoicingCustomerID != nil && r.InvoicingCustomerExternalID != nil {
+	if r.Inheritance != nil && r.Inheritance.InvoicingCustomerID != nil && r.Inheritance.InvoicingCustomerExternalID != nil {
 		return ierr.NewError("only one of invoicing_customer_id or invoicing_customer_external_id may be provided").
 			WithHint("Send either invoicing_customer_id or invoicing_customer_external_id, but not both").
 			Mark(ierr.ErrValidation)
 	}
 
 	// invoice_billing (deprecated) cannot be combined with the new invoicing customer fields
-	if r.InvoiceBilling != nil && (r.InvoicingCustomerID != nil || r.InvoicingCustomerExternalID != nil) {
+	if r.Inheritance != nil && r.Inheritance.InvoiceBilling != nil &&
+		(r.Inheritance.InvoicingCustomerID != nil || r.Inheritance.InvoicingCustomerExternalID != nil) {
 		return ierr.NewError("invoice_billing cannot be used together with invoicing_customer_id or invoicing_customer_external_id").
 			WithHint("invoice_billing is deprecated; use invoicing_customer_id or invoicing_customer_external_id instead").
 			Mark(ierr.ErrValidation)
 	}
 
-	if r.CustomerIDsToInheritSubscription != nil && r.ExternalCustomerIDsToInheritSubscription != nil {
+	if r.Inheritance != nil &&
+		len(r.Inheritance.CustomerIDsToInheritSubscription) > 0 &&
+		len(r.Inheritance.ExternalCustomerIDsToInheritSubscription) > 0 {
 		return ierr.NewError("only one of customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription may be provided").
 			WithHint("Send either internal customer IDs or external customer IDs for inheritance, but not both").
 			Mark(ierr.ErrValidation)
@@ -682,8 +658,8 @@ func (r *CreateSubscriptionRequest) Validate() error {
 
 	// Deprecated: invoice_billing is deprecated in favor of invoicing_customer_id / invoicing_customer_external_id.
 	// Validate the value if it was explicitly provided for backward compatibility.
-	if r.InvoiceBilling != nil {
-		if err := r.InvoiceBilling.Validate(); err != nil {
+	if r.Inheritance != nil && r.Inheritance.InvoiceBilling != nil {
+		if err := r.Inheritance.InvoiceBilling.Validate(); err != nil {
 			return err
 		}
 	}
@@ -767,12 +743,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 	if r.PlanID == "" {
 		return ierr.NewError("plan_id is required").
 			WithHint("Plan ID is required").
-			Mark(ierr.ErrValidation)
-	}
-
-	if r.ParentSubscriptionID != nil && lo.FromPtr(r.ParentSubscriptionID) == "" {
-		return ierr.NewError("parent_subscription_id cannot be empty when provided").
-			WithHint("Omit parent_subscription_id or provide a non-empty subscription ID").
 			Mark(ierr.ErrValidation)
 	}
 
@@ -981,12 +951,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		}
 	}
 
-	if r.CustomerIDsToInheritSubscription != nil && r.ExternalCustomerIDsToInheritSubscription != nil {
-		return ierr.NewError("only one of customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription may be provided").
-			WithHint("Send either internal customer IDs or external customer IDs for inheritance, but not both").
-			Mark(ierr.ErrValidation)
-	}
-
 	return nil
 }
 
@@ -1137,6 +1101,15 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 		subscriptionType = types.SubscriptionTypeStandalone
 	}
 
+	var invoicingCustomerID *string
+	var parentSubscriptionID *string
+	if r.Inheritance != nil {
+		invoicingCustomerID = r.Inheritance.InvoicingCustomerID
+		if r.Inheritance.ParentSubscriptionID != "" {
+			parentSubscriptionID = lo.ToPtr(r.Inheritance.ParentSubscriptionID)
+		}
+	}
+
 	sub := &subscription.Subscription{
 		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
 		CustomerID:         r.CustomerID,
@@ -1163,8 +1136,8 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 		PaymentBehavior:        string(paymentBehavior),
 		CollectionMethod:       string(collectionMethod),
 		GatewayPaymentMethodID: r.GatewayPaymentMethodID,
-		InvoicingCustomerID:    r.InvoicingCustomerID,
-		ParentSubscriptionID:   r.ParentSubscriptionID,
+		InvoicingCustomerID:    invoicingCustomerID,
+		ParentSubscriptionID:   parentSubscriptionID,
 		PaymentTerms:           r.PaymentTerms,
 		SubscriptionType:       subscriptionType,
 	}
