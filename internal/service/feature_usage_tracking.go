@@ -1895,18 +1895,16 @@ func (s *featureUsageTrackingService) validateAnalyticsRequestV2(req *dto.GetUsa
 	return nil
 }
 
-// fetchChildCustomers returns all direct children of the given parent customer (by internal ID).
-// Returns an empty slice when the customer has no children. Errors are returned to the caller.
+// fetchChildCustomers resolves child customers from inherited subscriptions under
+// all parent subscriptions owned by the given customer.
 func (s *featureUsageTrackingService) fetchChildCustomers(
 	ctx context.Context,
 	parentCustomerID string,
 ) ([]*customer.Customer, error) {
-	filter := types.NewNoLimitCustomerFilter()
-	filter.ParentCustomerIDs = []string{parentCustomerID}
-	children, err := s.CustomerRepo.List(ctx, filter)
+	children, err := s.CustomerRepo.ListChildrenFromInheritedSubscriptions(ctx, parentCustomerID)
 	if err != nil {
 		return nil, ierr.WithError(err).
-			WithHint("Failed to fetch child customers").
+			WithHint("Failed to fetch child customers from inherited subscriptions").
 			Mark(ierr.ErrDatabase)
 	}
 	return children, nil

@@ -111,6 +111,14 @@ func (s *InMemoryCustomerStore) List(ctx context.Context, filter *types.Customer
 	}), nil
 }
 
+// ListChildrenFromInheritedSubscriptions mirrors production behavior as closely as possible
+// in-memory; without a subscription store dependency here, it falls back to direct parent mapping.
+func (s *InMemoryCustomerStore) ListChildrenFromInheritedSubscriptions(ctx context.Context, parentCustomerID string) ([]*customer.Customer, error) {
+	filter := types.NewNoLimitCustomerFilter()
+	filter.ParentCustomerIDs = []string{parentCustomerID}
+	return s.List(ctx, filter)
+}
+
 func (s *InMemoryCustomerStore) Count(ctx context.Context, filter *types.CustomerFilter) (int, error) {
 	return s.InMemoryStore.Count(ctx, filter, customerFilterFn)
 }
