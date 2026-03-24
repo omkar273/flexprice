@@ -104,7 +104,11 @@ func (s *InMemoryInvoiceLineItemStore) List(ctx context.Context, filter *types.I
 				continue
 			}
 		}
-		if filter != nil && len(filter.SubscriptionIDs) > 0 && item.SubscriptionID != nil {
+		if filter != nil && len(filter.SubscriptionIDs) > 0 {
+			// nil SubscriptionID never matches a subscription ID filter
+			if item.SubscriptionID == nil {
+				continue
+			}
 			found := false
 			for _, id := range filter.SubscriptionIDs {
 				if *item.SubscriptionID == id {
