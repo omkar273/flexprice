@@ -285,8 +285,6 @@ func (s *invoiceService) CreateEmptyDraftInvoice(ctx context.Context, req dto.Cr
 	return resp, nil
 }
 
-// CreateInvoice is DEPRECATED - use CreateEmptyDraftInvoice + ComputeInvoice + FinalizeInvoice instead.
-// Keeping the interface method for backward compatibility with external callers (API handler, EE wallet).
 // This wrapper delegates to the draft-first flow. Invoice number is assigned during FinalizeInvoice.
 func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoiceRequest) (*dto.InvoiceResponse, error) {
 	// Delegate to draft-first flow
@@ -420,19 +418,17 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 				lineItemDomains = append(lineItemDomains, li)
 			}
 
-			// Only touch line items table if the count changed (IDs are deterministic,
-			// so same count means same IDs — avoid unnecessary deletes+inserts on re-compute)
-			if len(lineItemDomains) != len(inv.LineItems) {
-				if len(inv.LineItems) > 0 {
-					itemIDs := lo.Map(inv.LineItems, func(item *invoice.InvoiceLineItem, _ int) string { return item.ID })
-					if err := s.InvoiceRepo.RemoveLineItems(txCtx, inv.ID, itemIDs); err != nil {
-						return err
-					}
+			// Always replace line items on re-compute: remove old, insert new.
+			// Amounts/quantities may change between computes even if the count stays the same.
+			if len(inv.LineItems) > 0 {
+				itemIDs := lo.Map(inv.LineItems, func(item *invoice.InvoiceLineItem, _ int) string { return item.ID })
+				if err := s.InvoiceRepo.RemoveLineItems(txCtx, inv.ID, itemIDs); err != nil {
+					return err
 				}
-				if len(lineItemDomains) > 0 {
-					if err := s.InvoiceRepo.AddLineItems(txCtx, inv.ID, lineItemDomains); err != nil {
-						return err
-					}
+			}
+			if len(lineItemDomains) > 0 {
+				if err := s.InvoiceRepo.AddLineItems(txCtx, inv.ID, lineItemDomains); err != nil {
+					return err
 				}
 			}
 
