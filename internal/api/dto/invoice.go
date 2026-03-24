@@ -210,17 +210,14 @@ func (r *CreateInvoiceRequest) Validate() error {
 		return err
 	}
 
-	// Allow zero amounts when creating a draft without invoice number (draft-first flow)
-	if !r.SkipInvoiceNumber {
-		// Allow negative amount_due for credit invoices, but not for other types
-		if r.AmountDue.IsNegative() && r.InvoiceType != types.InvoiceTypeCredit {
-			return ierr.NewError("amount_due must be non-negative for non-credit invoices").
-				WithHint("amount due is negative for non-credit invoice").
-				WithReportableDetails(map[string]any{
-					"amount_due":   r.AmountDue.String(),
-					"invoice_type": r.InvoiceType,
-				}).Mark(ierr.ErrValidation)
-		}
+	// Allow negative amount_due for credit invoices, but not for other types
+	if r.AmountDue.IsNegative() && r.InvoiceType != types.InvoiceTypeCredit {
+		return ierr.NewError("amount_due must be non-negative for non-credit invoices").
+			WithHint("amount due is negative for non-credit invoice").
+			WithReportableDetails(map[string]any{
+				"amount_due":   r.AmountDue.String(),
+				"invoice_type": r.InvoiceType,
+			}).Mark(ierr.ErrValidation)
 	}
 
 	// Validate total_prepaid_applied if provided
