@@ -830,7 +830,7 @@ func (s *invoiceService) performFinalizeInvoiceActions(ctx context.Context, inv 
 		}
 
 		// Assign invoice number if not already assigned (idempotent)
-		if lockedInv.InvoiceNumber == nil {
+		if lockedInv.InvoiceNumber == nil || *lockedInv.InvoiceNumber == "" {
 			settingsSvc := NewSettingsService(s.ServiceParams).(*settingsService)
 			invoiceConfig, err := GetSetting[types.InvoiceConfig](settingsSvc, txCtx, types.SettingKeyInvoiceConfig)
 			if err != nil {
