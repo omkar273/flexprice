@@ -16,6 +16,7 @@ When creating a parent subscription today, inheritance is declared via flat top-
 - `invoicing_customer_id *string`
 - `invoicing_customer_external_id *string`
 - `parent_subscription_id *string`
+- `invoice_billing *types.InvoiceBilling`
 
 These are removed and replaced with a single `inheritance` object. The API is internal, so no backwards-compatibility shim is needed.
 
@@ -25,136 +26,228 @@ After a parent subscription is created, there is currently no way to add new chi
 
 ## Change 1: Restructure `CreateSubscriptionRequest`
 
-### New DTO
+### New DTO structs
 
 **File:** `internal/api/dto/subscription.go`
 
-Add a new struct:
+Add:
 
 ```go
-// SubscriptionInheritanceConfig groups all inheritance-related fields for
-// subscription creation and the inheritance execute endpoint.
+// SubscriptionInheritanceConfig groups all inheritance-related fields.
+// InvoicingCustomerID and InvoicingCustomerExternalID use pointer semantics
+// so nil ("not provided") can be distinguished from "" ("explicitly empty").
 type SubscriptionInheritanceConfig struct {
-    CustomerIDsToInheritSubscription         []string `json:"customer_ids_to_inherit_subscription,omitempty"`
-    ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
-    ParentSubscriptionID                     string   `json:"parent_subscription_id,omitempty"`
-    InvoicingCustomerID                      string   `json:"invoicing_customer_id,omitempty"`
-    InvoicingCustomerExternalID              string   `json:"invoicing_customer_external_id,omitempty"`
+    CustomerIDsToInheritSubscription         []string              `json:"customer_ids_to_inherit_subscription,omitempty"`
+    ExternalCustomerIDsToInheritSubscription []string              `json:"external_customer_ids_to_inherit_subscription,omitempty"`
+    ParentSubscriptionID                     string                `json:"parent_subscription_id,omitempty"`
+    InvoicingCustomerID                      *string               `json:"invoicing_customer_id,omitempty"`
+    InvoicingCustomerExternalID              *string               `json:"invoicing_customer_external_id,omitempty"`
+    InvoiceBilling                           *types.InvoiceBilling `json:"invoice_billing,omitempty"`
 }
 ```
 
-Replace the five flat fields on `CreateSubscriptionRequest` with:
+Add:
 
 ```go
-Inheritance *SubscriptionInheritanceConfig `json:"inheritance,omitempty"`
-```
-
-### Service changes
-
-**File:** `internal/service/subscription.go`
-
-`resolveUsageCustomerIDs(ctx, req)` reads from `req.Inheritance` instead of flat fields:
-
-```go
-if req.Inheritance == nil {
-    return nil, nil // STANDALONE
-}
-if len(req.Inheritance.CustomerIDsToInheritSubscription) > 0 {
-    // use internal IDs directly (existing logic)
-}
-if len(req.Inheritance.ExternalCustomerIDsToInheritSubscription) > 0 {
-    // resolve external → internal (existing logic)
-}
-return nil, nil
-```
-
-All other logic in `CreateSubscription` (type resolution, validation, `createInheritedSubscriptions` call) is unchanged — only the field access path changes.
-
-`InvoicingCustomerID` and `InvoicingCustomerExternalID` are also read from `req.Inheritance` wherever referenced in `CreateSubscription`.
-
-`ParentSubscriptionID` on the request is read from `req.Inheritance.ParentSubscriptionID`.
-
----
-
-## Change 2: `POST /subscriptions/:id/inheritance/execute`
-
-### Purpose
-
-Adds new child customers to an already-existing **parent** subscription. Idempotent: customers who already have an inherited subscription under this parent are silently skipped.
-
-### Request
-
-```go
-// ExecuteSubscriptionInheritanceRequest is the payload for POST /subscriptions/:id/inheritance/execute.
+// ExecuteSubscriptionInheritanceRequest is the payload for
+// POST /subscriptions/:id/inheritance/execute.
 // Exactly one of the two arrays must be non-empty.
 type ExecuteSubscriptionInheritanceRequest struct {
     CustomerIDsToInheritSubscription         []string `json:"customer_ids_to_inherit_subscription,omitempty"`
     ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
 }
-```
 
-**Validation (returns 400):**
-- Both arrays provided and non-empty → `"provide either customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription, not both"`
-- Both arrays empty or absent → `"at least one customer ID is required"`
-
-### Response
-
-```json
-{
-  "id": "subs_...",
-  "subscription_type": "parent",
-  "...": "full subscription object"
+func (r *ExecuteSubscriptionInheritanceRequest) Validate() error {
+    bothProvided := len(r.CustomerIDsToInheritSubscription) > 0 &&
+        len(r.ExternalCustomerIDsToInheritSubscription) > 0
+    if bothProvided {
+        return ierr.NewError("provide either customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription, not both").
+            Mark(ierr.ErrValidation)
+    }
+    if len(r.CustomerIDsToInheritSubscription) == 0 && len(r.ExternalCustomerIDsToInheritSubscription) == 0 {
+        return ierr.NewError("at least one customer ID is required").
+            Mark(ierr.ErrValidation)
+    }
+    return nil
 }
 ```
 
-Returns the (unchanged) parent subscription. The created inherited subscriptions are accessible via `GET /subscriptions?parent_subscription_id=...`.
+`Validate()` is called by the service at the start of `ExecuteSubscriptionInheritance`, consistent with the pattern used by other request DTOs in the codebase.
 
-### Execution logic
+### Fields removed from `CreateSubscriptionRequest`
 
-1. Fetch parent subscription by `:id`. Return 404 if not found.
-2. Validate `subscription_type == "parent"`. Return 400 if STANDALONE or INHERITED.
-3. Resolve customer IDs:
-   - If `ExternalCustomerIDsToInheritSubscription` provided: resolve external → internal via `CustomerRepo`. Return error if any not found.
-   - If `CustomerIDsToInheritSubscription` provided: validate all exist. Return error if any not found.
-4. Fetch existing inherited subscriptions for this parent via `getInheritedSubscriptions(ctx, parentSubID)`.
-5. Build a set of already-inherited customer IDs. Filter the resolved list — remove any customer already present in the set.
-6. If the filtered list is empty → return parent subscription immediately (nothing to do).
-7. Run `validateCustomerSubscriptionWorkflow(ctx, parentSub.CustomerID, filteredCustomerIDs)` on the filtered list to catch STANDALONE conflicts.
-8. Call `createInheritedSubscriptions(ctx, parentSub, filteredCustomerIDs)`.
-9. Fetch and return the updated parent subscription.
-
-### Handler
-
-Added to the existing `SubscriptionHandler` (not a new handler struct) to avoid DI changes.
-
-**File:** `internal/api/v1/subscription.go`
+The following six flat fields are deleted entirely:
 
 ```go
-func (h *SubscriptionHandler) ExecuteSubscriptionInheritance(c *gin.Context) {
-    id := c.Param("id")
-    var req dto.ExecuteSubscriptionInheritanceRequest
-    if err := c.ShouldBindJSON(&req); err != nil { ... }
-    resp, err := h.service.ExecuteSubscriptionInheritance(c.Request.Context(), id, &req)
-    if err != nil { c.Error(err); return }
-    c.JSON(http.StatusOK, resp)
-}
+// DELETE these:
+InvoicingCustomerID                      *string               `json:"invoicing_customer_id,omitempty"`
+InvoicingCustomerExternalID              *string               `json:"invoicing_customer_external_id,omitempty"`
+ParentSubscriptionID                     *string               `json:"parent_subscription_id,omitempty"`
+CustomerIDsToInheritSubscription         []string              `json:"customer_ids_to_inherit_subscription,omitempty"`
+ExternalCustomerIDsToInheritSubscription []string              `json:"external_customer_ids_to_inherit_subscription,omitempty"`
+InvoiceBilling                           *types.InvoiceBilling `json:"invoice_billing,omitempty"`
 ```
 
-### Service method
+Replace with:
+
+```go
+Inheritance *SubscriptionInheritanceConfig `json:"inheritance,omitempty"`
+```
+
+### `Validate()` rewrite (same file)
+
+Three validation blocks currently reference the flat fields and must be rewritten to read from `req.Inheritance`:
+
+1. **Mutual-exclusivity of invoicing fields** (currently ~line 578–589):
+   ```go
+   if req.Inheritance != nil {
+       invoiceCount := 0
+       if req.Inheritance.InvoicingCustomerID != nil { invoiceCount++ }
+       if req.Inheritance.InvoicingCustomerExternalID != nil { invoiceCount++ }
+       if req.Inheritance.InvoiceBilling != nil { invoiceCount++ }
+       if invoiceCount > 1 {
+           return err("only one of invoicing_customer_id, invoicing_customer_external_id, invoice_billing")
+       }
+   }
+   ```
+2. **Mutual-exclusivity of child ID arrays** (currently ~line 591–595):
+   ```go
+   if req.Inheritance != nil &&
+       len(req.Inheritance.CustomerIDsToInheritSubscription) > 0 &&
+       len(req.Inheritance.ExternalCustomerIDsToInheritSubscription) > 0 {
+       return err("provide either customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription, not both")
+   }
+   ```
+3. **ParentSubscriptionID empty-string check** (currently ~line 737–741):
+   ```go
+   if req.Inheritance != nil && req.Inheritance.ParentSubscriptionID != "" {
+       // existing check
+   }
+   ```
+
+### `ToSubscription()` rewrite (same file)
+
+`ToSubscription()` currently reads flat fields directly into the domain model. After the restructure it must read from `req.Inheritance`.
+
+**Do NOT use `lo.Ternary` here** — Go evaluates all arguments eagerly before the call, so `r.Inheritance.InvoicingCustomerID` would panic when `r.Inheritance == nil`. Use explicit guards:
+
+```go
+// Before:
+InvoicingCustomerID: r.InvoicingCustomerID,
+ParentSubscriptionID: r.ParentSubscriptionID,
+
+// After:
+var invoicingCustomerID *string
+var parentSubscriptionID *string
+if r.Inheritance != nil {
+    invoicingCustomerID = r.Inheritance.InvoicingCustomerID
+    if r.Inheritance.ParentSubscriptionID != "" {
+        parentSubscriptionID = lo.ToPtr(r.Inheritance.ParentSubscriptionID)
+    }
+}
+// then use invoicingCustomerID and parentSubscriptionID in the struct literal
+```
+
+### Service changes: `resolveUsageCustomerIDs`
 
 **File:** `internal/service/subscription.go`
 
-Added to `subscriptionService` (implements `SubscriptionService` interface).
+`resolveUsageCustomerIDs` currently reads from flat fields. After the change it reads from `req.Inheritance`:
+
+```go
+func (s *subscriptionService) resolveUsageCustomerIDs(
+    ctx context.Context,
+    req *dto.CreateSubscriptionRequest,
+) ([]string, error) {
+    if req.Inheritance == nil {
+        return nil, nil // STANDALONE — nil Inheritance is equivalent to "not provided"
+    }
+    // NOTE: {"inheritance": {}} with both arrays absent is also STANDALONE.
+    // The nil-slice vs non-nil-empty-slice distinction from the old flat fields
+    // is replaced by: non-nil Inheritance + at least one array populated = hierarchy.
+    if len(req.Inheritance.CustomerIDsToInheritSubscription) > 0 {
+        // resolve and validate internal IDs (existing logic, unchanged)
+    }
+    if len(req.Inheritance.ExternalCustomerIDsToInheritSubscription) > 0 {
+        // resolve external → internal (existing logic, unchanged)
+    }
+    return nil, nil // both arrays empty → STANDALONE
+}
+```
+
+All other reads of the flat fields in `CreateSubscription` (invoicing customer resolution at lines 93–121, `InvoiceBilling` at lines 100–106) are updated to read from `req.Inheritance.*`.
+
+---
+
+## Change 2: `POST /subscriptions/:id/inheritance/execute`
+
+### Execution logic
+
+1. Validate request: exactly one of `customer_ids_to_inherit_subscription` or `external_customer_ids_to_inherit_subscription` must be non-empty. Both provided → 400. Both empty → 400.
+2. Fetch parent subscription by `:id`. Not found → 404.
+3. Validate `subscription_type == "parent"`. STANDALONE or INHERITED → 400.
+4. Resolve customer IDs:
+   - External IDs → look up via `CustomerRepo`, error if any not found.
+   - Internal IDs → validate all exist, error if any not found.
+5. Fetch existing inherited subscriptions via `getInheritedSubscriptions(ctx, parentSubID)`.
+   - This fetches active, trialing, draft, and paused children — **not cancelled**.
+   - **Cancelled child edge case**: if a customer previously had an inherited sub under this parent that was then cancelled, they will NOT appear in the existing set, so the execute will create a fresh inherited sub for them. This is intentional — cancelled means the relationship ended, re-adding is a new creation.
+6. Build a set of already-inherited customer IDs (from step 5). Remove those customers from the resolved list.
+7. If filtered list is empty → return parent subscription immediately (pure no-op, 200 OK).
+8. Run `validateCustomerSubscriptionWorkflow(ctx, parentSub.CustomerID, filteredCustomerIDs)` to catch STANDALONE conflicts.
+9. Call `createInheritedSubscriptions(ctx, parentSub, filteredCustomerIDs)`.
+10. Fetch parent subscription via `GetSubscription` and return as `*dto.SubscriptionResponse`.
+
+### Service interface
+
+**File:** `internal/interfaces/service.go` (where `SubscriptionService` interface is defined)
+
+Add:
+
+```go
+ExecuteSubscriptionInheritance(ctx context.Context, parentSubID string, req *dto.ExecuteSubscriptionInheritanceRequest) (*dto.SubscriptionResponse, error)
+```
+
+### Service implementation
+
+**File:** `internal/service/subscription.go`
 
 ```go
 func (s *subscriptionService) ExecuteSubscriptionInheritance(
     ctx context.Context,
     parentSubID string,
     req *dto.ExecuteSubscriptionInheritanceRequest,
-) (*subscription.Subscription, error)
+) (*dto.SubscriptionResponse, error)
 ```
 
-Interface updated in `internal/service/subscription.go` (the `SubscriptionService` interface).
+Return type matches the interface convention used by all other subscription service methods.
+
+### Handler
+
+Added to the existing `SubscriptionHandler` (no new handler struct, no DI changes).
+
+**File:** `internal/api/v1/subscription.go`
+
+```go
+func (h *SubscriptionHandler) ExecuteSubscriptionInheritance(c *gin.Context) {
+    id := c.Param("id")
+    if id == "" {
+        c.Error(ierr.NewError("subscription ID is required").Mark(ierr.ErrValidation))
+        return
+    }
+    var req dto.ExecuteSubscriptionInheritanceRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.Error(ierr.WithError(err).WithHint("Invalid request format").Mark(ierr.ErrValidation))
+        return
+    }
+    resp, err := h.service.ExecuteSubscriptionInheritance(c.Request.Context(), id, &req)
+    if err != nil {
+        c.Error(err)
+        return
+    }
+    c.JSON(http.StatusOK, resp)
+}
+```
 
 ### Route registration
 
@@ -170,10 +263,12 @@ subscription.POST("/:id/inheritance/execute", handlers.Subscription.ExecuteSubsc
 
 | File | Change |
 |------|--------|
-| `internal/api/dto/subscription.go` | Add `SubscriptionInheritanceConfig`, `ExecuteSubscriptionInheritanceRequest`; replace flat fields on `CreateSubscriptionRequest` with `Inheritance *SubscriptionInheritanceConfig` |
-| `internal/service/subscription.go` | Update `resolveUsageCustomerIDs` to read from `req.Inheritance`; update all other flat-field reads; add `ExecuteSubscriptionInheritance` method; update `SubscriptionService` interface |
+| `internal/api/dto/subscription.go` | Add `SubscriptionInheritanceConfig`, `ExecuteSubscriptionInheritanceRequest`; remove 6 flat fields from `CreateSubscriptionRequest`; rewrite `Validate()` (3 blocks) and `ToSubscription()` |
+| `internal/interfaces/service.go` | Add `ExecuteSubscriptionInheritance` to `SubscriptionService` interface |
+| `internal/service/subscription.go` | Update `resolveUsageCustomerIDs` and all other flat-field reads in `CreateSubscription`; add `ExecuteSubscriptionInheritance` implementation |
 | `internal/api/v1/subscription.go` | Add `ExecuteSubscriptionInheritance` handler |
 | `internal/api/router.go` | Register new route |
+| `internal/service/*_test.go` | Update all test files that construct `CreateSubscriptionRequest` with the flat fields (`subscription_test.go`, `invoice_test.go`, `wallet_payment_test.go`, `billing_test.go`) to use the new `Inheritance` object |
 
 ---
 
@@ -181,13 +276,14 @@ subscription.POST("/:id/inheritance/execute", handlers.Subscription.ExecuteSubsc
 
 | Scenario | HTTP | Message |
 |----------|------|---------|
-| Both arrays provided | 400 | provide either … not both |
+| Both arrays provided | 400 | provide either customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription, not both |
 | Both arrays empty | 400 | at least one customer ID is required |
 | Parent sub not found | 404 | subscription not found |
 | Sub is not PARENT type | 400 | subscription is not a parent subscription |
 | Customer ID not found | 400 | customer not found: `<id>` |
 | STANDALONE conflict | 400 | existing hierarchy conflict error (from validateCustomerSubscriptionWorkflow) |
-| All customers already inherited | 200 | returns parent sub, no-op |
+| All customers already inherited (non-cancelled) | 200 | returns parent sub unchanged — no-op |
+| Previously-cancelled child re-added | 200 | creates new inherited sub — intentional |
 
 ---
 
@@ -198,3 +294,4 @@ subscription.POST("/:id/inheritance/execute", handlers.Subscription.ExecuteSubsc
 - `getInheritedSubscriptions` — reused as-is
 - Cascade cancel/pause/resume — unaffected
 - No new DB migrations needed
+- No new DI wiring — handler added to existing `SubscriptionHandler`
