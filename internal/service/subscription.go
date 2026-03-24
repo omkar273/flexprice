@@ -97,10 +97,6 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 				return nil, err
 			}
 			req.Inheritance.InvoicingCustomerID = lo.ToPtr(invoicingCustomer.ID)
-		} else if req.Inheritance.InvoicingCustomerID == nil || *req.Inheritance.InvoicingCustomerID == "" {
-			if lo.FromPtr(req.Inheritance.InvoiceBilling) == types.InvoiceBillingInvoiceToParent && customer.ParentCustomerID != nil {
-				req.Inheritance.InvoicingCustomerID = customer.ParentCustomerID
-			}
 		}
 		if req.Inheritance.InvoicingCustomerID != nil && *req.Inheritance.InvoicingCustomerID != "" {
 			invoicingCustomer, err := s.CustomerRepo.Get(ctx, *req.Inheritance.InvoicingCustomerID)

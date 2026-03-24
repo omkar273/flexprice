@@ -261,7 +261,6 @@ type SubscriptionInheritanceConfig struct {
 	ParentSubscriptionID                     string                `json:"parent_subscription_id,omitempty"`
 	InvoicingCustomerID                      *string               `json:"invoicing_customer_id,omitempty"`
 	InvoicingCustomerExternalID              *string               `json:"invoicing_customer_external_id,omitempty"`
-	InvoiceBilling                           *types.InvoiceBilling `json:"invoice_billing,omitempty"`
 }
 
 // ExecuteSubscriptionInheritanceRequest is the payload for
@@ -590,14 +589,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 
-	// invoice_billing (deprecated) cannot be combined with the new invoicing customer fields
-	if r.Inheritance != nil && r.Inheritance.InvoiceBilling != nil &&
-		(r.Inheritance.InvoicingCustomerID != nil || r.Inheritance.InvoicingCustomerExternalID != nil) {
-		return ierr.NewError("invoice_billing cannot be used together with invoicing_customer_id or invoicing_customer_external_id").
-			WithHint("invoice_billing is deprecated; use invoicing_customer_id or invoicing_customer_external_id instead").
-			Mark(ierr.ErrValidation)
-	}
-
 	if r.Inheritance != nil &&
 		len(r.Inheritance.CustomerIDsToInheritSubscription) > 0 &&
 		len(r.Inheritance.ExternalCustomerIDsToInheritSubscription) > 0 {
@@ -654,14 +645,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 	if r.PaymentBehavior == nil {
 		defaultPaymentBehavior := types.PaymentBehaviorDefaultActive
 		r.PaymentBehavior = &defaultPaymentBehavior
-	}
-
-	// Deprecated: invoice_billing is deprecated in favor of invoicing_customer_id / invoicing_customer_external_id.
-	// Validate the value if it was explicitly provided for backward compatibility.
-	if r.Inheritance != nil && r.Inheritance.InvoiceBilling != nil {
-		if err := r.Inheritance.InvoiceBilling.Validate(); err != nil {
-			return err
-		}
 	}
 
 	if r.PaymentTerms != nil {
