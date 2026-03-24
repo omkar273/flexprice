@@ -14033,7 +14033,8 @@
           },
           "target_environment_id": {
             "type": "string",
-            "description": "TargetEnvironmentID, when provided, clones the plan into a different environment\nwithin the same tenant. Omit or leave null to clone within the same environment."
+            "description": "TargetEnvironmentID, when provided, clones the plan into a different environment\nwithin the same tenant. Omit or leave null to clone within the same environment.",
+            "x-nullable": true
           }
         }
       },
@@ -24890,7 +24891,6 @@
           "12HOUR",
           "DAY",
           "WEEK",
-          "MONTH",
           "MONTH"
         ],
         "x-enum-varnames": [
@@ -24903,8 +24903,7 @@
           "WindowSize12Hour",
           "WindowSizeDay",
           "WindowSizeWeek",
-          "WindowSizeMonth",
-          "DefaultWindowSize"
+          "WindowSizeMonth"
         ],
         "x-speakeasy-name-override": "WindowSize"
       },

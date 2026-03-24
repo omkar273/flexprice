@@ -220,6 +220,11 @@ func (r *ClonePlanRequest) Validate() error {
 			WithHint("Please provide a unique lookup_key for the cloned plan").
 			Mark(errors.ErrValidation)
 	}
+	if r.TargetEnvironmentID != nil && *r.TargetEnvironmentID == "" {
+		return errors.NewError("target_environment_id cannot be empty when provided").
+			WithHint("Provide a valid environment ID or omit the field entirely").
+			Mark(errors.ErrValidation)
+	}
 	return nil
 }
 

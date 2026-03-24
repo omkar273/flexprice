@@ -12047,7 +12047,8 @@
                 },
                 "target_environment_id": {
                     "description": "TargetEnvironmentID, when provided, clones the plan into a different environment\nwithin the same tenant. Omit or leave null to clone within the same environment.",
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true
                 }
             }
         },
@@ -22917,7 +22918,6 @@
                 "12HOUR",
                 "DAY",
                 "WEEK",
-                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
@@ -22930,8 +22930,7 @@
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth",
-                "DefaultWindowSize"
+                "WindowSizeMonth"
             ]
         },
         "types.WorkflowExecutionFilter": {

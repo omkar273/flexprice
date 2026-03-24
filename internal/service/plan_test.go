@@ -1238,8 +1238,9 @@ func (s *PlanServiceSuite) TestClonePlan_CrossEnv() {
 
 	// seedEnv creates an environment in the store, ignoring already-exists errors
 	// so sub-tests that share the same IDs can each set up their own state.
+	// Unexpected errors are logged so they don't silently mask test failures.
 	seedEnv := func(id, name string) {
-		_ = s.GetStores().EnvironmentRepo.Create(s.GetContext(), &environment.Environment{
+		err := s.GetStores().EnvironmentRepo.Create(s.GetContext(), &environment.Environment{
 			ID:   id,
 			Name: name,
 			Type: types.EnvironmentDevelopment,
@@ -1248,6 +1249,9 @@ func (s *PlanServiceSuite) TestClonePlan_CrossEnv() {
 				Status:   types.StatusPublished,
 			},
 		})
+		if err != nil && !ierr.IsAlreadyExists(err) {
+			s.T().Logf("seedEnv: unexpected error creating env %s: %v", id, err)
+		}
 	}
 
 	s.Run("same_env_no_target", func() {

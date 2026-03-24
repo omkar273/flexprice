@@ -807,9 +807,11 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		return nil, err
 	}
 
-	// Determine save context and target environment ID
+	// Determine save context and target environment ID.
+	// Default to sourcePlan.EnvironmentID (not ctx) to guarantee a non-empty value
+	// even when the caller did not stamp the context with an environment.
 	saveCtx := ctx
-	targetEnvID := types.GetEnvironmentID(ctx)
+	targetEnvID := sourcePlan.EnvironmentID
 
 	if req.TargetEnvironmentID != nil && lo.FromPtr(req.TargetEnvironmentID) != "" {
 		if _, err := s.EnvironmentRepo.Get(ctx, lo.FromPtr(req.TargetEnvironmentID)); err != nil {
@@ -819,9 +821,10 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		saveCtx = types.SetEnvironmentID(ctx, targetEnvID)
 	}
 
-	// lookup_key uniqueness check must use saveCtx (target environment)
+	// lookup_key uniqueness check must use saveCtx (target environment).
+	// GetByLookupKey returns ErrNotFound when the key is free — treat that as success.
 	existing, err := s.PlanRepo.GetByLookupKey(saveCtx, req.LookupKey)
-	if err != nil {
+	if err != nil && !ierr.IsNotFound(err) {
 		return nil, err
 	}
 	if existing != nil {
@@ -866,9 +869,10 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 }
 
 // clonePlanCore builds and saves the cloned plan and sub-entities.
-// saveCtx carries the target environment ID — all writes and BaseModel generation use it.
+// saveCtx carries the target environment ID for tenant/user BaseModel stamping and DB writes.
+// EnvironmentID is NOT derived from BaseModel — it must be set explicitly on every entity via
+// targetEnvID, which is why CopyWith is followed by a direct EnvironmentID assignment.
 // sourcePlan, sourcePrices, sourceEntitlements, sourceGrants are pre-fetched from the source env.
-// targetEnvID is explicitly stamped on all new entities (CopyWith doesn't copy EnvironmentID).
 func (s *planService) clonePlanCore(
 	ctx context.Context,
 	saveCtx context.Context,

@@ -34,7 +34,7 @@ func (s *InMemoryEnvironmentStore) Create(ctx context.Context, env *environment.
 	if _, exists := s.environments[env.ID]; exists {
 		return ierr.NewError("environment already exists").
 			WithHint("Environment already exists").
-			Mark(ierr.ErrDatabase)
+			Mark(ierr.ErrAlreadyExists)
 	}
 
 	env.CreatedAt = time.Now()
