@@ -1,11 +1,19 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	ierr "github.com/flexprice/flexprice/internal/errors"
+)
 
 // InvoiceLineItemFilter provides filtering options for invoice line item queries.
 type InvoiceLineItemFilter struct {
 	*QueryFilter
 	*TimeRangeFilter
+
+	// DSL-based filters and sorts (same pattern as PlanFilter, CustomerFilter).
+	Filters []*FilterCondition `json:"filters,omitempty"`
+	Sort    []*SortCondition   `json:"sort,omitempty"`
 
 	// InvoiceIDs filters by one or more invoice IDs.
 	// Uses the (tenant_id, environment_id, invoice_id, status) index.
@@ -59,6 +67,9 @@ func NewNoLimitInvoiceLineItemFilter() *InvoiceLineItemFilter {
 
 // Validate validates the invoice line item filter.
 func (f *InvoiceLineItemFilter) Validate() error {
+	if f == nil {
+		return nil
+	}
 	if f.QueryFilter != nil {
 		if err := f.QueryFilter.Validate(); err != nil {
 			return err
@@ -68,6 +79,12 @@ func (f *InvoiceLineItemFilter) Validate() error {
 	if f.TimeRangeFilter != nil {
 		if err := f.TimeRangeFilter.Validate(); err != nil {
 			return err
+		}
+	}
+
+	if f.PeriodStart != nil && f.PeriodEnd != nil {
+		if f.PeriodStart.After(*f.PeriodEnd) {
+			return ierr.NewError("period_start must be before period_end").Mark(ierr.ErrValidation)
 		}
 	}
 

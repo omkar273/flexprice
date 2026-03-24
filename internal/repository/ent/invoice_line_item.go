@@ -6,8 +6,10 @@ import (
 
 	"github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/ent/invoicelineitem"
+	"github.com/flexprice/flexprice/ent/predicate"
 	"github.com/flexprice/flexprice/internal/cache"
 	domaininvoice "github.com/flexprice/flexprice/internal/domain/invoice"
+	"github.com/flexprice/flexprice/internal/dsl"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/postgres"
@@ -56,7 +58,9 @@ func (r *invoiceLineItemRepository) GetCache(ctx context.Context, id string) *do
 	environmentID := types.GetEnvironmentID(ctx)
 	cacheKey := cache.GenerateKey(cache.PrefixInvoiceLineItem, tenantID, environmentID, id)
 	if value, found := r.cache.Get(ctx, cacheKey); found {
-		return value.(*domaininvoice.InvoiceLineItem)
+		if item, ok := value.(*domaininvoice.InvoiceLineItem); ok {
+			return item
+		}
 	}
 	return nil
 }
@@ -92,7 +96,7 @@ func (r *invoiceLineItemRepository) Create(ctx context.Context, item *domaininvo
 
 	_, err := r.client.Writer(ctx).InvoiceLineItem.Create().
 		SetID(item.ID).
-		SetTenantID(item.TenantID).
+		SetTenantID(types.GetTenantID(ctx)).
 		SetInvoiceID(item.InvoiceID).
 		SetCustomerID(item.CustomerID).
 		SetNillableSubscriptionID(item.SubscriptionID).
@@ -165,66 +169,72 @@ func (r *invoiceLineItemRepository) CreateBulk(ctx context.Context, items []*dom
 		"tenant_id", types.GetTenantID(ctx),
 	)
 
-	client := r.client.Writer(ctx)
+	err := r.client.WithTx(ctx, func(ctx context.Context) error {
+		client := r.client.Writer(ctx)
 
-	bulk := make([]*ent.InvoiceLineItemCreate, len(items))
-	for i, item := range items {
-		if item.EnvironmentID == "" {
-			item.EnvironmentID = types.GetEnvironmentID(ctx)
+		bulk := make([]*ent.InvoiceLineItemCreate, len(items))
+		for i, item := range items {
+			if item.EnvironmentID == "" {
+				item.EnvironmentID = types.GetEnvironmentID(ctx)
+			}
+
+			bulk[i] = client.InvoiceLineItem.Create().
+				SetID(item.ID).
+				SetTenantID(types.GetTenantID(ctx)).
+				SetInvoiceID(item.InvoiceID).
+				SetCustomerID(item.CustomerID).
+				SetNillableSubscriptionID(item.SubscriptionID).
+				SetNillableEntityID(item.EntityID).
+				SetNillableEntityType(convertStringPtrToInvoiceLineItemEntityTypePtr(item.EntityType)).
+				SetNillablePlanDisplayName(item.PlanDisplayName).
+				SetNillablePriceType(convertStringPtrToPriceTypePtr(item.PriceType)).
+				SetNillablePriceID(item.PriceID).
+				SetNillableMeterID(item.MeterID).
+				SetNillableMeterDisplayName(item.MeterDisplayName).
+				SetNillablePriceUnitID(item.PriceUnitID).
+				SetNillablePriceUnit(item.PriceUnit).
+				SetNillablePriceUnitAmount(item.PriceUnitAmount).
+				SetNillableDisplayName(item.DisplayName).
+				SetAmount(item.Amount).
+				SetQuantity(item.Quantity).
+				SetCurrency(item.Currency).
+				SetNillablePeriodStart(item.PeriodStart).
+				SetNillablePeriodEnd(item.PeriodEnd).
+				SetMetadata(item.Metadata).
+				SetEnvironmentID(item.EnvironmentID).
+				SetCommitmentInfo(item.CommitmentInfo).
+				SetPrepaidCreditsApplied(item.PrepaidCreditsApplied).
+				SetLineItemDiscount(item.LineItemDiscount).
+				SetInvoiceLevelDiscount(item.InvoiceLevelDiscount).
+				SetStatus(string(item.Status)).
+				SetCreatedBy(item.CreatedBy).
+				SetUpdatedBy(item.UpdatedBy).
+				SetCreatedAt(item.CreatedAt).
+				SetUpdatedAt(item.UpdatedAt)
 		}
 
-		bulk[i] = client.InvoiceLineItem.Create().
-			SetID(item.ID).
-			SetTenantID(item.TenantID).
-			SetInvoiceID(item.InvoiceID).
-			SetCustomerID(item.CustomerID).
-			SetNillableSubscriptionID(item.SubscriptionID).
-			SetNillableEntityID(item.EntityID).
-			SetNillableEntityType(convertStringPtrToInvoiceLineItemEntityTypePtr(item.EntityType)).
-			SetNillablePlanDisplayName(item.PlanDisplayName).
-			SetNillablePriceType(convertStringPtrToPriceTypePtr(item.PriceType)).
-			SetNillablePriceID(item.PriceID).
-			SetNillableMeterID(item.MeterID).
-			SetNillableMeterDisplayName(item.MeterDisplayName).
-			SetNillablePriceUnitID(item.PriceUnitID).
-			SetNillablePriceUnit(item.PriceUnit).
-			SetNillablePriceUnitAmount(item.PriceUnitAmount).
-			SetNillableDisplayName(item.DisplayName).
-			SetAmount(item.Amount).
-			SetQuantity(item.Quantity).
-			SetCurrency(item.Currency).
-			SetNillablePeriodStart(item.PeriodStart).
-			SetNillablePeriodEnd(item.PeriodEnd).
-			SetMetadata(item.Metadata).
-			SetEnvironmentID(item.EnvironmentID).
-			SetCommitmentInfo(item.CommitmentInfo).
-			SetPrepaidCreditsApplied(item.PrepaidCreditsApplied).
-			SetLineItemDiscount(item.LineItemDiscount).
-			SetInvoiceLevelDiscount(item.InvoiceLevelDiscount).
-			SetStatus(string(item.Status)).
-			SetCreatedBy(item.CreatedBy).
-			SetUpdatedBy(item.UpdatedBy).
-			SetCreatedAt(item.CreatedAt).
-			SetUpdatedAt(item.UpdatedAt)
-	}
+		for i := 0; i < len(bulk); i += invoiceLineItemBatchSize {
+			end := i + invoiceLineItemBatchSize
+			if end > len(bulk) {
+				end = len(bulk)
+			}
+			if _, err := client.InvoiceLineItem.CreateBulk(bulk[i:end]...).Save(ctx); err != nil {
+				return ierr.WithError(err).
+					WithHint("failed to create invoice line items in bulk").
+					WithReportableDetails(map[string]interface{}{
+						"count":       len(items),
+						"batch_start": i,
+						"batch_end":   end,
+					}).
+					Mark(ierr.ErrDatabase)
+			}
+		}
+		return nil
+	})
 
-	for i := 0; i < len(bulk); i += invoiceLineItemBatchSize {
-		end := i + invoiceLineItemBatchSize
-		if end > len(bulk) {
-			end = len(bulk)
-		}
-		_, err := client.InvoiceLineItem.CreateBulk(bulk[i:end]...).Save(ctx)
-		if err != nil {
-			SetSpanError(span, err)
-			return ierr.WithError(err).
-				WithHint("failed to create invoice line items in bulk").
-				WithReportableDetails(map[string]interface{}{
-					"count":       len(items),
-					"batch_start": i,
-					"batch_end":   end,
-				}).
-				Mark(ierr.ErrDatabase)
-		}
+	if err != nil {
+		SetSpanError(span, err)
+		return err
 	}
 
 	SetSpanSuccess(span)
@@ -240,6 +250,7 @@ func (r *invoiceLineItemRepository) Get(ctx context.Context, id string) (*domain
 	defer FinishSpan(span)
 
 	if cached := r.GetCache(ctx, id); cached != nil {
+		SetSpanSuccess(span)
 		return cached, nil
 	}
 
@@ -434,14 +445,14 @@ func (o InvoiceLineItemQueryOptions) ApplyStatusFilter(query InvoiceLineItemQuer
 }
 
 func (o InvoiceLineItemQueryOptions) ApplySortFilter(query InvoiceLineItemQuery, field string, order string) InvoiceLineItemQuery {
-	if field != "" {
-		if order == "desc" {
-			query = query.Order(ent.Desc(o.GetFieldName(field)))
-		} else {
-			query = query.Order(ent.Asc(o.GetFieldName(field)))
-		}
+	fieldName := o.GetFieldName(field)
+	if fieldName == "" {
+		return query
 	}
-	return query
+	if order == types.OrderDesc {
+		return query.Order(ent.Desc(fieldName))
+	}
+	return query.Order(ent.Asc(fieldName))
 }
 
 func (o InvoiceLineItemQueryOptions) ApplyPaginationFilter(query InvoiceLineItemQuery, limit int, offset int) InvoiceLineItemQuery {
@@ -454,6 +465,16 @@ func (o InvoiceLineItemQueryOptions) GetFieldName(field string) string {
 		return field
 	}
 	return ""
+}
+
+// GetFieldResolver resolves a logical field name to an ent column name for DSL filters/sorts.
+func (o InvoiceLineItemQueryOptions) GetFieldResolver(field string) (string, error) {
+	fieldName := o.GetFieldName(field)
+	if fieldName == "" {
+		return "", ierr.NewErrorf("unknown field '%s' in invoice line item query", field).
+			Mark(ierr.ErrValidation)
+	}
+	return fieldName, nil
 }
 
 // applyEntityQueryOptions applies invoice line item-specific filters to the query.
@@ -488,6 +509,35 @@ func (o *InvoiceLineItemQueryOptions) applyEntityQueryOptions(_ context.Context,
 	if f.PeriodEnd != nil {
 		query = query.Where(invoicelineitem.PeriodEndLTE(*f.PeriodEnd))
 	}
+
+	// DSL-based complex filters
+	if len(f.Filters) > 0 {
+		var err error
+		query, err = dsl.ApplyFilters[InvoiceLineItemQuery, predicate.InvoiceLineItem](
+			query,
+			f.Filters,
+			o.GetFieldResolver,
+			func(p dsl.Predicate) predicate.InvoiceLineItem { return predicate.InvoiceLineItem(p) },
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// DSL-based sorts
+	if len(f.Sort) > 0 {
+		var err error
+		query, err = dsl.ApplySorts[InvoiceLineItemQuery, invoicelineitem.OrderOption](
+			query,
+			f.Sort,
+			o.GetFieldResolver,
+			func(o dsl.OrderFunc) invoicelineitem.OrderOption { return invoicelineitem.OrderOption(o) },
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return query, nil
 }
 

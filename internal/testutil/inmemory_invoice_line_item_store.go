@@ -22,7 +22,11 @@ func NewInMemoryInvoiceLineItemStore() *InMemoryInvoiceLineItemStore {
 func (s *InMemoryInvoiceLineItemStore) Create(ctx context.Context, item *invoice.InvoiceLineItem) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.data[item.ID] = item
+	if _, exists := s.data[item.ID]; exists {
+		return ierr.NewError("invoice line item already exists").Mark(ierr.ErrAlreadyExists)
+	}
+	cp := *item
+	s.data[item.ID] = &cp
 	return nil
 }
 
@@ -42,20 +46,31 @@ func (s *InMemoryInvoiceLineItemStore) Get(ctx context.Context, id string) (*inv
 	if !ok {
 		return nil, ierr.NewError("invoice line item not found").Mark(ierr.ErrNotFound)
 	}
-	return item, nil
+	cp := *item
+	return &cp, nil
 }
 
 func (s *InMemoryInvoiceLineItemStore) Update(ctx context.Context, item *invoice.InvoiceLineItem) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.data[item.ID] = item
+	if _, exists := s.data[item.ID]; !exists {
+		return ierr.NewError("invoice line item not found").Mark(ierr.ErrNotFound)
+	}
+	cp := *item
+	s.data[item.ID] = &cp
 	return nil
 }
 
 func (s *InMemoryInvoiceLineItemStore) Delete(ctx context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	delete(s.data, id)
+	item, exists := s.data[id]
+	if !exists {
+		return ierr.NewError("invoice line item not found").Mark(ierr.ErrNotFound)
+	}
+	cp := *item
+	cp.Status = types.StatusDeleted
+	s.data[id] = &cp
 	return nil
 }
 
@@ -65,7 +80,8 @@ func (s *InMemoryInvoiceLineItemStore) ListByInvoiceID(ctx context.Context, invo
 	var result []*invoice.InvoiceLineItem
 	for _, item := range s.data {
 		if item.InvoiceID == invoiceID && item.Status == types.StatusPublished {
-			result = append(result, item)
+			cp := *item
+			result = append(result, &cp)
 		}
 	}
 	return result, nil

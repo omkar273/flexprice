@@ -334,18 +334,25 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 	return resp, nil
 }
 
-func (s *invoiceService) GetInvoice(ctx context.Context, id string) (*dto.InvoiceResponse, error) {
+// getInvoiceWithLineItems fetches an invoice and populates its LineItems from the dedicated repo.
+func (s *invoiceService) getInvoiceWithLineItems(ctx context.Context, id string) (*invoice.Invoice, error) {
 	inv, err := s.InvoiceRepo.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-
-	// Fetch line items separately (Get no longer eager-loads them)
 	lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	inv.LineItems = lineItems
+	return inv, nil
+}
+
+func (s *invoiceService) GetInvoice(ctx context.Context, id string) (*dto.InvoiceResponse, error) {
+	inv, err := s.getInvoiceWithLineItems(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, lineItem := range inv.LineItems {
 		s.Logger.DebugwCtx(ctx, "got invoice line item", "id", lineItem.ID, "display_name", lineItem.DisplayName)
@@ -2710,18 +2717,11 @@ func (s *invoiceService) publishInternalWebhookEvent(ctx context.Context, eventN
 func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error) {
 	s.Logger.InfowCtx(ctx, "recalculating invoice v2 (draft)", "invoice_id", id)
 
-	// Get the invoice
-	inv, err := s.InvoiceRepo.Get(ctx, id)
+	// Get the invoice with its line items
+	inv, err := s.getInvoiceWithLineItems(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-
-	// Fetch line items separately (Get no longer eager-loads them)
-	lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	inv.LineItems = lineItems
 
 	// Validate invoice is in draft state
 	if inv.InvoiceStatus != types.InvoiceStatusDraft {

@@ -137,7 +137,9 @@ func (s *InMemoryInvoiceStore) CreateWithLineItems(ctx context.Context, inv *inv
 			if item.InvoiceID == "" {
 				item.InvoiceID = inv.ID
 			}
-			_ = s.lineItemStore.Create(ctx, item)
+			if err := s.lineItemStore.Create(ctx, item); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -546,7 +548,10 @@ func (s *InMemoryInvoiceStore) UpdateLineItem(ctx context.Context, item *invoice
 	return s.Update(ctx, inv)
 }
 
-// Clear removes all invoices from the store
+// Clear removes all invoices from the store, and also clears the associated line item store if set.
 func (s *InMemoryInvoiceStore) Clear() {
 	s.InMemoryStore.Clear()
+	if s.lineItemStore != nil {
+		s.lineItemStore.Clear()
+	}
 }
