@@ -102,6 +102,7 @@ func copyInvoice(inv *invoice.Invoice) *invoice.Invoice {
 		Version:                    inv.Version,
 		EnvironmentID:              inv.EnvironmentID,
 		RecalculatedInvoiceID:      inv.RecalculatedInvoiceID,
+		LastComputedAt:             inv.LastComputedAt,
 		BaseModel:                  inv.BaseModel,
 	}
 }
