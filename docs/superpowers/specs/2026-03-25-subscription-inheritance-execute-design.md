@@ -124,6 +124,7 @@ Three validation blocks currently reference the flat fields and must be rewritte
        // existing check
    }
    ```
+4. **Duplicate child-ID mutual-exclusivity check** (currently ~line 948 — identical in purpose to block 2 above): This second instance references the now-deleted flat fields and must be removed entirely. It becomes redundant after block 2 is rewritten to check `req.Inheritance.*`.
 
 ### `ToSubscription()` rewrite (same file)
 
