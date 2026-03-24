@@ -2118,10 +2118,15 @@ func (s *invoiceService) GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.
 	unpaidFixedCharges := decimal.Zero
 	totalInvoiceAmountPaid := decimal.Zero
 
+	// Include both Draft and Finalized invoices. With the draft-first flow and
+	// finalization delay, computed drafts already have committed charges (credits applied,
+	// line items populated). Excluding them would overstate the wallet's available balance.
+	// Empty/uncomputed drafts are harmless — they have zero AmountRemaining and are
+	// skipped by the AmountRemaining.IsZero() check below.
 	filter := types.NewNoLimitInvoiceFilter()
 	filter.QueryFilter.Status = lo.ToPtr(types.StatusPublished)
 	filter.CustomerID = req.CustomerID
-	filter.InvoiceStatus = []types.InvoiceStatus{types.InvoiceStatusFinalized}
+	filter.InvoiceStatus = []types.InvoiceStatus{types.InvoiceStatusDraft, types.InvoiceStatusFinalized}
 
 	invoicesResp, err := s.ListInvoices(ctx, filter)
 	if err != nil {
