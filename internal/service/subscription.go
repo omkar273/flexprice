@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
@@ -137,7 +136,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 	}
 
 	// --- Customer hierarchy: resolve customer_ids_to_inherit_subscription and set SubscriptionType ---
-	usageCustomerIDs, err := s.resolveUsageCustomerIDs(ctx, customer, &req)
+	usageCustomerIDs, err := s.resolveUsageCustomerIDs(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +148,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 	}
 
 	// Validate that none of the involved customers conflict with existing subscription workflows
-	if err := s.validateCustomerSubscriptionWorkflow(ctx, customer.ID, req.SubscriptionType, usageCustomerIDs); err != nil {
+	if err := s.validateCustomerSubscriptionWorkflow(ctx, customer.ID, usageCustomerIDs); err != nil {
 		return nil, err
 	}
 
@@ -1658,17 +1657,12 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 
 	subscription.CancelAtPeriodEnd = req.CancelAtPeriodEnd
 
-	// Persist update atomically.
-	err = s.DB.WithTx(ctx, func(ctx context.Context) error {
-		if err := s.SubRepo.Update(ctx, subscription); err != nil {
-			return ierr.WithError(err).
-				WithHint("Failed to update subscription").
-				Mark(ierr.ErrDatabase)
-		}
-		return nil
-	})
+	// Update the subscription in the database
+	err = s.SubRepo.Update(ctx, subscription)
 	if err != nil {
-		return nil, err
+		return nil, ierr.WithError(err).
+			WithHint("Failed to update subscription").
+			Mark(ierr.ErrDatabase)
 	}
 
 	logger.Info("successfully updated subscription")
@@ -1677,144 +1671,6 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 
 	// Return the updated subscription
 	return s.GetSubscription(ctx, subscriptionID)
-}
-
-// resolveUsageCustomerIDsUpdate validates a desired customer_ids_to_inherit_subscription list against
-// the current state of the parent subscription and returns the slice of net-new customer IDs to onboard.
-//
-// Rules:
-//   - Subscription must be ACTIVE, TRIALING, or DRAFT.
-//   - Every customer in desiredIDs must exist and be Published.
-//   - Any customer currently tracked by an inherited subscription that is absent from desiredIDs
-//     is a removal attempt → hard error (use cancellation instead).
-//   - Duplicate IDs in desiredIDs are silently deduplicated.
-//   - Returns the net-new customer IDs (desiredIDs minus already-inherited).
-func (s *subscriptionService) resolveUsageCustomerIDsUpdate(
-	ctx context.Context,
-	sub *subscription.Subscription,
-	desiredIDs []string,
-) ([]string, error) {
-	// 1. Subscription must be in an appropriate state.
-	switch sub.SubscriptionStatus {
-	case types.SubscriptionStatusActive, types.SubscriptionStatusTrialing, types.SubscriptionStatusDraft:
-		// allowed
-	default:
-		return nil, ierr.NewError(fmt.Sprintf(
-			"cannot update customer_ids_to_inherit_subscription on a subscription with status %q", sub.SubscriptionStatus)).
-			WithHint("customer_ids_to_inherit_subscription can only be updated on active, trialing, or draft subscriptions").
-			WithReportableDetails(map[string]interface{}{
-				"subscription_id":     sub.ID,
-				"subscription_status": sub.SubscriptionStatus,
-			}).
-			Mark(ierr.ErrValidation)
-	}
-
-	// 2. Deduplicate the caller's list.
-	desiredIDs = lo.Uniq(desiredIDs)
-
-	// 3. Validate each desired customer: must exist, be Published, and be a direct child.
-	if len(desiredIDs) > 0 {
-		cf := types.NewNoLimitCustomerFilter()
-		cf.CustomerIDs = desiredIDs
-		cf.Status = lo.ToPtr(types.StatusPublished)
-		found, err := s.CustomerRepo.List(ctx, cf)
-		if err != nil {
-			return nil, ierr.WithError(err).
-				WithHint("Failed to look up usage customers").
-				Mark(ierr.ErrDatabase)
-		}
-		byID := lo.SliceToMap(found, func(c *customer.Customer) (string, *customer.Customer) {
-			return c.ID, c
-		})
-		for _, id := range desiredIDs {
-			child, ok := byID[id]
-			if !ok {
-				return nil, ierr.NewError("usage customer not found").
-					WithHint("Each usage_customer_id must be a valid, published customer").
-					WithReportableDetails(map[string]interface{}{"customer_id": id}).
-					Mark(ierr.ErrValidation)
-			}
-			if child.ParentCustomerID == nil || *child.ParentCustomerID != sub.CustomerID {
-				return nil, ierr.NewError("usage customer is not a child of the subscription customer").
-					WithHint("Each usage_customer_id must be a direct child of the subscription's owner customer").
-					WithReportableDetails(map[string]interface{}{
-						"usage_customer_id":        id,
-						"subscription_customer_id": sub.CustomerID,
-					}).
-					Mark(ierr.ErrValidation)
-			}
-		}
-	}
-
-	// 4. Fetch the existing inherited subscriptions to determine current tracked customers.
-	existingInherited, err := s.getInheritedSubscriptions(ctx, sub.ID)
-	if err != nil {
-		return nil, err
-	}
-	existingCustomerIDs := make([]string, 0, len(existingInherited))
-	for _, inh := range existingInherited {
-		existingCustomerIDs = append(existingCustomerIDs, inh.CustomerID)
-	}
-
-	// 5. Detect removals: any existing customer not present in desiredIDs is a removal attempt.
-	desiredSet := lo.SliceToMap(desiredIDs, func(id string) (string, struct{}) { return id, struct{}{} })
-	for _, existingID := range existingCustomerIDs {
-		if _, kept := desiredSet[existingID]; !kept {
-			return nil, ierr.NewError("removing a usage customer requires cancelling the subscription").
-				WithHint("To remove customers from subscription inheritance, cancel the subscription and recreate it with the updated customer_ids_to_inherit_subscription").
-				WithReportableDetails(map[string]interface{}{
-					"subscription_id":           sub.ID,
-					"removed_usage_customer_id": existingID,
-				}).
-				Mark(ierr.ErrValidation)
-		}
-	}
-
-	// 6. Compute net-new customers (desired minus already tracked).
-	existingSet := lo.SliceToMap(existingCustomerIDs, func(id string) (string, struct{}) { return id, struct{}{} })
-	addedIDs := make([]string, 0)
-	for _, id := range desiredIDs {
-		if _, alreadyTracked := existingSet[id]; !alreadyTracked {
-			addedIDs = append(addedIDs, id)
-		}
-	}
-
-	// 7. Validate that neither the parent customer nor the new child customers have
-	// conflicting existing subscriptions.  We must EXCLUDE the subscription being updated
-	// (sub.ID) from this check — it is the subscription being promoted from STANDALONE →
-	// PARENT, so listing it as a STANDALONE conflict would be a false positive.
-	if len(addedIDs) > 0 {
-		allCustomerIDs := lo.Uniq(append([]string{sub.CustomerID}, addedIDs...))
-		cfSub := types.NewNoLimitSubscriptionFilter()
-		cfSub.CustomerIDs = allCustomerIDs
-		cfSub.SubscriptionStatus = []types.SubscriptionStatus{
-			types.SubscriptionStatusActive,
-			types.SubscriptionStatusTrialing,
-			types.SubscriptionStatusDraft,
-		}
-		candidateSubs, listErr := s.SubRepo.List(ctx, cfSub)
-		if listErr != nil {
-			return nil, ierr.WithError(listErr).
-				WithHint("Failed to list subscriptions for hierarchy conflict check").
-				Mark(ierr.ErrDatabase)
-		}
-		for _, candidate := range candidateSubs {
-			if candidate.ID == sub.ID {
-				// Skip the subscription we are currently updating — its type will change
-				// to PARENT as part of this operation.
-				continue
-			}
-			existingType := candidate.SubscriptionType
-			if existingType == "" {
-				existingType = types.SubscriptionTypeStandalone
-			}
-			if err := validateHierarchyWorkflowConflict(sub.CustomerID, candidate.CustomerID, types.SubscriptionTypeParent, existingType); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return addedIDs, nil
 }
 
 // CancelSubscription provides enhanced cancellation with proration support
@@ -6392,21 +6248,15 @@ func (s *subscriptionService) TriggerSubscriptionWorkflow(ctx context.Context, s
 }
 
 // resolveUsageCustomerIDs determines the set of customer IDs whose usage
-// should be aggregated on the parent subscription.
+// should be aggregated on the subscription.
 //   - If req.CustomerIDsToInheritSubscription is explicitly provided (even as an empty slice), use it.
 //   - Else if req.ExternalCustomerIDsToInheritSubscription is explicitly provided, resolve them to internal IDs and use them.
-//   - Otherwise, auto-detect children from customer hierarchy.
+//   - Otherwise, do not inherit usage by default.
 //   - Returns nil/empty when the subscription should be STANDALONE.
 func (s *subscriptionService) resolveUsageCustomerIDs(
 	ctx context.Context,
-	cust *customer.Customer,
 	req *dto.CreateSubscriptionRequest,
 ) ([]string, error) {
-	if req.CustomerIDsToInheritSubscription != nil && req.ExternalCustomerIDsToInheritSubscription != nil {
-		return nil, ierr.NewError("only one of customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription may be provided").
-			WithHint("Send either internal customer IDs or external customer IDs for inheritance, but not both").
-			Mark(ierr.ErrValidation)
-	}
 
 	// Explicitly provided (even empty array is valid). nil slice = field omitted in JSON.
 	if req.CustomerIDsToInheritSubscription != nil {
@@ -6427,20 +6277,11 @@ func (s *subscriptionService) resolveUsageCustomerIDs(
 		})
 
 		for _, childID := range ids {
-			child, ok := byID[childID]
+			_, ok := byID[childID]
 			if !ok {
 				return nil, ierr.NewError("usage customer not found").
 					WithHint("Each usage_customer_id must be a valid customer").
 					WithReportableDetails(map[string]any{"customer_id": childID}).
-					Mark(ierr.ErrValidation)
-			}
-			if child.ParentCustomerID == nil || *child.ParentCustomerID != cust.ID {
-				return nil, ierr.NewError("usage customer is not a child of the subscription customer").
-					WithHint("Each usage_customer_id must be a direct child of the subscription customer").
-					WithReportableDetails(map[string]any{
-						"usage_customer_id":        childID,
-						"subscription_customer_id": cust.ID,
-					}).
 					Mark(ierr.ErrValidation)
 			}
 		}
@@ -6451,14 +6292,6 @@ func (s *subscriptionService) resolveUsageCustomerIDs(
 		externalIDs := lo.Uniq(req.ExternalCustomerIDsToInheritSubscription)
 		if len(externalIDs) == 0 {
 			return []string{}, nil
-		}
-
-		for _, externalID := range externalIDs {
-			if strings.TrimSpace(externalID) == "" {
-				return nil, ierr.NewError("external_customer_ids_to_inherit_subscription contains an empty or blank external customer ID").
-					WithHint("All entries in external_customer_ids_to_inherit_subscription must be non-empty external customer IDs").
-					Mark(ierr.ErrValidation)
-			}
 		}
 
 		cf := types.NewNoLimitCustomerFilter()
@@ -6481,39 +6314,12 @@ func (s *subscriptionService) resolveUsageCustomerIDs(
 					WithReportableDetails(map[string]any{"external_customer_id": externalID}).
 					Mark(ierr.ErrValidation)
 			}
-			if child.ParentCustomerID == nil || *child.ParentCustomerID != cust.ID {
-				return nil, ierr.NewError("usage customer is not a child of the subscription customer").
-					WithHint("Each external usage customer must resolve to a direct child of the subscription customer").
-					WithReportableDetails(map[string]any{
-						"external_customer_id":     externalID,
-						"usage_customer_id":        child.ID,
-						"subscription_customer_id": cust.ID,
-					}).
-					Mark(ierr.ErrValidation)
-			}
 			resolvedIDs = append(resolvedIDs, child.ID)
 		}
 		return lo.Uniq(resolvedIDs), nil
 	}
 
-	// Auto-detect: find children of this customer
-	childFilter := types.NewNoLimitCustomerFilter()
-	childFilter.ParentCustomerIDs = []string{cust.ID}
-	childFilter.Status = lo.ToPtr(types.StatusPublished)
-	children, err := s.CustomerRepo.List(ctx, childFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(children) == 0 {
-		return nil, nil // No children → STANDALONE
-	}
-
-	ids := make([]string, 0, len(children))
-	for _, child := range children {
-		ids = append(ids, child.ID)
-	}
-	return ids, nil
+	return nil, nil
 }
 
 // validateCustomerSubscriptionWorkflow ensures a customer is not mixing STANDALONE
@@ -6521,9 +6327,9 @@ func (s *subscriptionService) resolveUsageCustomerIDs(
 func (s *subscriptionService) validateCustomerSubscriptionWorkflow(
 	ctx context.Context,
 	parentCustomerID string,
-	newSubType types.SubscriptionType,
 	usageCustomerIDs []string,
 ) error {
+	usageCustomerIDs = lo.Uniq(usageCustomerIDs)
 	allCustomerIDs := lo.Uniq(append([]string{parentCustomerID}, usageCustomerIDs...))
 	filter := types.NewNoLimitSubscriptionFilter()
 	filter.CustomerIDs = allCustomerIDs
@@ -6538,54 +6344,32 @@ func (s *subscriptionService) validateCustomerSubscriptionWorkflow(
 		return err
 	}
 
+	usageSet := lo.SliceToMap(usageCustomerIDs, func(id string) (string, struct{}) {
+		return id, struct{}{}
+	})
+
 	for _, existing := range existingSubs {
-		existingType := existing.SubscriptionType
-		if existingType == "" {
-			existingType = types.SubscriptionTypeStandalone
-		}
-		if err := validateHierarchyWorkflowConflict(parentCustomerID, existing.CustomerID, newSubType, existingType); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// validateHierarchyWorkflowConflict encodes conflict rules between STANDALONE and
-// hierarchy-based (PARENT/INHERITED) subscription types for a given customer.
-func validateHierarchyWorkflowConflict(
-	parentCustomerID, subscriptionCustomerID string,
-	newSubType, existingType types.SubscriptionType,
-) error {
-	cid := subscriptionCustomerID
-
-	if cid == parentCustomerID {
-		if newSubType == types.SubscriptionTypeParent &&
-			(existingType == types.SubscriptionTypeStandalone || existingType == types.SubscriptionTypeInherited) {
-			return ierr.NewError("customer already has standalone subscriptions").
-				WithHint("A customer cannot have both standalone and hierarchy-based subscriptions; cancel existing subscriptions first").
-				WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
+		if existing.CustomerID == parentCustomerID && existing.SubscriptionType == types.SubscriptionTypeInherited {
+			return ierr.NewError("parent customer cannot have inherited subscriptions").
+				WithHint("The parent customer cannot have any active, trialing, or draft inherited subscriptions").
+				WithReportableDetails(map[string]any{
+					"customer_id":       parentCustomerID,
+					"existing_sub_id":   existing.ID,
+					"existing_sub_type": existing.SubscriptionType,
+				}).
 				Mark(ierr.ErrInvalidOperation)
 		}
-		if newSubType == types.SubscriptionTypeStandalone && (existingType == types.SubscriptionTypeParent || existingType == types.SubscriptionTypeInherited) {
-			return ierr.NewError("customer already participates in a subscription hierarchy").
-				WithHint("A customer cannot have both standalone and hierarchy-based subscriptions; cancel existing subscriptions first").
-				WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
+
+		if _, isUsageCustomer := usageSet[existing.CustomerID]; isUsageCustomer && existing.SubscriptionType != types.SubscriptionTypeInherited {
+			return ierr.NewError("usage customer can only have inherited subscriptions").
+				WithHint("Each usage customer must only have active, trialing, or draft inherited subscriptions; cancel non-inherited subscriptions first").
+				WithReportableDetails(map[string]any{
+					"customer_id":       existing.CustomerID,
+					"existing_sub_id":   existing.ID,
+					"existing_sub_type": existing.SubscriptionType,
+				}).
 				Mark(ierr.ErrInvalidOperation)
 		}
-		return nil
-	}
-
-	if existingType == types.SubscriptionTypeStandalone {
-		return ierr.NewError("child customer already has standalone subscriptions").
-			WithHint("A customer cannot have both standalone and inherited subscriptions; cancel existing subscriptions first").
-			WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
-			Mark(ierr.ErrInvalidOperation)
-	}
-	if existingType == types.SubscriptionTypeParent {
-		return ierr.NewError("child customer is already a parent in another hierarchy").
-			WithHint("A customer cannot be both a parent and an inherited child").
-			WithReportableDetails(map[string]any{"customer_id": cid, "existing_type": existingType}).
-			Mark(ierr.ErrInvalidOperation)
 	}
 	return nil
 }

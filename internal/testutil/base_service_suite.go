@@ -191,7 +191,9 @@ func (s *BaseServiceTestSuite) setupContext() {
 func (s *BaseServiceTestSuite) setupStores() {
 	subStore := NewInMemorySubscriptionStore()
 	lineItemStore := NewInMemorySubscriptionLineItemStore()
+	customerStore := NewInMemoryCustomerStore()
 	subStore.SetLineItemStore(lineItemStore)
+	customerStore.SetSubscriptionStore(subStore)
 	s.stores = Stores{
 		SubscriptionRepo:             subStore,
 		SubscriptionLineItemRepo:     lineItemStore,
@@ -202,7 +204,7 @@ func (s *BaseServiceTestSuite) setupStores() {
 		PriceRepo:                    NewInMemoryPriceStore(),
 		PriceUnitRepo:                NewInMemoryPriceUnitStore(),
 		MeterRepo:                    NewInMemoryMeterStore(),
-		CustomerRepo:                 NewInMemoryCustomerStore(),
+		CustomerRepo:                 customerStore,
 		InvoiceRepo:                  NewInMemoryInvoiceStore(),
 		WalletRepo:                   NewInMemoryWalletStore(),
 		PaymentRepo:                  NewInMemoryPaymentStore(),

@@ -945,6 +945,12 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		}
 	}
 
+	if r.CustomerIDsToInheritSubscription != nil && r.ExternalCustomerIDsToInheritSubscription != nil {
+		return ierr.NewError("only one of customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription may be provided").
+			WithHint("Send either internal customer IDs or external customer IDs for inheritance, but not both").
+			Mark(ierr.ErrValidation)
+	}
+
 	return nil
 }
 
