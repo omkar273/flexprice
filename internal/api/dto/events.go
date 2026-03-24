@@ -319,18 +319,24 @@ func (r *GetEventsRequest) Validate() error {
 }
 
 type GetUsageAnalyticsRequest struct {
-	ExternalCustomerID string           `json:"external_customer_id" binding:"required"`
-	FeatureIDs         []string         `json:"feature_ids,omitempty"`
-	Sources            []string         `json:"sources,omitempty"`
-	StartTime          time.Time        `json:"start_time,omitempty"`
-	EndTime            time.Time        `json:"end_time,omitempty"`
-	GroupBy            []string         `json:"group_by,omitempty"` // allowed values: "source", "feature_id", "properties.<field_name>"
-	WindowSize         types.WindowSize `json:"window_size,omitempty"`
-	Expand             []string         `json:"expand,omitempty"` // allowed values: "price", "meter", "feature", "subscription_line_item","plan","addon"
+	// ExternalCustomerID is the single external customer ID.
+	// Optional when ExternalCustomerIDs is provided; required otherwise.
+	ExternalCustomerID string `json:"external_customer_id"`
+	// ExternalCustomerIDs is a list of external customer IDs whose usage will be merged
+	// into a single aggregated response. Unioned with ExternalCustomerID if both are set;
+	// duplicates are dropped. At least one of ExternalCustomerID or ExternalCustomerIDs
+	// must be provided.
+	ExternalCustomerIDs []string         `json:"external_customer_ids,omitempty"`
+	FeatureIDs          []string         `json:"feature_ids,omitempty"`
+	Sources             []string         `json:"sources,omitempty"`
+	StartTime           time.Time        `json:"start_time,omitempty"`
+	EndTime             time.Time        `json:"end_time,omitempty"`
+	GroupBy             []string         `json:"group_by,omitempty"` // allowed values: "source", "feature_id", "properties.<field_name>"
+	WindowSize          types.WindowSize `json:"window_size,omitempty"`
+	Expand              []string         `json:"expand,omitempty"` // allowed values: "price", "meter", "feature", "subscription_line_item","plan","addon"
 	// Property filters to filter the events by the keys in `properties` field of the event
 	PropertyFilters map[string][]string `json:"property_filters,omitempty"`
-	// IncludeChildren when true aggregates child customers' usage into the parent's total and adds
-	// the parent itself as a breakdown item alongside children so that sum(breakdowns) == total.
+	// IncludeChildren when true folds child customers' usage into the single aggregated total.
 	// Default: false.
 	IncludeChildren bool `json:"include_children,omitempty"`
 }
