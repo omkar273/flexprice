@@ -155,6 +155,17 @@ func (s *InvoiceSyncService) SyncInvoiceToPaddle(
 		"paddle_customer_id", paddleCustomerID,
 		"paddle_address_id", paddleAddressID)
 
+	// Preview the transaction to get Paddle-accurate tax BEFORE creating the real one.
+	// This ensures the FlexPrice invoice reflects the exact per-line and aggregate tax that
+	// Paddle will charge, preventing the "overpaid" situation after payment.
+	if err := s.previewAndSyncTax(ctx, flexInvoice, paddleCustomerID, paddleAddressID); err != nil {
+		// Non-fatal: log and proceed. The transaction is still created and the invoice
+		// totals will read from the created transaction as a fallback below.
+		s.logger.Warnw("Paddle tax preview failed, proceeding without pre-sync",
+			"error", err,
+			"invoice_id", req.InvoiceID)
+	}
+
 	createReq, err := s.buildCreateTransactionRequest(ctx, flexInvoice, paddleCustomerID, paddleAddressID)
 	if err != nil {
 		return nil, err
@@ -262,10 +273,86 @@ func (s *InvoiceSyncService) buildTransactionItems(flexInvoice *invoice.Invoice)
 			continue
 		}
 
+		txnItem, err := s.buildSingleTransactionItem(flexInvoice, item)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, *txnItem)
+	}
+
+	return items, nil
+}
+
+// buildSingleTransactionItem converts a single FlexPrice line item into the Paddle transaction item format.
+func (s *InvoiceSyncService) buildSingleTransactionItem(flexInvoice *invoice.Invoice, item *invoice.InvoiceLineItem) (*paddle.CreateTransactionItems, error) {
+	quantity := 1
+	if !item.Quantity.IsZero() {
+		q := item.Quantity.IntPart()
+		if q > 0 {
+			quantity = int(q)
+		}
+	}
+
+	unitAmount := item.Amount
+	if quantity > 1 {
+		unitAmount = item.Amount.Div(decimal.NewFromInt(int64(quantity)))
+	}
+
+	amountInCents := unitAmount.Mul(decimal.NewFromInt(100)).IntPart()
+	if amountInCents < 0 {
+		amountInCents = 0
+	}
+
+	currency := strings.ToUpper(item.Currency)
+	if currency == "" {
+		currency = strings.ToUpper(flexInvoice.Currency)
+	}
+	if currency == "" {
+		currency = "USD"
+	}
+
+	description := s.getLineItemDescription(item)
+	productName := s.getLineItemName(item)
+
+	// Paddle requires price.quantity (min/max) for custom prices - defaults to 1-100
+	priceQuantity := paddle.PriceQuantity{Minimum: 1, Maximum: 100}
+	if quantity > 100 {
+		priceQuantity.Maximum = quantity
+	}
+
+	txnItem := paddle.NewCreateTransactionItemsTransactionItemCreateWithProduct(&paddle.TransactionItemCreateWithProduct{
+		Quantity: quantity,
+		Price: paddle.TransactionPriceCreateWithProduct{
+			Description: description,
+			UnitPrice: paddle.Money{
+				Amount:       fmt.Sprintf("%d", amountInCents),
+				CurrencyCode: paddle.CurrencyCode(currency),
+			},
+			Quantity: priceQuantity,
+			Product: paddle.TransactionSubscriptionProductCreate{
+				Name:        productName,
+				TaxCategory: defaultTaxCategory,
+			},
+		},
+	})
+	return txnItem, nil
+}
+
+// buildPreviewItems builds the preview items for the Paddle PreviewTransaction call,
+// preserving the same order as non-zero FlexPrice line items so that
+// preview.Details.LineItems[i] maps back to that same line item by index.
+func (s *InvoiceSyncService) buildPreviewItems(flexInvoice *invoice.Invoice) ([]paddle.TransactionPreviewByCustomerItems, []*invoice.InvoiceLineItem) {
+	var previewItems []paddle.TransactionPreviewByCustomerItems
+	var includedLineItems []*invoice.InvoiceLineItem
+
+	for _, item := range flexInvoice.LineItems {
+		if item.Amount.IsZero() {
+			continue // same filter as buildTransactionItems
+		}
+
 		quantity := 1
 		if !item.Quantity.IsZero() {
-			q := item.Quantity.IntPart()
-			if q > 0 {
+			if q := item.Quantity.IntPart(); q > 0 {
 				quantity = int(q)
 			}
 		}
@@ -288,34 +375,156 @@ func (s *InvoiceSyncService) buildTransactionItems(flexInvoice *invoice.Invoice)
 			currency = "USD"
 		}
 
-		description := s.getLineItemDescription(item)
-		productName := s.getLineItemName(item)
-
-		// Paddle requires price.quantity (min/max) for custom prices - defaults to 1-100
 		priceQuantity := paddle.PriceQuantity{Minimum: 1, Maximum: 100}
 		if quantity > 100 {
 			priceQuantity.Maximum = quantity
 		}
 
-		txnItem := paddle.NewCreateTransactionItemsTransactionItemCreateWithProduct(&paddle.TransactionItemCreateWithProduct{
-			Quantity: quantity,
-			Price: paddle.TransactionPriceCreateWithProduct{
-				Description: description,
-				UnitPrice: paddle.Money{
-					Amount:       fmt.Sprintf("%d", amountInCents),
-					CurrencyCode: paddle.CurrencyCode(currency),
-				},
-				Quantity: priceQuantity,
-				Product: paddle.TransactionSubscriptionProductCreate{
-					Name:        productName,
-					TaxCategory: defaultTaxCategory,
+		previewItem := paddle.NewTransactionPreviewByCustomerItemsTransactionPreviewItemCreateWithProduct(
+			&paddle.TransactionPreviewItemCreateWithProduct{
+				Quantity:        quantity,
+				IncludeInTotals: true,
+				Price: paddle.TransactionPriceCreateWithProduct{
+					Description: s.getLineItemDescription(item),
+					UnitPrice: paddle.Money{
+						Amount:       fmt.Sprintf("%d", amountInCents),
+						CurrencyCode: paddle.CurrencyCode(currency),
+					},
+					Quantity: priceQuantity,
+					Product: paddle.TransactionSubscriptionProductCreate{
+						Name:        s.getLineItemName(item),
+						TaxCategory: defaultTaxCategory,
+					},
 				},
 			},
-		})
-		items = append(items, *txnItem)
+		)
+		previewItems = append(previewItems, *previewItem)
+		includedLineItems = append(includedLineItems, item)
 	}
 
-	return items, nil
+	return previewItems, includedLineItems
+}
+
+// parsePaddleCents converts a Paddle amount string (cents) to a decimal in the major currency unit.
+// Paddle returns all monetary values as strings in the lowest denomination (e.g. "160" = $1.60).
+func parsePaddleCents(s string) decimal.Decimal {
+	if s == "" {
+		return decimal.Zero
+	}
+	v, err := decimal.NewFromString(s)
+	if err != nil {
+		return decimal.Zero
+	}
+	return v.Div(decimal.NewFromInt(100))
+}
+
+// previewAndSyncTax calls the Paddle transactions/preview endpoint to get the exact
+// tax breakdown before creating the real transaction, then updates the FlexPrice invoice
+// so that its totals match what Paddle will actually charge the customer.
+//
+// Per-line taxes are stored in each InvoiceLineItem.Metadata["paddle_tax_amount"].
+// Aggregate tax and grand total are stored in the invoice-level fields and in Metadata.
+//
+// IMPORTANT: We always use Paddle's canonical aggregates (Details.Totals.Tax / GrandTotal)
+// for the invoice header — never re-sum per-line taxes ourselves. This avoids any floating-point
+// or rounding discrepancy between the two sides.
+func (s *InvoiceSyncService) previewAndSyncTax(
+	ctx context.Context,
+	flexInvoice *invoice.Invoice,
+	paddleCustomerID, paddleAddressID string,
+) error {
+	previewItems, includedLineItems := s.buildPreviewItems(flexInvoice)
+	if len(previewItems) == 0 {
+		s.logger.Debugw("no preview items to sync tax for", "invoice_id", flexInvoice.ID)
+		return nil
+	}
+
+	currency := paddle.CurrencyCode(strings.ToUpper(flexInvoice.Currency))
+	if currency == "" {
+		currency = paddle.CurrencyCodeUSD
+	}
+
+	previewReq := paddle.NewPreviewTransactionCreateRequestTransactionPreviewByCustomer(
+		&paddle.TransactionPreviewByCustomer{
+			CustomerID:   paddle.PtrTo(paddleCustomerID),
+			AddressID:    paddleAddressID,
+			CurrencyCode: paddle.PtrTo(currency),
+			Items:        previewItems,
+		},
+	)
+
+	preview, err := s.client.PreviewTransaction(ctx, previewReq)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Infow("received Paddle tax preview",
+		"invoice_id", flexInvoice.ID,
+		"tax_cents", preview.Details.Totals.Tax,
+		"grand_total_cents", preview.Details.Totals.GrandTotal,
+		"line_items_count", len(preview.Details.LineItems))
+
+	// --- Per-line-item tax ---
+	// preview.Details.LineItems is ordered the same as our previewItems input.
+	// We map back to FlexPrice line items using the includedLineItems index slice.
+	for i, previewLineItem := range preview.Details.LineItems {
+		if i >= len(includedLineItems) {
+			break
+		}
+		flexLineItem := includedLineItems[i]
+		lineTax := parsePaddleCents(previewLineItem.Totals.Tax)
+
+		if flexLineItem.Metadata == nil {
+			flexLineItem.Metadata = make(types.Metadata)
+		}
+		// Store Paddle-calculated per-line tax for display/audit purposes
+		flexLineItem.Metadata["paddle_tax_amount"] = lineTax.String()
+		flexLineItem.Metadata["paddle_tax_rate"] = previewLineItem.TaxRate
+
+		s.logger.Debugw("per-line Paddle tax synced",
+			"invoice_id", flexInvoice.ID,
+			"line_item_id", flexLineItem.ID,
+			"line_tax", lineTax,
+			"tax_rate", previewLineItem.TaxRate)
+	}
+
+	// --- Invoice-level aggregates ---
+	// ALWAYS use Paddle's own aggregate totals — never re-sum from line items.
+	// This guarantees FlexPrice amount_due == what Paddle charges == no overpaid.
+	aggTax := parsePaddleCents(preview.Details.Totals.Tax)
+	grandTotal := parsePaddleCents(preview.Details.Totals.GrandTotal)
+
+	if grandTotal.IsPositive() {
+		flexInvoice.TotalTax = aggTax
+		flexInvoice.Total = grandTotal
+		flexInvoice.AmountDue = grandTotal
+		flexInvoice.AmountRemaining = grandTotal.Sub(flexInvoice.AmountPaid)
+		if flexInvoice.AmountRemaining.IsNegative() {
+			flexInvoice.AmountRemaining = decimal.Zero
+		}
+
+		if flexInvoice.Metadata == nil {
+			flexInvoice.Metadata = make(types.Metadata)
+		}
+		flexInvoice.Metadata["paddle_tax_amount"] = aggTax.String()
+		flexInvoice.Metadata["paddle_grand_total"] = grandTotal.String()
+		flexInvoice.Metadata["paddle_subtotal"] = parsePaddleCents(preview.Details.Totals.Subtotal).String()
+
+		if err := s.invoiceRepo.Update(ctx, flexInvoice); err != nil {
+			s.logger.Errorw("failed to persist tax-synced invoice totals",
+				"error", err,
+				"invoice_id", flexInvoice.ID)
+			return err
+		}
+
+		s.logger.Infow("successfully synced Paddle tax to FlexPrice invoice",
+			"invoice_id", flexInvoice.ID,
+			"total_tax", aggTax,
+			"grand_total", grandTotal,
+			"amount_due", flexInvoice.AmountDue)
+	}
+
+	return nil
 }
 
 func (s *InvoiceSyncService) getLineItemName(item *invoice.InvoiceLineItem) string {
@@ -433,10 +642,17 @@ func (s *InvoiceSyncService) buildSyncResponse(txn *paddle.Transaction) *PaddleI
 	if txn.Checkout != nil {
 		resp.CheckoutURL = lo.FromPtrOr(txn.Checkout.URL, "")
 	}
-	if txn.Details.Totals.Total != "" {
-		if amt, err := decimal.NewFromString(txn.Details.Totals.Total); err == nil {
-			resp.Amount = amt
-		}
+	// Capture subtotal (pre-tax) for reference
+	if txn.Details.Totals.Subtotal != "" {
+		resp.Amount = parsePaddleCents(txn.Details.Totals.Subtotal)
+	}
+	// Capture tax and grand total from created transaction for mismatch logging only.
+	// These do NOT override the invoice — previewAndSyncTax is the source of truth.
+	if txn.Details.Totals.Tax != "" {
+		resp.TaxAmount = parsePaddleCents(txn.Details.Totals.Tax)
+	}
+	if txn.Details.Totals.GrandTotal != "" {
+		resp.GrandTotal = parsePaddleCents(txn.Details.Totals.GrandTotal)
 	}
 	return resp
 }
@@ -499,7 +715,10 @@ func (s *InvoiceSyncService) buildResponseFromMapping(mapping *entityintegration
 	return resp
 }
 
-// updateFlexPriceInvoiceFromPaddle updates FlexPrice invoice metadata with Paddle details (self-contained for Temporal activity)
+// updateFlexPriceInvoiceFromPaddle persists the Paddle transaction metadata (ID, checkout URL)
+// to the FlexPrice invoice. Tax totals are already set by previewAndSyncTax before this runs
+// — we do NOT override them here. We only log a warning if the created transaction's grand total
+// differs from what the preview set, for observability.
 func (s *InvoiceSyncService) updateFlexPriceInvoiceFromPaddle(ctx context.Context, flexInvoice *invoice.Invoice, syncResp *PaddleInvoiceSyncResponse) error {
 	if syncResp == nil || syncResp.PaddleTransactionID == "" {
 		return nil
@@ -511,6 +730,19 @@ func (s *InvoiceSyncService) updateFlexPriceInvoiceFromPaddle(ctx context.Contex
 	if syncResp.CheckoutURL != "" {
 		flexInvoice.Metadata["paddle_checkout_url"] = syncResp.CheckoutURL
 	}
+
+	// Log a warning if the created transaction's grand total differs from what the preview set.
+	// This should not happen in practice but helps detect edge cases (e.g. tax rate changed
+	// between preview and create, or preview used stale address data).
+	if syncResp.GrandTotal.IsPositive() && !flexInvoice.AmountDue.Equal(syncResp.GrandTotal) {
+		s.logger.Warnw("Paddle tax mismatch: invoice amount_due differs from created transaction grand_total",
+			"invoice_id", flexInvoice.ID,
+			"invoice_amount_due", flexInvoice.AmountDue,
+			"paddle_grand_total", syncResp.GrandTotal,
+			"invoice_total_tax", flexInvoice.TotalTax,
+			"paddle_tax", syncResp.TaxAmount)
+	}
+
 	return s.invoiceRepo.Update(ctx, flexInvoice)
 }
 
