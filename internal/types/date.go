@@ -88,6 +88,20 @@ func NextBillingDate(currentPeriodStart, billingAnchor time.Time, unit int, peri
 			Mark(ierr.ErrValidation)
 	}
 
+	// For calendar billing with QUARTERLY and HALF_YEARLY periods, the billingAnchor
+	// is set to the start of the next calendar boundary (e.g. April 1 for a
+	// subscription starting mid-Q1). If currentPeriodStart is before the anchor,
+	// we are still in the partial first period and the next billing date IS
+	// the anchor itself. MONTHLY and ANNUAL already handle this correctly via
+	// their own month/year arithmetic.
+	if (period == BILLING_PERIOD_QUARTER || period == BILLING_PERIOD_HALF_YEAR) &&
+		currentPeriodStart.Before(billingAnchor) {
+		if subscriptionEndDate != nil && billingAnchor.After(*subscriptionEndDate) {
+			return *subscriptionEndDate, nil
+		}
+		return billingAnchor, nil
+	}
+
 	// Get the current year and month
 	y, m, _ := currentPeriodStart.Date()
 	// get the time always from anchor because
