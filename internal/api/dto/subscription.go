@@ -380,6 +380,11 @@ type CreateSubscriptionRequest struct {
 	// nil slice = JSON omitted (auto-detect children); non-nil = explicit list (empty slice allowed).
 	CustomerIDsToInheritSubscription []string `json:"customer_ids_to_inherit_subscription,omitempty"`
 
+	// ExternalCustomerIDsToInheritSubscription is the external-ID variant of
+	// customer_ids_to_inherit_subscription. Values are resolved internally to customer IDs.
+	// Mutually exclusive with customer_ids_to_inherit_subscription.
+	ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
+
 	// SubscriptionType is set internally by the service layer.
 	SubscriptionType types.SubscriptionType `json:"-"`
 }
@@ -595,6 +600,12 @@ func (r *CreateSubscriptionRequest) Validate() error {
 	if r.InvoiceBilling != nil && (r.InvoicingCustomerID != nil || r.InvoicingCustomerExternalID != nil) {
 		return ierr.NewError("invoice_billing cannot be used together with invoicing_customer_id or invoicing_customer_external_id").
 			WithHint("invoice_billing is deprecated; use invoicing_customer_id or invoicing_customer_external_id instead").
+			Mark(ierr.ErrValidation)
+	}
+
+	if r.CustomerIDsToInheritSubscription != nil && r.ExternalCustomerIDsToInheritSubscription != nil {
+		return ierr.NewError("only one of customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription may be provided").
+			WithHint("Send either internal customer IDs or external customer IDs for inheritance, but not both").
 			Mark(ierr.ErrValidation)
 	}
 

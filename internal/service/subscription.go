@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
@@ -6414,6 +6415,7 @@ func (s *subscriptionService) TriggerSubscriptionWorkflow(ctx context.Context, s
 // resolveUsageCustomerIDs determines the set of customer IDs whose usage
 // should be aggregated on the parent subscription.
 //   - If req.CustomerIDsToInheritSubscription is explicitly provided (even as an empty slice), use it.
+//   - Else if req.ExternalCustomerIDsToInheritSubscription is explicitly provided, resolve them to internal IDs and use them.
 //   - Otherwise, auto-detect children from customer hierarchy.
 //   - Returns nil/empty when the subscription should be STANDALONE.
 func (s *subscriptionService) resolveUsageCustomerIDs(
@@ -6421,6 +6423,12 @@ func (s *subscriptionService) resolveUsageCustomerIDs(
 	cust *customer.Customer,
 	req *dto.CreateSubscriptionRequest,
 ) ([]string, error) {
+	if req.CustomerIDsToInheritSubscription != nil && req.ExternalCustomerIDsToInheritSubscription != nil {
+		return nil, ierr.NewError("only one of customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription may be provided").
+			WithHint("Send either internal customer IDs or external customer IDs for inheritance, but not both").
+			Mark(ierr.ErrValidation)
+	}
+
 	// Explicitly provided (even empty array is valid). nil slice = field omitted in JSON.
 	if req.CustomerIDsToInheritSubscription != nil {
 		ids := lo.Uniq(req.CustomerIDsToInheritSubscription)
@@ -6458,6 +6466,55 @@ func (s *subscriptionService) resolveUsageCustomerIDs(
 			}
 		}
 		return ids, nil
+	}
+
+	if req.ExternalCustomerIDsToInheritSubscription != nil {
+		externalIDs := lo.Uniq(req.ExternalCustomerIDsToInheritSubscription)
+		if len(externalIDs) == 0 {
+			return []string{}, nil
+		}
+
+		for _, externalID := range externalIDs {
+			if strings.TrimSpace(externalID) == "" {
+				return nil, ierr.NewError("external_customer_ids_to_inherit_subscription contains an empty or blank external customer ID").
+					WithHint("All entries in external_customer_ids_to_inherit_subscription must be non-empty external customer IDs").
+					Mark(ierr.ErrValidation)
+			}
+		}
+
+		cf := types.NewNoLimitCustomerFilter()
+		cf.ExternalIDs = externalIDs
+		cf.Status = lo.ToPtr(types.StatusPublished)
+		children, err := s.CustomerRepo.List(ctx, cf)
+		if err != nil {
+			return nil, err
+		}
+		byExternalID := lo.SliceToMap(children, func(c *customer.Customer) (string, *customer.Customer) {
+			return c.ExternalID, c
+		})
+
+		resolvedIDs := make([]string, 0, len(externalIDs))
+		for _, externalID := range externalIDs {
+			child, ok := byExternalID[externalID]
+			if !ok {
+				return nil, ierr.NewError("usage customer not found").
+					WithHint("Each external usage customer ID must resolve to a valid active customer").
+					WithReportableDetails(map[string]any{"external_customer_id": externalID}).
+					Mark(ierr.ErrValidation)
+			}
+			if child.ParentCustomerID == nil || *child.ParentCustomerID != cust.ID {
+				return nil, ierr.NewError("usage customer is not a child of the subscription customer").
+					WithHint("Each external usage customer must resolve to a direct child of the subscription customer").
+					WithReportableDetails(map[string]any{
+						"external_customer_id":     externalID,
+						"usage_customer_id":        child.ID,
+						"subscription_customer_id": cust.ID,
+					}).
+					Mark(ierr.ErrValidation)
+			}
+			resolvedIDs = append(resolvedIDs, child.ID)
+		}
+		return lo.Uniq(resolvedIDs), nil
 	}
 
 	// Auto-detect: find children of this customer
