@@ -494,13 +494,14 @@ func (s *eventService) GetUsageByMeterWithFilters(ctx context.Context, req *dto.
 
 	params := &events.UsageWithFiltersParams{
 		UsageParams: &events.UsageParams{
-			EventName:          m.EventName,
-			PropertyName:       m.Aggregation.Field,
-			AggregationType:    m.Aggregation.Type,
-			ExternalCustomerID: req.ExternalCustomerID,
-			StartTime:          req.StartTime,
-			EndTime:            req.EndTime,
-			Filters:            meterFilters,
+			EventName:           m.EventName,
+			PropertyName:        m.Aggregation.Field,
+			AggregationType:     m.Aggregation.Type,
+			ExternalCustomerIDs: lo.Uniq(req.ExternalCustomerIDs),
+			CustomerID:          req.CustomerID,
+			StartTime:           req.StartTime,
+			EndTime:             req.EndTime,
+			Filters:             meterFilters,
 		},
 		FilterGroups: prioritizedGroups,
 	}

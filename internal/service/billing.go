@@ -459,7 +459,7 @@ func (s *billingService) CalculateUsageCharges(
 				usageRequest := &dto.GetUsageByMeterRequest{
 					MeterID:            item.MeterID,
 					PriceID:            item.PriceID,
-					ExternalCustomerID: customer.ExternalID,
+					ExternalCustomerIDs: []string{customer.ExternalID},
 					StartTime:          item.GetPeriodStart(periodStart),
 					EndTime:            item.GetPeriodEnd(periodEnd),
 					WindowSize:         meter.Aggregation.BucketSize,
@@ -529,7 +529,7 @@ func (s *billingService) CalculateUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:            item.MeterID,
 							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
+							ExternalCustomerIDs: []string{customer.ExternalID},
 							StartTime:          item.GetPeriodStart(periodStart),
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							WindowSize:         types.WindowSizeDay, // Use daily window size
@@ -585,7 +585,7 @@ func (s *billingService) CalculateUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:            item.MeterID,
 							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
+							ExternalCustomerIDs: []string{customer.ExternalID},
 							StartTime:          item.GetPeriodStart(periodStart),
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							BillingAnchor:      &sub.BillingAnchor,
@@ -697,7 +697,7 @@ func (s *billingService) CalculateUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:            item.MeterID,
 							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
+							ExternalCustomerIDs: []string{customer.ExternalID},
 							StartTime:          item.GetPeriodStart(periodStart),
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							WindowSize:         meter.Aggregation.BucketSize,
@@ -1252,7 +1252,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:            item.MeterID,
 							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
+							ExternalCustomerIDs: []string{customer.ExternalID},
 							StartTime:          item.GetPeriodStart(periodStart),
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							WindowSize:         types.WindowSizeDay, // Use daily window size
@@ -1308,7 +1308,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:            item.MeterID,
 							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
+							ExternalCustomerIDs: []string{customer.ExternalID},
 							StartTime:          item.GetPeriodStart(periodStart),
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							BillingAnchor:      &sub.BillingAnchor,
@@ -3254,7 +3254,7 @@ func (s *billingService) calculateNeverResetUsage(
 	totalUsageRequest := &dto.GetUsageByMeterRequest{
 		MeterID:            item.MeterID,
 		PriceID:            item.PriceID,
-		ExternalCustomerID: customer.ExternalID,
+		ExternalCustomerIDs: []string{customer.ExternalID},
 		StartTime:          sub.StartDate,
 		EndTime:            lineItemPeriodEnd,
 		BillingAnchor:      &sub.BillingAnchor,
@@ -3270,7 +3270,7 @@ func (s *billingService) calculateNeverResetUsage(
 	previousPeriodUsageRequest := &dto.GetUsageByMeterRequest{
 		MeterID:            item.MeterID,
 		PriceID:            item.PriceID,
-		ExternalCustomerID: customer.ExternalID,
+		ExternalCustomerIDs: []string{customer.ExternalID},
 		StartTime:          sub.StartDate,
 		EndTime:            lineItemPeriodStart,
 	}

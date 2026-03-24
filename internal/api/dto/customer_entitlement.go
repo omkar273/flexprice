@@ -117,10 +117,10 @@ type BillingPeriodInfo struct {
 
 // CustomerUsageSummaryResponse represents the response for customer usage summary
 type CustomerUsageSummaryResponse struct {
-	CustomerID      string                    `json:"customer_id"`
-	Features        []*FeatureUsageSummary    `json:"features"`
-	Period          *BillingPeriodInfo        `json:"period"`
-	Pagination      *types.PaginationResponse `json:"pagination,omitempty"`
+	CustomerID string                    `json:"customer_id"`
+	Features   []*FeatureUsageSummary    `json:"features"`
+	Period     *BillingPeriodInfo        `json:"period"`
+	Pagination *types.PaginationResponse `json:"pagination,omitempty"`
 }
 
 // FeatureUsageSummary represents usage for a single feature

@@ -3420,14 +3420,14 @@ func (s *BillingServiceSuite) TestCalculateNeverResetUsage() {
 
 			// Debug: Test the event service directly to see what it returns
 			totalUsageRequest := &dto.GetUsageByMeterRequest{
-				MeterID:            testMeter.ID,
-				PriceID:            testPrice.ID,
-				ExternalCustomerID: s.testData.customer.ExternalID,
-				StartTime:          tt.subscriptionStart,
-				EndTime:            lineItemPeriodEnd,
+				MeterID:             testMeter.ID,
+				PriceID:             testPrice.ID,
+				ExternalCustomerIDs: []string{s.testData.customer.ExternalID},
+				StartTime:           tt.subscriptionStart,
+				EndTime:             lineItemPeriodEnd,
 			}
 			s.T().Logf("DEBUG: Total usage request - MeterID: %s, PriceID: %s, Customer: %s, Start: %s, End: %s",
-				totalUsageRequest.MeterID, totalUsageRequest.PriceID, totalUsageRequest.ExternalCustomerID,
+				totalUsageRequest.MeterID, totalUsageRequest.PriceID, totalUsageRequest.ExternalCustomerIDs,
 				totalUsageRequest.StartTime, totalUsageRequest.EndTime)
 			totalUsageResponse, err := eventService.GetUsageByMeter(ctx, totalUsageRequest)
 			s.NoError(err)
@@ -3438,11 +3438,11 @@ func (s *BillingServiceSuite) TestCalculateNeverResetUsage() {
 			}
 
 			previousUsageRequest := &dto.GetUsageByMeterRequest{
-				MeterID:            testMeter.ID,
-				PriceID:            testPrice.ID,
-				ExternalCustomerID: s.testData.customer.ExternalID,
-				StartTime:          tt.subscriptionStart,
-				EndTime:            lineItemPeriodStart,
+				MeterID:             testMeter.ID,
+				PriceID:             testPrice.ID,
+				ExternalCustomerIDs: []string{s.testData.customer.ExternalID},
+				StartTime:           tt.subscriptionStart,
+				EndTime:             lineItemPeriodStart,
 			}
 			previousUsageResponse, err := eventService.GetUsageByMeter(ctx, previousUsageRequest)
 			s.NoError(err)
