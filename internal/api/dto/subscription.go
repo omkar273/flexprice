@@ -252,6 +252,42 @@ func (r *SubscriptionCouponRequest) Validate() error {
 	return nil
 }
 
+// SubscriptionInheritanceConfig groups all inheritance-related fields for
+// subscription creation. InvoicingCustomerID and InvoicingCustomerExternalID
+// use pointer semantics so nil ("not provided") differs from "" ("explicitly empty").
+type SubscriptionInheritanceConfig struct {
+	CustomerIDsToInheritSubscription         []string              `json:"customer_ids_to_inherit_subscription,omitempty"`
+	ExternalCustomerIDsToInheritSubscription []string              `json:"external_customer_ids_to_inherit_subscription,omitempty"`
+	ParentSubscriptionID                     string                `json:"parent_subscription_id,omitempty"`
+	InvoicingCustomerID                      *string               `json:"invoicing_customer_id,omitempty"`
+	InvoicingCustomerExternalID              *string               `json:"invoicing_customer_external_id,omitempty"`
+	InvoiceBilling                           *types.InvoiceBilling `json:"invoice_billing,omitempty"`
+}
+
+// ExecuteSubscriptionInheritanceRequest is the payload for
+// POST /subscriptions/:id/inheritance/execute.
+// Exactly one of the two arrays must be non-empty.
+type ExecuteSubscriptionInheritanceRequest struct {
+	CustomerIDsToInheritSubscription         []string `json:"customer_ids_to_inherit_subscription,omitempty"`
+	ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
+}
+
+func (r *ExecuteSubscriptionInheritanceRequest) Validate() error {
+	bothProvided := len(r.CustomerIDsToInheritSubscription) > 0 &&
+		len(r.ExternalCustomerIDsToInheritSubscription) > 0
+	if bothProvided {
+		return ierr.NewError("provide either customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription, not both").
+			WithHint("Send either internal or external customer IDs for inheritance, not both").
+			Mark(ierr.ErrValidation)
+	}
+	if len(r.CustomerIDsToInheritSubscription) == 0 && len(r.ExternalCustomerIDsToInheritSubscription) == 0 {
+		return ierr.NewError("at least one customer ID is required").
+			WithHint("Provide customer_ids_to_inherit_subscription or external_customer_ids_to_inherit_subscription").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
 type CreateSubscriptionRequest struct {
 
 	// customer_id is the flexprice customer id
