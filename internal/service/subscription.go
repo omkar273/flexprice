@@ -1662,19 +1662,11 @@ func (s *subscriptionService) CancelSubscription(
 			Mark(ierr.ErrValidation)
 	}
 
-	// Step 3b: Additional validations for scheduled_date cancellations
-	if req.CancellationType == types.CancellationTypeScheduledDate {
-		// Reject if end_date is already set — avoid silent overwrites
-		if subscription.EndDate != nil {
-			return nil, ierr.NewError("subscription already has an end date set").
-				WithHint("The subscription already has an end date.").
-				WithReportableDetails(map[string]interface{}{
-					"subscription_id":   subscriptionID,
-					"existing_end_date": subscription.EndDate.Format(time.RFC3339),
-				}).
-				Mark(ierr.ErrValidation)
-		}
-		// Reject if cancel_at is already set — subscription is already scheduled to cancel
+	// Step 3b: Guard against double-scheduling
+	// Both end_of_period and scheduled_date schedule a future cancellation via cancel_at.
+	// Reject if one is already in place to prevent silent overwrites.
+	if req.CancellationType == types.CancellationTypeScheduledDate ||
+		req.CancellationType == types.CancellationTypeEndOfPeriod {
 		if subscription.CancelAt != nil {
 			return nil, ierr.NewError("subscription is already scheduled to cancel").
 				WithHint("The subscription already has a scheduled cancellation. Cancel the existing schedule before setting a new one.").
@@ -1698,11 +1690,6 @@ func (s *subscriptionService) CancelSubscription(
 	// Step 5: Execute in transaction
 	err = s.DB.WithTx(ctx, func(ctx context.Context) error {
 
-		// For scheduled_date cancellations, only mark end_date — skip all side-effects.
-		if req.CancellationType == types.CancellationTypeScheduledDate {
-			return s.updateSubscriptionForCancellation(ctx, subscription, req.CancellationType, effectiveDate, req.Reason)
-		}
-
 		// Step 6: Calculate proration using unified function
 		if req.ProrationBehavior == types.ProrationBehaviorCreateProrations {
 			prorationService := NewProrationService(s.ServiceParams)
@@ -1721,7 +1708,11 @@ func (s *subscriptionService) CancelSubscription(
 		if invoicePolicy == "" {
 			invoicePolicy = types.CancelImmediatelyInvoicePolicySkip
 		}
-		shouldCreateInvoice := req.CancellationType != types.CancellationTypeEndOfPeriod &&
+		// Scheduled cancellations (end_of_period and scheduled_date) do not generate an
+		// immediate invoice — billing continues until the effective date.
+		isScheduled := req.CancellationType == types.CancellationTypeEndOfPeriod ||
+			req.CancellationType == types.CancellationTypeScheduledDate
+		shouldCreateInvoice := !isScheduled &&
 			invoicePolicy == types.CancelImmediatelyInvoicePolicyGenerateInvoice
 		if shouldCreateInvoice {
 			invoiceService := NewInvoiceService(s.ServiceParams)
@@ -1745,9 +1736,10 @@ func (s *subscriptionService) CancelSubscription(
 
 		}
 
-		// Step 6.5: Capture original state BEFORE modification (for end_of_period cancellations)
+		// Step 6.5: Capture original state BEFORE modification (for scheduled cancellations)
 		var originalState *subscriptionOriginalState
-		if req.CancellationType == types.CancellationTypeEndOfPeriod {
+		if req.CancellationType == types.CancellationTypeEndOfPeriod ||
+			req.CancellationType == types.CancellationTypeScheduledDate {
 			originalState = &subscriptionOriginalState{
 				CancelAtPeriodEnd: subscription.CancelAtPeriodEnd,
 				CancelAt:          subscription.CancelAt,
@@ -1766,8 +1758,9 @@ func (s *subscriptionService) CancelSubscription(
 			return err
 		}
 
-		// Step 7b: Handle scheduling for end_of_period cancellation
-		if req.CancellationType == types.CancellationTypeEndOfPeriod {
+		// Step 7b: Handle scheduling for future cancellations (end_of_period and scheduled_date)
+		if req.CancellationType == types.CancellationTypeEndOfPeriod ||
+			req.CancellationType == types.CancellationTypeScheduledDate {
 			// Cancel all pending schedules (especially plan changes) before creating cancellation schedule
 			if err := s.cancelAllPendingSchedules(ctx, subscription.ID); err != nil {
 				logger.Errorw("failed to cancel pending schedules", "error", err)
@@ -4818,14 +4811,11 @@ func (s *subscriptionService) updateSubscriptionForCancellation(
 		subscription.CancelAtPeriodEnd = false
 		subscription.EndDate = &effectiveDate
 
-	case types.CancellationTypeEndOfPeriod:
-		// Don't change status immediately - will be cancelled at period end
+	case types.CancellationTypeEndOfPeriod, types.CancellationTypeScheduledDate:
+		// Don't change status immediately — actual cancellation runs when the schedule fires.
+		// EndDate is NOT set here; it will be set by the cancellation schedule processor.
 		subscription.CancelAtPeriodEnd = true
 		subscription.CancelAt = &effectiveDate
-		// EndDate should NOT be set - will be set when actually cancelled at period end
-
-	case types.CancellationTypeScheduledDate:
-		subscription.EndDate = &effectiveDate
 
 	default:
 		return ierr.NewError("invalid cancellation type").
