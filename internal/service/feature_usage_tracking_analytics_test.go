@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
-	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
+	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/testutil"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -122,6 +123,7 @@ func TestFetchParentSubscriptions(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, types.CtxTenantID, types.DefaultTenantID)
 	ctx = context.WithValue(ctx, types.CtxUserID, types.DefaultUserID)
+	ctx = context.WithValue(ctx, types.CtxRequestID, types.GenerateUUID())
 
 	newSub := func(id string, subType types.SubscriptionType, parentSubID *string) *subscription.Subscription {
 		return &subscription.Subscription{
@@ -139,8 +141,6 @@ func TestFetchParentSubscriptions(t *testing.T) {
 			BaseModel:      types.GetDefaultBaseModel(ctx),
 		}
 	}
-
-	ptr := func(s string) *string { return &s }
 
 	t.Run("no subscriptions — returns empty slice", func(t *testing.T) {
 		subStore := testutil.NewInMemorySubscriptionStore()
@@ -189,7 +189,7 @@ func TestFetchParentSubscriptions(t *testing.T) {
 			ServiceParams: ServiceParams{SubRepo: subStore},
 		}
 		subs := []*subscription.Subscription{
-			newSub("sub_inherited_1", types.SubscriptionTypeInherited, ptr("sub_parent_1")),
+			newSub("sub_inherited_1", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_1")),
 		}
 		parents, err := svc.fetchParentSubscriptions(ctx, subs)
 		require.NoError(t, err)
@@ -209,13 +209,15 @@ func TestFetchParentSubscriptions(t *testing.T) {
 			ServiceParams: ServiceParams{SubRepo: subStore},
 		}
 		subs := []*subscription.Subscription{
-			newSub("sub_inh_a", types.SubscriptionTypeInherited, ptr("sub_parent_shared")),
-			newSub("sub_inh_b", types.SubscriptionTypeInherited, ptr("sub_parent_shared")),
+			newSub("sub_inh_a", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_shared")),
+			newSub("sub_inh_b", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_shared")),
 		}
 		parents, err := svc.fetchParentSubscriptions(ctx, subs)
 		require.NoError(t, err)
 		require.Len(t, parents, 1)
 		assert.Equal(t, "sub_parent_shared", parents[0].ID)
+		require.Len(t, parents[0].LineItems, 1)
+		assert.Equal(t, "li_shared", parents[0].LineItems[0].ID)
 	})
 
 	t.Run("parent subscription not found — returns error", func(t *testing.T) {
@@ -225,9 +227,10 @@ func TestFetchParentSubscriptions(t *testing.T) {
 			ServiceParams: ServiceParams{SubRepo: subStore},
 		}
 		subs := []*subscription.Subscription{
-			newSub("sub_inh_missing", types.SubscriptionTypeInherited, ptr("sub_parent_missing")),
+			newSub("sub_inh_missing", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_missing")),
 		}
 		_, err := svc.fetchParentSubscriptions(ctx, subs)
 		require.Error(t, err)
+		assert.True(t, ierr.IsNotFound(err), "expected a not-found error, got: %v", err)
 	})
 }
