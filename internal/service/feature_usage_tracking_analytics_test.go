@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
@@ -117,11 +118,12 @@ func TestValidateAnalyticsRequest(t *testing.T) {
 // duplicated here as unit tests because fetchAnalyticsData, fetchCustomer, and
 // fetchChildCustomers all require repo implementations.
 
-// --- fetchParentSubscriptions ---
+// --- resolveHierarchyLineItems ---
 
-func TestFetchParentSubscriptions(t *testing.T) {
+func TestResolveHierarchyLineItems(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, types.CtxTenantID, types.DefaultTenantID)
+	ctx = context.WithValue(ctx, types.CtxEnvironmentID, "env_test")
 	ctx = context.WithValue(ctx, types.CtxUserID, types.DefaultUserID)
 	ctx = context.WithValue(ctx, types.CtxRequestID, types.GenerateUUID())
 
@@ -130,107 +132,124 @@ func TestFetchParentSubscriptions(t *testing.T) {
 			ID:                   id,
 			SubscriptionType:     subType,
 			ParentSubscriptionID: parentSubID,
+			CustomerID:           "cust_child",
+			SubscriptionStatus:   types.SubscriptionStatusActive,
 			BaseModel:            types.GetDefaultBaseModel(ctx),
 		}
 	}
 
-	newLineItem := func(id, subID string) *subscription.SubscriptionLineItem {
+	newLineItem := func(id, subID, meterID string) *subscription.SubscriptionLineItem {
 		return &subscription.SubscriptionLineItem{
 			ID:             id,
 			SubscriptionID: subID,
+			MeterID:        meterID,
+			PriceType:      types.PRICE_TYPE_USAGE,
+			StartDate:      time.Now().UTC(),
 			BaseModel:      types.GetDefaultBaseModel(ctx),
 		}
 	}
 
 	t.Run("no subscriptions — returns empty slice", func(t *testing.T) {
 		subStore := testutil.NewInMemorySubscriptionStore()
+		lineItemStore := testutil.NewInMemorySubscriptionLineItemStore()
 		svc := &featureUsageTrackingService{
-			ServiceParams: ServiceParams{SubRepo: subStore},
+			ServiceParams: ServiceParams{
+				SubRepo:                  subStore,
+				SubscriptionLineItemRepo: lineItemStore,
+			},
 		}
-		parents, err := svc.fetchParentSubscriptions(ctx, nil)
+		items, err := svc.resolveHierarchyLineItems(ctx, "cust_child", []string{"meter_1"}, nil)
 		require.NoError(t, err)
-		assert.Empty(t, parents)
+		assert.Empty(t, items)
 	})
 
-	t.Run("standalone subscription — returns empty slice", func(t *testing.T) {
+	t.Run("standalone subscription for customer — returns empty slice", func(t *testing.T) {
 		subStore := testutil.NewInMemorySubscriptionStore()
+		lineItemStore := testutil.NewInMemorySubscriptionLineItemStore()
 		svc := &featureUsageTrackingService{
-			ServiceParams: ServiceParams{SubRepo: subStore},
+			ServiceParams: ServiceParams{
+				SubRepo:                  subStore,
+				SubscriptionLineItemRepo: lineItemStore,
+			},
 		}
-		subs := []*subscription.Subscription{
-			newSub("sub_standalone", types.SubscriptionTypeStandalone, nil),
-		}
-		parents, err := svc.fetchParentSubscriptions(ctx, subs)
+		standalone := newSub("sub_standalone", types.SubscriptionTypeStandalone, nil)
+		standalone.CustomerID = "cust_child"
+		require.NoError(t, subStore.Create(ctx, standalone))
+
+		items, err := svc.resolveHierarchyLineItems(ctx, "cust_child", []string{"meter_1"}, nil)
 		require.NoError(t, err)
-		assert.Empty(t, parents)
+		assert.Empty(t, items)
 	})
 
-	t.Run("parent-type subscription — returns empty slice", func(t *testing.T) {
+	t.Run("inherited subscription with parent line items — returns matching meter line items", func(t *testing.T) {
 		subStore := testutil.NewInMemorySubscriptionStore()
-		svc := &featureUsageTrackingService{
-			ServiceParams: ServiceParams{SubRepo: subStore},
-		}
-		subs := []*subscription.Subscription{
-			newSub("sub_parent", types.SubscriptionTypeParent, nil),
-		}
-		parents, err := svc.fetchParentSubscriptions(ctx, subs)
-		require.NoError(t, err)
-		assert.Empty(t, parents)
-	})
-
-	t.Run("one inherited subscription — fetches parent with line items", func(t *testing.T) {
-		subStore := testutil.NewInMemorySubscriptionStore()
-		// Create the parent subscription with a line item
+		lineItemStore := testutil.NewInMemorySubscriptionLineItemStore()
 		parentSub := newSub("sub_parent_1", types.SubscriptionTypeParent, nil)
-		lineItem := newLineItem("li_1", "sub_parent_1")
-		require.NoError(t, subStore.CreateWithLineItems(ctx, parentSub, []*subscription.SubscriptionLineItem{lineItem}))
+		parentSub.CustomerID = "cust_parent"
+		require.NoError(t, subStore.Create(ctx, parentSub))
+
+		inherited := newSub("sub_inherited_1", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_1"))
+		inherited.CustomerID = "cust_child"
+		require.NoError(t, subStore.Create(ctx, inherited))
+
+		require.NoError(t, lineItemStore.Create(ctx, newLineItem("li_match", "sub_parent_1", "meter_1")))
+		require.NoError(t, lineItemStore.Create(ctx, newLineItem("li_other", "sub_parent_1", "meter_2")))
 
 		svc := &featureUsageTrackingService{
-			ServiceParams: ServiceParams{SubRepo: subStore},
+			ServiceParams: ServiceParams{
+				SubRepo:                  subStore,
+				SubscriptionLineItemRepo: lineItemStore,
+			},
 		}
-		subs := []*subscription.Subscription{
-			newSub("sub_inherited_1", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_1")),
-		}
-		parents, err := svc.fetchParentSubscriptions(ctx, subs)
+		items, err := svc.resolveHierarchyLineItems(ctx, "cust_child", []string{"meter_1"}, nil)
 		require.NoError(t, err)
-		require.Len(t, parents, 1)
-		assert.Equal(t, "sub_parent_1", parents[0].ID)
-		require.Len(t, parents[0].LineItems, 1)
-		assert.Equal(t, "li_1", parents[0].LineItems[0].ID)
+		require.Len(t, items, 1)
+		assert.Equal(t, "li_match", items[0].ID)
 	})
 
-	t.Run("two inherited subs pointing to same parent — parent fetched once", func(t *testing.T) {
+	t.Run("two inherited subs pointing to same parent — line items returned once from parent scope", func(t *testing.T) {
 		subStore := testutil.NewInMemorySubscriptionStore()
+		lineItemStore := testutil.NewInMemorySubscriptionLineItemStore()
 		parentSub := newSub("sub_parent_shared", types.SubscriptionTypeParent, nil)
-		lineItem := newLineItem("li_shared", "sub_parent_shared")
-		require.NoError(t, subStore.CreateWithLineItems(ctx, parentSub, []*subscription.SubscriptionLineItem{lineItem}))
+		parentSub.CustomerID = "cust_parent"
+		require.NoError(t, subStore.Create(ctx, parentSub))
+
+		inhA := newSub("sub_inh_a", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_shared"))
+		inhA.CustomerID = "cust_child"
+		inhB := newSub("sub_inh_b", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_shared"))
+		inhB.CustomerID = "cust_child"
+		require.NoError(t, subStore.Create(ctx, inhA))
+		require.NoError(t, subStore.Create(ctx, inhB))
+
+		require.NoError(t, lineItemStore.Create(ctx, newLineItem("li_shared", "sub_parent_shared", "meter_1")))
 
 		svc := &featureUsageTrackingService{
-			ServiceParams: ServiceParams{SubRepo: subStore},
+			ServiceParams: ServiceParams{
+				SubRepo:                  subStore,
+				SubscriptionLineItemRepo: lineItemStore,
+			},
 		}
-		subs := []*subscription.Subscription{
-			newSub("sub_inh_a", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_shared")),
-			newSub("sub_inh_b", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_shared")),
-		}
-		parents, err := svc.fetchParentSubscriptions(ctx, subs)
+		items, err := svc.resolveHierarchyLineItems(ctx, "cust_child", []string{"meter_1"}, nil)
 		require.NoError(t, err)
-		require.Len(t, parents, 1)
-		assert.Equal(t, "sub_parent_shared", parents[0].ID)
-		require.Len(t, parents[0].LineItems, 1)
-		assert.Equal(t, "li_shared", parents[0].LineItems[0].ID)
+		require.Len(t, items, 1)
+		assert.Equal(t, "li_shared", items[0].ID)
 	})
 
-	t.Run("parent subscription not found — returns error", func(t *testing.T) {
+	t.Run("inherited subscription with missing parent pointer — returns empty", func(t *testing.T) {
 		subStore := testutil.NewInMemorySubscriptionStore()
-		// Do NOT create the parent sub in the store
+		lineItemStore := testutil.NewInMemorySubscriptionLineItemStore()
+		inh := newSub("sub_inh_missing_parent", types.SubscriptionTypeInherited, nil)
+		inh.CustomerID = "cust_child"
+		require.NoError(t, subStore.Create(ctx, inh))
 		svc := &featureUsageTrackingService{
-			ServiceParams: ServiceParams{SubRepo: subStore},
+			ServiceParams: ServiceParams{
+				SubRepo:                  subStore,
+				SubscriptionLineItemRepo: lineItemStore,
+			},
 		}
-		subs := []*subscription.Subscription{
-			newSub("sub_inh_missing", types.SubscriptionTypeInherited, lo.ToPtr("sub_parent_missing")),
-		}
-		_, err := svc.fetchParentSubscriptions(ctx, subs)
-		require.Error(t, err)
-		assert.True(t, ierr.IsNotFound(err), "expected a not-found error, got: %v", err)
+		items, err := svc.resolveHierarchyLineItems(ctx, "cust_child", []string{"meter_1"}, nil)
+		require.NoError(t, err)
+		assert.Empty(t, items)
 	})
+
 }
