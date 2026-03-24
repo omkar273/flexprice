@@ -1778,18 +1778,7 @@ func (s *featureUsageTrackingService) GetDetailedUsageAnalytics(ctx context.Cont
 		return nil, err
 	}
 
-	// 4. Optionally attach per-child-customer breakdown
-	if req.IncludeChildCustomersBreakdown && data.Customer != nil {
-		children, err := s.fetchChildCustomers(ctx, data.Customer.ID)
-		if err != nil {
-			s.Logger.WarnwCtx(ctx, "failed to fetch child customers, skipping breakdown",
-				"customer_id", data.Customer.ID, "error", err)
-		} else {
-			response.ChildBreakdowns = s.buildChildAnalyticsBreakdowns(ctx, children, req)
-		}
-	}
-
-	// 5. Optionally aggregate children into the total and include parent in breakdowns
+	// 4. Optionally aggregate children into the total
 	if req.IncludeChildren && data.Customer != nil {
 		children, err := s.fetchChildCustomers(ctx, data.Customer.ID)
 		if err != nil {
@@ -1819,15 +1808,6 @@ func (s *featureUsageTrackingService) GetDetailedUsageAnalyticsV2(ctx context.Co
 	var aggregatedData *AnalyticsData
 	var currency string
 
-	// perCustomerPairs stores (customer, data) for tenant-level breakdown.
-	// Only populated when IncludeChildCustomersBreakdown=true and no ExternalCustomerID is set.
-	type customerDataPair struct {
-		cust *customer.Customer
-		data *AnalyticsData
-	}
-	var perCustomerPairs []customerDataPair
-	collectPerCustomer := req.IncludeChildCustomersBreakdown && req.ExternalCustomerID == ""
-
 	// Process each customer and aggregate their analytics data
 	for i, cust := range customers {
 		// Create a customer-specific request
@@ -1842,9 +1822,6 @@ func (s *featureUsageTrackingService) GetDetailedUsageAnalyticsV2(ctx context.Co
 				"external_customer_id", cust.ExternalID,
 				"error", err,
 			)
-			if collectPerCustomer {
-				perCustomerPairs = append(perCustomerPairs, customerDataPair{cust: cust, data: nil})
-			}
 			continue
 		}
 
@@ -1871,9 +1848,6 @@ func (s *featureUsageTrackingService) GetDetailedUsageAnalyticsV2(ctx context.Co
 			s.mergeAnalyticsData(aggregatedData, data)
 		}
 
-		if collectPerCustomer {
-			perCustomerPairs = append(perCustomerPairs, customerDataPair{cust: cust, data: data})
-		}
 	}
 
 	// If no data was collected, return empty response
@@ -1893,23 +1867,6 @@ func (s *featureUsageTrackingService) GetDetailedUsageAnalyticsV2(ctx context.Co
 	response, err := s.buildAnalyticsResponse(ctx, aggregatedData, req)
 	if err != nil {
 		return nil, err
-	}
-
-	// 4. Optionally attach child/customer breakdowns
-	if req.IncludeChildCustomersBreakdown {
-		if req.ExternalCustomerID != "" {
-			// Customer-level: breakdown = direct children of the queried customer
-			// For tenant-level we dont support child breakdowns as it would be too expensive to fetch all customers in the tenant
-			if aggregatedData.Customer != nil {
-				children, err := s.fetchChildCustomers(ctx, aggregatedData.Customer.ID)
-				if err != nil {
-					s.Logger.WarnwCtx(ctx, "failed to fetch child customers for breakdown",
-						"customer_id", aggregatedData.Customer.ID, "error", err)
-				} else {
-					response.ChildBreakdowns = s.buildChildAnalyticsBreakdowns(ctx, children, req)
-				}
-			}
-		}
 	}
 
 	return response, nil
@@ -1955,66 +1912,8 @@ func (s *featureUsageTrackingService) fetchChildCustomers(
 	return children, nil
 }
 
-// buildChildAnalyticsBreakdowns fetches analytics for each child customer and returns
-// []ChildBreakdownItem. Per-child errors are non-fatal: an empty entry is emitted instead
-// of failing the whole request.
-func (s *featureUsageTrackingService) buildChildAnalyticsBreakdowns(
-	ctx context.Context,
-	children []*customer.Customer,
-	req *dto.GetUsageAnalyticsRequest,
-) []dto.ChildBreakdownItem {
-	breakdowns := make([]dto.ChildBreakdownItem, 0, len(children))
-	for _, child := range children {
-		childReq := *req
-		childReq.ExternalCustomerID = child.ExternalID
-		childReq.IncludeChildCustomersBreakdown = false // hierarchy is 1-deep; prevent any recursion
-
-		data, err := s.fetchAnalyticsData(ctx, &childReq)
-		if err != nil {
-			s.Logger.WarnwCtx(ctx, "failed to fetch analytics for child customer, using empty entry",
-				"child_customer_id", child.ID,
-				"child_external_id", child.ExternalID,
-				"error", err,
-			)
-			breakdowns = append(breakdowns, dto.ChildBreakdownItem{
-				CustomerID:         child.ID,
-				ExternalCustomerID: child.ExternalID,
-				CustomerName:       child.Name,
-				Items:              []dto.UsageAnalyticItem{},
-			})
-			continue
-		}
-
-		resp, err := s.buildAnalyticsResponse(ctx, data, &childReq)
-		if err != nil || resp == nil {
-			s.Logger.WarnwCtx(ctx, "failed to build analytics response for child customer, using empty entry",
-				"child_customer_id", child.ID,
-				"error", err,
-			)
-			breakdowns = append(breakdowns, dto.ChildBreakdownItem{
-				CustomerID:         child.ID,
-				ExternalCustomerID: child.ExternalID,
-				CustomerName:       child.Name,
-				Items:              []dto.UsageAnalyticItem{},
-			})
-			continue
-		}
-
-		breakdowns = append(breakdowns, dto.ChildBreakdownItem{
-			CustomerID:         child.ID,
-			ExternalCustomerID: child.ExternalID,
-			CustomerName:       child.Name,
-			TotalCost:          resp.TotalCost,
-			Currency:           resp.Currency,
-			Items:              resp.Items,
-		})
-	}
-	return breakdowns
-}
-
 // buildAggregatedAnalyticsWithChildren merges parent + all children analytics into a single
-// total response and builds a breakdown list where the parent is the first item followed by
-// each child — ensuring sum(breakdowns) == total.
+// total response.
 func (s *featureUsageTrackingService) buildAggregatedAnalyticsWithChildren(
 	ctx context.Context,
 	parentData *AnalyticsData,
@@ -2027,7 +1926,6 @@ func (s *featureUsageTrackingService) buildAggregatedAnalyticsWithChildren(
 		childReq := *req
 		childReq.ExternalCustomerID = child.ExternalID
 		childReq.IncludeChildren = false
-		childReq.IncludeChildCustomersBreakdown = false
 		d, err := s.fetchAnalyticsData(ctx, &childReq)
 		if err != nil {
 			s.Logger.WarnwCtx(ctx, "skipping child for include_children aggregation",
@@ -2056,58 +1954,6 @@ func (s *featureUsageTrackingService) buildAggregatedAnalyticsWithChildren(
 		r, _ := s.buildAnalyticsResponse(ctx, parentData, req)
 		return r
 	}
-
-	// 4. Build breakdowns: parent item first, then each child.
-	breakdowns := make([]dto.ChildBreakdownItem, 0, 1+len(children))
-
-	parentResp, _ := s.buildAnalyticsResponse(ctx, parentData, req)
-	if parentResp != nil {
-		breakdowns = append(breakdowns, dto.ChildBreakdownItem{
-			CustomerID:         parentData.Customer.ID,
-			ExternalCustomerID: parentData.Customer.ExternalID,
-			CustomerName:       parentData.Customer.Name,
-			TotalCost:          parentResp.TotalCost,
-			Currency:           parentResp.Currency,
-			Items:              parentResp.Items,
-		})
-	}
-
-	for i, child := range children {
-		cd := childDataSlices[i]
-		if cd == nil {
-			breakdowns = append(breakdowns, dto.ChildBreakdownItem{
-				CustomerID:         child.ID,
-				ExternalCustomerID: child.ExternalID,
-				CustomerName:       child.Name,
-				Items:              []dto.UsageAnalyticItem{},
-			})
-			continue
-		}
-		childReq := *req
-		childReq.ExternalCustomerID = child.ExternalID
-		childReq.IncludeChildren = false
-		childReq.IncludeChildCustomersBreakdown = false
-		cr, err := s.buildAnalyticsResponse(ctx, cd, &childReq)
-		if err != nil || cr == nil {
-			breakdowns = append(breakdowns, dto.ChildBreakdownItem{
-				CustomerID:         child.ID,
-				ExternalCustomerID: child.ExternalID,
-				CustomerName:       child.Name,
-				Items:              []dto.UsageAnalyticItem{},
-			})
-			continue
-		}
-		breakdowns = append(breakdowns, dto.ChildBreakdownItem{
-			CustomerID:         child.ID,
-			ExternalCustomerID: child.ExternalID,
-			CustomerName:       child.Name,
-			TotalCost:          cr.TotalCost,
-			Currency:           cr.Currency,
-			Items:              cr.Items,
-		})
-	}
-
-	totalResp.ChildBreakdowns = breakdowns
 	return totalResp
 }
 

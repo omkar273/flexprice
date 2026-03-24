@@ -102,9 +102,6 @@ type GetCustomerUsageSummaryRequest struct {
 	FeatureIDs        []string `json:"feature_ids,omitempty" form:"feature_ids"`
 	FeatureLookupKeys []string `json:"feature_lookup_keys,omitempty" form:"feature_lookup_keys"`
 	SubscriptionIDs   []string `json:"subscription_ids,omitempty" form:"subscription_ids"`
-	// IncludeChildCustomersBreakdown when true returns per-child-customer feature usage alongside the aggregated result.
-	// Default: false (no breaking change).
-	IncludeChildCustomersBreakdown bool `json:"include_child_customers_breakdown,omitempty" form:"include_child_customers_breakdown"`
 }
 
 func (r *GetCustomerUsageSummaryRequest) Validate() error {
@@ -118,23 +115,12 @@ type BillingPeriodInfo struct {
 	Period    string    `json:"period"` // e.g., "monthly", "yearly"
 }
 
-// ChildUsageSummaryItem holds feature usage for a single direct child customer.
-type ChildUsageSummaryItem struct {
-	CustomerID   string               `json:"customer_id"`
-	ExternalID   string               `json:"external_id"`
-	CustomerName string               `json:"customer_name,omitempty"`
-	Features     []*FeatureUsageSummary `json:"features"`
-}
-
 // CustomerUsageSummaryResponse represents the response for customer usage summary
 type CustomerUsageSummaryResponse struct {
 	CustomerID      string                    `json:"customer_id"`
 	Features        []*FeatureUsageSummary    `json:"features"`
 	Period          *BillingPeriodInfo        `json:"period"`
 	Pagination      *types.PaginationResponse `json:"pagination,omitempty"`
-	// ChildBreakdowns is populated only when include_child_customers_breakdown=true.
-	// Contains one entry per direct child customer of the requested customer.
-	ChildBreakdowns []ChildUsageSummaryItem `json:"child_breakdowns,omitempty"`
 }
 
 // FeatureUsageSummary represents usage for a single feature
