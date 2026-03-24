@@ -2021,24 +2021,21 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 
 	r.logger.Debugw("subscription usage query", "aggColumns", aggColumns, "tableRef", tableRef, "opts", params.Opts)
 
-	// Build customer_id filter: single = for one ID, IN for multiple.
-	// Guard against empty slice which would yield invalid SQL (IN ()) and misaligned arguments.
+	// Build customer_id filter using IN (...) for all cases.
+	// Guard against empty slice which would yield invalid SQL (IN ()).
 	if len(params.CustomerIDs) == 0 {
-		return map[string]*events.UsageByFeatureResult{}, nil
+		return nil, ierr.NewError("customer_ids is required").
+			WithHint("At least one customer ID is required to fetch usage by subscription").
+			Mark(ierr.ErrValidation)
 	}
 
-	customerFilter := "customer_id = ?"
+	placeholders := make([]string, len(params.CustomerIDs))
 	args := []interface{}{params.SubscriptionID}
-	if len(params.CustomerIDs) == 1 {
-		args = append(args, params.CustomerIDs[0])
-	} else {
-		placeholders := make([]string, len(params.CustomerIDs))
-		for i, cid := range params.CustomerIDs {
-			placeholders[i] = "?"
-			args = append(args, cid)
-		}
-		customerFilter = fmt.Sprintf("customer_id IN (%s)", strings.Join(placeholders, ", "))
+	for i, cid := range params.CustomerIDs {
+		placeholders[i] = "?"
+		args = append(args, cid)
 	}
+	customerFilter := fmt.Sprintf("customer_id IN (%s)", strings.Join(placeholders, ", "))
 
 	args = append(args, environmentID, tenantID, params.StartTime, params.EndTime)
 
