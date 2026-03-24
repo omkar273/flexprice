@@ -571,6 +571,7 @@ func (s *featureUsageTrackingService) prepareProcessedEvents(ctx context.Context
 				"error", err,
 				"customer_id", customer.ID,
 			)
+			return results, err
 		}
 		if len(parentSubIDs) > 0 {
 			parentFilter := types.NewSubscriptionFilter()
@@ -1986,7 +1987,6 @@ func (s *featureUsageTrackingService) fetchChildCustomers(
 	}
 	return children, nil
 }
-
 
 // fetchAnalyticsData fetches all required data sequentially
 func (s *featureUsageTrackingService) fetchAnalyticsData(ctx context.Context, req *dto.GetUsageAnalyticsRequest) (*AnalyticsData, error) {

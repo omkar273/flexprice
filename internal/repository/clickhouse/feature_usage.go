@@ -2002,12 +2002,12 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 
 	// Start a span for this repository operation
 	span := StartRepositorySpan(ctx, "feature_usage", "get_usage_by_subscription_v2", map[string]interface{}{
-		"subscription_id": params.SubscriptionID,
-		"customer_ids":    params.CustomerIDs,
-		"environment_id":  environmentID,
-		"tenant_id":       tenantID,
-		"start_time":      params.StartTime,
-		"end_time":        params.EndTime,
+		"subscription_id":    params.SubscriptionID,
+		"customer_ids_count": len(params.CustomerIDs),
+		"environment_id":     environmentID,
+		"tenant_id":          tenantID,
+		"start_time":         params.StartTime,
+		"end_time":           params.EndTime,
 	})
 	defer FinishSpan(span)
 
@@ -2029,12 +2029,13 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 			Mark(ierr.ErrValidation)
 	}
 
-	customerIDLiterals := make([]string, len(params.CustomerIDs))
 	args := []interface{}{params.SubscriptionID}
+	customerPlaceholders := make([]string, len(params.CustomerIDs))
 	for i, cid := range params.CustomerIDs {
-		customerIDLiterals[i] = fmt.Sprintf("'%s'", cid)
+		customerPlaceholders[i] = "?"
+		args = append(args, cid)
 	}
-	customerFilter := fmt.Sprintf("customer_id IN (%s)", strings.Join(customerIDLiterals, ", "))
+	customerFilter := fmt.Sprintf("customer_id IN (%s)", strings.Join(customerPlaceholders, ", "))
 
 	args = append(args, environmentID, tenantID, params.StartTime, params.EndTime)
 
@@ -2059,13 +2060,17 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 
 	r.logger.Debugw("executing subscription usage query",
 		"subscription_id", params.SubscriptionID,
-		"customer_ids", params.CustomerIDs,
+		"customer_ids_count", len(params.CustomerIDs),
 		"environment_id", environmentID,
 		"start_time", params.StartTime,
 		"end_time", params.EndTime,
 	)
 
-	r.logger.Debugw("subscription usage query", "query", query, "params", args)
+	r.logger.Debugw("subscription usage query",
+		"subscription_id", params.SubscriptionID,
+		"customer_ids_count", len(params.CustomerIDs),
+		"agg_types_count", len(params.AggTypes),
+	)
 
 	rows, err := r.store.GetConn().Query(ctx, query, args...)
 	if err != nil {
@@ -2073,8 +2078,8 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 		return nil, ierr.WithError(err).
 			WithHint("Failed to execute optimized subscription usage query").
 			WithReportableDetails(map[string]interface{}{
-				"subscription_id": params.SubscriptionID,
-				"customer_ids":    params.CustomerIDs,
+				"subscription_id":    params.SubscriptionID,
+				"customer_ids_count": len(params.CustomerIDs),
 			}).
 			Mark(ierr.ErrDatabase)
 	}

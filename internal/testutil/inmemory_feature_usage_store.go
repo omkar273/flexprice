@@ -98,11 +98,21 @@ func (s *InMemoryFeatureUsageStore) GetFeatureUsageBySubscription(ctx context.Co
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	subscriptionID := params.SubscriptionID
+	customerIDs := params.CustomerIDs
+	allowedCustomers := make(map[string]struct{}, len(customerIDs))
+	for _, customerID := range customerIDs {
+		allowedCustomers[customerID] = struct{}{}
+	}
 
 	result := make(map[string]*events.UsageByFeatureResult)
 	for _, usage := range s.usage {
 		if usage.SubscriptionID != subscriptionID {
 			continue
+		}
+		if len(allowedCustomers) > 0 {
+			if _, ok := allowedCustomers[usage.CustomerID]; !ok {
+				continue
+			}
 		}
 		// For count aggregation, subscription service uses CountDistinctIDs.
 		// Use QtyTotal as count when it's a whole number (typical for count meters).

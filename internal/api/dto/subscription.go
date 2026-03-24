@@ -1096,6 +1096,11 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 		endDate = r.EndDate
 	}
 
+	subscriptionType := r.SubscriptionType
+	if subscriptionType == "" {
+		subscriptionType = types.SubscriptionTypeStandalone
+	}
+
 	sub := &subscription.Subscription{
 		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
 		CustomerID:         r.CustomerID,
@@ -1125,7 +1130,7 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 		InvoicingCustomerID:    r.InvoicingCustomerID,
 		ParentSubscriptionID:   r.ParentSubscriptionID,
 		PaymentTerms:           r.PaymentTerms,
-		SubscriptionType:       r.SubscriptionType,
+		SubscriptionType:       subscriptionType,
 	}
 
 	// Set commitment amount, duration, and overage factor if provided

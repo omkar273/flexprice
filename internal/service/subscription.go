@@ -6462,6 +6462,7 @@ func listParentSubscriptionIDsForInheritedCustomer(ctx context.Context, params S
 	inheritedFilter.SubscriptionStatus = []types.SubscriptionStatus{
 		types.SubscriptionStatusActive,
 		types.SubscriptionStatusTrialing,
+		types.SubscriptionStatusDraft,
 	}
 
 	inheritedSubs, err := params.SubRepo.List(ctx, inheritedFilter)
