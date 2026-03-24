@@ -2029,13 +2029,12 @@ func (r *FeatureUsageRepository) GetFeatureUsageBySubscription(ctx context.Conte
 			Mark(ierr.ErrValidation)
 	}
 
-	placeholders := make([]string, len(params.CustomerIDs))
+	customerIDLiterals := make([]string, len(params.CustomerIDs))
 	args := []interface{}{params.SubscriptionID}
 	for i, cid := range params.CustomerIDs {
-		placeholders[i] = "?"
-		args = append(args, cid)
+		customerIDLiterals[i] = fmt.Sprintf("'%s'", cid)
 	}
-	customerFilter := fmt.Sprintf("customer_id IN (%s)", strings.Join(placeholders, ", "))
+	customerFilter := fmt.Sprintf("customer_id IN (%s)", strings.Join(customerIDLiterals, ", "))
 
 	args = append(args, environmentID, tenantID, params.StartTime, params.EndTime)
 
