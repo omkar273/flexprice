@@ -30,6 +30,7 @@ type PaddleClient interface {
 	CreateCustomer(ctx context.Context, req *paddle.CreateCustomerRequest) (*paddle.Customer, error)
 	CreateAddress(ctx context.Context, customerID string, req *paddle.CreateAddressRequest) (*paddle.Address, error)
 	CreateTransaction(ctx context.Context, req *paddle.CreateTransactionRequest) (*paddle.Transaction, error)
+	PreviewTransaction(ctx context.Context, req *paddle.PreviewTransactionCreateRequest) (*paddle.TransactionPreview, error)
 	VerifyWebhookSignature(ctx context.Context, payload []byte, signature string, webhookSecret string) error
 }
 
@@ -273,6 +274,30 @@ func (c *Client) CreateTransaction(ctx context.Context, req *paddle.CreateTransa
 	c.logger.Infow("successfully created transaction in Paddle",
 		"transaction_id", txn.ID)
 	return txn, nil
+}
+
+// PreviewTransaction calls the Paddle transactions/preview API to calculate tax and totals
+// without creating a real transaction. This is used to pre-sync Paddle tax to FlexPrice invoices.
+func (c *Client) PreviewTransaction(ctx context.Context, req *paddle.PreviewTransactionCreateRequest) (*paddle.TransactionPreview, error) {
+	client, _, err := c.GetSDKClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	preview, err := client.PreviewTransactionCreate(ctx, req)
+	if err != nil {
+		c.logger.Errorw("failed to preview transaction in Paddle",
+			"error", err)
+		return nil, ierr.NewError("failed to preview transaction in Paddle").
+			WithHint("Unable to get tax preview from Paddle").
+			WithReportableDetails(map[string]interface{}{
+				"error": err.Error(),
+			}).
+			Mark(ierr.ErrInternal)
+	}
+
+	c.logger.Infow("successfully previewed transaction in Paddle")
+	return preview, nil
 }
 
 // toCountryCode converts a string to Paddle CountryCode (uppercase ISO 3166-1 alpha-2)

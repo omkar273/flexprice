@@ -463,8 +463,22 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 	return skipped, err
 }
 
-func (s *invoiceService) GetInvoice(ctx context.Context, id string) (*dto.InvoiceResponse, error) {
+// getInvoiceWithLineItems fetches an invoice and populates its LineItems from the dedicated repo.
+func (s *invoiceService) getInvoiceWithLineItems(ctx context.Context, id string) (*invoice.Invoice, error) {
 	inv, err := s.InvoiceRepo.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	inv.LineItems = lineItems
+	return inv, nil
+}
+
+func (s *invoiceService) GetInvoice(ctx context.Context, id string) (*dto.InvoiceResponse, error) {
+	inv, err := s.getInvoiceWithLineItems(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -2922,8 +2936,8 @@ func (s *invoiceService) publishInternalWebhookEvent(ctx context.Context, eventN
 func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error) {
 	s.Logger.InfowCtx(ctx, "recalculating invoice v2 (draft)", "invoice_id", id)
 
-	// Get the invoice
-	inv, err := s.InvoiceRepo.Get(ctx, id)
+	// Get the invoice with its line items
+	inv, err := s.getInvoiceWithLineItems(ctx, id)
 	if err != nil {
 		return nil, err
 	}
