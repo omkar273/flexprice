@@ -429,7 +429,7 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 			inv.LineItems = lineItemDomains
 		}
 
-		if inv.Subtotal.IsZero() {
+		if inv.InvoiceType == types.InvoiceTypeSubscription && inv.Subtotal.IsZero() {
 			now := time.Now().UTC()
 			inv.LastComputedAt = &now
 			inv.InvoiceStatus = types.InvoiceStatusSkipped
