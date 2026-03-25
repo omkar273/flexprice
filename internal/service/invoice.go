@@ -951,6 +951,7 @@ func (s *invoiceService) VoidInvoice(ctx context.Context, id string, req dto.Inv
 	allowedInvoiceStatuses := []types.InvoiceStatus{
 		types.InvoiceStatusDraft,
 		types.InvoiceStatusFinalized,
+		types.InvoiceStatusSkipped,
 	}
 	if !lo.Contains(allowedInvoiceStatuses, inv.InvoiceStatus) {
 		return ierr.NewError("invoice status is not allowed").
