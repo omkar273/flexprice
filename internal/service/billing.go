@@ -1467,6 +1467,18 @@ func (s *billingService) CalculateFeatureUsageCharges(
 								Mark(ierr.ErrNotFound)
 						}
 
+						linePeriodStart := item.GetPeriodStart(periodStart)
+						linePeriodEnd := item.GetPeriodEnd(periodEnd)
+						// Clamp windowed commitment calculations to elapsed time in the current period.
+						now := time.Now().UTC()
+						effectiveCommitmentEnd := now
+						if effectiveCommitmentEnd.Before(linePeriodStart) {
+							effectiveCommitmentEnd = linePeriodStart
+						}
+						if effectiveCommitmentEnd.After(linePeriodEnd) {
+							effectiveCommitmentEnd = linePeriodEnd
+						}
+
 						// Reuse the bucketed usage result already fetched for bucketed meter
 						// pricing (IsBucketedMaxMeter/IsBucketedSumMeter) to avoid a redundant
 						// ClickHouse round-trip with the same parameters.
@@ -1480,8 +1492,8 @@ func (s *billingService) CalculateFeatureUsageCharges(
 								UsageParams: &events.UsageParams{
 									ExternalCustomerID: customer.ExternalID,
 									AggregationType:    meter.Aggregation.Type,
-									StartTime:          item.GetPeriodStart(periodStart),
-									EndTime:            item.GetPeriodEnd(periodEnd),
+									StartTime:          linePeriodStart,
+									EndTime:            effectiveCommitmentEnd,
 									WindowSize:         meter.Aggregation.BucketSize,
 									BillingAnchor:      &sub.BillingAnchor,
 									GroupByProperty:    meter.Aggregation.GroupBy,
@@ -1498,8 +1510,8 @@ func (s *billingService) CalculateFeatureUsageCharges(
 						bucketedValues := s.fillBucketedValuesForWindowedCommitment(
 							item,
 							commitmentUsageResult,
-							item.GetPeriodStart(periodStart),
-							item.GetPeriodEnd(periodEnd),
+							linePeriodStart,
+							effectiveCommitmentEnd,
 							meter.Aggregation.BucketSize,
 							&sub.BillingAnchor,
 							meter.Aggregation.Type,
