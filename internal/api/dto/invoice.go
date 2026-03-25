@@ -114,13 +114,152 @@ type CreateInvoiceRequest struct {
 
 	// invoice_pdf_url is the URL where customers can download the PDF version of this invoice
 	InvoicePDFURL *string `json:"invoice_pdf_url,omitempty"`
+}
 
-	// skip_invoice_number when true creates a draft without assigning an invoice number (assigned during populate).
-	// Used for draft-first flow. Not exposed in API.
-	SkipInvoiceNumber bool `json:"-"`
+// ToDraftRequest converts a CreateInvoiceRequest to a CreateDraftInvoiceRequest,
+// extracting only the fields needed for empty draft creation.
+func (r *CreateInvoiceRequest) ToDraftRequest() CreateDraftInvoiceRequest {
+	return CreateDraftInvoiceRequest{
+		CustomerID:     r.CustomerID,
+		SubscriptionID: r.SubscriptionID,
+		InvoiceType:    r.InvoiceType,
+		Currency:       r.Currency,
+		PeriodStart:    r.PeriodStart,
+		PeriodEnd:      r.PeriodEnd,
+		BillingPeriod:  r.BillingPeriod,
+		BillingReason:  r.BillingReason,
+		Description:    r.Description,
+		DueDate:        r.DueDate,
+		Metadata:       r.Metadata,
+		IdempotencyKey: r.IdempotencyKey,
+		InvoicePDFURL:  r.InvoicePDFURL,
+	}
+}
 
-	// suppress_webhook when true skips publishing webhook on create. Used for draft creation. Not exposed in API.
-	SuppressWebhook bool `json:"-"`
+// ToComputeRequest converts a CreateInvoiceRequest to an InvoiceComputeRequest,
+// extracting only the fields needed for invoice computation (line items, amounts, coupons, taxes).
+func (r *CreateInvoiceRequest) ToComputeRequest() InvoiceComputeRequest {
+	return InvoiceComputeRequest{
+		LineItems:        r.LineItems,
+		Subtotal:         r.Subtotal,
+		Total:            r.Total,
+		AmountDue:        r.AmountDue,
+		Description:      r.Description,
+		DueDate:          r.DueDate,
+		InvoiceCoupons:   r.InvoiceCoupons,
+		LineItemCoupons:  r.LineItemCoupons,
+		PreparedTaxRates: r.PreparedTaxRates,
+	}
+}
+
+// ===================== Draft Invoice Creation DTO =====================
+
+// CreateDraftInvoiceRequest contains only the fields needed to create an empty zero-dollar
+// draft invoice. No amounts, no line items, no coupons, no taxes — those are populated
+// later by ComputeInvoice. Used by CreateEmptyDraftInvoice and CreateDraftInvoiceForSubscription.
+type CreateDraftInvoiceRequest struct {
+	CustomerID     string                       `json:"customer_id" validate:"required"`
+	SubscriptionID *string                      `json:"subscription_id,omitempty"`
+	InvoiceType    types.InvoiceType            `json:"invoice_type" validate:"required"`
+	Currency       string                       `json:"currency" validate:"required"`
+	PeriodStart    *time.Time                   `json:"period_start,omitempty"`
+	PeriodEnd      *time.Time                   `json:"period_end,omitempty"`
+	BillingPeriod  *string                      `json:"billing_period,omitempty"`
+	BillingReason  types.InvoiceBillingReason   `json:"billing_reason,omitempty"`
+	Description    string                       `json:"description,omitempty"`
+	DueDate        *time.Time                   `json:"due_date,omitempty"`
+	Metadata       types.Metadata               `json:"metadata,omitempty"`
+	IdempotencyKey *string                      `json:"idempotency_key,omitempty"`
+	InvoicePDFURL  *string                      `json:"invoice_pdf_url,omitempty"`
+}
+
+// Validate validates the draft invoice creation request.
+func (r *CreateDraftInvoiceRequest) Validate() error {
+	if err := validator.ValidateRequest(r); err != nil {
+		return err
+	}
+	if err := r.InvoiceType.Validate(); err != nil {
+		return err
+	}
+	if r.InvoiceType == types.InvoiceTypeSubscription {
+		if r.SubscriptionID == nil {
+			return ierr.NewError("subscription_id is required for subscription invoice").
+				WithHint("subscription_id is required for subscription invoice").
+				Mark(ierr.ErrValidation)
+		}
+		if r.BillingPeriod == nil {
+			return ierr.NewError("billing_period is required for subscription invoice").
+				WithHint("billing_period is required for subscription invoice").
+				Mark(ierr.ErrValidation)
+		}
+		if r.PeriodStart == nil {
+			return ierr.NewError("period_start is required for subscription invoice").
+				WithHint("period_start is required for subscription invoice").
+				Mark(ierr.ErrValidation)
+		}
+		if r.PeriodEnd == nil {
+			return ierr.NewError("period_end is required for subscription invoice").
+				WithHint("period_end is required for subscription invoice").
+				Mark(ierr.ErrValidation)
+		}
+		if r.PeriodEnd.Before(*r.PeriodStart) {
+			return ierr.NewError("period_end must be after period_start").
+				WithHint("period_end must be after period_start").
+				Mark(ierr.ErrValidation)
+		}
+	}
+	return nil
+}
+
+// ToDraftInvoice converts a CreateDraftInvoiceRequest to a zero-dollar draft invoice domain object.
+// Unlike CreateInvoiceRequest.ToInvoice, this skips tax/discount calculations since all amounts are zero.
+func (r *CreateDraftInvoiceRequest) ToDraftInvoice(ctx context.Context) (*invoice.Invoice, error) {
+	if err := types.ValidateCurrencyCode(r.Currency); err != nil {
+		return nil, err
+	}
+
+	return &invoice.Invoice{
+		ID:              types.GenerateUUIDWithPrefix(types.UUID_PREFIX_INVOICE),
+		CustomerID:      r.CustomerID,
+		SubscriptionID:  r.SubscriptionID,
+		InvoiceType:     r.InvoiceType,
+		Currency:        strings.ToLower(r.Currency),
+		AmountDue:       decimal.Zero,
+		Total:           decimal.Zero,
+		Subtotal:        decimal.Zero,
+		AmountPaid:      decimal.Zero,
+		AmountRemaining: decimal.Zero,
+		TotalDiscount:   decimal.Zero,
+		TotalTax:        decimal.Zero,
+		Description:     r.Description,
+		DueDate:         r.DueDate,
+		PeriodStart:     r.PeriodStart,
+		BillingPeriod:   r.BillingPeriod,
+		PeriodEnd:       r.PeriodEnd,
+		BillingReason:   string(r.BillingReason),
+		Metadata:        r.Metadata,
+		InvoicePDFURL:   r.InvoicePDFURL,
+		InvoiceStatus:   types.InvoiceStatusDraft,
+		PaymentStatus:   types.PaymentStatusPending,
+		BaseModel:       types.GetDefaultBaseModel(ctx),
+	}, nil
+}
+
+// ===================== Invoice Compute DTO =====================
+
+// InvoiceComputeRequest contains the computed data to apply to a draft invoice during ComputeInvoice.
+// No customer, subscription, or period info — those are already on the invoice. This is purely
+// the computed line items, amounts, coupons, and taxes to populate.
+type InvoiceComputeRequest struct {
+	LineItems        []CreateInvoiceLineItemRequest `json:"line_items"`
+	Subtotal         decimal.Decimal                `json:"subtotal" swaggertype:"string"`
+	Total            decimal.Decimal                `json:"total" swaggertype:"string"`
+	AmountDue        decimal.Decimal                `json:"amount_due" swaggertype:"string"`
+	Description      string                         `json:"description,omitempty"`
+	DueDate          *time.Time                     `json:"due_date,omitempty"`
+	InvoiceCoupons   []InvoiceCoupon                `json:"invoice_coupons,omitempty"`
+	LineItemCoupons  []InvoiceLineItemCoupon        `json:"line_item_coupons,omitempty"`
+	PreparedTaxRates []*TaxRateResponse             `json:"prepared_tax_rates,omitempty"`
 }
 
 // CreateProrationInvoiceRequest represents the request for creating a proration invoice
