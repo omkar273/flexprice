@@ -73,7 +73,7 @@ Add a `## Handling Webhooks` section to all three custom SDK READMEs. These file
 ## TypeScript Implementation Detail
 
 **Imports:**
-- `WebhookEventName` from `@flexprice/sdk/models` (as-const enum object)
+- `WebhookEventName` and `webhookDto*FromJSON` from `@flexprice/sdk` root (re-exported via `index.extras.ts` → `sdk/models/index.js`)
 - `webhookDto*FromJSON` helpers (e.g. `webhookDtoPaymentWebhookPayloadFromJSON`) — return `SafeParseResult<T, SDKValidationError>`
 - Fields auto-camelCased: `event_type` → `eventType`, `invoice_status` → `invoiceStatus`
 
