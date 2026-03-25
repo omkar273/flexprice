@@ -1036,6 +1036,8 @@ func (s *billingService) CalculateFeatureUsageCharges(
 
 	usageCharges := make([]dto.CreateInvoiceLineItemRequest, 0)
 	totalUsageCost := decimal.Zero
+	// Freeze evaluation time for the full calculation to avoid per-line-item drift.
+	asOf := time.Now().UTC()
 
 	// Cumulative subscription commitment: when CommitmentDuration != BillingPeriod and prior invoices exist
 	var useCumulativePath bool
@@ -1470,8 +1472,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 						linePeriodStart := item.GetPeriodStart(periodStart)
 						linePeriodEnd := item.GetPeriodEnd(periodEnd)
 						// Clamp windowed commitment calculations to elapsed time in the current period.
-						now := time.Now().UTC()
-						effectiveCommitmentEnd := now
+						effectiveCommitmentEnd := asOf
 						if effectiveCommitmentEnd.Before(linePeriodStart) {
 							effectiveCommitmentEnd = linePeriodStart
 						}
