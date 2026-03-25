@@ -808,17 +808,16 @@ func (s *walletService) handlePurchasedCreditInvoicedTransaction(ctx context.Con
 			amountPaid = &amount
 		}
 
-		invoice, err := invoiceService.CreateInvoice(ctx, dto.CreateInvoiceRequest{
+		invReq := dto.CreateInvoiceRequest{
 			CustomerID:     w.CustomerID,
 			AmountDue:      amount,
 			AmountPaid:     amountPaid,
 			Subtotal:       amount,
 			Total:          amount,
 			Currency:       w.Currency,
-			InvoiceType:    types.InvoiceTypeOneOff, // Changed from CREDIT to ONE_OFF
+			InvoiceType:    types.InvoiceTypeOneOff,
 			DueDate:        lo.ToPtr(time.Now().UTC()),
 			IdempotencyKey: idempotencyKey,
-			InvoiceStatus:  lo.ToPtr(types.InvoiceStatusFinalized),
 			LineItems: []dto.CreateInvoiceLineItemRequest{
 				{
 					Amount:      amount,
@@ -828,19 +827,21 @@ func (s *walletService) handlePurchasedCreditInvoicedTransaction(ctx context.Con
 			},
 			PaymentStatus: lo.ToPtr(paymentStatus),
 			Metadata:      invoiceMetadata,
-		})
+		}
+		// Use CreateInvoice which handles draft-first flow: create draft, compute, finalize, webhook
+		inv, err := invoiceService.CreateInvoice(ctx, invReq)
 		if err != nil {
 			return ierr.WithError(err).
 				WithHint("Failed to create invoice for purchased credits").
 				Mark(ierr.ErrInternal)
 		}
 
-		invoiceID = invoice.ID
+		invoiceID = inv.ID
 
 		if autoCompleteEnabled {
 			s.Logger.InfowCtx(ctx, "created auto-completed credit purchase",
 				"wallet_transaction_id", walletTransactionID,
-				"invoice_id", invoice.ID,
+				"invoice_id", inv.ID,
 				"wallet_id", walletID,
 				"credits", req.CreditsToAdd.String(),
 				"amount", amount.String(),
@@ -849,7 +850,7 @@ func (s *walletService) handlePurchasedCreditInvoicedTransaction(ctx context.Con
 		} else {
 			s.Logger.InfowCtx(ctx, "created pending credit purchase",
 				"wallet_transaction_id", walletTransactionID,
-				"invoice_id", invoice.ID,
+				"invoice_id", inv.ID,
 				"wallet_id", walletID,
 				"credits", req.CreditsToAdd.String(),
 				"amount", amount.String(),

@@ -36,11 +36,14 @@ type InvoiceService interface {
 
 	// Additional methods specific to this service
 	CreateOneOffInvoice(ctx context.Context, req dto.CreateInvoiceRequest) (*dto.InvoiceResponse, error)
+	CreateEmptyDraftInvoice(ctx context.Context, req dto.CreateDraftInvoiceRequest) (*dto.InvoiceResponse, error)
 	FinalizeInvoice(ctx context.Context, id string) error
 	VoidInvoice(ctx context.Context, id string, req dto.InvoiceVoidRequest) error
 	ProcessDraftInvoice(ctx context.Context, id string, paymentParams *dto.PaymentParameters, sub *subscription.Subscription, flowType types.InvoiceFlowType) error
 	UpdatePaymentStatus(ctx context.Context, id string, status types.PaymentStatus, amount *decimal.Decimal) error
 	CreateSubscriptionInvoice(ctx context.Context, req *dto.CreateSubscriptionInvoiceRequest, paymentParams *dto.PaymentParameters, flowType types.InvoiceFlowType, isDraftSubscription bool) (*dto.InvoiceResponse, *subscription.Subscription, error)
+	CreateDraftInvoiceForSubscription(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time, referencePoint types.InvoiceReferencePoint) (*dto.InvoiceResponse, error)
+	ComputeInvoice(ctx context.Context, invoiceID string, req *dto.InvoiceComputeRequest) (skipped bool, err error)
 	GetPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error)
 	GetCustomerInvoiceSummary(ctx context.Context, customerID string, currency string) (*dto.CustomerInvoiceSummary, error)
 	GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.GetUnpaidInvoicesToBePaidRequest) (*dto.GetUnpaidInvoicesToBePaidResponse, error)
@@ -60,6 +63,8 @@ type InvoiceService interface {
 
 	// Cron methods
 	SyncInvoiceToExternalVendors(ctx context.Context, invoiceID string) error
+	IsFinalizationDue(ctx context.Context, invoiceID string) (bool, error)
+	ListAllTenantDraftInvoices(ctx context.Context, batchSize, offset int) ([]*invoice.Invoice, error)
 
 	DistributeInvoiceLevelDiscount(ctx context.Context, lineItems []*invoice.InvoiceLineItem, invoiceDiscountAmount decimal.Decimal) error
 }
@@ -78,18 +83,15 @@ func NewInvoiceService(params ServiceParams) InvoiceService {
 
 func (s *invoiceService) CreateOneOffInvoice(ctx context.Context, req dto.CreateInvoiceRequest) (*dto.InvoiceResponse, error) {
 
-	// Here we validate all the coupons and then pass them to CreateInvoice Service.
-	// This validation is here because we want to the createInvoice be independent of the coupon service.
+	// Validate coupons
 	couponValidationService := NewCouponValidationService(s.ServiceParams)
 	validCoupons := make([]dto.InvoiceCoupon, 0)
 	for _, couponID := range req.Coupons {
-		// Get coupon details for validation
 		coupon, err := s.CouponRepo.Get(ctx, couponID)
 		if err != nil {
 			s.Logger.ErrorwCtx(ctx, "failed to get coupon", "error", err, "coupon_id", couponID)
 			continue
 		}
-
 		if err := couponValidationService.ValidateCoupon(ctx, *coupon, nil); err != nil {
 			s.Logger.ErrorwCtx(ctx, "failed to validate coupon", "error", err, "coupon_id", couponID)
 			continue
@@ -98,10 +100,9 @@ func (s *invoiceService) CreateOneOffInvoice(ctx context.Context, req dto.Create
 			CouponID: couponID,
 		})
 	}
-
 	req.InvoiceCoupons = validCoupons
 
-	// Prepare tax rates - handle both tax_rates (IDs) and tax_rate_overrides (codes)
+	// Prepare tax rates
 	taxService := NewTaxService(s.ServiceParams)
 	finalTaxRates := make([]*dto.TaxRateResponse, 0)
 	if len(req.TaxRateOverrides) > 0 {
@@ -120,20 +121,24 @@ func (s *invoiceService) CreateOneOffInvoice(ctx context.Context, req dto.Create
 			finalTaxRates = append(finalTaxRates, tr)
 		}
 	}
-
 	req.PreparedTaxRates = finalTaxRates
+
+	// Delegate to CreateInvoice which handles draft-first flow: create draft, compute, finalize, webhook
 	return s.CreateInvoice(ctx, req)
 }
 
-func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoiceRequest) (*dto.InvoiceResponse, error) {
+// CreateEmptyDraftInvoice creates a zero-dollar draft invoice without line items or invoice number.
+// The invoice is created with status DRAFT, zero amounts, and no invoice number assigned.
+// Use ComputeInvoice to populate line items (for subscription) and apply coupons/taxes.
+// Use FinalizeInvoice to assign the invoice number and seal the invoice.
+func (s *invoiceService) CreateEmptyDraftInvoice(ctx context.Context, req dto.CreateDraftInvoiceRequest) (*dto.InvoiceResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
 
 	var resp *dto.InvoiceResponse
 
-	// Start transaction
-	err := s.DB.WithTx(ctx, func(tx context.Context) error {
+	err := s.DB.WithTx(ctx, func(txCtx context.Context) error {
 		// 1. Generate idempotency key if not provided
 		var idempKey string
 		if req.IdempotencyKey == nil {
@@ -168,10 +173,9 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 			scope := idempotency.ScopeOneOffInvoice
 			if req.SubscriptionID != nil {
 				scope = idempotency.ScopeSubscriptionInvoice
-				params["subscription_id"] = req.SubscriptionID
+				params["subscription_id"] = *req.SubscriptionID
 			} else {
 				// For one-off invoices, a timestamp is required to ensure uniqueness
-				// across repeated invoice creations.
 				params["timestamp"] = time.Now().UTC()
 			}
 			idempKey = s.idempGen.GenerateKey(scope, params)
@@ -179,113 +183,67 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 			idempKey = *req.IdempotencyKey
 		}
 
-		// 2. Check for existing invoice with same idempotency key
-		existing, err := s.InvoiceRepo.GetByIdempotencyKey(tx, idempKey)
-
+		// 2. Check for existing invoice with same idempotency key (idempotent draft creation)
+		existing, err := s.InvoiceRepo.GetByIdempotencyKey(txCtx, idempKey)
 		if err != nil && !ierr.IsNotFound(err) {
 			return ierr.WithError(err).WithHint("failed to check idempotency").Mark(ierr.ErrDatabase)
 		}
 		if existing != nil {
-			s.Logger.InfofCtx(ctx, "invoice already exists, returning existing invoice")
-			err = ierr.NewError("invoice already exists").WithHint("invoice already exists").Mark(ierr.ErrAlreadyExists)
-			return err
+			if existing.InvoiceStatus == types.InvoiceStatusDraft || existing.InvoiceStatus == types.InvoiceStatusSkipped {
+				s.Logger.Infow("draft/skipped invoice already exists for idempotency key, returning existing", "invoice_id", existing.ID)
+				resp = dto.NewInvoiceResponse(existing)
+				return nil
+			}
+			s.Logger.Infof("invoice already exists, returning existing invoice")
+			return ierr.NewError("invoice already exists").WithHint("invoice already exists").Mark(ierr.ErrAlreadyExists)
 		}
 
-		// 3. For subscription invoices, validate period uniqueness and get billing sequence
+		// 3. For subscription invoices, check period uniqueness and get billing sequence
 		var billingSeq *int
 		if req.SubscriptionID != nil {
-			// Check period uniqueness
-			exists, err := s.InvoiceRepo.ExistsForPeriod(ctx, *req.SubscriptionID, *req.PeriodStart, *req.PeriodEnd)
-			if err != nil {
+			existingForPeriod, err := s.InvoiceRepo.GetForPeriod(txCtx, *req.SubscriptionID, *req.PeriodStart, *req.PeriodEnd)
+			if err != nil && !ierr.IsNotFound(err) {
 				return err
 			}
-			if exists {
-				s.Logger.InfowCtx(ctx, "another invoice for same subscription period exists",
+			if existingForPeriod != nil {
+				if existingForPeriod.InvoiceStatus == types.InvoiceStatusDraft || existingForPeriod.InvoiceStatus == types.InvoiceStatusSkipped {
+					s.Logger.Infow("draft/skipped invoice already exists for period, returning existing",
+						"invoice_id", existingForPeriod.ID,
+						"subscription_id", *req.SubscriptionID,
+						"period_start", *req.PeriodStart,
+						"period_end", *req.PeriodEnd)
+					resp = dto.NewInvoiceResponse(existingForPeriod)
+					return nil
+				}
+				s.Logger.Infow("invoice already exists for subscription period",
+					"invoice_id", existingForPeriod.ID,
 					"subscription_id", *req.SubscriptionID,
 					"period_start", *req.PeriodStart,
 					"period_end", *req.PeriodEnd)
-				// do nothing, just log and continue
+				return ierr.NewError("invoice already exists").WithHint("invoice already exists for this period").Mark(ierr.ErrAlreadyExists)
 			}
 
 			// Get billing sequence
-			seq, err := s.InvoiceRepo.GetNextBillingSequence(ctx, *req.SubscriptionID)
+			seq, err := s.InvoiceRepo.GetNextBillingSequence(txCtx, *req.SubscriptionID)
 			if err != nil {
 				return err
 			}
 			billingSeq = &seq
 		}
 
-		// 4. Generate invoice number
-		var invoiceNumber string
-		if req.InvoiceNumber != nil {
-			invoiceNumber = *req.InvoiceNumber
-		} else {
-			settingsSvc := NewSettingsService(s.ServiceParams).(*settingsService)
-			invoiceConfig, err := GetSetting[types.InvoiceConfig](
-				settingsSvc,
-				ctx,
-				types.SettingKeyInvoiceConfig,
-			)
-			if err != nil {
-				return ierr.WithError(err).
-					WithHint("Failed to get invoice configuration").
-					Mark(ierr.ErrValidation)
-			}
-
-			invoiceNumber, err = s.InvoiceRepo.GetNextInvoiceNumber(ctx, &invoiceConfig)
-			if err != nil {
-				return err
-			}
-		}
-
-		// 5. Create invoice
-		// Convert request to domain model
-		inv, err := req.ToInvoice(ctx)
+		// 4. Create invoice (no invoice number for draft) — ToDraftInvoice returns zero amounts
+		inv, err := req.ToDraftInvoice(txCtx)
 		if err != nil {
 			return err
 		}
 
-		inv.InvoiceNumber = &invoiceNumber
 		inv.IdempotencyKey = &idempKey
 		inv.BillingSequence = billingSeq
+		inv.InvoiceStatus = types.InvoiceStatusDraft
 
 		// Set correct billing reason based on billing sequence for subscription invoices
 		if req.SubscriptionID != nil && billingSeq != nil && lo.FromPtr(billingSeq) == 1 {
 			inv.BillingReason = string(types.InvoiceBillingReasonSubscriptionCreate)
-		}
-
-		// Setting default values
-		if req.InvoiceType == types.InvoiceTypeOneOff || req.InvoiceType == types.InvoiceTypeCredit {
-			if req.InvoiceStatus == nil {
-				inv.InvoiceStatus = types.InvoiceStatusFinalized
-			}
-		} else if req.InvoiceType == types.InvoiceTypeSubscription {
-			if req.InvoiceStatus == nil {
-				inv.InvoiceStatus = types.InvoiceStatusDraft
-			}
-		}
-
-		if req.AmountPaid == nil {
-			if req.PaymentStatus == nil {
-				inv.AmountPaid = inv.AmountDue
-			}
-		}
-
-		// Calculated Amount Remaining
-		inv.AmountRemaining = inv.AmountDue.Sub(inv.AmountPaid)
-
-		if req.PaymentStatus == nil || lo.FromPtr(req.PaymentStatus) == "" {
-			if inv.AmountRemaining.IsZero() {
-				inv.PaymentStatus = types.PaymentStatusSucceeded
-			} else {
-				inv.PaymentStatus = types.PaymentStatusPending
-			}
-		}
-
-		// Set PaidAt if the invoice is being created with SUCCEEDED status and fully paid
-		if inv.PaymentStatus == types.PaymentStatusSucceeded && inv.AmountRemaining.IsZero() && inv.PaidAt == nil {
-			now := time.Now().UTC()
-			inv.PaidAt = &now
 		}
 
 		// Validate invoice
@@ -293,23 +251,8 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 			return err
 		}
 
-		// Create invoice with line items in a single transaction
-		if err := s.InvoiceRepo.CreateWithLineItems(ctx, inv); err != nil {
-			return err
-		}
-
-		// Apply credit adjustments and coupons
-		if err := s.applyCreditsAndCouponsToInvoice(ctx, inv, req); err != nil {
-			return err
-		}
-
-		// Apply taxes to invoice
-		if err := s.applyTaxesToInvoice(ctx, inv, req); err != nil {
-			return err
-		}
-
-		// Update the invoice in the database
-		if err := s.InvoiceRepo.Update(ctx, inv); err != nil {
+		// Create invoice with line items (must use txCtx so it participates in this transaction)
+		if err := s.InvoiceRepo.Create(txCtx, inv); err != nil {
 			return err
 		}
 
@@ -325,13 +268,195 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 		return nil, err
 	}
 
-	eventName := types.WebhookEventInvoiceCreateDraft
-	if resp.InvoiceStatus == types.InvoiceStatusFinalized {
-		eventName = types.WebhookEventInvoiceUpdateFinalized
+	return resp, nil
+}
+
+// This wrapper delegates to the draft-first flow. Invoice number is assigned during FinalizeInvoice.
+func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoiceRequest) (*dto.InvoiceResponse, error) {
+	// Delegate to draft-first flow
+	draftReq := req.ToDraftRequest()
+	draft, err := s.CreateEmptyDraftInvoice(ctx, draftReq)
+	if err != nil {
+		return nil, err
 	}
 
-	s.publishInternalWebhookEvent(ctx, eventName, resp.ID)
-	return resp, nil
+	// Compute to assign invoice number and apply coupons/taxes
+	computeReq := req.ToComputeRequest()
+	skipped, err := s.ComputeInvoice(ctx, draft.ID, &computeReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// If invoice was skipped (zero-dollar), return it without further processing
+	if skipped {
+		inv, err := s.InvoiceRepo.Get(ctx, draft.ID)
+		if err != nil {
+			return nil, err
+		}
+		return dto.NewInvoiceResponse(inv), nil
+	}
+
+	// Check if we need to finalize (original CreateInvoice would auto-finalize for one-off/credit)
+	shouldFinalize := req.InvoiceType == types.InvoiceTypeOneOff || req.InvoiceType == types.InvoiceTypeCredit
+	if req.InvoiceStatus != nil && *req.InvoiceStatus == types.InvoiceStatusFinalized {
+		shouldFinalize = true
+	}
+
+	if shouldFinalize {
+		if err := s.FinalizeInvoice(ctx, draft.ID); err != nil {
+			return nil, err
+		}
+	}
+
+	// Get the updated invoice
+	inv, err := s.InvoiceRepo.Get(ctx, draft.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Publish webhook (original behavior)
+	eventName := types.WebhookEventInvoiceCreateDraft
+	if inv.InvoiceStatus == types.InvoiceStatusFinalized {
+		eventName = types.WebhookEventInvoiceUpdateFinalized
+	}
+	s.publishInternalWebhookEvent(ctx, eventName, inv.ID)
+
+	return dto.NewInvoiceResponse(inv), nil
+}
+
+// CreateDraftInvoiceForSubscription creates a zero-dollar draft invoice without line items for a subscription period.
+// No invoice number is assigned. Use ComputeInvoice to populate line items and FinalizeInvoice to assign the number.
+func (s *invoiceService) CreateDraftInvoiceForSubscription(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time, referencePoint types.InvoiceReferencePoint) (*dto.InvoiceResponse, error) {
+	sub, _, err := s.SubRepo.GetWithLineItems(ctx, subscriptionID)
+	if err != nil {
+		return nil, err
+	}
+	billingPeriodStr := string(sub.BillingPeriod)
+	invoicingCustomerID := sub.GetInvoicingCustomerID()
+	req := dto.CreateDraftInvoiceRequest{
+		CustomerID:     invoicingCustomerID,
+		SubscriptionID: lo.ToPtr(sub.ID),
+		InvoiceType:    types.InvoiceTypeSubscription,
+		Currency:       sub.Currency,
+		BillingPeriod:  &billingPeriodStr,
+		PeriodStart:    &periodStart,
+		PeriodEnd:      &periodEnd,
+		BillingReason:  types.InvoiceBillingReasonSubscriptionCycle,
+	}
+	if referencePoint == types.ReferencePointCancel {
+		req.BillingReason = types.InvoiceBillingReasonProration
+	}
+	return s.CreateEmptyDraftInvoice(ctx, req)
+}
+
+// ComputeInvoice computes a draft invoice under lock: computes line items (subscription),
+// applies credits/coupons/taxes, or marks SKIPPED if zero-dollar. Re-runnable on draft invoices.
+// Invoice number is NOT assigned here — it is assigned during FinalizeInvoice.
+// For one-off/credit invoices, pass the original request to apply coupons/taxes; for subscription invoices, pass nil.
+// Always sets LastComputedAt on successful computation.
+func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, req *dto.InvoiceComputeRequest) (skipped bool, err error) {
+	var inv *invoice.Invoice
+	err = s.DB.WithTx(ctx, func(txCtx context.Context) error {
+		inv, err = s.InvoiceRepo.GetForUpdate(txCtx, invoiceID)
+		if err != nil {
+			return err
+		}
+		// Only compute drafts; skip finalized/voided/skipped invoices
+		if inv.InvoiceStatus != types.InvoiceStatusDraft {
+			skipped = (inv.InvoiceStatus == types.InvoiceStatusSkipped)
+			return nil
+		}
+
+		var applyReq *dto.InvoiceComputeRequest
+
+		if inv.InvoiceType == types.InvoiceTypeSubscription && inv.SubscriptionID != nil {
+			// Subscription: compute line items from billing service
+			if inv.PeriodStart == nil || inv.PeriodEnd == nil {
+				return ierr.NewError("subscription invoice missing period dates").
+					WithHint("PeriodStart and PeriodEnd are required for subscription invoices").
+					WithReportableDetails(map[string]interface{}{
+						"invoice_id": inv.ID,
+					}).
+					Mark(ierr.ErrValidation)
+			}
+			sub, err := s.SubRepo.Get(txCtx, *inv.SubscriptionID)
+			if err != nil {
+				return err
+			}
+			refPoint := types.ReferencePointPeriodEnd
+			if inv.BillingReason == string(types.InvoiceBillingReasonProration) {
+				refPoint = types.ReferencePointCancel
+			}
+			billingService := NewBillingService(s.ServiceParams)
+			subInvReq, err := billingService.PrepareSubscriptionInvoiceRequest(txCtx, sub, *inv.PeriodStart, *inv.PeriodEnd, refPoint)
+			if err != nil {
+				return err
+			}
+			computeReq := subInvReq.ToComputeRequest()
+			applyReq = &computeReq
+		} else if req != nil {
+			// One-off or credit: line items and amounts come from the caller's request
+			applyReq = req
+		}
+
+		// Populate invoice from the computed request (uniform for all invoice types)
+		if applyReq != nil {
+			lineItemDomains := make([]*invoice.InvoiceLineItem, 0, len(applyReq.LineItems))
+			for _, item := range applyReq.LineItems {
+				lineItemDomains = append(lineItemDomains, item.ToInvoiceLineItem(txCtx, inv))
+			}
+
+			// Always replace line items on re-compute: remove old, insert new.
+			// Amounts/quantities may change between computes even if the count stays the same.
+			if len(inv.LineItems) > 0 {
+				itemIDs := lo.Map(inv.LineItems, func(item *invoice.InvoiceLineItem, _ int) string { return item.ID })
+				if err := s.InvoiceRepo.RemoveLineItems(txCtx, inv.ID, itemIDs); err != nil {
+					return err
+				}
+			}
+			if len(lineItemDomains) > 0 {
+				if err := s.InvoiceRepo.AddLineItems(txCtx, inv.ID, lineItemDomains); err != nil {
+					return err
+				}
+			}
+
+			inv.Subtotal = applyReq.Subtotal
+			inv.Total = applyReq.Total
+			inv.AmountDue = applyReq.AmountDue
+			inv.AmountRemaining = inv.AmountDue.Sub(inv.AmountPaid)
+			inv.Description = applyReq.Description
+			inv.DueDate = applyReq.DueDate
+			inv.LineItems = lineItemDomains
+		}
+
+		if inv.InvoiceType == types.InvoiceTypeSubscription && inv.Subtotal.IsZero() {
+			now := time.Now().UTC()
+			inv.LastComputedAt = &now
+			inv.InvoiceStatus = types.InvoiceStatusSkipped
+			if err := s.InvoiceRepo.Update(txCtx, inv); err != nil {
+				return err
+			}
+			skipped = true
+			return nil
+		}
+
+		// Apply credits/coupons and taxes if we have a request
+		// Note: invoice number is assigned later during finalization
+		if applyReq != nil {
+			if err := s.applyCreditsAndCouponsToInvoice(txCtx, inv, *applyReq); err != nil {
+				return err
+			}
+			if err := s.applyTaxesToInvoice(txCtx, inv, *applyReq); err != nil {
+				return err
+			}
+		}
+
+		now := time.Now().UTC()
+		inv.LastComputedAt = &now
+
+		return s.InvoiceRepo.Update(txCtx, inv)
+	})
+	return skipped, err
 }
 
 // getInvoiceWithLineItems fetches an invoice and populates its LineItems from the dedicated repo.
@@ -683,25 +808,109 @@ func (s *invoiceService) FinalizeInvoice(ctx context.Context, id string) error {
 }
 
 func (s *invoiceService) performFinalizeInvoiceActions(ctx context.Context, inv *invoice.Invoice) error {
+	if inv.InvoiceStatus == types.InvoiceStatusSkipped {
+		// No-op: skipped invoices are not finalized
+		return nil
+	}
 	if inv.InvoiceStatus != types.InvoiceStatusDraft {
 		return ierr.NewError("invoice is not in draft status").WithHint("invoice must be in draft status to be finalized").Mark(ierr.ErrValidation)
 	}
 
-	if inv.Total.IsZero() {
-		inv.PaymentStatus = types.PaymentStatusSucceeded
-	}
+	err := s.DB.WithTx(ctx, func(txCtx context.Context) error {
+		// Lock invoice to prevent concurrent finalization
+		lockedInv, err := s.InvoiceRepo.GetForUpdate(txCtx, inv.ID)
+		if err != nil {
+			return err
+		}
+		// Re-check status after acquiring lock
+		if lockedInv.InvoiceStatus != types.InvoiceStatusDraft {
+			return ierr.NewError("invoice is not in draft status").WithHint("invoice was finalized concurrently").Mark(ierr.ErrValidation)
+		}
 
-	now := time.Now().UTC()
-	inv.InvoiceStatus = types.InvoiceStatusFinalized
-	inv.FinalizedAt = &now
+		// Assign invoice number if not already assigned (idempotent)
+		if lockedInv.InvoiceNumber == nil || *lockedInv.InvoiceNumber == "" {
+			settingsSvc := NewSettingsService(s.ServiceParams).(*settingsService)
+			invoiceConfig, err := GetSetting[types.InvoiceConfig](settingsSvc, txCtx, types.SettingKeyInvoiceConfig)
+			if err != nil {
+				return ierr.WithError(err).WithHint("Failed to get invoice configuration").Mark(ierr.ErrValidation)
+			}
+			invoiceNumber, err := s.InvoiceRepo.GetNextInvoiceNumber(txCtx, &invoiceConfig)
+			if err != nil {
+				return err
+			}
+			lockedInv.InvoiceNumber = &invoiceNumber
+		}
 
-	if err := s.InvoiceRepo.Update(ctx, inv); err != nil {
+		if lockedInv.Total.IsZero() {
+			lockedInv.PaymentStatus = types.PaymentStatusSucceeded
+		}
+
+		now := time.Now().UTC()
+		lockedInv.InvoiceStatus = types.InvoiceStatusFinalized
+		lockedInv.FinalizedAt = &now
+
+		if err := s.InvoiceRepo.Update(txCtx, lockedInv); err != nil {
+			return err
+		}
+
+		// Update the caller's reference so downstream code sees the finalized state
+		*inv = *lockedInv
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
 	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceUpdateFinalized, inv.ID)
 
 	return nil
+}
+
+// IsFinalizationDue checks whether a draft invoice's finalization delay has elapsed.
+// Returns true if the invoice should be finalized now (delay elapsed or no delay configured).
+// Returns false if the invoice is not a draft or the delay has not yet elapsed.
+func (s *invoiceService) IsFinalizationDue(ctx context.Context, invoiceID string) (bool, error) {
+	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
+	if err != nil {
+		return false, err
+	}
+
+	if inv.InvoiceStatus != types.InvoiceStatusDraft {
+		return false, nil
+	}
+
+	// Only finalize invoices that have been computed (LastComputedAt set by ComputeInvoice)
+	if inv.LastComputedAt == nil {
+		return false, nil
+	}
+
+	settingsSvc := NewSettingsService(s.ServiceParams).(*settingsService)
+	invoiceConfig, err := GetSetting[types.InvoiceConfig](settingsSvc, ctx, types.SettingKeyInvoiceConfig)
+	if err != nil {
+		// Fail-closed: if we can't load config, don't finalize — the cron will retry next cycle
+		return false, ierr.WithError(err).WithHint("failed to load invoice config for finalization check").Mark(ierr.ErrDatabase)
+	}
+
+	if invoiceConfig.FinalizationDelaySeconds == 0 {
+		return true, nil
+	}
+
+	dueAt := inv.CreatedAt.Add(time.Duration(invoiceConfig.FinalizationDelaySeconds) * time.Second)
+	return time.Now().UTC().After(dueAt), nil
+}
+
+// ListAllTenantDraftInvoices returns draft invoices across all tenants with LastComputedAt set.
+// Used by the scheduled finalization job to find invoices ready for finalization.
+func (s *invoiceService) ListAllTenantDraftInvoices(ctx context.Context, batchSize, offset int) ([]*invoice.Invoice, error) {
+	filter := &types.InvoiceFilter{
+		QueryFilter: &types.QueryFilter{
+			Limit:  lo.ToPtr(batchSize),
+			Offset: lo.ToPtr(offset),
+			Status: lo.ToPtr(types.StatusPublished),
+		},
+		InvoiceStatus: []types.InvoiceStatus{types.InvoiceStatusDraft},
+	}
+	return s.InvoiceRepo.ListAllTenant(ctx, filter)
 }
 
 // updateMetadata merges the request metadata with the existing invoice metadata.
@@ -742,6 +951,7 @@ func (s *invoiceService) VoidInvoice(ctx context.Context, id string, req dto.Inv
 	allowedInvoiceStatuses := []types.InvoiceStatus{
 		types.InvoiceStatusDraft,
 		types.InvoiceStatusFinalized,
+		types.InvoiceStatusSkipped,
 	}
 	if !lo.Contains(allowedInvoiceStatuses, inv.InvoiceStatus) {
 		return ierr.NewError("invoice status is not allowed").
@@ -843,6 +1053,10 @@ func (s *invoiceService) ProcessDraftInvoice(ctx context.Context, id string, pay
 
 	if inv.InvoiceStatus != types.InvoiceStatusDraft {
 		return ierr.NewError("invoice is not in draft status").WithHint("invoice must be in draft status to be processed").Mark(ierr.ErrValidation)
+	}
+
+	if inv.LastComputedAt == nil {
+		return ierr.NewError("invoice has not been computed").WithHint("Invoice must be computed before processing").Mark(ierr.ErrValidation)
 	}
 
 	// try to finalize the invoice
@@ -1719,8 +1933,6 @@ func (s *invoiceService) CreateSubscriptionInvoice(ctx context.Context, req *dto
 		return nil, nil, err
 	}
 
-	billingService := NewBillingService(s.ServiceParams)
-
 	// Get subscription with line items
 	subscription, _, err := s.SubRepo.GetWithLineItems(ctx, req.SubscriptionID)
 	if err != nil {
@@ -1738,37 +1950,33 @@ func (s *invoiceService) CreateSubscriptionInvoice(ctx context.Context, req *dto
 			Mark(ierr.ErrValidation)
 	}
 
-	// Prepare invoice request using billing service
-	invoiceReq, err := billingService.PrepareSubscriptionInvoiceRequest(ctx,
-		subscription,
-		req.PeriodStart,
-		req.PeriodEnd,
-		req.ReferencePoint,
-	)
+	// Draft-first: create zero-dollar draft (idempotent; returns existing if same period)
+	draft, err := s.CreateDraftInvoiceForSubscription(ctx, req.SubscriptionID, req.PeriodStart, req.PeriodEnd, req.ReferencePoint)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Check if the invoice is zeroAmountInvoice
-	if invoiceReq.Subtotal.IsZero() {
+	// Populate draft with usage and line items; if zero-dollar, marked SKIPPED
+	// Pass nil for subscription invoices - coupons/taxes come from billing service
+	skipped, err := s.ComputeInvoice(ctx, draft.ID, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	if skipped {
 		return nil, subscription, nil
 	}
 
-	s.Logger.InfowCtx(ctx, "prepared invoice request for subscription",
-		"invoice_request", invoiceReq)
+	// Process: finalize, sync, attempt payment
+	if err := s.ProcessDraftInvoice(ctx, draft.ID, paymentParams, subscription, flowType); err != nil {
+		return nil, nil, err
+	}
 
-	// Create the invoice
-	inv, err := s.CreateInvoice(ctx, *invoiceReq)
+	// Return populated invoice (re-fetch for final state)
+	inv, err := s.InvoiceRepo.Get(ctx, draft.ID)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	// Process the invoice with payment behavior, passing subscription to avoid extra DB call
-	if err := s.ProcessDraftInvoice(ctx, inv.ID, paymentParams, subscription, flowType); err != nil {
-		return nil, nil, err
-	}
-
-	return inv, subscription, nil
+	return dto.NewInvoiceResponse(inv), subscription, nil
 }
 
 func (s *invoiceService) GetPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error) {
@@ -1918,10 +2126,15 @@ func (s *invoiceService) GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.
 	unpaidFixedCharges := decimal.Zero
 	totalInvoiceAmountPaid := decimal.Zero
 
+	// Include both Draft and Finalized invoices. With the draft-first flow and
+	// finalization delay, computed drafts already have committed charges (credits applied,
+	// line items populated). Excluding them would overstate the wallet's available balance.
+	// Empty/uncomputed drafts are harmless — they have zero AmountRemaining and are
+	// skipped by the AmountRemaining.IsZero() check below.
 	filter := types.NewNoLimitInvoiceFilter()
 	filter.QueryFilter.Status = lo.ToPtr(types.StatusPublished)
 	filter.CustomerID = req.CustomerID
-	filter.InvoiceStatus = []types.InvoiceStatus{types.InvoiceStatusFinalized}
+	filter.InvoiceStatus = []types.InvoiceStatus{types.InvoiceStatusDraft, types.InvoiceStatusFinalized}
 
 	invoicesResp, err := s.ListInvoices(ctx, filter)
 	if err != nil {
@@ -2068,6 +2281,9 @@ func (s *invoiceService) AttemptPayment(ctx context.Context, id string) error {
 	inv, err := s.InvoiceRepo.Get(ctx, id)
 	if err != nil {
 		return err
+	}
+	if inv.InvoiceStatus == types.InvoiceStatusSkipped {
+		return nil // No-op for zero-dollar skipped invoices
 	}
 
 	// Use the new payment function with nil parameters to use subscription defaults
@@ -2865,9 +3081,8 @@ func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, fi
 		}
 
 		// STEP 6b: Apply credits and coupons (same order as CreateInvoice: coupons first, then credit adjustment)
-		newInvoiceReq.SubscriptionID = inv.SubscriptionID
-		newInvoiceReq.CustomerID = inv.CustomerID
-		if err := s.applyCreditsAndCouponsToInvoice(txCtx, inv, lo.FromPtr(newInvoiceReq)); err != nil {
+		computeReq := newInvoiceReq.ToComputeRequest()
+		if err := s.applyCreditsAndCouponsToInvoice(txCtx, inv, computeReq); err != nil {
 			return err
 		}
 		if err := s.InvoiceRepo.Update(txCtx, inv); err != nil {
@@ -3018,12 +3233,9 @@ func (s *invoiceService) RecalculateTaxesOnInvoice(ctx context.Context, inv *inv
 		return nil
 	}
 
-	// Create a minimal request with subscription ID for tax preparation
-	// This follows the principle of passing only what's needed
-	req := dto.CreateInvoiceRequest{
-		SubscriptionID: inv.SubscriptionID,
-		CustomerID:     inv.CustomerID,
-	}
+	// Create a minimal request for tax preparation
+	// applyTaxesToInvoice gets subscription ID and customer ID from the invoice itself
+	req := dto.InvoiceComputeRequest{}
 
 	// Apply taxes to invoice
 	if err := s.applyTaxesToInvoice(ctx, inv, req); err != nil {
@@ -3046,16 +3258,20 @@ func (s *invoiceService) RecalculateTaxesOnInvoice(ctx context.Context, inv *inv
 // applyTaxesToInvoice applies taxes to an invoice.
 // For one-off invoices, uses prepared tax rates from req.PreparedTaxRates.
 // For subscription invoices, prepares tax rates from subscription associations.
-func (s *invoiceService) applyTaxesToInvoice(ctx context.Context, inv *invoice.Invoice, req dto.CreateInvoiceRequest) error {
+func (s *invoiceService) applyTaxesToInvoice(ctx context.Context, inv *invoice.Invoice, req dto.InvoiceComputeRequest) error {
 	taxService := NewTaxService(s.ServiceParams)
 	var taxRates []*dto.TaxRateResponse
 
 	if len(req.PreparedTaxRates) > 0 {
-		// Use prepared tax rates (from one-off invoices)
+		// Use prepared tax rates (from one-off invoices or billing service)
 		taxRates = req.PreparedTaxRates
 	} else if inv.SubscriptionID != nil {
 		// Prepare tax rates for subscription invoices
-		preparedTaxRates, err := taxService.PrepareTaxRatesForInvoice(ctx, req)
+		taxPrepareReq := dto.CreateInvoiceRequest{
+			SubscriptionID: inv.SubscriptionID,
+			CustomerID:     inv.CustomerID,
+		}
+		preparedTaxRates, err := taxService.PrepareTaxRatesForInvoice(ctx, taxPrepareReq)
 		if err != nil {
 			s.Logger.ErrorwCtx(ctx, "failed to prepare tax rates for invoice",
 				"error", err,
@@ -3839,6 +4055,13 @@ func (s *invoiceService) SyncInvoiceToExternalVendors(ctx context.Context, invoi
 	if err != nil {
 		return err
 	}
+	if invoice.InvoiceStatus == types.InvoiceStatusSkipped {
+		return nil // No-op for zero-dollar skipped invoices
+	}
+
+	if invoice.SubscriptionID == nil {
+		return nil // No subscription to sync for non-subscription invoices
+	}
 
 	sub, err := s.SubRepo.Get(ctx, *invoice.SubscriptionID)
 	if err != nil {
@@ -3892,7 +4115,7 @@ func (s *invoiceService) SyncInvoiceToExternalVendors(ctx context.Context, invoi
 }
 
 // applyCreditsAndCouponsToInvoice applies wallet credits and coupons to invoice, updating totals once
-func (s *invoiceService) applyCreditsAndCouponsToInvoice(ctx context.Context, inv *invoice.Invoice, req dto.CreateInvoiceRequest) error {
+func (s *invoiceService) applyCreditsAndCouponsToInvoice(ctx context.Context, inv *invoice.Invoice, req dto.InvoiceComputeRequest) error {
 	s.Logger.DebugwCtx(ctx, "applying credit adjustments and coupons to invoice",
 		"invoice_id", inv.ID,
 		"customer_id", inv.CustomerID,

@@ -133,6 +133,8 @@ const (
 	InvoiceStatusFinalized InvoiceStatus = "FINALIZED"
 	// InvoiceStatusVoided indicates invoice has been voided and is no longer valid for payment
 	InvoiceStatusVoided InvoiceStatus = "VOIDED"
+	// InvoiceStatusSkipped indicates a zero-dollar draft; no invoice number, no finalization, no vendor sync, no payment
+	InvoiceStatusSkipped InvoiceStatus = "SKIPPED"
 )
 
 func (s InvoiceStatus) String() string {
@@ -144,6 +146,7 @@ func (s InvoiceStatus) Validate() error {
 		InvoiceStatusDraft,
 		InvoiceStatusFinalized,
 		InvoiceStatusVoided,
+		InvoiceStatusSkipped,
 	}
 
 	if s != "" && !lo.Contains(allowed, s) {
@@ -265,6 +268,7 @@ type InvoiceConfig struct {
 	InvoiceNumberSuffixLength              int                 `json:"suffix_length,omitempty" validate:"required,min=1,max=10"`
 	DueDateDays                            *int                `json:"due_date_days,omitempty" validate:"omitempty,min=0"` // Number of days after period end when payment is due
 	AutoCompletePurchasedCreditTransaction bool                `json:"auto_complete_purchased_credit_transaction,omitempty"`
+	FinalizationDelaySeconds               int                 `json:"finalization_delay_seconds,omitempty" validate:"omitempty,min=0"` // Seconds to wait after invoice creation before finalization. 0 = immediate.
 }
 
 // Validate implements SettingConfig interface
