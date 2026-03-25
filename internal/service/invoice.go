@@ -379,7 +379,7 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 					}).
 					Mark(ierr.ErrValidation)
 			}
-			sub, _, err := s.SubRepo.GetWithLineItems(txCtx, *inv.SubscriptionID)
+			sub, err := s.SubRepo.Get(txCtx, *inv.SubscriptionID)
 			if err != nil {
 				return err
 			}
@@ -401,12 +401,9 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 
 		// Populate invoice from the computed request (uniform for all invoice types)
 		if applyReq != nil {
-			// Build new line items with deterministic IDs
 			lineItemDomains := make([]*invoice.InvoiceLineItem, 0, len(applyReq.LineItems))
-			for i, item := range applyReq.LineItems {
-				li := item.ToInvoiceLineItem(txCtx, inv)
-				li.ID = fmt.Sprintf("%s-li-%d", inv.ID, i)
-				lineItemDomains = append(lineItemDomains, li)
+			for _, item := range applyReq.LineItems {
+				lineItemDomains = append(lineItemDomains, item.ToInvoiceLineItem(txCtx, inv))
 			}
 
 			// Always replace line items on re-compute: remove old, insert new.
@@ -453,7 +450,6 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 				return err
 			}
 		}
-
 
 		now := time.Now().UTC()
 		inv.LastComputedAt = &now
