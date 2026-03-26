@@ -2869,6 +2869,109 @@ func (s *BillingServiceSuite) TestCalculateFeatureUsageCharges_MatchesActiveLine
 	s.True(totalAmount.GreaterThan(decimal.Zero), "Total should be positive")
 }
 
+func (s *BillingServiceSuite) TestCalculateFeatureUsageCharges_WindowedTrueUp_UsesElapsedTimeOnly() {
+	ctx := s.GetContext()
+	s.setupTestData()
+
+	now := time.Now().UTC()
+	periodStart := now.Add(-48 * time.Hour)
+	periodEnd := now.Add(72 * time.Hour)
+
+	windowedMeter := &meter.Meter{
+		ID:        "meter_windowed_sum_day",
+		Name:      "Windowed Sum Day",
+		EventName: "windowed_sum_day",
+		Aggregation: meter.Aggregation{
+			Type:       types.AggregationSum,
+			Field:      "units",
+			BucketSize: types.WindowSizeDay,
+		},
+		BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().MeterRepo.CreateMeter(ctx, windowedMeter))
+
+	commitmentQty := decimal.NewFromInt(1)
+	overageFactor := decimal.NewFromInt(2)
+	windowedLineItem := &subscription.SubscriptionLineItem{
+		ID:                     "sub_li_windowed_trueup_elapsed",
+		SubscriptionID:         s.testData.subscription.ID,
+		CustomerID:             s.testData.subscription.CustomerID,
+		EntityID:               s.testData.plan.ID,
+		EntityType:             types.SubscriptionLineItemEntityTypePlan,
+		PlanDisplayName:        s.testData.plan.Name,
+		PriceID:                s.testData.prices.apiCalls.ID,
+		PriceType:              types.PRICE_TYPE_USAGE,
+		MeterID:                windowedMeter.ID,
+		MeterDisplayName:       windowedMeter.Name,
+		DisplayName:            "Windowed Commitment Usage",
+		Quantity:               decimal.Zero,
+		Currency:               s.testData.subscription.Currency,
+		BillingPeriod:          s.testData.subscription.BillingPeriod,
+		InvoiceCadence:         types.InvoiceCadenceArrear,
+		StartDate:              s.testData.subscription.StartDate,
+		CommitmentType:         types.COMMITMENT_TYPE_QUANTITY,
+		CommitmentQuantity:     &commitmentQty,
+		CommitmentOverageFactor: &overageFactor,
+		CommitmentTrueUpEnabled: true,
+		CommitmentWindowed:      true,
+		BaseModel:               types.GetDefaultBaseModel(ctx),
+	}
+
+	subCopy := *s.testData.subscription
+	subCopy.CurrentPeriodStart = periodStart
+	subCopy.CurrentPeriodEnd = periodEnd
+	subCopy.LineItems = []*subscription.SubscriptionLineItem{windowedLineItem}
+
+	usage := &dto.GetUsageBySubscriptionResponse{
+		StartTime: periodStart,
+		EndTime:   periodEnd,
+		Currency:  subCopy.Currency,
+		Charges: []*dto.SubscriptionUsageByMetersResponse{
+			{
+				SubscriptionLineItemID: windowedLineItem.ID,
+				Price:                  s.testData.prices.apiCalls,
+				Quantity:               0,
+				Amount:                 0,
+				IsOverage:              false,
+			},
+		},
+	}
+
+	lineItems, totalAmount, err := s.service.CalculateFeatureUsageCharges(
+		ctx,
+		&subCopy,
+		usage,
+		periodStart,
+		periodEnd,
+		nil,
+	)
+	s.NoError(err)
+	s.Len(lineItems, 1)
+
+	lineStart := windowedLineItem.GetPeriodStart(periodStart)
+	lineEnd := windowedLineItem.GetPeriodEnd(periodEnd)
+	effectiveEnd := now.In(lineStart.Location())
+	if effectiveEnd.Before(lineStart) {
+		effectiveEnd = lineStart
+	}
+	if effectiveEnd.After(lineEnd) {
+		effectiveEnd = lineEnd
+	}
+
+	elapsedBuckets := generateBucketStarts(lineStart, effectiveEnd, windowedMeter.Aggregation.BucketSize, &subCopy.BillingAnchor)
+	fullPeriodBuckets := generateBucketStarts(lineStart, lineEnd, windowedMeter.Aggregation.BucketSize, &subCopy.BillingAnchor)
+	s.Less(len(elapsedBuckets), len(fullPeriodBuckets), "test setup requires in-progress period with future buckets")
+
+	priceService := NewPriceService(s.service.(*billingService).ServiceParams)
+	perWindowCommitment := priceService.CalculateCost(ctx, s.testData.prices.apiCalls, commitmentQty)
+	expectedTotal := perWindowCommitment.Mul(decimal.NewFromInt(int64(len(elapsedBuckets))))
+	fullPeriodTotal := perWindowCommitment.Mul(decimal.NewFromInt(int64(len(fullPeriodBuckets))))
+
+	s.True(totalAmount.Equal(expectedTotal), "expected elapsed-window true-up %s, got %s", expectedTotal, totalAmount)
+	s.True(lineItems[0].Amount.Equal(expectedTotal), "line item amount should match elapsed-window commitment total")
+	s.True(totalAmount.LessThan(fullPeriodTotal), "amount should not project full-period commitment")
+}
+
 func (s *BillingServiceSuite) TestCalculateFeatureUsageCharges_CumulativeCommitment() {
 	// Monthly subscription with annual commitment ($60), overage factor 2x
 	ctx := s.GetContext()
