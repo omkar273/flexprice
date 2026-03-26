@@ -116,3 +116,4 @@ CLAUDE.m
 api/tests/python/.venv/
 
 vendor/
+.claude/settings.json
