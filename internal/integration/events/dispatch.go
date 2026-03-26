@@ -2,24 +2,25 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/domain/connection"
 	"github.com/flexprice/flexprice/internal/logger"
-	temporalservice "github.com/flexprice/flexprice/internal/temporal/service"
 	temporalmodels "github.com/flexprice/flexprice/internal/temporal/models"
+	temporalservice "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/types"
 )
 
 // InvoiceVendorSyncInput is the minimal data needed to fan out invoice sync workflows.
 type InvoiceVendorSyncInput struct {
-	TenantID           string
-	EnvironmentID      string
-	UserID             string
-	InvoiceID          string
-	CustomerID         string
-	CollectionMethod   string
+	TenantID         string
+	EnvironmentID    string
+	UserID           string
+	InvoiceID        string
+	CustomerID       string
+	CollectionMethod string
 }
 
 // DispatchInvoiceVendorSync starts Temporal invoice-sync workflows for each enabled provider.
@@ -51,14 +52,25 @@ func DispatchInvoiceVendorSync(
 		"environment_id", in.EnvironmentID,
 	)
 
-	triggerStripeIfEnabled(ctx, connRepo, temporalSvc, log, in)
-	triggerRazorpayIfEnabled(ctx, connRepo, temporalSvc, log, in)
-	triggerChargebeeIfEnabled(ctx, connRepo, temporalSvc, log, in)
-	triggerQuickBooksIfEnabled(ctx, connRepo, temporalSvc, log, in)
-	triggerHubSpotIfEnabled(ctx, connRepo, temporalSvc, log, in)
-	triggerMoyasarIfEnabled(ctx, connRepo, temporalSvc, log, in)
-	triggerNomodIfEnabled(ctx, connRepo, temporalSvc, log, in)
-	triggerPaddleIfEnabled(ctx, connRepo, temporalSvc, log, in)
+	var dispatchErrs []error
+	for _, trigger := range []func() error{
+		func() error { return triggerStripeIfEnabled(ctx, connRepo, temporalSvc, log, in) },
+		func() error { return triggerRazorpayIfEnabled(ctx, connRepo, temporalSvc, log, in) },
+		func() error { return triggerChargebeeIfEnabled(ctx, connRepo, temporalSvc, log, in) },
+		func() error { return triggerQuickBooksIfEnabled(ctx, connRepo, temporalSvc, log, in) },
+		func() error { return triggerHubSpotIfEnabled(ctx, connRepo, temporalSvc, log, in) },
+		func() error { return triggerMoyasarIfEnabled(ctx, connRepo, temporalSvc, log, in) },
+		func() error { return triggerNomodIfEnabled(ctx, connRepo, temporalSvc, log, in) },
+		func() error { return triggerPaddleIfEnabled(ctx, connRepo, temporalSvc, log, in) },
+	} {
+		if err := trigger(); err != nil {
+			dispatchErrs = append(dispatchErrs, err)
+		}
+	}
+
+	if len(dispatchErrs) > 0 {
+		return fmt.Errorf("integration_events: one or more provider dispatches failed for invoice %s: %w", in.InvoiceID, errors.Join(dispatchErrs...))
+	}
 
 	return nil
 }
@@ -69,9 +81,9 @@ func executeWorkflow(
 	log *logger.Logger,
 	workflowType types.TemporalWorkflowType,
 	input interface{},
-	provider string,
+	provider types.SecretProvider,
 	invoiceID string,
-) {
+) error {
 	workflowRun, err := temporalSvc.ExecuteWorkflow(ctx, workflowType, input)
 	if err != nil {
 		log.Errorw("integration_events: failed to start workflow",
@@ -80,7 +92,7 @@ func executeWorkflow(
 			"invoice_id", invoiceID,
 			"error", err,
 		)
-		return
+		return fmt.Errorf("provider %s workflow start failed: %w", provider, err)
 	}
 
 	log.Infow("integration_events: workflow started",
@@ -90,6 +102,7 @@ func executeWorkflow(
 		"workflow_id", workflowRun.GetID(),
 		"run_id", workflowRun.GetRunID(),
 	)
+	return nil
 }
 
 func triggerStripeIfEnabled(
@@ -98,13 +111,16 @@ func triggerStripeIfEnabled(
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
 	in InvoiceVendorSyncInput,
-) {
+) error {
 	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderStripe)
-	if err != nil || conn == nil {
-		return
+	if err != nil {
+		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderStripe, err)
+	}
+	if conn == nil {
+		return nil
 	}
 	if !conn.IsInvoiceOutboundEnabled() {
-		return
+		return nil
 	}
 
 	input := &temporalmodels.StripeInvoiceSyncWorkflowInput{
@@ -114,7 +130,7 @@ func triggerStripeIfEnabled(
 		TenantID:         in.TenantID,
 		EnvironmentID:    in.EnvironmentID,
 	}
-	executeWorkflow(ctx, temporalSvc, log, types.TemporalStripeInvoiceSyncWorkflow, input, "stripe", in.InvoiceID)
+	return executeWorkflow(ctx, temporalSvc, log, types.TemporalStripeInvoiceSyncWorkflow, input, types.SecretProviderStripe, in.InvoiceID)
 }
 
 func triggerRazorpayIfEnabled(
@@ -123,13 +139,16 @@ func triggerRazorpayIfEnabled(
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
 	in InvoiceVendorSyncInput,
-) {
+) error {
 	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderRazorpay)
-	if err != nil || conn == nil {
-		return
+	if err != nil {
+		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderRazorpay, err)
+	}
+	if conn == nil {
+		return nil
 	}
 	if !conn.IsInvoiceOutboundEnabled() {
-		return
+		return nil
 	}
 
 	input := &temporalmodels.RazorpayInvoiceSyncWorkflowInput{
@@ -138,7 +157,7 @@ func triggerRazorpayIfEnabled(
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
-	executeWorkflow(ctx, temporalSvc, log, types.TemporalRazorpayInvoiceSyncWorkflow, input, "razorpay", in.InvoiceID)
+	return executeWorkflow(ctx, temporalSvc, log, types.TemporalRazorpayInvoiceSyncWorkflow, input, types.SecretProviderRazorpay, in.InvoiceID)
 }
 
 func triggerChargebeeIfEnabled(
@@ -147,13 +166,16 @@ func triggerChargebeeIfEnabled(
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
 	in InvoiceVendorSyncInput,
-) {
+) error {
 	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderChargebee)
-	if err != nil || conn == nil {
-		return
+	if err != nil {
+		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderChargebee, err)
+	}
+	if conn == nil {
+		return nil
 	}
 	if !conn.IsInvoiceOutboundEnabled() {
-		return
+		return nil
 	}
 
 	input := &temporalmodels.ChargebeeInvoiceSyncWorkflowInput{
@@ -162,7 +184,7 @@ func triggerChargebeeIfEnabled(
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
-	executeWorkflow(ctx, temporalSvc, log, types.TemporalChargebeeInvoiceSyncWorkflow, input, "chargebee", in.InvoiceID)
+	return executeWorkflow(ctx, temporalSvc, log, types.TemporalChargebeeInvoiceSyncWorkflow, input, types.SecretProviderChargebee, in.InvoiceID)
 }
 
 func triggerQuickBooksIfEnabled(
@@ -171,13 +193,16 @@ func triggerQuickBooksIfEnabled(
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
 	in InvoiceVendorSyncInput,
-) {
+) error {
 	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderQuickBooks)
-	if err != nil || conn == nil {
-		return
+	if err != nil {
+		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderQuickBooks, err)
+	}
+	if conn == nil {
+		return nil
 	}
 	if !conn.IsInvoiceOutboundEnabled() {
-		return
+		return nil
 	}
 
 	input := &temporalmodels.QuickBooksInvoiceSyncWorkflowInput{
@@ -186,7 +211,7 @@ func triggerQuickBooksIfEnabled(
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
-	executeWorkflow(ctx, temporalSvc, log, types.TemporalQuickBooksInvoiceSyncWorkflow, input, "quickbooks", in.InvoiceID)
+	return executeWorkflow(ctx, temporalSvc, log, types.TemporalQuickBooksInvoiceSyncWorkflow, input, types.SecretProviderQuickBooks, in.InvoiceID)
 }
 
 func triggerHubSpotIfEnabled(
@@ -195,13 +220,16 @@ func triggerHubSpotIfEnabled(
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
 	in InvoiceVendorSyncInput,
-) {
+) error {
 	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderHubSpot)
-	if err != nil || conn == nil {
-		return
+	if err != nil {
+		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderHubSpot, err)
+	}
+	if conn == nil {
+		return nil
 	}
 	if !conn.IsInvoiceOutboundEnabled() {
-		return
+		return nil
 	}
 
 	input := &temporalmodels.HubSpotInvoiceSyncWorkflowInput{
@@ -210,7 +238,7 @@ func triggerHubSpotIfEnabled(
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
-	executeWorkflow(ctx, temporalSvc, log, types.TemporalHubSpotInvoiceSyncWorkflow, input, "hubspot", in.InvoiceID)
+	return executeWorkflow(ctx, temporalSvc, log, types.TemporalHubSpotInvoiceSyncWorkflow, input, types.SecretProviderHubSpot, in.InvoiceID)
 }
 
 func triggerMoyasarIfEnabled(
@@ -219,13 +247,16 @@ func triggerMoyasarIfEnabled(
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
 	in InvoiceVendorSyncInput,
-) {
+) error {
 	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderMoyasar)
-	if err != nil || conn == nil {
-		return
+	if err != nil {
+		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderMoyasar, err)
+	}
+	if conn == nil {
+		return nil
 	}
 	if !conn.IsInvoiceOutboundEnabled() {
-		return
+		return nil
 	}
 
 	input := &temporalmodels.MoyasarInvoiceSyncWorkflowInput{
@@ -234,7 +265,7 @@ func triggerMoyasarIfEnabled(
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
-	executeWorkflow(ctx, temporalSvc, log, types.TemporalMoyasarInvoiceSyncWorkflow, input, "moyasar", in.InvoiceID)
+	return executeWorkflow(ctx, temporalSvc, log, types.TemporalMoyasarInvoiceSyncWorkflow, input, types.SecretProviderMoyasar, in.InvoiceID)
 }
 
 func triggerNomodIfEnabled(
@@ -243,13 +274,16 @@ func triggerNomodIfEnabled(
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
 	in InvoiceVendorSyncInput,
-) {
+) error {
 	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderNomod)
-	if err != nil || conn == nil {
-		return
+	if err != nil {
+		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderNomod, err)
+	}
+	if conn == nil {
+		return nil
 	}
 	if !conn.IsInvoiceOutboundEnabled() {
-		return
+		return nil
 	}
 
 	input := &temporalmodels.NomodInvoiceSyncWorkflowInput{
@@ -258,7 +292,7 @@ func triggerNomodIfEnabled(
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
-	executeWorkflow(ctx, temporalSvc, log, types.TemporalNomodInvoiceSyncWorkflow, input, "nomod", in.InvoiceID)
+	return executeWorkflow(ctx, temporalSvc, log, types.TemporalNomodInvoiceSyncWorkflow, input, types.SecretProviderNomod, in.InvoiceID)
 }
 
 func triggerPaddleIfEnabled(
@@ -267,13 +301,16 @@ func triggerPaddleIfEnabled(
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
 	in InvoiceVendorSyncInput,
-) {
+) error {
 	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderPaddle)
-	if err != nil || conn == nil {
-		return
+	if err != nil {
+		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderPaddle, err)
+	}
+	if conn == nil {
+		return nil
 	}
 	if !conn.IsInvoiceOutboundEnabled() {
-		return
+		return nil
 	}
 
 	input := &temporalmodels.PaddleInvoiceSyncWorkflowInput{
@@ -282,7 +319,7 @@ func triggerPaddleIfEnabled(
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
-	executeWorkflow(ctx, temporalSvc, log, types.TemporalPaddleInvoiceSyncWorkflow, input, "paddle", in.InvoiceID)
+	return executeWorkflow(ctx, temporalSvc, log, types.TemporalPaddleInvoiceSyncWorkflow, input, types.SecretProviderPaddle, in.InvoiceID)
 }
 
 var errTemporalUnavailable = fmt.Errorf("integration_events: temporal service not available")

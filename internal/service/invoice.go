@@ -880,7 +880,7 @@ func (s *invoiceService) SyncInvoiceToStripeIfEnabled(ctx context.Context, invoi
 			sub = storedSub
 		}
 	} else if sub.CollectionMethod == "" {
-		sub.CollectionMethod = string(types.CollectionMethodChargeAutomatically)
+		sub.CollectionMethod = string(types.CollectionMethodSendInvoice)
 	}
 
 	// Check if Stripe connection exists
@@ -1776,16 +1776,24 @@ func (s *invoiceService) attemptPaymentForSubscriptionInvoice(ctx context.Contex
 		}
 	}
 
-	// Check if invoice is synced to Stripe - if so, only allow payments through record payment API
+	// If Stripe outbound invoice sync is enabled for this tenant/environment,
+	// skip automatic payment and let Stripe/record-payment flows be the source of truth.
+	conn, connErr := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderStripe)
+	if connErr == nil && conn != nil && conn.IsInvoiceOutboundEnabled() {
+		s.Logger.InfowCtx(ctx, "stripe invoice sync enabled, skipping automatic payment processing",
+			"invoice_id", inv.ID,
+			"subscription_id", lo.FromPtr(inv.SubscriptionID),
+			"flow_type", flowType)
+		return nil
+	}
+
+	// Fallback guard: if mapping already exists in Stripe, also skip automatic payment.
 	stripeIntegration, err := s.IntegrationFactory.GetStripeIntegration(ctx)
 	if err == nil && stripeIntegration.InvoiceSyncSvc.IsInvoiceSyncedToStripe(ctx, inv.ID) {
 		s.Logger.InfowCtx(ctx, "invoice is synced to Stripe, skipping automatic payment processing",
 			"invoice_id", inv.ID,
 			"subscription_id", lo.FromPtr(inv.SubscriptionID),
 			"flow_type", flowType)
-
-		// For invoices synced to Stripe, payments should only be processed through the record payment API
-		// which handles payment links and card payments. Automatic payment processing is disabled.
 		return nil
 	}
 
