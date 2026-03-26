@@ -8,7 +8,6 @@ import (
 	"github.com/flexprice/flexprice/internal/service"
 	invoiceModels "github.com/flexprice/flexprice/internal/temporal/models/invoice"
 	temporalService "github.com/flexprice/flexprice/internal/temporal/service"
-	invoiceWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/invoice"
 	"github.com/flexprice/flexprice/internal/types"
 	"go.temporal.io/sdk/activity"
 )
@@ -267,7 +266,7 @@ func (s *InvoiceActivities) FinalizeDueDraftsActivity(
 			// Fire FinalizeDraftInvoiceWorkflow — same pattern as ScheduleBillingActivity
 			_, err = temporalSvc.ExecuteWorkflow(
 				invCtx,
-				invoiceWorkflows.WorkflowFinalizeDraftInvoice,
+				types.TemporalFinalizeDraftInvoiceWorkflow,
 				invoiceModels.ProcessInvoiceWorkflowInput{
 					InvoiceID:     inv.ID,
 					TenantID:      inv.TenantID,
