@@ -475,16 +475,13 @@ func (r *invoiceRepository) GetForUpdate(ctx context.Context, id string) (*domai
 			Mark(ierr.ErrNotFound)
 	}
 
-	// Load invoice with line items (same connection holds the lock)
+	// Load invoice (same connection holds the lock)
 	inv, err := client.Invoice.Query().
 		Where(
 			invoice.ID(id),
 			invoice.TenantID(tenantID),
 			invoice.EnvironmentID(environmentID),
 		).
-		WithLineItems(func(q *ent.InvoiceLineItemQuery) {
-			q.Where(invoicelineitem.Status(string(types.StatusPublished)))
-		}).
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -497,7 +494,17 @@ func (r *invoiceRepository) GetForUpdate(ctx context.Context, id string) (*domai
 		return nil, ierr.WithError(err).WithHint("getting invoice failed").Mark(ierr.ErrDatabase)
 	}
 
-	return domainInvoice.FromEnt(inv), nil
+	result := domainInvoice.FromEnt(inv)
+
+	// Fetch line items separately (consistent with Get pattern)
+	invLineitemRepo := NewInvoiceLineItemRepository(r.client, r.logger, r.cache)
+	items, err := invLineitemRepo.ListByInvoiceID(ctx, id)
+	if err != nil {
+		return nil, ierr.WithError(err).WithHint("failed to get invoice line items").Mark(ierr.ErrDatabase)
+	}
+	result.LineItems = items
+
+	return result, nil
 }
 
 func (r *invoiceRepository) Update(ctx context.Context, inv *domainInvoice.Invoice) error {
@@ -1050,6 +1057,10 @@ func (o InvoiceQueryOptions) applyEntityQueryOptions(_ context.Context, f *types
 	}
 	if len(f.InvoiceStatus) > 0 {
 		query = query.Where(invoice.InvoiceStatusIn(f.InvoiceStatus...))
+	} else {
+		// By default, exclude SKIPPED invoices from listings — they are zero-dollar
+		// drafts with no financial data. Callers that need them can filter explicitly.
+		query = query.Where(invoice.InvoiceStatusNEQ(types.InvoiceStatusSkipped))
 	}
 	if len(f.PaymentStatus) > 0 {
 		query = query.Where(invoice.PaymentStatusIn(f.PaymentStatus...))

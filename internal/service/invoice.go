@@ -2142,6 +2142,25 @@ func (s *invoiceService) GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.
 	}
 
 	for _, inv := range invoicesResp.Items {
+		// For uncomputed subscription drafts, compute inline to get accurate amounts.
+		// Without this, uncomputed drafts have zero AmountRemaining and would be skipped,
+		// understating pending charges and overstating available wallet balance.
+		if inv.InvoiceStatus == types.InvoiceStatusDraft && inv.LastComputedAt == nil {
+			_, computeErr := s.ComputeInvoice(ctx, inv.ID, nil)
+			if computeErr != nil {
+				s.Logger.ErrorwCtx(ctx, "failed to compute draft invoice for wallet balance",
+					"invoice_id", inv.ID, "error", computeErr)
+				continue
+			}
+			// Re-fetch to get computed amounts (use repo directly to avoid
+			// dependency on InvoiceLineItemRepo which may not be injected in tests)
+			computedInv, fetchErr := s.InvoiceRepo.Get(ctx, inv.ID)
+			if fetchErr != nil {
+				continue
+			}
+			inv = dto.NewInvoiceResponse(computedInv)
+		}
+
 		// filter by currency
 		if !types.IsMatchingCurrency(inv.Currency, req.Currency) {
 			continue
