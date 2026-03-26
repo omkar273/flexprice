@@ -9,6 +9,7 @@ type ScheduledTaskInterval string
 
 const (
 	ScheduledTaskIntervalEvery15Minutes ScheduledTaskInterval = "15MIN"
+	ScheduledTaskIntervalEvery30Minutes ScheduledTaskInterval = "30MIN"
 	ScheduledTaskIntervalCustom         ScheduledTaskInterval = "custom" // 10 minutes for testing
 	ScheduledTaskIntervalHourly         ScheduledTaskInterval = "hourly"
 	ScheduledTaskIntervalDaily          ScheduledTaskInterval = "daily"

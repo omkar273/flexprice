@@ -1951,7 +1951,14 @@ func (s *invoiceService) CreateSubscriptionInvoice(ctx context.Context, req *dto
 	}
 
 	// Draft-first: create zero-dollar draft (idempotent; returns existing if same period)
-	draft, err := s.CreateDraftInvoiceForSubscription(ctx, req.SubscriptionID, req.PeriodStart, req.PeriodEnd, req.ReferencePoint)
+	// Use ToDraftRequest to build from pre-fetched subscription, avoiding redundant DB fetch
+	draftReq := req.ToDraftRequest(
+		subscription.GetInvoicingCustomerID(),
+		subscription.ID,
+		subscription.Currency,
+		string(subscription.BillingPeriod),
+	)
+	draft, err := s.CreateEmptyDraftInvoice(ctx, draftReq)
 	if err != nil {
 		return nil, nil, err
 	}
