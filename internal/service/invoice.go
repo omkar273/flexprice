@@ -18,13 +18,12 @@ import (
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/idempotency"
 	"github.com/flexprice/flexprice/internal/integration/chargebee"
+	integrationevents "github.com/flexprice/flexprice/internal/integration/events"
 	"github.com/flexprice/flexprice/internal/integration/quickbooks"
 	"github.com/flexprice/flexprice/internal/integration/razorpay"
 	"github.com/flexprice/flexprice/internal/integration/stripe"
 	"github.com/flexprice/flexprice/internal/interfaces"
 	"github.com/flexprice/flexprice/internal/s3"
-	"github.com/flexprice/flexprice/internal/temporal/models"
-	temporalservice "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
@@ -334,7 +333,8 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 		eventName = types.WebhookEventInvoiceUpdateFinalized
 	}
 
-	s.publishInternalWebhookEvent(ctx, eventName, resp.ID)
+	s.publishSystemEvent(ctx, eventName, resp.ID)
+
 	return resp, nil
 }
 
@@ -669,7 +669,11 @@ func (s *invoiceService) FinalizeInvoice(ctx context.Context, id string) error {
 		return err
 	}
 
-	return s.performFinalizeInvoiceActions(ctx, inv)
+	if err := s.performFinalizeInvoiceActions(ctx, inv); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *invoiceService) performFinalizeInvoiceActions(ctx context.Context, inv *invoice.Invoice) error {
@@ -689,7 +693,7 @@ func (s *invoiceService) performFinalizeInvoiceActions(ctx context.Context, inv 
 		return err
 	}
 
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceUpdateFinalized, inv.ID)
+	s.publishSystemEvent(ctx, types.WebhookEventInvoiceUpdateFinalized, inv.ID)
 
 	return nil
 }
@@ -821,7 +825,7 @@ func (s *invoiceService) VoidInvoice(ctx context.Context, id string, req dto.Inv
 		return err
 	}
 
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceUpdateVoided, inv.ID)
+	s.publishSystemEvent(ctx, types.WebhookEventInvoiceUpdateVoided, inv.ID)
 	return nil
 }
 
@@ -840,43 +844,8 @@ func (s *invoiceService) ProcessDraftInvoice(ctx context.Context, id string, pay
 		return err
 	}
 
-	stripeSyncTriggered := false
-
-	// Sync to Stripe if Stripe connection is enabled and invoice is for subscription
-	if sub != nil {
-		stripeSyncTriggered = s.triggerStripeInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID, sub.CollectionMethod)
-	}
-
-	// Sync to Razorpay if Razorpay connection is enabled (async via Temporal)
-	s.triggerRazorpayInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
-
-	// Sync to Moyasar if Moyasar connection is enabled (async via Temporal)
-	s.triggerMoyasarInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
-
-	// Sync to HubSpot if HubSpot connection is enabled (async via Temporal)
-	s.triggerHubSpotInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
-
-	// Sync to Chargebee if Chargebee connection is enabled (async via Temporal)
-	s.triggerChargebeeInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
-
-	// Sync to QuickBooks if QuickBooks connection is enabled (async via Temporal)
-	s.triggerQuickBooksInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
-
-	// Sync to Nomod if Nomod connection is enabled (async via Temporal)
-	s.triggerNomodInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
-
-	// Sync to Paddle if Paddle connection is enabled (async via Temporal)
-	s.triggerPaddleInvoiceSyncWorkflow(ctx, inv.ID, inv.CustomerID)
-
-	// Preserve Stripe behavior: if Stripe sync is delegated to Temporal, skip immediate payment attempt.
-	// Payment remains handled through external provider flows and record-payment APIs.
-	if stripeSyncTriggered {
-		s.Logger.InfowCtx(ctx, "Stripe sync workflow triggered, skipping immediate automatic payment attempt",
-			"invoice_id", inv.ID,
-			"subscription_id", lo.FromPtr(inv.SubscriptionID),
-			"flow_type", flowType)
-		return nil
-	}
+	// Integration invoice sync is triggered by the shared system event
+	// invoice.update.finalized (published from performFinalizeInvoiceActions).
 
 	// try to process payment for the invoice based on behavior and log any errors
 	// Pass the subscription object to avoid extra DB call
@@ -889,59 +858,31 @@ func (s *invoiceService) ProcessDraftInvoice(ctx context.Context, id string, pay
 	return nil
 }
 
-// syncInvoiceToStripeIfEnabled syncs the invoice to Stripe if Stripe connection is enabled
+// SyncInvoiceToStripeIfEnabled syncs the invoice to Stripe if Stripe connection is enabled.
 func (s *invoiceService) SyncInvoiceToStripeIfEnabled(ctx context.Context, invoiceID string, collectionMethod string) error {
 	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
 	if err != nil {
 		return err
 	}
-	if inv.SubscriptionID == nil {
-		s.Logger.DebugwCtx(ctx, "invoice has no subscription, skipping Stripe invoice sync",
-			"invoice_id", invoiceID)
-		return nil
-	}
 
+	// Keep Stripe sync working for both subscription and non-subscription invoices.
+	// For invoices without subscription context, default to send_invoice.
 	sub := &subscription.Subscription{
-		ID:               *inv.SubscriptionID,
 		CollectionMethod: collectionMethod,
 	}
-	if sub.CollectionMethod == "" {
-		storedSub, err := s.SubRepo.Get(ctx, *inv.SubscriptionID)
-		if err != nil {
-			return err
+	if inv.SubscriptionID != nil {
+		sub.ID = *inv.SubscriptionID
+		if sub.CollectionMethod == "" {
+			storedSub, err := s.SubRepo.Get(ctx, *inv.SubscriptionID)
+			if err != nil {
+				return err
+			}
+			sub = storedSub
 		}
-		sub = storedSub
+	} else if sub.CollectionMethod == "" {
+		sub.CollectionMethod = string(types.CollectionMethodChargeAutomatically)
 	}
 
-	return s.syncInvoiceToStripeIfEnabled(ctx, inv, sub, nil)
-}
-
-func (s *invoiceService) SyncInvoiceToRazorpayIfEnabled(ctx context.Context, invoiceID string) error {
-	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
-	if err != nil {
-		return err
-	}
-	return s.syncInvoiceToRazorpayIfEnabled(ctx, inv)
-}
-
-func (s *invoiceService) SyncInvoiceToChargebeeIfEnabled(ctx context.Context, invoiceID string) error {
-	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
-	if err != nil {
-		return err
-	}
-	return s.syncInvoiceToChargebeeIfEnabled(ctx, inv)
-}
-
-func (s *invoiceService) SyncInvoiceToQuickBooksIfEnabled(ctx context.Context, invoiceID string) error {
-	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
-	if err != nil {
-		return err
-	}
-	return s.syncInvoiceToQuickBooksIfEnabled(ctx, inv)
-}
-
-// syncInvoiceToStripeIfEnabled syncs the invoice to Stripe if Stripe connection is enabled
-func (s *invoiceService) syncInvoiceToStripeIfEnabled(ctx context.Context, inv *invoice.Invoice, sub *subscription.Subscription, paymentParams *dto.PaymentParameters) error {
 	// Check if Stripe connection exists
 	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderStripe)
 	if err != nil || conn == nil {
@@ -990,12 +931,12 @@ func (s *invoiceService) syncInvoiceToStripeIfEnabled(ctx context.Context, inv *
 		"collection_method", sub.CollectionMethod)
 
 	// Determine collection method from subscription
-	collectionMethod := types.CollectionMethod(sub.CollectionMethod)
+	stripeCollectionMethod := types.CollectionMethod(sub.CollectionMethod)
 
 	// Create sync request using the integration package's DTO
 	syncRequest := stripe.StripeInvoiceSyncRequest{
 		InvoiceID:        inv.ID,
-		CollectionMethod: string(collectionMethod),
+		CollectionMethod: string(stripeCollectionMethod),
 	}
 
 	// Perform the sync
@@ -1012,8 +953,13 @@ func (s *invoiceService) syncInvoiceToStripeIfEnabled(ctx context.Context, inv *
 	return nil
 }
 
-// syncInvoiceToRazorpayIfEnabled syncs the invoice to Razorpay if Razorpay connection is enabled
-func (s *invoiceService) syncInvoiceToRazorpayIfEnabled(ctx context.Context, inv *invoice.Invoice) error {
+// SyncInvoiceToRazorpayIfEnabled syncs the invoice to Razorpay if Razorpay connection is enabled.
+func (s *invoiceService) SyncInvoiceToRazorpayIfEnabled(ctx context.Context, invoiceID string) error {
+	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
+	if err != nil {
+		return err
+	}
+
 	// Check if Razorpay connection exists
 	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderRazorpay)
 	if err != nil || conn == nil {
@@ -1096,8 +1042,13 @@ func (s *invoiceService) syncInvoiceToRazorpayIfEnabled(ctx context.Context, inv
 	return nil
 }
 
-// syncInvoiceToChargebeeIfEnabled syncs the invoice to Chargebee if Chargebee connection is enabled
-func (s *invoiceService) syncInvoiceToChargebeeIfEnabled(ctx context.Context, inv *invoice.Invoice) error {
+// SyncInvoiceToChargebeeIfEnabled syncs the invoice to Chargebee if Chargebee connection is enabled.
+func (s *invoiceService) SyncInvoiceToChargebeeIfEnabled(ctx context.Context, invoiceID string) error {
+	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
+	if err != nil {
+		return err
+	}
+
 	// Check if Chargebee connection exists
 	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderChargebee)
 	if err != nil || conn == nil {
@@ -1149,8 +1100,13 @@ func (s *invoiceService) syncInvoiceToChargebeeIfEnabled(ctx context.Context, in
 	return nil
 }
 
-// syncInvoiceToQuickBooksIfEnabled syncs the invoice to QuickBooks if QuickBooks connection is enabled
-func (s *invoiceService) syncInvoiceToQuickBooksIfEnabled(ctx context.Context, inv *invoice.Invoice) error {
+// SyncInvoiceToQuickBooksIfEnabled syncs the invoice to QuickBooks if QuickBooks connection is enabled.
+func (s *invoiceService) SyncInvoiceToQuickBooksIfEnabled(ctx context.Context, invoiceID string) error {
+	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
+	if err != nil {
+		return err
+	}
+
 	// Check if QuickBooks connection exists
 	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderQuickBooks)
 	if err != nil || conn == nil {
@@ -1204,591 +1160,6 @@ func (s *invoiceService) syncInvoiceToQuickBooksIfEnabled(ctx context.Context, i
 		"quickbooks_invoice_id", syncResponse.QuickBooksInvoiceID)
 
 	return nil
-}
-
-// triggerHubSpotInvoiceSyncWorkflow triggers the HubSpot invoice sync workflow via Temporal
-func (s *invoiceService) triggerHubSpotInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID string) {
-	// Copy necessary context values
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-
-	s.Logger.InfowCtx(ctx, "triggering HubSpot invoice sync workflow",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"tenant_id", tenantID,
-		"environment_id", envID)
-
-	// Check if HubSpot connection exists and invoice outbound sync is enabled
-	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderHubSpot)
-	if err != nil {
-		s.Logger.DebugwCtx(ctx, "HubSpot connection not found, skipping invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	if !conn.IsInvoiceOutboundEnabled() {
-		s.Logger.DebugwCtx(ctx, "HubSpot invoice outbound sync disabled, skipping invoice sync",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"connection_id", conn.ID)
-		return
-	}
-
-	// Prepare workflow input with all necessary IDs
-	input := &models.HubSpotInvoiceSyncWorkflowInput{
-		InvoiceID:     invoiceID,
-		CustomerID:    customerID,
-		TenantID:      tenantID,
-		EnvironmentID: envID,
-	}
-
-	// Validate input
-	if err := input.Validate(); err != nil {
-		s.Logger.ErrorwCtx(ctx, "invalid workflow input for HubSpot invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	// Get global temporal service
-	temporalSvc := temporalservice.GetGlobalTemporalService()
-	if temporalSvc == nil {
-		s.Logger.WarnwCtx(ctx, "temporal service not available for HubSpot invoice sync",
-			"invoice_id", invoiceID)
-		return
-	}
-
-	// Start workflow - Temporal handles async execution, no need for goroutines
-	workflowRun, err := temporalSvc.ExecuteWorkflow(
-		ctx,
-		types.TemporalHubSpotInvoiceSyncWorkflow,
-		input,
-	)
-	if err != nil {
-		s.Logger.ErrorwCtx(ctx, "failed to start HubSpot invoice sync workflow",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	s.Logger.InfowCtx(ctx, "HubSpot invoice sync workflow started successfully",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"workflow_id", workflowRun.GetID(),
-		"run_id", workflowRun.GetRunID())
-}
-
-// triggerNomodInvoiceSyncWorkflow triggers the Nomod invoice sync workflow via Temporal
-func (s *invoiceService) triggerNomodInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID string) {
-	// Copy necessary context values
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-
-	s.Logger.InfowCtx(ctx, "triggering Nomod invoice sync workflow",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"tenant_id", tenantID,
-		"environment_id", envID)
-
-	// Check if Nomod connection exists and invoice outbound sync is enabled
-	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderNomod)
-	if err != nil {
-		s.Logger.DebugwCtx(ctx, "Nomod connection not found, skipping invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	if !conn.IsInvoiceOutboundEnabled() {
-		s.Logger.DebugwCtx(ctx, "Nomod invoice outbound sync disabled, skipping invoice sync",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"connection_id", conn.ID)
-		return
-	}
-
-	// Prepare workflow input with all necessary IDs
-	input := &models.NomodInvoiceSyncWorkflowInput{
-		InvoiceID:     invoiceID,
-		CustomerID:    customerID,
-		TenantID:      tenantID,
-		EnvironmentID: envID,
-	}
-
-	// Validate input
-	if err := input.Validate(); err != nil {
-		s.Logger.ErrorwCtx(ctx, "invalid workflow input for Nomod invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	// Get global temporal service
-	temporalSvc := temporalservice.GetGlobalTemporalService()
-	if temporalSvc == nil {
-		s.Logger.WarnwCtx(ctx, "temporal service not available for Nomod invoice sync",
-			"invoice_id", invoiceID)
-		return
-	}
-
-	// Start workflow - Temporal handles async execution, no need for goroutines
-	workflowRun, err := temporalSvc.ExecuteWorkflow(
-		ctx,
-		types.TemporalNomodInvoiceSyncWorkflow,
-		input,
-	)
-	if err != nil {
-		s.Logger.ErrorwCtx(ctx, "failed to start Nomod invoice sync workflow",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	s.Logger.InfowCtx(ctx, "Nomod invoice sync workflow started successfully",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"workflow_id", workflowRun.GetID(),
-		"run_id", workflowRun.GetRunID())
-}
-
-// triggerMoyasarInvoiceSyncWorkflow triggers the Moyasar invoice sync workflow via Temporal
-func (s *invoiceService) triggerMoyasarInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID string) {
-	// Copy necessary context values
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-
-	s.Logger.InfowCtx(ctx, "triggering Moyasar invoice sync workflow",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"tenant_id", tenantID,
-		"environment_id", envID)
-
-	// Check if Moyasar connection exists and invoice outbound sync is enabled
-	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderMoyasar)
-	if err != nil {
-		s.Logger.DebugwCtx(ctx, "Moyasar connection not found, skipping invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	if !conn.IsInvoiceOutboundEnabled() {
-		s.Logger.DebugwCtx(ctx, "Moyasar invoice outbound sync disabled, skipping invoice sync",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"connection_id", conn.ID)
-		return
-	}
-
-	// Prepare workflow input with all necessary IDs
-	input := &models.MoyasarInvoiceSyncWorkflowInput{
-		InvoiceID:     invoiceID,
-		CustomerID:    customerID,
-		TenantID:      tenantID,
-		EnvironmentID: envID,
-	}
-
-	// Validate input
-	if err := input.Validate(); err != nil {
-		s.Logger.ErrorwCtx(ctx, "invalid workflow input for Moyasar invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	// Get global temporal service
-	temporalSvc := temporalservice.GetGlobalTemporalService()
-	if temporalSvc == nil {
-		s.Logger.WarnwCtx(ctx, "temporal service not available for Moyasar invoice sync",
-			"invoice_id", invoiceID)
-		return
-	}
-
-	// Start workflow - Temporal handles async execution, no need for goroutines
-	workflowRun, err := temporalSvc.ExecuteWorkflow(
-		ctx,
-		types.TemporalMoyasarInvoiceSyncWorkflow,
-		input,
-	)
-	if err != nil {
-		s.Logger.ErrorwCtx(ctx, "failed to start Moyasar invoice sync workflow",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	s.Logger.InfowCtx(ctx, "Moyasar invoice sync workflow started successfully",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"workflow_id", workflowRun.GetID(),
-		"run_id", workflowRun.GetRunID())
-}
-
-// triggerPaddleInvoiceSyncWorkflow triggers the Paddle invoice sync workflow via Temporal
-func (s *invoiceService) triggerPaddleInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID string) {
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-
-	s.Logger.Infow("triggering Paddle invoice sync workflow",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"tenant_id", tenantID,
-		"environment_id", envID)
-
-	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderPaddle)
-	if err != nil {
-		s.Logger.Warnw("invoice and customer not synced to Paddle: Paddle connection not available",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"error", err,
-			"reason", "no_paddle_connection")
-		return
-	}
-
-	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
-		s.Logger.Warnw("invoice and customer not synced to Paddle: invoice outbound sync disabled for Paddle connection",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"connection_id", lo.Ternary(conn != nil, conn.ID, ""),
-			"reason", "invoice_outbound_disabled")
-		return
-	}
-
-	input := &models.PaddleInvoiceSyncWorkflowInput{
-		InvoiceID:     invoiceID,
-		CustomerID:    customerID,
-		TenantID:      tenantID,
-		EnvironmentID: envID,
-	}
-
-	if err := input.Validate(); err != nil {
-		s.Logger.Errorw("invalid workflow input for Paddle invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	temporalSvc := temporalservice.GetGlobalTemporalService()
-	if temporalSvc == nil {
-		s.Logger.Warnw("temporal service not available for Paddle invoice sync",
-			"invoice_id", invoiceID)
-		return
-	}
-
-	workflowRun, err := temporalSvc.ExecuteWorkflow(
-		ctx,
-		types.TemporalPaddleInvoiceSyncWorkflow,
-		input,
-	)
-	if err != nil {
-		s.Logger.Errorw("failed to start Paddle invoice sync workflow",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	s.Logger.Infow("Paddle invoice sync workflow started successfully",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"workflow_id", workflowRun.GetID(),
-		"run_id", workflowRun.GetRunID())
-}
-
-func (s *invoiceService) triggerStripeInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID, collectionMethod string) bool {
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-
-	s.Logger.InfowCtx(ctx, "triggering Stripe invoice sync workflow",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"collection_method", collectionMethod,
-		"tenant_id", tenantID,
-		"environment_id", envID)
-
-	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderStripe)
-	if err != nil {
-		s.Logger.DebugwCtx(ctx, "Stripe connection not found, skipping invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return false
-	}
-
-	if !conn.IsInvoiceOutboundEnabled() {
-		s.Logger.DebugwCtx(ctx, "Stripe invoice outbound sync disabled, skipping invoice sync",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"connection_id", conn.ID)
-		return false
-	}
-
-	input := &models.StripeInvoiceSyncWorkflowInput{
-		InvoiceID:        invoiceID,
-		CustomerID:       customerID,
-		CollectionMethod: collectionMethod,
-		TenantID:         tenantID,
-		EnvironmentID:    envID,
-	}
-
-	if err := input.Validate(); err != nil {
-		s.Logger.ErrorwCtx(ctx, "invalid workflow input for Stripe invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return false
-	}
-
-	temporalSvc := temporalservice.GetGlobalTemporalService()
-	if temporalSvc == nil {
-		s.Logger.WarnwCtx(ctx, "temporal service not available for Stripe invoice sync",
-			"invoice_id", invoiceID)
-		return false
-	}
-
-	workflowRun, err := temporalSvc.ExecuteWorkflow(
-		ctx,
-		types.TemporalStripeInvoiceSyncWorkflow,
-		input,
-	)
-	if err != nil {
-		s.Logger.ErrorwCtx(ctx, "failed to start Stripe invoice sync workflow",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return false
-	}
-
-	s.Logger.InfowCtx(ctx, "Stripe invoice sync workflow started successfully",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"workflow_id", workflowRun.GetID(),
-		"run_id", workflowRun.GetRunID())
-	return true
-}
-
-func (s *invoiceService) triggerRazorpayInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID string) {
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-
-	s.Logger.InfowCtx(ctx, "triggering Razorpay invoice sync workflow",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"tenant_id", tenantID,
-		"environment_id", envID)
-
-	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderRazorpay)
-	if err != nil {
-		s.Logger.DebugwCtx(ctx, "Razorpay connection not found, skipping invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	if !conn.IsInvoiceOutboundEnabled() {
-		s.Logger.DebugwCtx(ctx, "Razorpay invoice outbound sync disabled, skipping invoice sync",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"connection_id", conn.ID)
-		return
-	}
-
-	input := &models.RazorpayInvoiceSyncWorkflowInput{
-		InvoiceID:     invoiceID,
-		CustomerID:    customerID,
-		TenantID:      tenantID,
-		EnvironmentID: envID,
-	}
-
-	if err := input.Validate(); err != nil {
-		s.Logger.ErrorwCtx(ctx, "invalid workflow input for Razorpay invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	temporalSvc := temporalservice.GetGlobalTemporalService()
-	if temporalSvc == nil {
-		s.Logger.WarnwCtx(ctx, "temporal service not available for Razorpay invoice sync",
-			"invoice_id", invoiceID)
-		return
-	}
-
-	workflowRun, err := temporalSvc.ExecuteWorkflow(
-		ctx,
-		types.TemporalRazorpayInvoiceSyncWorkflow,
-		input,
-	)
-	if err != nil {
-		s.Logger.ErrorwCtx(ctx, "failed to start Razorpay invoice sync workflow",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	s.Logger.InfowCtx(ctx, "Razorpay invoice sync workflow started successfully",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"workflow_id", workflowRun.GetID(),
-		"run_id", workflowRun.GetRunID())
-}
-
-func (s *invoiceService) triggerChargebeeInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID string) {
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-
-	s.Logger.InfowCtx(ctx, "triggering Chargebee invoice sync workflow",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"tenant_id", tenantID,
-		"environment_id", envID)
-
-	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderChargebee)
-	if err != nil {
-		s.Logger.DebugwCtx(ctx, "Chargebee connection not found, skipping invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	if !conn.IsInvoiceOutboundEnabled() {
-		s.Logger.DebugwCtx(ctx, "Chargebee invoice outbound sync disabled, skipping invoice sync",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"connection_id", conn.ID)
-		return
-	}
-
-	input := &models.ChargebeeInvoiceSyncWorkflowInput{
-		InvoiceID:     invoiceID,
-		CustomerID:    customerID,
-		TenantID:      tenantID,
-		EnvironmentID: envID,
-	}
-
-	if err := input.Validate(); err != nil {
-		s.Logger.ErrorwCtx(ctx, "invalid workflow input for Chargebee invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	temporalSvc := temporalservice.GetGlobalTemporalService()
-	if temporalSvc == nil {
-		s.Logger.WarnwCtx(ctx, "temporal service not available for Chargebee invoice sync",
-			"invoice_id", invoiceID)
-		return
-	}
-
-	workflowRun, err := temporalSvc.ExecuteWorkflow(
-		ctx,
-		types.TemporalChargebeeInvoiceSyncWorkflow,
-		input,
-	)
-	if err != nil {
-		s.Logger.ErrorwCtx(ctx, "failed to start Chargebee invoice sync workflow",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	s.Logger.InfowCtx(ctx, "Chargebee invoice sync workflow started successfully",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"workflow_id", workflowRun.GetID(),
-		"run_id", workflowRun.GetRunID())
-}
-
-func (s *invoiceService) triggerQuickBooksInvoiceSyncWorkflow(ctx context.Context, invoiceID, customerID string) {
-	tenantID := types.GetTenantID(ctx)
-	envID := types.GetEnvironmentID(ctx)
-
-	s.Logger.InfowCtx(ctx, "triggering QuickBooks invoice sync workflow",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"tenant_id", tenantID,
-		"environment_id", envID)
-
-	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderQuickBooks)
-	if err != nil {
-		if !ierr.IsNotFound(err) {
-			s.Logger.ErrorwCtx(ctx, "failed to check QuickBooks connection, skipping invoice sync",
-				"error", err,
-				"invoice_id", invoiceID,
-				"customer_id", customerID)
-		} else {
-			s.Logger.DebugwCtx(ctx, "QuickBooks connection not found, skipping invoice sync",
-				"invoice_id", invoiceID,
-				"customer_id", customerID)
-		}
-		return
-	}
-
-	if !conn.IsInvoiceOutboundEnabled() {
-		s.Logger.DebugwCtx(ctx, "QuickBooks invoice outbound sync disabled, skipping invoice sync",
-			"invoice_id", invoiceID,
-			"customer_id", customerID,
-			"connection_id", conn.ID)
-		return
-	}
-
-	input := &models.QuickBooksInvoiceSyncWorkflowInput{
-		InvoiceID:     invoiceID,
-		CustomerID:    customerID,
-		TenantID:      tenantID,
-		EnvironmentID: envID,
-	}
-
-	if err := input.Validate(); err != nil {
-		s.Logger.ErrorwCtx(ctx, "invalid workflow input for QuickBooks invoice sync",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	temporalSvc := temporalservice.GetGlobalTemporalService()
-	if temporalSvc == nil {
-		s.Logger.WarnwCtx(ctx, "temporal service not available for QuickBooks invoice sync",
-			"invoice_id", invoiceID)
-		return
-	}
-
-	workflowRun, err := temporalSvc.ExecuteWorkflow(
-		ctx,
-		types.TemporalQuickBooksInvoiceSyncWorkflow,
-		input,
-	)
-	if err != nil {
-		s.Logger.ErrorwCtx(ctx, "failed to start QuickBooks invoice sync workflow",
-			"error", err,
-			"invoice_id", invoiceID,
-			"customer_id", customerID)
-		return
-	}
-
-	s.Logger.InfowCtx(ctx, "QuickBooks invoice sync workflow started successfully",
-		"invoice_id", invoiceID,
-		"customer_id", customerID,
-		"workflow_id", workflowRun.GetID(),
-		"run_id", workflowRun.GetRunID())
 }
 
 func (s *invoiceService) UpdatePaymentStatus(ctx context.Context, id string, status types.PaymentStatus, amount *decimal.Decimal) error {
@@ -1894,7 +1265,7 @@ func (s *invoiceService) UpdatePaymentStatus(ctx context.Context, id string, sta
 	}
 
 	// Publish webhook events
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceUpdatePayment, inv.ID)
+	s.publishSystemEvent(ctx, types.WebhookEventInvoiceUpdatePayment, inv.ID)
 
 	return nil
 }
@@ -2020,7 +1391,7 @@ func (s *invoiceService) ReconcilePaymentStatus(ctx context.Context, id string, 
 	}
 
 	// Publish webhook events
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceUpdatePayment, inv.ID)
+	s.publishSystemEvent(ctx, types.WebhookEventInvoiceUpdatePayment, inv.ID)
 
 	return nil
 }
@@ -2195,7 +1566,7 @@ func (s *invoiceService) GetCustomerInvoiceSummary(ctx context.Context, customer
 			summary.OverdueInvoiceCount++
 
 			// Publish webhook event
-			s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoicePaymentOverdue, inv.ID)
+			s.publishSystemEvent(ctx, types.WebhookEventInvoicePaymentOverdue, inv.ID)
 		}
 
 		// Split charges by type
@@ -2982,7 +2353,7 @@ func (s *invoiceService) RecalculateInvoiceAmounts(ctx context.Context, invoiceI
 	return nil
 }
 
-func (s *invoiceService) publishInternalWebhookEvent(ctx context.Context, eventName types.WebhookEventName, invoiceID string) {
+func (s *invoiceService) publishSystemEvent(ctx context.Context, eventName types.WebhookEventName, invoiceID string) {
 	webhookPayload, err := json.Marshal(struct {
 		InvoiceID string `json:"invoice_id"`
 		TenantID  string `json:"tenant_id"`
@@ -3217,7 +2588,7 @@ func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, fi
 	}
 
 	// Publish webhook event for invoice recalculation
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceCreateDraft, inv.ID)
+	s.publishSystemEvent(ctx, types.WebhookEventInvoiceCreateDraft, inv.ID)
 
 	// Finalize the invoice if requested
 	if finalize {
@@ -3462,7 +2833,7 @@ func (s *invoiceService) UpdateInvoice(ctx context.Context, id string, req dto.U
 	}
 
 	// Publish webhook event for invoice update
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceUpdate, id)
+	s.publishSystemEvent(ctx, types.WebhookEventInvoiceUpdate, id)
 
 	// Return the updated invoice
 	return s.GetInvoice(ctx, id)
@@ -3476,7 +2847,7 @@ func (s *invoiceService) TriggerCommunication(ctx context.Context, id string) er
 	}
 
 	// Publish webhook event
-	s.publishInternalWebhookEvent(ctx, types.WebhookEventInvoiceCommunicationTriggered, inv.ID)
+	s.publishSystemEvent(ctx, types.WebhookEventInvoiceCommunicationTriggered, inv.ID)
 	return nil
 }
 
@@ -3522,7 +2893,7 @@ func (s *invoiceService) TriggerWebhook(ctx context.Context, invoiceID string, e
 	)
 
 	// Publish webhook event
-	s.publishInternalWebhookEvent(ctx, eventName, inv.ID)
+	s.publishSystemEvent(ctx, eventName, inv.ID)
 	return nil
 }
 
@@ -4151,38 +3522,31 @@ func (s *invoiceService) DeleteInvoice(ctx context.Context, id string) error {
 
 // SyncInvoiceToExternalVendors syncs an invoice to external vendors
 func (s *invoiceService) SyncInvoiceToExternalVendors(ctx context.Context, invoiceID string) error {
-
-	invoice, err := s.InvoiceRepo.Get(ctx, invoiceID)
+	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
 	if err != nil {
 		return err
 	}
 
-	sub, err := s.SubRepo.Get(ctx, *invoice.SubscriptionID)
-	if err != nil {
-		return err
+	collectionMethod := ""
+	if inv.SubscriptionID != nil {
+		sub, err := s.SubRepo.Get(ctx, *inv.SubscriptionID)
+		if err != nil {
+			s.Logger.WarnwCtx(ctx, "SyncInvoiceToExternalVendors: failed to get subscription, using empty collection method",
+				"invoice_id", invoiceID,
+				"error", err)
+		} else {
+			collectionMethod = sub.CollectionMethod
+		}
 	}
 
-	s.triggerStripeInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID, sub.CollectionMethod)
-
-	// Sync to Razorpay if Razorpay connection is enabled (async via Temporal)
-	s.triggerRazorpayInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID)
-
-	// Sync to HubSpot if HubSpot connection is enabled (async via Temporal)
-	s.triggerHubSpotInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID)
-
-	// Sync to Chargebee if Chargebee connection is enabled (async via Temporal)
-	s.triggerChargebeeInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID)
-
-	// Sync to QuickBooks if QuickBooks connection is enabled (async via Temporal)
-	s.triggerQuickBooksInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID)
-
-	// Sync to Nomod if Nomod connection is enabled (async via Temporal)
-	s.triggerNomodInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID)
-
-	// Sync to Paddle if Paddle connection is enabled (async via Temporal)
-	s.triggerPaddleInvoiceSyncWorkflow(ctx, invoice.ID, invoice.CustomerID)
-
-	return nil
+	return integrationevents.DispatchInvoiceVendorSync(ctx, s.Config, s.ConnectionRepo, s.Logger, integrationevents.InvoiceVendorSyncInput{
+		TenantID:         types.GetTenantID(ctx),
+		EnvironmentID:    types.GetEnvironmentID(ctx),
+		UserID:           types.GetUserID(ctx),
+		InvoiceID:        inv.ID,
+		CustomerID:       inv.CustomerID,
+		CollectionMethod: collectionMethod,
+	})
 }
 
 // applyCreditsAndCouponsToInvoice applies wallet credits and coupons to invoice, updating totals once
