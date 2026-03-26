@@ -993,6 +993,7 @@ var (
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true},
 		{Name: "voided_at", Type: field.TypeTime, Nullable: true},
 		{Name: "finalized_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_computed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "billing_period", Type: field.TypeString, Nullable: true},
 		{Name: "period_start", Type: field.TypeTime, Nullable: true},
 		{Name: "period_end", Type: field.TypeTime, Nullable: true},
@@ -1038,7 +1039,7 @@ var (
 			{
 				Name:    "idx_tenant_environment_invoice_number_unique",
 				Unique:  true,
-				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[35]},
+				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[36]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "invoice_number IS NOT NULL AND invoice_number != '' AND status = 'published'",
 				},
@@ -1046,7 +1047,7 @@ var (
 			{
 				Name:    "idx_tenant_environment_idempotency_key_unique",
 				Unique:  true,
-				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[38]},
+				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[39]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "idempotency_key IS NOT NULL",
 				},
@@ -1054,7 +1055,7 @@ var (
 			{
 				Name:    "idx_subscription_period_unique",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[9], InvoicesColumns[29], InvoicesColumns[30]},
+				Columns: []*schema.Column{InvoicesColumns[9], InvoicesColumns[30], InvoicesColumns[31]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "invoice_status != 'VOIDED' AND subscription_id IS NOT NULL",
 				},

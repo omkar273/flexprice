@@ -392,7 +392,7 @@ func (s *temporalService) extractWorkflowContextID(workflowType types.TemporalWo
 		if input, ok := params.(subscriptionModels.ProcessSubscriptionBillingWorkflowInput); ok {
 			return input.SubscriptionID
 		}
-	case types.TemporalProcessInvoiceWorkflow:
+	case types.TemporalProcessInvoiceWorkflow, types.TemporalFinalizeDraftInvoiceWorkflow:
 		// Extract invoice ID from ProcessInvoiceWorkflowInput
 		if input, ok := params.(invoiceModels.ProcessInvoiceWorkflowInput); ok {
 			return input.InvoiceID
@@ -503,7 +503,7 @@ func (s *temporalService) buildWorkflowInput(ctx context.Context, workflowType t
 		return s.buildCustomerOnboardingInput(ctx, tenantID, environmentID, userID, params)
 	case types.TemporalPrepareProcessedEventsWorkflow:
 		return s.buildPrepareProcessedEventsInput(ctx, tenantID, environmentID, userID, params)
-	case types.TemporalProcessInvoiceWorkflow:
+	case types.TemporalProcessInvoiceWorkflow, types.TemporalFinalizeDraftInvoiceWorkflow:
 		return s.buildProcessInvoiceInput(ctx, tenantID, environmentID, params)
 	case types.TemporalRecalculateInvoiceWorkflow:
 		return s.buildRecalculateInvoiceInput(ctx, tenantID, environmentID, userID, params)
