@@ -19,6 +19,7 @@ const (
 func (s ScheduledTaskInterval) Validate() error {
 	allowedIntervals := []ScheduledTaskInterval{
 		ScheduledTaskIntervalEvery15Minutes,
+		ScheduledTaskIntervalEvery30Minutes,
 		ScheduledTaskIntervalCustom,
 		ScheduledTaskIntervalHourly,
 		ScheduledTaskIntervalDaily,
@@ -34,7 +35,7 @@ func (s ScheduledTaskInterval) Validate() error {
 		}
 	}
 	return ierr.NewError("invalid scheduled task interval").
-		WithHint("Interval must be one of: 15MIN, custom, hourly, daily").
+		WithHint("Interval must be one of: 15MIN, 30MIN, custom, hourly, daily").
 		Mark(ierr.ErrValidation)
 }
 

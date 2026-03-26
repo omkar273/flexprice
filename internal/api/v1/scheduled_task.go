@@ -283,18 +283,17 @@ func (h *ScheduledTaskHandler) ScheduleUpdateBillingPeriod(c *gin.Context) {
 	})
 }
 
-// @Summary Schedule update billing period
-// @ID scheduleUpdateBillingPeriod
-// @Description Use when you need to trigger a billing-period update workflow (e.g. to recalculate or sync billing windows).
+// @Summary Schedule draft finalization
+// @ID scheduleDraftFinalization
+// @Description Triggers the draft invoice finalization workflow that scans computed draft invoices whose finalization delay has elapsed and finalizes them (assign invoice number, sync to vendors, attempt payment).
 // @Tags Scheduled Tasks
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
-// @Param request body object true "Schedule Update Billing Period Request"
 // @Success 200 {object} object
 // @Failure 400 {object} ierr.ErrorResponse "Invalid request"
 // @Failure 500 {object} ierr.ErrorResponse "Server error"
-// @Router /tasks/scheduled/schedule-update-billing-period [post]
+// @Router /tasks/scheduled/schedule-draft-finalization [post]
 func (h *ScheduledTaskHandler) ScheduleDraftFinalization(c *gin.Context) {
 
 	response, err := h.service.ScheduleDraftFinalization(c.Request.Context())
