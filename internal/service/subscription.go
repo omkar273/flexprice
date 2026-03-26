@@ -2146,10 +2146,10 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 	// 400-500 meters down to only 5-7 that have actual usage
 	distinctEventNames, err := s.EventRepo.GetDistinctEventNames(ctx, customer.ExternalID, usageStartTime, usageEndTime)
 	if err != nil {
-		s.Logger.WarnwCtx(ctx, "failed to get distinct event names, proceeding without optimization",
+		s.Logger.ErrorwCtx(ctx, "failed to get distinct event names",
 			"error", err,
 			"external_customer_id", customer.ExternalID)
-		distinctEventNames = nil // Fallback: process all meters if optimization fails
+		return nil, fmt.Errorf("failed to get distinct event names for customer %s: %w", customer.ExternalID, err)
 	}
 
 	// Create a map for fast event name lookup
@@ -2179,23 +2179,10 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 			continue
 		}
 
-		if len(distinctEventNames) == 0 {
-			// skip all usage items if distinct event names is nil
-			// which means there is no event data in the database
-			// this is a fallback to ensure that we don't process all meters
-			// if the event data is not available
-
-			s.Logger.DebugwCtx(ctx, "skipping meter as there are no events",
-				"meter_id", lineItem.MeterID,
-				"event_name", meter.EventName,
-				"customer_id", customer.ID,
-				"external_customer_id", customer.ExternalID,
-				"subscription_id", req.SubscriptionID)
-			continue
-		}
-
-		// Performance optimization: Skip meters that don't have any events for this customer
-		// Only skip if we successfully got distinct event names (not nil) and the event doesn't exist
+		// Performance optimization: Skip meters that don't have any events for this customer.
+		// distinctEventNames == nil means the optimization query failed (e.g. context deadline),
+		// so we fall back to processing all meters. A non-nil empty slice means the query
+		// succeeded but found no events, so we can safely skip.
 		if distinctEventNames != nil && !eventNameExists[meter.EventName] {
 			s.Logger.DebugwCtx(ctx, "skipping meter with no events",
 				"meter_id", lineItem.MeterID,
