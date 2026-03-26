@@ -90,8 +90,16 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		zapLogger.Sugar().Warn("Fluentd is enabled but host/port not configured properly")
 	}
 
+	sugar := zapLogger.Sugar()
+	if cfg.Logging.ServiceName != "" {
+		sugar = sugar.With("service.name", cfg.Logging.ServiceName)
+	}
+	if cfg.Logging.Environment != "" {
+		sugar = sugar.With("deployment.environment", cfg.Logging.Environment)
+	}
+
 	return &Logger{
-		SugaredLogger: zapLogger.Sugar(),
+		SugaredLogger: sugar,
 		fluentdLogger: fluentdLogger,
 		serviceName:   string(cfg.Deployment.Mode),
 		sentryEnabled: cfg.Sentry.Enabled,
