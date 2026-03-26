@@ -9,8 +9,15 @@ import (
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/getsentry/sentry-go"
+	"go.opentelemetry.io/contrib/bridges/otelzap"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	otellog "go.opentelemetry.io/otel/log"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // sentryToZapLevel maps a sentry LogLevel to its zapcore equivalent for level-gating.
@@ -25,10 +32,11 @@ var sentryToZapLevel = map[sentry.LogLevel]zapcore.Level{
 // Logger wraps zap.SugaredLogger to provide logging functionality
 type Logger struct {
 	*zap.SugaredLogger
-	fluentdLogger *fluent.Fluent
-	serviceName   string
-	sentryEnabled bool
-	sentryCtx     context.Context // used for sentry.NewLogger; defaults to context.Background()
+	fluentdLogger   *fluent.Fluent
+	otelLogProvider *sdklog.LoggerProvider
+	serviceName     string
+	sentryEnabled   bool
+	sentryCtx       context.Context // used for sentry.NewLogger; defaults to context.Background()
 }
 
 // Global logger for convenience
@@ -40,6 +48,13 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 
 	if cfg.Logging.DBLevel == types.LogLevelDebug {
 		config = zap.NewDevelopmentConfig()
+	}
+
+	// Apply the configured log level (debug/info/warn/error) to the zap logger.
+	// zap's AtomicLevel.UnmarshalText understands standard level strings.
+	if err := config.Level.UnmarshalText([]byte(cfg.Logging.Level)); err != nil {
+		// Fallback to info if the level string is invalid
+		config.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
 	}
 
 	config.EncoderConfig.TimeKey = "timestamp"
@@ -83,13 +98,84 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		zapLogger.Sugar().Warn("Fluentd is enabled but host/port not configured properly")
 	}
 
+	// Initialize OpenTelemetry log exporter (for SigNoz / any OTLP backend)
+	var otelLogProvider *sdklog.LoggerProvider
+	if cfg.Logging.OtelEnabled && cfg.Logging.OtelEndpoint != "" {
+		otelLogProvider, err = newOtelLogProvider(context.Background(), cfg)
+		if err != nil {
+			zapLogger.Sugar().Warnf("Failed to initialize OTel log exporter: %v, falling back to stdout only", err)
+			otelLogProvider = nil
+		} else {
+			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s)", cfg.Logging.OtelEndpoint)
+		}
+	}
+
+	// Build the final zap logger, optionally tee-ing into the otelzap bridge
+	finalLogger := zapLogger
+	if otelLogProvider != nil {
+		scopeName := cfg.Logging.ServiceName
+		if scopeName == "" {
+			scopeName = string(cfg.Deployment.Mode)
+		}
+		otelCore := otelzap.NewCore(scopeName, otelzap.WithLoggerProvider(otelLogProvider))
+		finalLogger = zap.New(zapcore.NewTee(zapLogger.Core(), otelCore), zap.WithCaller(true))
+	}
+
+	sugar := finalLogger.Sugar()
+	if cfg.Logging.ServiceName != "" {
+		sugar = sugar.With("service.name", cfg.Logging.ServiceName)
+	}
+	if cfg.Logging.Environment != "" {
+		sugar = sugar.With("deployment.environment", cfg.Logging.Environment)
+	}
+
 	return &Logger{
-		SugaredLogger: zapLogger.Sugar(),
-		fluentdLogger: fluentdLogger,
-		serviceName:   string(cfg.Deployment.Mode),
-		sentryEnabled: cfg.Sentry.Enabled,
-		sentryCtx:     context.Background(),
+		SugaredLogger:   sugar,
+		fluentdLogger:   fluentdLogger,
+		otelLogProvider: otelLogProvider,
+		serviceName:     string(cfg.Deployment.Mode),
+		sentryEnabled:   cfg.Sentry.Enabled,
+		sentryCtx:       context.Background(),
 	}, nil
+}
+
+// newOtelLogProvider builds a sdklog.LoggerProvider that exports via OTLP gRPC.
+func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog.LoggerProvider, error) {
+	opts := []otlploggrpc.Option{
+		otlploggrpc.WithEndpoint(cfg.Logging.OtelEndpoint),
+	}
+	if cfg.Logging.OtelInsecure {
+		opts = append(opts, otlploggrpc.WithDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
+	} else {
+		opts = append(opts, otlploggrpc.WithDialOption(grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, ""))))
+	}
+	if cfg.Logging.OtelIngestionKey != "" {
+		opts = append(opts, otlploggrpc.WithHeaders(map[string]string{
+			"signoz-ingestion-key": cfg.Logging.OtelIngestionKey,
+		}))
+	}
+
+	exporter, err := otlploggrpc.New(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	provider := sdklog.NewLoggerProvider(
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)),
+	)
+	return provider, nil
+}
+
+// Shutdown flushes and closes the OTel log provider. Call this on application exit.
+func (l *Logger) Shutdown(ctx context.Context) {
+	if l.otelLogProvider != nil {
+		_ = l.otelLogProvider.Shutdown(ctx)
+	}
+}
+
+// OtelLogProvider returns the underlying OTel LoggerProvider (e.g. to register as global).
+func (l *Logger) OtelLogProvider() otellog.LoggerProvider {
+	return l.otelLogProvider
 }
 
 // Initialize default logger and set it as global while also using Dependency Injection
@@ -225,10 +311,11 @@ func (l *Logger) WithContext(ctx context.Context) *Logger {
 			"tenant_id", tenantID,
 			"user_id", userID,
 		),
-		fluentdLogger: l.fluentdLogger,
-		serviceName:   l.serviceName,
-		sentryEnabled: l.sentryEnabled,
-		sentryCtx:     ctx,
+		fluentdLogger:   l.fluentdLogger,
+		otelLogProvider: l.otelLogProvider,
+		serviceName:     l.serviceName,
+		sentryEnabled:   l.sentryEnabled,
+		sentryCtx:       ctx,
 	}
 }
 

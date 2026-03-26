@@ -130,10 +130,20 @@ type LoggingConfig struct {
 	Level   types.LogLevel `mapstructure:"level" validate:"required"`
 	DBLevel types.LogLevel `mapstructure:"db_level" validate:"required"`
 
+	// Service identity fields added to every log line
+	ServiceName string `mapstructure:"service_name" validate:"omitempty"`
+	Environment string `mapstructure:"environment" validate:"omitempty"`
+
 	// Fluentd configuration
 	FluentdEnabled bool   `mapstructure:"fluentd_enabled" default:"false"`
 	FluentdHost    string `mapstructure:"fluentd_host" validate:"omitempty"`
 	FluentdPort    int    `mapstructure:"fluentd_port" validate:"omitempty"`
+
+	// OpenTelemetry / SigNoz log export configuration
+	OtelEnabled        bool   `mapstructure:"otel_enabled" default:"false"`
+	OtelEndpoint       string `mapstructure:"otel_endpoint" validate:"omitempty"`        // e.g. ingest.us.signoz.cloud:443
+	OtelInsecure       bool   `mapstructure:"otel_insecure" default:"false"`             // set true for local collector without TLS
+	OtelIngestionKey   string `mapstructure:"otel_ingestion_key" validate:"omitempty"`   // SigNoz ingestion key
 }
 
 type PostgresConfig struct {
@@ -364,6 +374,10 @@ func NewConfig() (*Configuration, error) {
 
 	// Step 4: Environment variable key mapping (e.g., FLEXPRICE_KAFKA_CONSUMER_GROUP)
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	// Bind bare env vars (no FLEXPRICE_ prefix) for service identity fields
+	_ = v.BindEnv("logging.service_name", "SERVICE_NAME")
+	_ = v.BindEnv("logging.environment", "ENVIRONMENT")
 
 	// Step 5: Read the YAML file
 	if err := v.ReadInConfig(); err != nil {

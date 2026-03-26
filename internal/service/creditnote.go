@@ -584,6 +584,13 @@ func (s *creditNoteService) validateInvoiceEligibility(ctx context.Context, invo
 		return nil, err
 	}
 
+	// Fetch line items separately (Get no longer eager-loads them)
+	lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(ctx, invoiceID)
+	if err != nil {
+		return nil, err
+	}
+	inv.LineItems = lineItems
+
 	// validate invoice status
 	if inv.InvoiceStatus != types.InvoiceStatusFinalized {
 		return nil, ierr.NewError("invoice not ready for credit note").

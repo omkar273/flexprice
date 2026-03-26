@@ -104,6 +104,7 @@ func (s *InvoiceServiceSuite) setupService() {
 		MeterRepo:                    s.GetStores().MeterRepo,
 		CustomerRepo:                 s.GetStores().CustomerRepo,
 		InvoiceRepo:                  s.invoiceRepo,
+		InvoiceLineItemRepo:          s.GetStores().InvoiceLineItemRepo,
 		EntitlementRepo:              s.GetStores().EntitlementRepo,
 		EnvironmentRepo:              s.GetStores().EnvironmentRepo,
 		FeatureRepo:                  s.GetStores().FeatureRepo,
@@ -1644,7 +1645,7 @@ func (s *InvoiceServiceSuite) TestListInvoicesWithExternalCustomerID() {
 func (s *InvoiceServiceSuite) TestUpdateInvoice() {
 	ctx := s.GetContext()
 
-	// Create a test invoice first - explicitly set as draft and pending payment
+	// Create a test invoice first (draft-first flow: create draft → populate → finalize, so result is finalized)
 	createReq := dto.CreateInvoiceRequest{
 		CustomerID:    s.testData.customer.ID,
 		InvoiceType:   types.InvoiceTypeOneOff,
@@ -1654,15 +1655,14 @@ func (s *InvoiceServiceSuite) TestUpdateInvoice() {
 		Subtotal:      decimal.NewFromFloat(100.00),
 		BillingReason: types.InvoiceBillingReasonManual,
 		DueDate:       lo.ToPtr(time.Now().UTC().Add(24 * time.Hour)), // Due in 1 day
-		InvoiceStatus: lo.ToPtr(types.InvoiceStatusDraft),
-		PaymentStatus: lo.ToPtr(types.PaymentStatusPending),
 	}
 
 	invoice, err := s.service.CreateOneOffInvoice(ctx, createReq)
 	s.Require().NoError(err)
 	s.Require().NotNil(invoice)
-	s.Require().Equal(types.InvoiceStatusDraft, invoice.InvoiceStatus)
-	s.Require().Equal(types.PaymentStatusPending, invoice.PaymentStatus)
+	s.Require().Equal(types.InvoiceStatusFinalized, invoice.InvoiceStatus)
+	// PaymentStatus may be PENDING or SUCCEEDED (e.g. SUCCEEDED when total is zero with no line items)
+	s.Require().Contains([]types.PaymentStatus{types.PaymentStatusPending, types.PaymentStatusSucceeded}, invoice.PaymentStatus)
 
 	tests := []struct {
 		name          string
@@ -1741,8 +1741,11 @@ func (s *InvoiceServiceSuite) TestUpdateInvoice() {
 		Total:         decimal.NewFromFloat(100.00),
 		Subtotal:      decimal.NewFromFloat(100.00),
 		BillingReason: types.InvoiceBillingReasonManual,
-		PaymentStatus: lo.ToPtr(types.PaymentStatusSucceeded), // Mark as paid
 	})
+	s.Require().NoError(err)
+	// Mark as paid (draft-first flow returns finalized + pending; simulate payment)
+	amount := decimal.NewFromFloat(100.00)
+	err = s.service.UpdatePaymentStatus(ctx, paidInvoice.ID, types.PaymentStatusSucceeded, &amount)
 	s.Require().NoError(err)
 
 	// Update PDF URL and due date for paid invoice (should succeed)

@@ -13,8 +13,10 @@ import (
 	"github.com/flexprice/flexprice/internal/logger"
 	temporalClient "github.com/flexprice/flexprice/internal/temporal/client"
 	"github.com/flexprice/flexprice/internal/temporal/models"
+	invoiceModels "github.com/flexprice/flexprice/internal/temporal/models/invoice"
 	subscriptionModels "github.com/flexprice/flexprice/internal/temporal/models/subscription"
 	exportWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/export"
+	invoiceWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/invoice"
 	subscriptionWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/subscription"
 	"github.com/flexprice/flexprice/internal/types"
 	"go.temporal.io/api/serviceerror"
@@ -809,4 +811,44 @@ func (s *scheduledTaskService) ScheduleUpdateBillingPeriod(ctx context.Context) 
 	}
 
 	return "Triggered update billing period workflow successfully", nil
+}
+
+// ScheduleDraftFinalization creates a Temporal schedule that runs every 30 minutes
+// to finalize draft invoices whose finalization delay has elapsed.
+func (s *scheduledTaskService) ScheduleDraftFinalization(ctx context.Context) (string, error) {
+	scheduleID := types.GenerateUUIDWithPrefix("schtask_draft_finalize")
+
+	scheduleSpec := client.ScheduleSpec{
+		CronExpressions: []string{"*/30 * * * *"}, // Every 30 minutes
+	}
+
+	action := &client.ScheduleWorkflowAction{
+		Workflow: invoiceWorkflows.ScheduleDraftFinalizationWorkflow,
+		Args: []interface{}{
+			invoiceModels.ScheduleDraftFinalizationWorkflowInput{
+				BatchSize: 100,
+			},
+		},
+		TaskQueue:                string(types.TemporalTaskQueueInvoice),
+		WorkflowExecutionTimeout: 1 * time.Hour,
+		WorkflowRunTimeout:       1 * time.Hour,
+		WorkflowTaskTimeout:      1 * time.Hour,
+	}
+
+	scheduleOptions := models.CreateScheduleOptions{
+		ID:     scheduleID,
+		Spec:   scheduleSpec,
+		Action: action,
+		Paused: false,
+	}
+
+	_, err := s.temporalClient.CreateSchedule(ctx, scheduleOptions)
+	if err != nil {
+		s.logger.Errorw("failed to create draft finalization schedule", "error", err)
+		return "", ierr.WithError(err).
+			WithHint("Failed to create draft finalization schedule").
+			Mark(ierr.ErrInternal)
+	}
+
+	return "Triggered draft finalization schedule successfully", nil
 }

@@ -15,6 +15,7 @@ import (
 // InMemoryInvoiceStore implements invoice.Repository
 type InMemoryInvoiceStore struct {
 	*InMemoryStore[*invoice.Invoice]
+	lineItemStore *InMemoryInvoiceLineItemStore
 }
 
 // NewInMemoryInvoiceStore creates a new in-memory invoice store
@@ -22,6 +23,11 @@ func NewInMemoryInvoiceStore() *InMemoryInvoiceStore {
 	return &InMemoryInvoiceStore{
 		InMemoryStore: NewInMemoryStore[*invoice.Invoice](),
 	}
+}
+
+// SetLineItemStore wires the line item store for cross-store operations
+func (s *InMemoryInvoiceStore) SetLineItemStore(lineItemStore *InMemoryInvoiceLineItemStore) {
+	s.lineItemStore = lineItemStore
 }
 
 // Helper to copy invoice
@@ -102,6 +108,7 @@ func copyInvoice(inv *invoice.Invoice) *invoice.Invoice {
 		Version:                    inv.Version,
 		EnvironmentID:              inv.EnvironmentID,
 		RecalculatedInvoiceID:      inv.RecalculatedInvoiceID,
+		LastComputedAt:             inv.LastComputedAt,
 		BaseModel:                  inv.BaseModel,
 	}
 }
@@ -122,7 +129,21 @@ func (s *InMemoryInvoiceStore) Create(ctx context.Context, inv *invoice.Invoice)
 }
 
 func (s *InMemoryInvoiceStore) CreateWithLineItems(ctx context.Context, inv *invoice.Invoice) error {
-	return s.Create(ctx, inv) // In memory store doesn't need special transaction handling
+	if err := s.Create(ctx, inv); err != nil {
+		return err
+	}
+	if s.lineItemStore != nil {
+		for _, item := range inv.LineItems {
+			// Ensure InvoiceID is set on each line item (mirrors real DB behaviour)
+			if item.InvoiceID == "" {
+				item.InvoiceID = inv.ID
+			}
+			if err := s.lineItemStore.Create(ctx, item); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (s *InMemoryInvoiceStore) AddLineItems(ctx context.Context, invoiceID string, items []*invoice.InvoiceLineItem) error {
@@ -135,6 +156,9 @@ func (s *InMemoryInvoiceStore) AddLineItems(ctx context.Context, invoiceID strin
 		itemCopy := copyInvoice(&invoice.Invoice{LineItems: []*invoice.InvoiceLineItem{item}}).LineItems[0]
 		itemCopy.InvoiceID = invoiceID
 		inv.LineItems = append(inv.LineItems, itemCopy)
+		if s.lineItemStore != nil {
+			_ = s.lineItemStore.Create(ctx, itemCopy)
+		}
 	}
 	return s.Update(ctx, inv)
 }
@@ -160,6 +184,11 @@ func (s *InMemoryInvoiceStore) Get(ctx context.Context, id string) (*invoice.Inv
 	return copyInvoice(inv), nil
 }
 
+// GetForUpdate returns the invoice; in-memory store has no row locking.
+func (s *InMemoryInvoiceStore) GetForUpdate(ctx context.Context, id string) (*invoice.Invoice, error) {
+	return s.Get(ctx, id)
+}
+
 func (s *InMemoryInvoiceStore) Update(ctx context.Context, inv *invoice.Invoice) error {
 	if inv == nil {
 		return ierr.NewError("invoice cannot be nil").WithHint("invoice cannot be nil").Mark(ierr.ErrValidation)
@@ -173,6 +202,10 @@ func (s *InMemoryInvoiceStore) Delete(ctx context.Context, id string) error {
 
 func (s *InMemoryInvoiceStore) List(ctx context.Context, filter *types.InvoiceFilter) ([]*invoice.Invoice, error) {
 	return s.InMemoryStore.List(ctx, filter, invoiceFilterFn, invoiceSortFn)
+}
+
+func (s *InMemoryInvoiceStore) ListAllTenant(ctx context.Context, filter *types.InvoiceFilter) ([]*invoice.Invoice, error) {
+	return s.List(ctx, filter)
 }
 
 func (s *InMemoryInvoiceStore) Count(ctx context.Context, filter *types.InvoiceFilter) (int, error) {
@@ -222,6 +255,27 @@ func (s *InMemoryInvoiceStore) ExistsForPeriod(ctx context.Context, subscription
 	}
 
 	return false, nil
+}
+
+func (s *InMemoryInvoiceStore) GetForPeriod(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time) (*invoice.Invoice, error) {
+	filter := types.NewNoLimitInvoiceFilter()
+	filter.SubscriptionID = subscriptionID
+	invoices, err := s.List(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, inv := range invoices {
+		if inv.InvoiceStatus == types.InvoiceStatusVoided {
+			continue
+		}
+		if inv.PeriodStart != nil && inv.PeriodEnd != nil &&
+			periodStart.Equal(*inv.PeriodStart) && periodEnd.Equal(*inv.PeriodEnd) {
+			return copyInvoice(inv), nil
+		}
+	}
+
+	return nil, ierr.NewError("invoice not found").WithHint("invoice not found for period").Mark(ierr.ErrNotFound)
 }
 
 func (s *InMemoryInvoiceStore) GetNextInvoiceNumber(ctx context.Context, invoiceConfig *types.InvoiceConfig) (string, error) {
@@ -525,7 +579,10 @@ func (s *InMemoryInvoiceStore) UpdateLineItem(ctx context.Context, item *invoice
 	return s.Update(ctx, inv)
 }
 
-// Clear removes all invoices from the store
+// Clear removes all invoices from the store, and also clears the associated line item store if set.
 func (s *InMemoryInvoiceStore) Clear() {
 	s.InMemoryStore.Clear()
+	if s.lineItemStore != nil {
+		s.lineItemStore.Clear()
+	}
 }
