@@ -34,6 +34,7 @@ type ScheduledTaskService interface {
 
 	CalculateIntervalBoundaries(currentTime time.Time, interval types.ScheduledTaskInterval) (startTime, endTime time.Time)
 	ScheduleUpdateBillingPeriod(ctx context.Context) (string, error)
+	ScheduleDraftFinalization(ctx context.Context) (string, error)
 }
 
 type scheduledTaskService struct {
@@ -708,6 +709,8 @@ func (s *scheduledTaskService) getCronExpression(interval types.ScheduledTaskInt
 		return "15 * * * *" // Every hour at 15 minutes past (e.g., 10:15, 11:15, 12:15)
 	case types.ScheduledTaskIntervalDaily:
 		return "15 0 * * *" // Every day at 00:15 AM
+	case types.ScheduledTaskIntervalEvery30Minutes:
+		return "*/30 * * * *" // Every 30 minutes
 	default:
 		return "15 0 * * *" // Default to daily at 00:15
 	}
@@ -818,8 +821,10 @@ func (s *scheduledTaskService) ScheduleUpdateBillingPeriod(ctx context.Context) 
 func (s *scheduledTaskService) ScheduleDraftFinalization(ctx context.Context) (string, error) {
 	scheduleID := types.GenerateUUIDWithPrefix("schtask_draft_finalize")
 
+	cronExpr := s.getCronExpression(types.ScheduledTaskIntervalEvery30Minutes)
+
 	scheduleSpec := client.ScheduleSpec{
-		CronExpressions: []string{"*/30 * * * *"}, // Every 30 minutes
+		CronExpressions: []string{cronExpr}, // Every 30 minutes
 	}
 
 	action := &client.ScheduleWorkflowAction{

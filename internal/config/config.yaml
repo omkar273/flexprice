@@ -126,6 +126,7 @@ temporal:
   task_queue: "billing-task-queue"
   api_key: "strong api key"
   api_key_name: "secret name"
+  max_workflows_per_cron_run: 500 # Max child workflows per cron cycle; 0 = unlimited
   client_name: "flexprice-client"
   retry:
     initial_interval_seconds: 1
