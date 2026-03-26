@@ -69,6 +69,7 @@ const (
 	TemporalScheduleSubscriptionBillingWorkflow TemporalWorkflowType = "ScheduleSubscriptionBillingWorkflow"
 	TemporalProcessSubscriptionBillingWorkflow  TemporalWorkflowType = "ProcessSubscriptionBillingWorkflow"
 	TemporalProcessInvoiceWorkflow              TemporalWorkflowType = "ProcessInvoiceWorkflow"
+	TemporalFinalizeDraftInvoiceWorkflow        TemporalWorkflowType = "FinalizeDraftInvoiceWorkflow"
 	TemporalRecalculateInvoiceWorkflow          TemporalWorkflowType = "RecalculateInvoiceWorkflow"
 	TemporalReprocessEventsWorkflow             TemporalWorkflowType = "ReprocessEventsWorkflow"
 	TemporalReprocessRawEventsWorkflow          TemporalWorkflowType = "ReprocessRawEventsWorkflow"
@@ -117,6 +118,7 @@ func (w TemporalWorkflowType) Validate() error {
 		TemporalScheduleSubscriptionBillingWorkflow, // "ScheduleSubscriptionBillingWorkflow"
 		TemporalProcessSubscriptionBillingWorkflow,  // "ProcessSubscriptionBillingWorkflow"
 		TemporalProcessInvoiceWorkflow,              // "ProcessInvoiceWorkflow"
+		TemporalFinalizeDraftInvoiceWorkflow,        // "FinalizeDraftInvoiceWorkflow"
 		TemporalRecalculateInvoiceWorkflow,          // "RecalculateInvoiceWorkflow"
 		TemporalReprocessEventsWorkflow,             // "ReprocessEventsWorkflow"
 		TemporalReprocessRawEventsWorkflow,          // "ReprocessRawEventsWorkflow"
@@ -147,7 +149,7 @@ func (w TemporalWorkflowType) TaskQueue() TemporalTaskQueue {
 		return TemporalTaskQueueSubscription
 	case TemporalRecalculateInvoiceWorkflow:
 		return TemporalTaskQueueSubscription
-	case TemporalProcessInvoiceWorkflow, TemporalScheduleDraftFinalizationWorkflow:
+	case TemporalProcessInvoiceWorkflow, TemporalFinalizeDraftInvoiceWorkflow, TemporalScheduleDraftFinalizationWorkflow:
 		return TemporalTaskQueueInvoice
 	case TemporalCustomerOnboardingWorkflow, TemporalPrepareProcessedEventsWorkflow:
 		return TemporalTaskQueueWorkflows
@@ -199,6 +201,7 @@ func GetWorkflowsForTaskQueue(taskQueue TemporalTaskQueue) []TemporalWorkflowTyp
 	case TemporalTaskQueueInvoice:
 		return []TemporalWorkflowType{
 			TemporalProcessInvoiceWorkflow,
+			TemporalFinalizeDraftInvoiceWorkflow,
 			TemporalScheduleDraftFinalizationWorkflow,
 		}
 	case TemporalTaskQueueWorkflows:
