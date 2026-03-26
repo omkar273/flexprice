@@ -670,25 +670,27 @@ func (s *InvoiceServiceSuite) TestFinalizeInvoice_PublishesFinalizedSystemEventF
 	rec := &recordingWebhookPublisher{inner: s.GetWebhookPublisher()}
 	s.service.(*invoiceService).WebhookPublisher = rec
 
-	resp, err := s.service.CreateOneOffInvoice(ctx, dto.CreateInvoiceRequest{
-		CustomerID:    s.testData.customer.ID,
-		InvoiceType:   types.InvoiceTypeOneOff,
-		Currency:      "usd",
-		AmountDue:     decimal.NewFromFloat(50),
-		Total:         decimal.NewFromFloat(50),
-		Subtotal:      decimal.NewFromFloat(50),
-		BillingReason: types.InvoiceBillingReasonManual,
-		InvoiceStatus: lo.ToPtr(types.InvoiceStatusDraft),
-		PaymentStatus: lo.ToPtr(types.PaymentStatusPending),
-	})
-	s.Require().NoError(err)
-	s.Require().NotNil(resp)
-	s.Equal(types.InvoiceStatusDraft, resp.InvoiceStatus)
+	draftInvoice := &invoice.Invoice{
+		ID:              types.GenerateUUIDWithPrefix(types.UUID_PREFIX_INVOICE),
+		CustomerID:      s.testData.customer.ID,
+		InvoiceType:     types.InvoiceTypeOneOff,
+		InvoiceStatus:   types.InvoiceStatusDraft,
+		PaymentStatus:   types.PaymentStatusPending,
+		Currency:        "usd",
+		AmountDue:       decimal.NewFromFloat(50),
+		Total:           decimal.NewFromFloat(50),
+		Subtotal:        decimal.NewFromFloat(50),
+		AmountPaid:      decimal.Zero,
+		AmountRemaining: decimal.NewFromFloat(50),
+		BaseModel:       types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.invoiceRepo.CreateWithLineItems(ctx, draftInvoice))
+
 	s.NotContains(lo.Map(rec.events, func(ev *types.WebhookEvent, _ int) types.WebhookEventName {
 		return ev.EventName
 	}), types.WebhookEventInvoiceUpdateFinalized)
 
-	err = s.service.FinalizeInvoice(ctx, resp.ID)
+	err := s.service.FinalizeInvoice(ctx, draftInvoice.ID)
 	s.Require().NoError(err)
 
 	var finalized *types.WebhookEvent
@@ -702,7 +704,7 @@ func (s *InvoiceServiceSuite) TestFinalizeInvoice_PublishesFinalizedSystemEventF
 		InvoiceID string `json:"invoice_id"`
 	}
 	s.Require().NoError(json.Unmarshal(finalized.Payload, &pl))
-	s.Equal(resp.ID, pl.InvoiceID)
+	s.Equal(draftInvoice.ID, pl.InvoiceID)
 }
 
 func (s *InvoiceServiceSuite) TestFinalizeInvoice_PublishesFinalizedSystemEventForSubscription() {
