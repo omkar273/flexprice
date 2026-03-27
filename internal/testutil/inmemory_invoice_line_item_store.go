@@ -3,10 +3,12 @@ package testutil
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/flexprice/flexprice/internal/domain/invoice"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/shopspring/decimal"
 )
 
 // InMemoryInvoiceLineItemStore implements invoice.LineItemRepository for testing.
@@ -123,6 +125,108 @@ func (s *InMemoryInvoiceLineItemStore) List(ctx context.Context, filter *types.I
 		result = append(result, item)
 	}
 	return result, nil
+}
+
+func (s *InMemoryInvoiceLineItemStore) GetRevenueByCustomer(
+	_ context.Context,
+	periodStart, periodEnd time.Time,
+	customerIDs []string,
+) ([]invoice.RevenueByCustomerRow, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	custFilter := make(map[string]bool, len(customerIDs))
+	for _, id := range customerIDs {
+		custFilter[id] = true
+	}
+
+	// Aggregate: key = customerID + "|" + priceType
+	agg := make(map[string]decimal.Decimal)
+	for _, item := range s.data {
+		if item.Status != types.StatusPublished {
+			continue
+		}
+		if item.PeriodStart != nil && item.PeriodStart.Before(periodStart) {
+			continue
+		}
+		if item.PeriodEnd != nil && !item.PeriodEnd.Before(periodEnd) {
+			continue
+		}
+		if len(custFilter) > 0 && !custFilter[item.CustomerID] {
+			continue
+		}
+		pt := "FIXED"
+		if item.PriceType != nil {
+			pt = *item.PriceType
+		}
+		key := item.CustomerID + "|" + pt
+		agg[key] = agg[key].Add(item.Amount)
+	}
+
+	var results []invoice.RevenueByCustomerRow
+	for key, amount := range agg {
+		parts := splitKeyOnce(key, "|")
+		results = append(results, invoice.RevenueByCustomerRow{
+			CustomerID: parts[0],
+			PriceType:  parts[1],
+			Amount:     amount,
+		})
+	}
+	return results, nil
+}
+
+func (s *InMemoryInvoiceLineItemStore) GetVoiceMinutesByCustomer(
+	_ context.Context,
+	periodStart, periodEnd time.Time,
+	meterID string,
+	customerIDs []string,
+) ([]invoice.VoiceMinutesRow, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	custFilter := make(map[string]bool, len(customerIDs))
+	for _, id := range customerIDs {
+		custFilter[id] = true
+	}
+
+	agg := make(map[string]decimal.Decimal)
+	for _, item := range s.data {
+		if item.Status != types.StatusPublished {
+			continue
+		}
+		if item.MeterID == nil || *item.MeterID != meterID {
+			continue
+		}
+		if item.PeriodStart != nil && item.PeriodStart.Before(periodStart) {
+			continue
+		}
+		if item.PeriodEnd != nil && !item.PeriodEnd.Before(periodEnd) {
+			continue
+		}
+		if len(custFilter) > 0 && !custFilter[item.CustomerID] {
+			continue
+		}
+		agg[item.CustomerID] = agg[item.CustomerID].Add(item.Quantity)
+	}
+
+	var results []invoice.VoiceMinutesRow
+	for custID, usageMs := range agg {
+		results = append(results, invoice.VoiceMinutesRow{
+			CustomerID: custID,
+			UsageMs:    usageMs,
+		})
+	}
+	return results, nil
+}
+
+// splitKeyOnce splits s on the first occurrence of sep into exactly 2 parts.
+func splitKeyOnce(s, sep string) [2]string {
+	for i := 0; i < len(s); i++ {
+		if s[i] == sep[0] {
+			return [2]string{s[:i], s[i+1:]}
+		}
+	}
+	return [2]string{s, ""}
 }
 
 func (s *InMemoryInvoiceLineItemStore) Clear() {

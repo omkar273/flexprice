@@ -1095,7 +1095,7 @@ func (r *EventRepository) GetTotalEventCount(ctx context.Context, startTime, end
 			SELECT 
 				%s AS window_time,
 				COUNT(DISTINCT(id)) as event_count
-			FROM events FINAL
+			FROM events
 			WHERE tenant_id = ?
 			AND environment_id = ?
 			AND timestamp >= ?
@@ -1152,7 +1152,7 @@ func (r *EventRepository) GetTotalEventCount(ctx context.Context, startTime, end
 		// No window size, just get total count
 		query := `
 			SELECT COUNT(DISTINCT(id)) as total_count
-			FROM events FINAL
+			FROM events
 			WHERE tenant_id = ?
 			AND environment_id = ?
 		`
@@ -1210,7 +1210,7 @@ func (r *EventRepository) GetEventByID(ctx context.Context, eventID string) (*ev
 			properties,
 			environment_id,
 			ingested_at
-		FROM events FINAL
+		FROM events
 		WHERE tenant_id = ?
 		AND environment_id = ?
 		AND id = ?
