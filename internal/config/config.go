@@ -138,11 +138,12 @@ type LoggingConfig struct {
 	FluentdHost    string `mapstructure:"fluentd_host" validate:"omitempty"`
 	FluentdPort    int    `mapstructure:"fluentd_port" validate:"omitempty"`
 
-	// OpenTelemetry / SigNoz log export configuration
-	OtelEnabled        bool   `mapstructure:"otel_enabled" default:"false"`
-	OtelEndpoint       string `mapstructure:"otel_endpoint" validate:"omitempty"`        // e.g. ingest.us.signoz.cloud:443
-	OtelInsecure       bool   `mapstructure:"otel_insecure" default:"false"`             // set true for local collector without TLS
-	OtelIngestionKey   string `mapstructure:"otel_ingestion_key" validate:"omitempty"`   // SigNoz ingestion key
+	// OpenTelemetry log export configuration (works with SigNoz, Grafana, Datadog, etc.)
+	OtelEnabled       bool   `mapstructure:"otel_enabled" default:"false"`
+	OtelEndpoint      string `mapstructure:"otel_endpoint" validate:"omitempty"`   // e.g. ingest.us.signoz.cloud:443
+	OtelInsecure      bool   `mapstructure:"otel_insecure" default:"false"`         // set true for local collector without TLS
+	OtelAuthHeader    string `mapstructure:"otel_auth_header" validate:"omitempty"` // header name, e.g. signoz-ingestion-key
+	OtelAuthValue     string `mapstructure:"otel_auth_value" validate:"omitempty"`  // header value / token
 }
 
 type PostgresConfig struct {
@@ -383,7 +384,8 @@ func NewConfig() (*Configuration, error) {
 	_ = v.BindEnv("logging.otel_enabled", "FLEXPRICE_LOGGING_OTEL_ENABLED")
 	_ = v.BindEnv("logging.otel_endpoint", "FLEXPRICE_LOGGING_OTEL_ENDPOINT")
 	_ = v.BindEnv("logging.otel_insecure", "FLEXPRICE_LOGGING_OTEL_INSECURE")
-	_ = v.BindEnv("logging.otel_ingestion_key", "FLEXPRICE_LOGGING_OTEL_INGESTION_KEY")
+	_ = v.BindEnv("logging.otel_auth_header", "FLEXPRICE_LOGGING_OTEL_AUTH_HEADER")
+	_ = v.BindEnv("logging.otel_auth_value", "FLEXPRICE_LOGGING_OTEL_AUTH_VALUE")
 
 	// Step 5: Read the YAML file
 	if err := v.ReadInConfig(); err != nil {
