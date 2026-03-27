@@ -44,6 +44,7 @@ func NewHandler(deps Deps) Handler {
 	h := &handler{deps: deps}
 	h.processors = map[types.WebhookEventName]eventProcessor{
 		types.WebhookEventInvoiceUpdateFinalized: h.processInvoiceUpdateFinalized,
+		types.WebhookEventCustomerCreated:        h.processCustomerCreated,
 	}
 	return h
 }
@@ -75,7 +76,6 @@ func (h *handler) RegisterHandler(router *pubsubRouter.Router) {
 // It dispatches to event-specific processors; unknown events are ACKed and ignored.
 func (h *handler) processMessage(msg *message.Message) error {
 	ctx := msg.Context()
-
 	var event types.WebhookEvent
 	if err := json.Unmarshal(msg.Payload, &event); err != nil {
 		h.deps.Logger.Errorw("integration_events: failed to unmarshal WebhookEvent, dropping message",
@@ -154,6 +154,40 @@ func (h *handler) processInvoiceUpdateFinalized(
 	if err := DispatchInvoiceVendorSync(ctx, h.deps.Config, h.deps.ConnectionRepo, h.deps.Logger, in); err != nil {
 		h.deps.Logger.Errorw("integration_events: invoice vendor sync dispatch failed",
 			"invoice_id", inv.ID,
+			"error", err,
+		)
+		return err
+	}
+
+	return nil
+}
+
+func (h *handler) processCustomerCreated(
+	ctx context.Context,
+	event *types.WebhookEvent,
+	msg *message.Message,
+) error {
+	var pl struct {
+		CustomerID string `json:"customer_id"`
+	}
+	if err := json.Unmarshal(event.Payload, &pl); err != nil || pl.CustomerID == "" {
+		h.deps.Logger.Errorw("integration_events: invalid customer payload on created event, dropping",
+			"message_uuid", msg.UUID,
+			"error", err,
+		)
+		return nil
+	}
+
+	in := CustomerVendorSyncInput{
+		TenantID:      event.TenantID,
+		EnvironmentID: event.EnvironmentID,
+		UserID:        event.UserID,
+		CustomerID:    pl.CustomerID,
+	}
+
+	if err := DispatchCustomerVendorSync(ctx, h.deps.Config, h.deps.ConnectionRepo, h.deps.Logger, in); err != nil {
+		h.deps.Logger.Errorw("integration_events: customer vendor sync dispatch failed",
+			"customer_id", pl.CustomerID,
 			"error", err,
 		)
 		return err
