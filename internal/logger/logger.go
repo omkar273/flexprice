@@ -10,14 +10,14 @@ import (
 	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/getsentry/sentry-go"
 	"go.opentelemetry.io/contrib/bridges/otelzap"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	otellog "go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // sentryToZapLevel maps a sentry LogLevel to its zapcore equivalent for level-gating.
@@ -145,10 +145,9 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 		otlploggrpc.WithEndpoint(cfg.Logging.OtelEndpoint),
 	}
 	if cfg.Logging.OtelInsecure {
-		opts = append(opts, otlploggrpc.WithDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
-	} else {
-		opts = append(opts, otlploggrpc.WithDialOption(grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, ""))))
+		opts = append(opts, otlploggrpc.WithInsecure())
 	}
+	// When not insecure, otlploggrpc uses TLS by default — no extra option needed.
 	if cfg.Logging.OtelIngestionKey != "" {
 		opts = append(opts, otlploggrpc.WithHeaders(map[string]string{
 			"signoz-ingestion-key": cfg.Logging.OtelIngestionKey,
@@ -160,8 +159,24 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 		return nil, err
 	}
 
+	// Build resource with service.name and deployment.environment so SigNoz can
+	// group and filter logs correctly.
+	resAttrs := []attribute.KeyValue{
+		semconv.ServiceName(cfg.Logging.ServiceName),
+	}
+	if cfg.Logging.Environment != "" {
+		resAttrs = append(resAttrs, semconv.DeploymentEnvironmentName(cfg.Logging.Environment))
+	}
+	res, err := resource.New(ctx,
+		resource.WithAttributes(resAttrs...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	provider := sdklog.NewLoggerProvider(
-		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)),
+		sdklog.WithProcessor(sdklog.NewSimpleProcessor(exporter)),
+		sdklog.WithResource(res),
 	)
 	return provider, nil
 }
