@@ -15,8 +15,8 @@ import (
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/postgres"
 	"github.com/flexprice/flexprice/internal/types"
-	"github.com/lib/pq"
 	"github.com/shopspring/decimal"
+	"strings"
 )
 
 const invoiceLineItemBatchSize = 1000
@@ -604,12 +604,15 @@ func (r *invoiceLineItemRepository) GetRevenueByCustomer(
 
 	// Build the query with optional customer filter
 	customerFilter := ""
-	paramIdx := 5
 	args := []interface{}{tenantID, envID, periodStart, periodEnd}
 
 	if len(customerIDs) > 0 {
-		customerFilter = fmt.Sprintf(" AND ili.customer_id = ANY($%d)", paramIdx)
-		args = append(args, pq.Array(customerIDs))
+		placeholders := make([]string, len(customerIDs))
+		for i, id := range customerIDs {
+			placeholders[i] = fmt.Sprintf("$%d", i+5)
+			args = append(args, id)
+		}
+		customerFilter = " AND ili.customer_id IN (" + strings.Join(placeholders, ", ") + ")"
 	}
 
 	query := fmt.Sprintf(`
@@ -694,12 +697,15 @@ func (r *invoiceLineItemRepository) GetVoiceMinutesByCustomer(
 
 	// Build the query with optional customer filter
 	customerFilter := ""
-	paramIdx := 6
 	args := []interface{}{tenantID, envID, periodStart, periodEnd, meterID}
 
 	if len(customerIDs) > 0 {
-		customerFilter = fmt.Sprintf(" AND ili.customer_id = ANY($%d)", paramIdx)
-		args = append(args, pq.Array(customerIDs))
+		placeholders := make([]string, len(customerIDs))
+		for i, id := range customerIDs {
+			placeholders[i] = fmt.Sprintf("$%d", i+6)
+			args = append(args, id)
+		}
+		customerFilter = " AND ili.customer_id IN (" + strings.Join(placeholders, ", ") + ")"
 	}
 
 	query := fmt.Sprintf(`

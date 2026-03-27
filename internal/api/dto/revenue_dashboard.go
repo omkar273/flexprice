@@ -35,6 +35,16 @@ func (r *RevenueDashboardRequest) Validate() error {
 			}).
 			Mark(ierr.ErrValidation)
 	}
+	const maxCustomerIDs = 1000
+	if len(r.CustomerIDs) > maxCustomerIDs {
+		return ierr.NewError("customer_ids exceeds maximum allowed count").
+			WithHint("customer_ids must not exceed 1000 entries").
+			WithReportableDetails(map[string]interface{}{
+				"count": len(r.CustomerIDs),
+				"max":   maxCustomerIDs,
+			}).
+			Mark(ierr.ErrValidation)
+	}
 	return nil
 }
 
