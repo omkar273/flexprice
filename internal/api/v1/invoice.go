@@ -164,15 +164,17 @@ func (h *InvoiceHandler) FinalizeInvoice(c *gin.Context) {
 // ComputeInvoice godoc
 // @Summary Compute draft invoice
 // @ID computeInvoice
-// @Description Recomputes a draft invoice in-place using the same logic as ComputeInvoice (subscription line items from billing, coupons/taxes; or one-off/credit payload when provided). Omits body for subscription drafts; send InvoiceComputeRequest for one-off/credit drafts.
+// @Description Recomputes a draft invoice in-place using the same logic as ComputeInvoice (subscription line items from billing, coupons/taxes; or one-off/credit payload when provided). Omits body for subscription drafts; send InvoiceComputeRequest for one-off/credit drafts. Use sync=true query param to wait for the result; otherwise the workflow is triggered asynchronously (default).
 // @Tags Invoices
 // @x-scope "write"
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
+// @Param sync query string false "If 'true', execute synchronously and return invoice. Default is async."
 // @Param request body dto.InvoiceComputeRequest false "Optional compute payload (one-off/credit drafts)"
-// @Success 200 {object} dto.ComputeInvoiceResponse
+// @Success 200 {object} dto.ComputeInvoiceResponse "Sync mode response"
+// @Success 202 {object} models.TemporalWorkflowResult "Async mode response"
 // @Failure 400 {object} ierr.ErrorResponse "Invalid request or invoice is not draft"
 // @Failure 404 {object} ierr.ErrorResponse "Invoice not found"
 // @Failure 500 {object} ierr.ErrorResponse "Server error"
@@ -202,6 +204,58 @@ func (h *InvoiceHandler) ComputeInvoice(c *gin.Context) {
 		return
 	}
 
+	syncMode := c.Query("sync") == "true"
+
+	// Try Temporal workflow execution
+	temporalSvc := temporalservice.GetGlobalTemporalService()
+	if temporalSvc != nil {
+		workflowInput := invoiceModels.ComputeInvoiceWorkflowInput{
+			InvoiceID: id,
+		}
+
+		if syncMode {
+			// Synchronous: execute workflow and wait for result
+			result, err := temporalSvc.ExecuteWorkflowSync(ctx, types.TemporalComputeInvoiceWorkflow, workflowInput, 300)
+			if err != nil {
+				h.logger.Errorw("failed to execute compute invoice workflow sync", "error", err, "invoice_id", id)
+				c.Error(err)
+				return
+			}
+
+			workflowResult, _ := result.(*invoiceModels.ComputeInvoiceWorkflowResult)
+
+			// Fetch the updated invoice to return
+			invoice, err := h.invoiceService.GetInvoice(ctx, id)
+			if err != nil {
+				h.logger.Errorw("failed to get invoice after compute", "error", err, "invoice_id", id)
+				c.Error(err)
+				return
+			}
+
+			c.JSON(http.StatusOK, dto.ComputeInvoiceResponse{
+				Invoice: invoice,
+				Skipped: workflowResult.Skipped,
+			})
+			return
+		}
+
+		// Async mode (default): start workflow and return workflow ID
+		workflowRun, err := temporalSvc.ExecuteWorkflow(ctx, types.TemporalComputeInvoiceWorkflow, workflowInput)
+		if err != nil {
+			h.logger.Errorw("failed to start compute invoice workflow", "error", err, "invoice_id", id)
+			c.Error(err)
+			return
+		}
+
+		c.JSON(http.StatusAccepted, models.TemporalWorkflowResult{
+			Message:    "compute invoice workflow started",
+			WorkflowID: workflowRun.GetID(),
+			RunID:      workflowRun.GetRunID(),
+		})
+		return
+	}
+
+	// Fallback: no Temporal available, call service directly (always sync)
 	var reqPtr *dto.InvoiceComputeRequest
 	var body dto.InvoiceComputeRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
