@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -318,6 +319,11 @@ func (s *dashboardService) GetRevenueDashboard(ctx context.Context, req dto.Reve
 			summary.CPM = &cpm
 		}
 	}
+
+	// Sort by total revenue descending so highest-revenue customers appear first
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].TotalRevenue.GreaterThan(items[j].TotalRevenue)
+	})
 
 	if items == nil {
 		items = []dto.RevenueDashboardCustomer{}
