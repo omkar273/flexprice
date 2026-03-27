@@ -11,7 +11,6 @@ import (
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/flexprice/flexprice/internal/utils"
 	"github.com/shopspring/decimal"
-	"golang.org/x/sync/errgroup"
 )
 
 // DashboardService provides dashboard functionality
@@ -179,30 +178,22 @@ func (s *dashboardService) GetRevenueDashboard(ctx context.Context, req dto.Reve
 	// Step 1: Check custom analytics config for CPM / voice minutes
 	meterID, hasCustomAnalytics := s.resolveVoiceMeterID(ctx)
 
-	// Step 2: Run queries in parallel
-	var revenueRows []domaininvoice.RevenueByCustomerRow
-	var voiceRows []domaininvoice.VoiceMinutesRow
-
-	g, gCtx := errgroup.WithContext(ctx)
-
-	g.Go(func() error {
-		var err error
-		revenueRows, err = s.InvoiceLineItemRepo.GetRevenueByCustomer(gCtx, req.PeriodStart, req.PeriodEnd, req.CustomerIDs)
-		return err
-	})
-
-	if hasCustomAnalytics && meterID != "" {
-		g.Go(func() error {
-			var err error
-			voiceRows, err = s.InvoiceLineItemRepo.GetVoiceMinutesByCustomer(gCtx, req.PeriodStart, req.PeriodEnd, meterID, req.CustomerIDs)
-			return err
-		})
+	// Step 2: Fetch revenue data
+	revenueRows, err := s.InvoiceLineItemRepo.GetRevenueByCustomer(ctx, req.PeriodStart, req.PeriodEnd, req.CustomerIDs)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("failed to fetch revenue by customer").
+			Mark(ierr.ErrDatabase)
 	}
 
-	if err := g.Wait(); err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("failed to fetch revenue dashboard data").
-			Mark(ierr.ErrDatabase)
+	var voiceRows []domaininvoice.VoiceMinutesRow
+	if hasCustomAnalytics && meterID != "" {
+		voiceRows, err = s.InvoiceLineItemRepo.GetVoiceMinutesByCustomer(ctx, req.PeriodStart, req.PeriodEnd, meterID, req.CustomerIDs)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("failed to fetch voice minutes by customer").
+				Mark(ierr.ErrDatabase)
+		}
 	}
 
 	// Step 3: Aggregate per-customer data
