@@ -672,6 +672,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 	dashboardRoutes := v1Private.Group("/dashboard")
 	{
 		dashboardRoutes.POST("/revenues", handlers.Dashboard.GetRevenues)
+		dashboardRoutes.POST("/revenue-dashboard", handlers.Dashboard.GetRevenueDashboard)
 	}
 
 	// Workflow monitoring routes
