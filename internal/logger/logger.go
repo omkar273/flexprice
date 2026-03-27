@@ -106,7 +106,7 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 			zapLogger.Sugar().Warnf("Failed to initialize OTel log exporter: %v, falling back to stdout only", err)
 			otelLogProvider = nil
 		} else {
-			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s)", cfg.Logging.OtelEndpoint)
+			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s, ingestion_key_set: %v)", cfg.Logging.OtelEndpoint, cfg.Logging.OtelIngestionKey != "")
 		}
 	}
 
@@ -175,7 +175,7 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 	}
 
 	provider := sdklog.NewLoggerProvider(
-		sdklog.WithProcessor(sdklog.NewSimpleProcessor(exporter)),
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)),
 		sdklog.WithResource(res),
 	)
 	return provider, nil
