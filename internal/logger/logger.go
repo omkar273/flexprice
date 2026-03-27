@@ -106,7 +106,7 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 			zapLogger.Sugar().Warnf("Failed to initialize OTel log exporter: %v, falling back to stdout only", err)
 			otelLogProvider = nil
 		} else {
-			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s)", cfg.Logging.OtelEndpoint)
+			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s, auth_header: %s, auth_value_set: %v)", cfg.Logging.OtelEndpoint, cfg.Logging.OtelAuthHeader, cfg.Logging.OtelAuthValue != "")
 		}
 	}
 
@@ -148,9 +148,9 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 		opts = append(opts, otlploggrpc.WithInsecure())
 	}
 	// When not insecure, otlploggrpc uses TLS by default — no extra option needed.
-	if cfg.Logging.OtelIngestionKey != "" {
+	if cfg.Logging.OtelAuthHeader != "" && cfg.Logging.OtelAuthValue != "" {
 		opts = append(opts, otlploggrpc.WithHeaders(map[string]string{
-			"signoz-ingestion-key": cfg.Logging.OtelIngestionKey,
+			cfg.Logging.OtelAuthHeader: cfg.Logging.OtelAuthValue,
 		}))
 	}
 
@@ -175,7 +175,7 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 	}
 
 	provider := sdklog.NewLoggerProvider(
-		sdklog.WithProcessor(sdklog.NewSimpleProcessor(exporter)),
+		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)),
 		sdklog.WithResource(res),
 	)
 	return provider, nil
