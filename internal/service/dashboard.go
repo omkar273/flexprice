@@ -238,10 +238,41 @@ func (s *dashboardService) GetRevenueDashboard(ctx context.Context, req dto.Reve
 		}
 	}
 
-	// Step 4: Build response — filter zero-revenue customers
+	// Step 4: Bulk-fetch customer details for enrichment
+	uniqueCustomerIDs := make([]string, 0, len(customerMap))
+	for custID := range customerMap {
+		uniqueCustomerIDs = append(uniqueCustomerIDs, custID)
+	}
+
+	type customerInfo struct {
+		Name       string
+		ExternalID string
+	}
+	customerInfoMap := make(map[string]customerInfo, len(uniqueCustomerIDs))
+
+	if len(uniqueCustomerIDs) > 0 {
+		custFilter := &types.CustomerFilter{
+			QueryFilter: types.NewNoLimitQueryFilter(),
+			CustomerIDs: uniqueCustomerIDs,
+		}
+		customers, err := s.CustomerRepo.List(ctx, custFilter)
+		if err != nil {
+			s.Logger.WarnwCtx(ctx, "failed to fetch customer details for revenue dashboard", "error", err)
+			// Continue without customer details rather than failing the entire request
+		} else {
+			for _, c := range customers {
+				customerInfoMap[c.ID] = customerInfo{
+					Name:       c.Name,
+					ExternalID: c.ExternalID,
+				}
+			}
+		}
+	}
+
+	// Step 5: Build response — filter zero-revenue customers
 	msPerMinute := decimal.NewFromInt(60000)
 
-	var customers []dto.RevenueDashboardCustomer
+	var items []dto.RevenueDashboardCustomer
 	summaryUsage := decimal.Zero
 	summaryFixed := decimal.Zero
 	summaryVoiceMs := decimal.Zero
@@ -256,11 +287,14 @@ func (s *dashboardService) GetRevenueDashboard(ctx context.Context, req dto.Reve
 		summaryFixed = summaryFixed.Add(cd.fixedRevenue)
 		summaryVoiceMs = summaryVoiceMs.Add(cd.voiceMs)
 
+		info := customerInfoMap[custID]
 		cust := dto.RevenueDashboardCustomer{
-			CustomerID:        custID,
-			TotalRevenue:      totalRevenue,
-			TotalUsageRevenue: cd.usageRevenue,
-			TotalFixedRevenue: cd.fixedRevenue,
+			CustomerID:         custID,
+			CustomerName:       info.Name,
+			ExternalCustomerID: info.ExternalID,
+			TotalRevenue:       totalRevenue,
+			TotalUsageRevenue:  cd.usageRevenue,
+			TotalFixedRevenue:  cd.fixedRevenue,
 		}
 
 		if hasCustomAnalytics {
@@ -273,7 +307,7 @@ func (s *dashboardService) GetRevenueDashboard(ctx context.Context, req dto.Reve
 			}
 		}
 
-		customers = append(customers, cust)
+		items = append(items, cust)
 	}
 
 	// Build summary
@@ -294,13 +328,13 @@ func (s *dashboardService) GetRevenueDashboard(ctx context.Context, req dto.Reve
 		}
 	}
 
-	if customers == nil {
-		customers = []dto.RevenueDashboardCustomer{}
+	if items == nil {
+		items = []dto.RevenueDashboardCustomer{}
 	}
 
 	return &dto.RevenueDashboardResponse{
-		Summary:   summary,
-		Customers: customers,
+		Summary: summary,
+		Items:   items,
 	}, nil
 }
 

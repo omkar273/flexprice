@@ -40,8 +40,8 @@ func (r *RevenueDashboardRequest) Validate() error {
 
 // RevenueDashboardResponse represents the response for the revenue dashboard API
 type RevenueDashboardResponse struct {
-	Summary   RevenueDashboardSummary    `json:"summary"`
-	Customers []RevenueDashboardCustomer `json:"customers"`
+	Summary RevenueDashboardSummary    `json:"summary"`
+	Items   []RevenueDashboardCustomer `json:"items"`
 }
 
 // RevenueDashboardSummary represents aggregate revenue metrics across all customers
@@ -55,10 +55,12 @@ type RevenueDashboardSummary struct {
 
 // RevenueDashboardCustomer represents per-customer revenue data
 type RevenueDashboardCustomer struct {
-	CustomerID        string           `json:"customer_id"`
-	TotalRevenue      decimal.Decimal  `json:"total_revenue" swaggertype:"string"`
-	TotalUsageRevenue decimal.Decimal  `json:"total_usage_revenue" swaggertype:"string"`
-	TotalFixedRevenue decimal.Decimal  `json:"total_fixed_revenue" swaggertype:"string"`
-	CPM               *decimal.Decimal `json:"cpm,omitempty" swaggertype:"string"`
-	VoiceMinutes      *decimal.Decimal `json:"voice_minutes,omitempty" swaggertype:"string"`
+	CustomerID         string           `json:"customer_id"`
+	CustomerName       string           `json:"customer_name"`
+	ExternalCustomerID string           `json:"external_customer_id"`
+	TotalRevenue       decimal.Decimal  `json:"total_revenue" swaggertype:"string"`
+	TotalUsageRevenue  decimal.Decimal  `json:"total_usage_revenue" swaggertype:"string"`
+	TotalFixedRevenue  decimal.Decimal  `json:"total_fixed_revenue" swaggertype:"string"`
+	CPM                *decimal.Decimal `json:"cpm,omitempty" swaggertype:"string"`
+	VoiceMinutes       *decimal.Decimal `json:"voice_minutes,omitempty" swaggertype:"string"`
 }
