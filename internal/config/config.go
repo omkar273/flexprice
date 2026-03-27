@@ -379,6 +379,12 @@ func NewConfig() (*Configuration, error) {
 	_ = v.BindEnv("logging.service_name", "SERVICE_NAME")
 	_ = v.BindEnv("logging.environment", "ENVIRONMENT")
 
+	// Explicitly bind OTel logging vars — AutomaticEnv can miss nested keys with underscores
+	_ = v.BindEnv("logging.otel_enabled", "FLEXPRICE_LOGGING_OTEL_ENABLED")
+	_ = v.BindEnv("logging.otel_endpoint", "FLEXPRICE_LOGGING_OTEL_ENDPOINT")
+	_ = v.BindEnv("logging.otel_insecure", "FLEXPRICE_LOGGING_OTEL_INSECURE")
+	_ = v.BindEnv("logging.otel_ingestion_key", "FLEXPRICE_LOGGING_OTEL_INGESTION_KEY")
+
 	// Step 5: Read the YAML file
 	if err := v.ReadInConfig(); err != nil {
 		fmt.Printf("Error reading config file: %v\n", err)
