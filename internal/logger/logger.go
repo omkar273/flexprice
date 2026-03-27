@@ -12,9 +12,10 @@ import (
 	"go.opentelemetry.io/contrib/bridges/otelzap"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	otellog "go.opentelemetry.io/otel/log"
-	"go.opentelemetry.io/otel/sdk/resource"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -139,22 +140,40 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 	}, nil
 }
 
-// newOtelLogProvider builds a sdklog.LoggerProvider that exports via OTLP gRPC.
+// newOtelLogProvider builds a sdklog.LoggerProvider that exports via OTLP (gRPC or HTTP).
 func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog.LoggerProvider, error) {
-	opts := []otlploggrpc.Option{
-		otlploggrpc.WithEndpoint(cfg.Logging.OtelEndpoint),
-	}
-	if cfg.Logging.OtelInsecure {
-		opts = append(opts, otlploggrpc.WithInsecure())
-	}
-	// When not insecure, otlploggrpc uses TLS by default — no extra option needed.
+	headers := map[string]string{}
 	if cfg.Logging.OtelAuthHeader != "" && cfg.Logging.OtelAuthValue != "" {
-		opts = append(opts, otlploggrpc.WithHeaders(map[string]string{
-			cfg.Logging.OtelAuthHeader: cfg.Logging.OtelAuthValue,
-		}))
+		headers[cfg.Logging.OtelAuthHeader] = cfg.Logging.OtelAuthValue
 	}
 
-	exporter, err := otlploggrpc.New(ctx, opts...)
+	var exporter sdklog.Exporter
+	var err error
+
+	if cfg.Logging.OtelProtocol == "http" {
+		httpOpts := []otlploghttp.Option{
+			otlploghttp.WithEndpoint(cfg.Logging.OtelEndpoint),
+		}
+		if cfg.Logging.OtelInsecure {
+			httpOpts = append(httpOpts, otlploghttp.WithInsecure())
+		}
+		if len(headers) > 0 {
+			httpOpts = append(httpOpts, otlploghttp.WithHeaders(headers))
+		}
+		exporter, err = otlploghttp.New(ctx, httpOpts...)
+	} else {
+		// default: grpc
+		grpcOpts := []otlploggrpc.Option{
+			otlploggrpc.WithEndpoint(cfg.Logging.OtelEndpoint),
+		}
+		if cfg.Logging.OtelInsecure {
+			grpcOpts = append(grpcOpts, otlploggrpc.WithInsecure())
+		}
+		if len(headers) > 0 {
+			grpcOpts = append(grpcOpts, otlploggrpc.WithHeaders(headers))
+		}
+		exporter, err = otlploggrpc.New(ctx, grpcOpts...)
+	}
 	if err != nil {
 		return nil, err
 	}
