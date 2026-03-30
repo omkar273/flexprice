@@ -123,6 +123,11 @@ var commands = []Command{
 		Description: "Sync a price to all subscriptions with the same plan and start date by creating new line items",
 		Run:         internal.SyncPriceToSubscriptions,
 	},
+	{
+		Name:        "setup-draft-invoices",
+		Description: "Create draft invoices for subscriptions from a JSON file and trigger processing workflows",
+		Run:         internal.SetupDraftInvoices,
+	},
 }
 
 // runBulkReprocessEventsCommand wraps the bulk reprocess events with command line parameters

@@ -31,6 +31,9 @@ type Repository interface {
 	// Bulk operations with edges
 	CreateWithLineItems(ctx context.Context, inv *Invoice) error
 
+	// CreateBulk creates multiple invoices in a single transaction with batching.
+	CreateBulk(ctx context.Context, invoices []*Invoice) error
+
 	// Idempotency operations
 	GetByIdempotencyKey(ctx context.Context, key string) (*Invoice, error)
 
