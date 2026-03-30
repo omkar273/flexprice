@@ -1781,6 +1781,11 @@ func (s *subscriptionService) CancelSubscription(
 			return err
 		}
 
+		// Step 7b: Terminate plan line items (set EndDate = effectiveDate)
+		if err := s.cancelPlanLineItemsForSubscription(ctx, subscription.ID, effectiveDate); err != nil {
+			return err
+		}
+
 		// Step 7b: Handle scheduling for future cancellations (end_of_period and scheduled_date)
 		if req.CancellationType == types.CancellationTypeEndOfPeriod ||
 			req.CancellationType == types.CancellationTypeScheduledDate {
@@ -6162,4 +6167,42 @@ func (s *subscriptionService) TriggerSubscriptionWorkflow(ctx context.Context, s
 	}
 
 	return response, nil
+}
+
+// cancelPlanLineItemsForSubscription sets EndDate on all plan line items for the subscription
+// up to effectiveDate. Items that have not yet started (StartDate > effectiveDate) are skipped
+// because they never became active; the subscription-level EndDate already protects billing.
+// Uses direct repository update (not DeleteSubscriptionLineItem) to avoid the effectiveFrom
+// validation in that service function.
+func (s *subscriptionService) cancelPlanLineItemsForSubscription(
+	ctx context.Context,
+	subscriptionID string,
+	effectiveDate time.Time,
+) error {
+	lineItemFilter := types.NewNoLimitSubscriptionLineItemFilter()
+	lineItemFilter.SubscriptionIDs = []string{subscriptionID}
+	lineItemFilter.EntityType = lo.ToPtr(types.SubscriptionLineItemEntityTypePlan)
+	lineItemFilter.Status = lo.ToPtr(types.StatusPublished)
+
+	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range lineItems {
+		// Skip items that haven't started yet — they never became active
+		if item.StartDate.After(effectiveDate) {
+			continue
+		}
+		// Skip items already terminated at or before effectiveDate
+		if !item.EndDate.IsZero() && !item.EndDate.After(effectiveDate) {
+			continue
+		}
+		item.EndDate = effectiveDate
+		if err := s.SubscriptionLineItemRepo.Update(ctx, item); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
