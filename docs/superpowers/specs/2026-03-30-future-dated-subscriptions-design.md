@@ -92,13 +92,20 @@ Add a new helper function `cancelPlanLineItemsForSubscription(ctx, sub, effectiv
 **Helper logic:**
 
 ```
-for each plan line item on the subscription:
+filter := NewNoLimitSubscriptionLineItemFilter()
+filter.SubscriptionIDs = []string{sub.ID}
+filter.EntityType = lo.ToPtr(SubscriptionLineItemEntityTypePlan)  // plan items only
+lineItems = SubscriptionLineItemRepo.List(ctx, filter)
+
+for each line item:
     if item.StartDate.After(effectiveDate):
         skip  // item never became active; subscription-level EndDate protects billing
     if item.EndDate.IsZero() || item.EndDate.After(effectiveDate):
         item.EndDate = effectiveDate
-        repo.UpdateLineItem(ctx, item)  // direct repository call, NOT DeleteSubscriptionLineItem
+        SubscriptionLineItemRepo.Update(ctx, item)  // direct repository call, NOT DeleteSubscriptionLineItem
 ```
+
+**Entity type:** The filter must use `SubscriptionLineItemEntityTypePlan`. `SubscriptionLineItemEntityTypeSubscription` is used for TaxRate and AddonAssociation entity types elsewhere — it is not used for subscription line items in this service and must not be included.
 
 **Persistence mechanism:** The helper must call the repository layer **directly** (e.g., `SubscriptionLineItemRepo.Update()`), not via `DeleteSubscriptionLineItem()`. The `DeleteSubscriptionLineItem` service function contains a validation that rejects `effectiveFrom < item.StartDate`. Even though the pre-start guard above skips those items, using `DeleteSubscriptionLineItem` would introduce a dependency on that internal check and deviates from the intended data operation (we are updating `EndDate`, not deleting the record). Use a direct repository update.
 
@@ -136,7 +143,7 @@ Both timestamps align to `cancel_at`, so the state is consistent. The executor p
 
 ### Change
 
-In both `FilterLineItemsToBeInvoiced()` and `CalculateFixedCharges()`, add:
+In both `FilterLineItemsToBeInvoiced()` and `CalculateFixedCharges()`, add an early-continue guard inside the iteration loop over line items:
 
 ```go
 // Skip line items that ended before the billing period started
@@ -144,6 +151,8 @@ if !item.EndDate.IsZero() && !item.EndDate.After(periodStart) {
     continue
 }
 ```
+
+In `FilterLineItemsToBeInvoiced`, this guard goes inside the deduplication loop before any existing billing-period checks. In `CalculateFixedCharges`, it goes inside the line item iteration loop alongside the existing `item.StartDate.After(periodEnd)` skip.
 
 ### Behavior After Change
 
