@@ -40,10 +40,22 @@ type handler struct {
 type eventProcessor func(context.Context, *types.WebhookEvent, *message.Message) error
 
 // NewHandler constructs the integration events handler.
+// Each event type maps directly to the dispatch function that owns its resolution logic.
 func NewHandler(deps Deps) Handler {
 	h := &handler{deps: deps}
 	h.processors = map[types.WebhookEventName]eventProcessor{
-		types.WebhookEventInvoiceUpdateFinalized: h.processInvoiceUpdateFinalized,
+		types.WebhookEventInvoiceUpdateFinalized: func(ctx context.Context, event *types.WebhookEvent, msg *message.Message) error {
+			return DispatchInvoiceVendorSync(
+				ctx,
+				h.deps.Config,
+				h.deps.ConnectionRepo,
+				h.deps.InvoiceRepo,
+				h.deps.SubRepo,
+				h.deps.Logger,
+				event,
+				msg.UUID,
+			)
+		},
 	}
 	return h
 }
@@ -102,62 +114,4 @@ func (h *handler) processMessage(msg *message.Message) error {
 	)
 
 	return processor(ctx, &event, msg)
-}
-
-func (h *handler) processInvoiceUpdateFinalized(
-	ctx context.Context,
-	event *types.WebhookEvent,
-	msg *message.Message,
-) error {
-	var pl struct {
-		InvoiceID string `json:"invoice_id"`
-	}
-	if err := json.Unmarshal(event.Payload, &pl); err != nil || pl.InvoiceID == "" {
-		h.deps.Logger.Errorw("integration_events: invalid invoice payload on finalized event, dropping",
-			"message_uuid", msg.UUID,
-			"error", err,
-		)
-		return nil
-	}
-
-	inv, err := h.deps.InvoiceRepo.Get(ctx, pl.InvoiceID)
-	if err != nil {
-		h.deps.Logger.Errorw("integration_events: failed to load invoice for sync dispatch",
-			"invoice_id", pl.InvoiceID,
-			"error", err,
-		)
-		return err
-	}
-
-	collectionMethod := ""
-	if inv.SubscriptionID != nil && h.deps.SubRepo != nil {
-		sub, err := h.deps.SubRepo.Get(ctx, *inv.SubscriptionID)
-		if err != nil {
-			h.deps.Logger.Warnw("integration_events: failed to get subscription for collection method",
-				"invoice_id", inv.ID,
-				"subscription_id", *inv.SubscriptionID,
-				"error", err)
-		} else if sub != nil {
-			collectionMethod = sub.CollectionMethod
-		}
-	}
-
-	in := InvoiceVendorSyncInput{
-		TenantID:         event.TenantID,
-		EnvironmentID:    event.EnvironmentID,
-		UserID:           event.UserID,
-		InvoiceID:        inv.ID,
-		CustomerID:       inv.CustomerID,
-		CollectionMethod: collectionMethod,
-	}
-
-	if err := DispatchInvoiceVendorSync(ctx, h.deps.Config, h.deps.ConnectionRepo, h.deps.Logger, in); err != nil {
-		h.deps.Logger.Errorw("integration_events: invoice vendor sync dispatch failed",
-			"invoice_id", inv.ID,
-			"error", err,
-		)
-		return err
-	}
-
-	return nil
 }

@@ -3773,31 +3773,23 @@ func (s *invoiceService) SyncInvoiceToExternalVendors(ctx context.Context, invoi
 	if inv.InvoiceStatus == types.InvoiceStatusSkipped {
 		return nil // No-op for zero-dollar skipped invoices
 	}
-
 	if inv.SubscriptionID == nil {
 		return nil // No subscription to sync for non-subscription invoices
 	}
 
-	collectionMethod := ""
-	if inv.SubscriptionID != nil {
-		sub, err := s.SubRepo.Get(ctx, *inv.SubscriptionID)
-		if err != nil {
-			s.Logger.WarnwCtx(ctx, "SyncInvoiceToExternalVendors: failed to get subscription, using empty collection method",
-				"invoice_id", invoiceID,
-				"error", err)
-		} else {
-			collectionMethod = sub.CollectionMethod
-		}
+	payload, err := json.Marshal(map[string]string{"invoice_id": invoiceID})
+	if err != nil {
+		return err
 	}
-
-	return integrationevents.DispatchInvoiceVendorSync(ctx, s.Config, s.ConnectionRepo, s.Logger, integrationevents.InvoiceVendorSyncInput{
-		TenantID:         types.GetTenantID(ctx),
-		EnvironmentID:    types.GetEnvironmentID(ctx),
-		UserID:           types.GetUserID(ctx),
-		InvoiceID:        inv.ID,
-		CustomerID:       inv.CustomerID,
-		CollectionMethod: collectionMethod,
-	})
+	event := &types.WebhookEvent{
+		TenantID:      types.GetTenantID(ctx),
+		EnvironmentID: types.GetEnvironmentID(ctx),
+		UserID:        types.GetUserID(ctx),
+		Payload:       payload,
+	}
+	return integrationevents.DispatchInvoiceVendorSync(
+		ctx, s.Config, s.ConnectionRepo, s.InvoiceRepo, s.SubRepo, s.Logger, event, "",
+	)
 }
 
 // applyCreditsAndCouponsToInvoice applies wallet credits and coupons to invoice, updating totals once
