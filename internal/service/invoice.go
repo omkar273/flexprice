@@ -460,13 +460,10 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 			return nil
 		}
 
-		// Apply credits/coupons and taxes if we have a request
+		// Apply coupons/discounts only — credits and taxes are deferred to finalization
 		// Note: invoice number is assigned later during finalization
 		if applyReq != nil {
-			if err := s.applyCreditsAndCouponsToInvoice(txCtx, inv, *applyReq); err != nil {
-				return err
-			}
-			if err := s.applyTaxesToInvoice(txCtx, inv, *applyReq); err != nil {
+			if err := s.applyCouponsToInvoice(txCtx, inv, *applyReq); err != nil {
 				return err
 			}
 		}
@@ -846,6 +843,52 @@ func (s *invoiceService) performFinalizeInvoiceActions(ctx context.Context, inv 
 		if lockedInv.InvoiceStatus != types.InvoiceStatusDraft {
 			return ierr.NewError("invoice is not in draft status").WithHint("invoice was finalized concurrently").Mark(ierr.ErrValidation)
 		}
+
+		// ====================================================================
+		// Apply prepaid credits and taxes before sealing the invoice.
+		// Credits and taxes are deferred from ComputeInvoice to ensure wallet
+		// debits only happen when the invoice is actually finalized.
+		// ====================================================================
+
+		// Load line items — ApplyCreditsToInvoice needs them
+		lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(txCtx, lockedInv.ID)
+		if err != nil {
+			return err
+		}
+		lockedInv.LineItems = lineItems
+
+		if len(lockedInv.LineItems) > 0 {
+			// Apply credits — this debits wallets and updates line items
+			creditAdjustmentService := NewCreditAdjustmentService(s.ServiceParams)
+			creditResult, err := creditAdjustmentService.ApplyCreditsToInvoice(txCtx, lockedInv)
+			if err != nil {
+				return err
+			}
+			lockedInv.TotalPrepaidCreditsApplied = creditResult.TotalPrepaidCreditsApplied
+
+			// Recalculate total with credits applied
+			newTotal := lockedInv.Subtotal.Sub(lockedInv.TotalDiscount).Sub(lockedInv.TotalPrepaidCreditsApplied)
+			if newTotal.IsNegative() {
+				newTotal = decimal.Zero
+			}
+			lockedInv.Total = newTotal
+			lockedInv.AmountDue = lockedInv.Total
+			lockedInv.AmountRemaining = lockedInv.Total.Sub(lockedInv.AmountPaid)
+
+			// Persist credit-adjusted totals before tax recalculation
+			if err := s.InvoiceRepo.Update(txCtx, lockedInv); err != nil {
+				return err
+			}
+
+			// Recalculate taxes with credits factored in
+			if err := s.RecalculateTaxesOnInvoice(txCtx, lockedInv); err != nil {
+				return err
+			}
+		}
+
+		// ====================================================================
+		// Finalize the invoice
+		// ====================================================================
 
 		// Assign invoice number if not already assigned (idempotent)
 		if lockedInv.InvoiceNumber == nil || *lockedInv.InvoiceNumber == "" {
@@ -4204,6 +4247,49 @@ func (s *invoiceService) applyCreditsAndCouponsToInvoice(ctx context.Context, in
 	s.Logger.InfowCtx(ctx, "successfully applied credit adjustments and coupons to invoice",
 		"invoice_id", inv.ID,
 		"total_prepaid_applied", inv.TotalPrepaidCreditsApplied,
+		"total_discount", inv.TotalDiscount,
+		"invoice_level_coupons", len(req.InvoiceCoupons),
+		"line_item_level_coupons", len(req.LineItemCoupons),
+		"new_total", inv.Total,
+		"subtotal", inv.Subtotal,
+	)
+
+	return nil
+}
+
+// applyCouponsToInvoice applies only coupons/discounts to an invoice (no credit deduction or taxes).
+// Credits and taxes are deferred to the finalization step.
+func (s *invoiceService) applyCouponsToInvoice(ctx context.Context, inv *invoice.Invoice, req dto.InvoiceComputeRequest) error {
+	s.Logger.DebugwCtx(ctx, "applying coupons to invoice",
+		"invoice_id", inv.ID,
+		"customer_id", inv.CustomerID,
+		"currency", inv.Currency,
+	)
+
+	// Apply coupons (handles computation, persistence, and mutations internally)
+	couponApplicationService := NewCouponApplicationService(s.ServiceParams)
+	couponResult, err := couponApplicationService.ApplyCouponsToInvoice(ctx, dto.ApplyCouponsToInvoiceRequest{
+		Invoice:         inv,
+		InvoiceCoupons:  req.InvoiceCoupons,
+		LineItemCoupons: req.LineItemCoupons,
+	})
+	if err != nil {
+		return err
+	}
+
+	inv.TotalDiscount = couponResult.TotalDiscountAmount
+
+	newTotal := inv.Subtotal.Sub(inv.TotalDiscount)
+	if newTotal.IsNegative() {
+		newTotal = decimal.Zero
+	}
+
+	inv.Total = newTotal
+	inv.AmountDue = inv.Total
+	inv.AmountRemaining = inv.Total.Sub(inv.AmountPaid)
+
+	s.Logger.InfowCtx(ctx, "successfully applied coupons to invoice",
+		"invoice_id", inv.ID,
 		"total_discount", inv.TotalDiscount,
 		"invoice_level_coupons", len(req.InvoiceCoupons),
 		"line_item_level_coupons", len(req.LineItemCoupons),
