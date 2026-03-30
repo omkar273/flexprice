@@ -2188,6 +2188,12 @@ func (s *invoiceService) GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.
 			inv = dto.NewInvoiceResponse(computedInv)
 		}
 
+		// Skip draft invoices whose billing period hasn't ended yet —
+		// their charges are not yet due and should not reduce wallet balance.
+		if inv.InvoiceStatus == types.InvoiceStatusDraft && inv.PeriodEnd != nil && inv.PeriodEnd.After(time.Now().UTC()) {
+			continue
+		}
+
 		// filter by currency
 		if !types.IsMatchingCurrency(inv.Currency, req.Currency) {
 			continue
