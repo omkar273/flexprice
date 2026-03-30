@@ -97,12 +97,14 @@ for each plan line item on the subscription:
         skip  // item never became active; subscription-level EndDate protects billing
     if item.EndDate.IsZero() || item.EndDate.After(effectiveDate):
         item.EndDate = effectiveDate
-        persist update
+        repo.UpdateLineItem(ctx, item)  // direct repository call, NOT DeleteSubscriptionLineItem
 ```
+
+**Persistence mechanism:** The helper must call the repository layer **directly** (e.g., `SubscriptionLineItemRepo.Update()`), not via `DeleteSubscriptionLineItem()`. The `DeleteSubscriptionLineItem` service function contains a validation that rejects `effectiveFrom < item.StartDate`. Even though the pre-start guard above skips those items, using `DeleteSubscriptionLineItem` would introduce a dependency on that internal check and deviates from the intended data operation (we are updating `EndDate`, not deleting the record). Use a direct repository update.
 
 **Guard conditions explained:**
 
-- `item.StartDate.After(effectiveDate)` — Pre-start cancellation: the subscription was cancelled before this line item's start date. The line item never became active. Setting `EndDate = effectiveDate` would create `EndDate < StartDate`, which is a logically inconsistent record. Instead, leave `EndDate` as zero; billing is already fully protected by the subscription-level `EndDate` check in `FilterLineItemsToBeInvoiced`.
+- `item.StartDate.After(effectiveDate)` — Pre-start cancellation: the subscription was cancelled before this line item's start date. The line item never became active. Setting `EndDate = effectiveDate` would create `EndDate < StartDate`, an inconsistent record. Skip these items; billing is protected by the subscription-level `EndDate` check (for immediate cancellations) and by Fix 3's per-item `EndDate` filter (for the scheduled cancellation window — see Fix 3).
 - `item.EndDate.IsZero() || item.EndDate.After(effectiveDate)` — Only update items whose EndDate is either unset or extends beyond the cancellation point. Items already terminated before `effectiveDate` are left untouched.
 
 **Called for both cancellation types:**
@@ -149,9 +151,20 @@ if !item.EndDate.IsZero() && !item.EndDate.After(periodStart) {
 - Line items with `EndDate = zero` (no expiry) continue to be included normally
 - Combines with Fix 2: Fix 2 sets `EndDate` on cancellation; Fix 3 enforces it in billing
 
+### Billing Guard Coverage by Cancellation Type
+
+| Cancellation type | Primary billing guard |
+|---|---|
+| Immediate | `sub.EndDate` (set immediately) — subscription-level check in `FilterLineItemsToBeInvoiced` |
+| Scheduled (pre-executor) | `item.EndDate` (set to `cancel_at` by Fix 2) — per-item check added by Fix 3 |
+| Scheduled (post-executor) | `sub.EndDate` (set by executor) + `item.EndDate` (already set) — both guards active |
+| Pre-start immediate cancel | `sub.EndDate` (set immediately) — line items skipped by helper, subscription-level check covers billing |
+
+For scheduled cancellations before the executor fires, `sub.EndDate` is nil. Fix 3's per-item `EndDate` filter is the **operative billing guard** during this window. The subscription-level `EndDate` check in `FilterLineItemsToBeInvoiced` only activates after the executor runs.
+
 ### Usage Charges — No Change Needed
 
-`CalculateUsageCharges()` does not filter line items by `EndDate` directly. It relies on the repository layer (`ActiveFilter = true` in `SubscriptionLineItemFilter`) which applies active-status filtering at the DB query level. Usage charges for cancelled line items are additionally blocked upstream: events after cancellation are rejected by `isSubscriptionValidForEvent()` and `item.IsActive(event.Timestamp)` in the event post-processing service. No changes to the usage charge path are needed.
+`CalculateUsageCharges()` does not filter line items by `EndDate` directly. It relies on the repository layer, which applies active-status filtering at the DB level only when **both** `ActiveFilter = true` and `CurrentPeriodStart` are set in `SubscriptionLineItemFilter` — both are required for the filter to take effect. Usage charges for cancelled line items are additionally blocked upstream: events after cancellation are rejected by `isSubscriptionValidForEvent()` and `item.IsActive(event.Timestamp)` in the event post-processing service. No changes to the usage charge path are needed.
 
 ---
 
