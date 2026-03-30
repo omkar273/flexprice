@@ -289,3 +289,9 @@ raw_event_consumption:
   output_topic: "staging_events"                 # OUTPUT: Publishes transformed events to here
   rate_limit: 10
   consumer_group: "v1_raw_event_processing_v4"
+
+
+integration_events:
+  enabled: true
+  consumer_group: "integration-events-consumer"
+  rate_limit: 10
