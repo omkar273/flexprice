@@ -457,15 +457,15 @@ func (s *billingService) CalculateUsageCharges(
 			if (meter.IsBucketedMaxMeter() || meter.IsBucketedSumMeter()) && matchingCharge.Price != nil {
 				hasGroupBy := meter.Aggregation.GroupBy != "" && !meter.IsBucketedSumMeter()
 				usageRequest := &dto.GetUsageByMeterRequest{
-					MeterID:            item.MeterID,
-					PriceID:            item.PriceID,
-					ExternalCustomerID: customer.ExternalID,
-					StartTime:          item.GetPeriodStart(periodStart),
-					EndTime:            item.GetPeriodEnd(periodEnd),
-					WindowSize:         meter.Aggregation.BucketSize,
-					BillingAnchor:      &sub.BillingAnchor,
-					Filters:            meter.ToFilterMap(),
-					Meter:              meter,
+					MeterID:             item.MeterID,
+					PriceID:             item.PriceID,
+					ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+					StartTime:           item.GetPeriodStart(periodStart),
+					EndTime:             item.GetPeriodEnd(periodEnd),
+					WindowSize:          meter.Aggregation.BucketSize,
+					BillingAnchor:       &sub.BillingAnchor,
+					Filters:             meter.ToFilterMap(),
+					Meter:               meter,
 				}
 				usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
 				if err != nil {
@@ -529,14 +529,14 @@ func (s *billingService) CalculateUsageCharges(
 
 						// Create usage request with daily window size
 						usageRequest := &dto.GetUsageByMeterRequest{
-							MeterID:            item.MeterID,
-							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
-							StartTime:          item.GetPeriodStart(periodStart),
-							EndTime:            item.GetPeriodEnd(periodEnd),
-							WindowSize:         types.WindowSizeDay, // Use daily window size
-							Filters:            meter.ToFilterMap(),
-							Meter:              meter,
+							MeterID:             item.MeterID,
+							PriceID:             item.PriceID,
+							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							StartTime:           item.GetPeriodStart(periodStart),
+							EndTime:             item.GetPeriodEnd(periodEnd),
+							WindowSize:          types.WindowSizeDay, // Use daily window size
+							Filters:             meter.ToFilterMap(),
+							Meter:               meter,
 						}
 
 						// Get usage data with daily windows
@@ -587,15 +587,15 @@ func (s *billingService) CalculateUsageCharges(
 
 						// Create usage request with monthly window size
 						usageRequest := &dto.GetUsageByMeterRequest{
-							MeterID:            item.MeterID,
-							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
-							StartTime:          item.GetPeriodStart(periodStart),
-							EndTime:            item.GetPeriodEnd(periodEnd),
-							BillingAnchor:      &sub.BillingAnchor,
-							WindowSize:         types.WindowSizeMonth, // Use monthly window size
-							Filters:            meter.ToFilterMap(),
-							Meter:              meter,
+							MeterID:             item.MeterID,
+							PriceID:             item.PriceID,
+							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							StartTime:           item.GetPeriodStart(periodStart),
+							EndTime:             item.GetPeriodEnd(periodEnd),
+							BillingAnchor:       &sub.BillingAnchor,
+							WindowSize:          types.WindowSizeMonth, // Use monthly window size
+							Filters:             meter.ToFilterMap(),
+							Meter:               meter,
 						}
 
 						// Get usage data with monthly windows
@@ -701,15 +701,15 @@ func (s *billingService) CalculateUsageCharges(
 
 						// Fetch bucketed usage values
 						usageRequest := &dto.GetUsageByMeterRequest{
-							MeterID:            item.MeterID,
-							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
-							StartTime:          item.GetPeriodStart(periodStart),
-							EndTime:            item.GetPeriodEnd(periodEnd),
-							WindowSize:         meter.Aggregation.BucketSize,
-							BillingAnchor:      &sub.BillingAnchor,
-							Meter:              meter,
-							Filters:            meter.ToFilterMap(),
+							MeterID:             item.MeterID,
+							PriceID:             item.PriceID,
+							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							StartTime:           item.GetPeriodStart(periodStart),
+							EndTime:             item.GetPeriodEnd(periodEnd),
+							WindowSize:          meter.Aggregation.BucketSize,
+							BillingAnchor:       &sub.BillingAnchor,
+							Meter:               meter,
+							Filters:             meter.ToFilterMap(),
 						}
 
 						usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
@@ -1260,14 +1260,14 @@ func (s *billingService) CalculateFeatureUsageCharges(
 
 						// Create usage request with daily window size
 						usageRequest := &dto.GetUsageByMeterRequest{
-							MeterID:            item.MeterID,
-							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
-							StartTime:          item.GetPeriodStart(periodStart),
-							EndTime:            item.GetPeriodEnd(periodEnd),
-							WindowSize:         types.WindowSizeDay, // Use daily window size
-							Filters:            meter.ToFilterMap(),
-							Meter:              meter,
+							MeterID:             item.MeterID,
+							PriceID:             item.PriceID,
+							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							StartTime:           item.GetPeriodStart(periodStart),
+							EndTime:             item.GetPeriodEnd(periodEnd),
+							WindowSize:          types.WindowSizeDay, // Use daily window size
+							Filters:             meter.ToFilterMap(),
+							Meter:               meter,
 						}
 
 						// Get usage data with daily windows
@@ -1318,15 +1318,15 @@ func (s *billingService) CalculateFeatureUsageCharges(
 
 						// Create usage request with monthly window size
 						usageRequest := &dto.GetUsageByMeterRequest{
-							MeterID:            item.MeterID,
-							PriceID:            item.PriceID,
-							ExternalCustomerID: customer.ExternalID,
-							StartTime:          item.GetPeriodStart(periodStart),
-							EndTime:            item.GetPeriodEnd(periodEnd),
-							BillingAnchor:      &sub.BillingAnchor,
-							WindowSize:         types.WindowSizeMonth,
-							Meter:              meter,
-							Filters:            meter.ToFilterMap(), // Use monthly window size
+							MeterID:             item.MeterID,
+							PriceID:             item.PriceID,
+							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							StartTime:           item.GetPeriodStart(periodStart),
+							EndTime:             item.GetPeriodEnd(periodEnd),
+							BillingAnchor:       &sub.BillingAnchor,
+							WindowSize:          types.WindowSizeMonth, // Use monthly window size
+							Filters:             meter.ToFilterMap(),
+							Meter:               meter,
 						}
 
 						// Get usage data with monthly windows
@@ -2993,11 +2993,11 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 					meterID := featureMeterMap[featureID]
 					// Create usage request with daily window size for current billing period
 					usageRequest := &dto.GetUsageByMeterRequest{
-						MeterID:            meterID,
-						ExternalCustomerID: customer.ExternalID,
-						StartTime:          sub.CurrentPeriodStart,
-						EndTime:            sub.CurrentPeriodEnd,
-						WindowSize:         types.WindowSizeDay,
+						MeterID:             meterID,
+						ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+						StartTime:           sub.CurrentPeriodStart,
+						EndTime:             sub.CurrentPeriodEnd,
+						WindowSize:          types.WindowSizeDay,
 					}
 
 					// Get usage data with daily windows
@@ -3044,12 +3044,12 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 
 					// Create usage request for current month with monthly window size
 					usageRequest := &dto.GetUsageByMeterRequest{
-						MeterID:            meterID,
-						ExternalCustomerID: customer.ExternalID,
-						StartTime:          sub.CurrentPeriodStart,
-						EndTime:            sub.CurrentPeriodEnd,
-						WindowSize:         types.WindowSizeMonth,
-						BillingAnchor:      &sub.BillingAnchor,
+						MeterID:             meterID,
+						ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+						StartTime:           sub.CurrentPeriodStart,
+						EndTime:             sub.CurrentPeriodEnd,
+						WindowSize:          types.WindowSizeMonth,
+						BillingAnchor:       &sub.BillingAnchor,
 					}
 
 					// Get usage data for current month
@@ -3102,10 +3102,10 @@ func (s *billingService) GetCustomerUsageSummary(ctx context.Context, customerID
 					// For never reset features, calculate cumulative usage from subscription start to current period end
 					// This maintains consistency with the billing logic
 					totalUsageRequest := &dto.GetUsageByMeterRequest{
-						MeterID:            meterID,
-						ExternalCustomerID: customer.ExternalID,
-						StartTime:          sub.StartDate,
-						EndTime:            sub.CurrentPeriodEnd,
+						MeterID:             meterID,
+						ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+						StartTime:           sub.StartDate,
+						EndTime:             sub.CurrentPeriodEnd,
 					}
 
 					totalUsageResult, err := eventService.GetUsageByMeter(ctx, totalUsageRequest)
@@ -3256,12 +3256,12 @@ func (s *billingService) calculateNeverResetUsage(
 
 	// Get total cumulative usage from subscription start to line item period end
 	totalUsageRequest := &dto.GetUsageByMeterRequest{
-		MeterID:            item.MeterID,
-		PriceID:            item.PriceID,
-		ExternalCustomerID: customer.ExternalID,
-		StartTime:          sub.StartDate,
-		EndTime:            lineItemPeriodEnd,
-		BillingAnchor:      &sub.BillingAnchor,
+		MeterID:             item.MeterID,
+		PriceID:             item.PriceID,
+		ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+		StartTime:           sub.StartDate,
+		EndTime:             lineItemPeriodEnd,
+		BillingAnchor:       &sub.BillingAnchor,
 	}
 
 	totalUsageResult, err := eventService.GetUsageByMeter(ctx, totalUsageRequest)
@@ -3272,11 +3272,11 @@ func (s *billingService) calculateNeverResetUsage(
 	// Get cumulative usage from subscription start to line item period start
 	// This represents usage that was already billed in previous periods
 	previousPeriodUsageRequest := &dto.GetUsageByMeterRequest{
-		MeterID:            item.MeterID,
-		PriceID:            item.PriceID,
-		ExternalCustomerID: customer.ExternalID,
-		StartTime:          sub.StartDate,
-		EndTime:            lineItemPeriodStart,
+		MeterID:             item.MeterID,
+		PriceID:             item.PriceID,
+		ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+		StartTime:           sub.StartDate,
+		EndTime:             lineItemPeriodStart,
 	}
 
 	previousPeriodUsageResult, err := eventService.GetUsageByMeter(ctx, previousPeriodUsageRequest)
