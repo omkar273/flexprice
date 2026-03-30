@@ -2,17 +2,22 @@ package service
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
+	domaininvoice "github.com/flexprice/flexprice/internal/domain/invoice"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/flexprice/flexprice/internal/utils"
+	"github.com/shopspring/decimal"
 )
 
 // DashboardService provides dashboard functionality
 type DashboardService interface {
 	GetRevenues(ctx context.Context, req dto.DashboardRevenuesRequest) (*dto.DashboardRevenuesResponse, error)
+	GetRevenueDashboard(ctx context.Context, req dto.RevenueDashboardRequest) (*dto.RevenueDashboardResponse, error)
 }
 
 type dashboardService struct {
@@ -161,4 +166,220 @@ func (s *dashboardService) getInvoicePaymentStatus(ctx context.Context) (*dto.In
 		PeriodStart: periodStart,
 		PeriodEnd:   now,
 	}, nil
+}
+
+// GetRevenueDashboard returns revenue analytics with summary tiles and per-customer breakdown.
+func (s *dashboardService) GetRevenueDashboard(ctx context.Context, req dto.RevenueDashboardRequest) (*dto.RevenueDashboardResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("failed to validate revenue dashboard request").
+			Mark(ierr.ErrValidation)
+	}
+
+	// Step 1: Check custom analytics config for CPM / voice minutes
+	meterID, hasCustomAnalytics := s.resolveVoiceMeterID(ctx)
+
+	// Step 2: Fetch revenue data
+	revenueRows, err := s.InvoiceLineItemRepo.GetRevenueByCustomer(ctx, req.PeriodStart, req.PeriodEnd, req.CustomerIDs)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("failed to fetch revenue by customer").
+			Mark(ierr.ErrDatabase)
+	}
+
+	var voiceRows []domaininvoice.VoiceMinutesRow
+	if hasCustomAnalytics && meterID != "" {
+		voiceRows, err = s.InvoiceLineItemRepo.GetVoiceMinutesByCustomer(ctx, req.PeriodStart, req.PeriodEnd, meterID, req.CustomerIDs)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("failed to fetch voice minutes by customer").
+				Mark(ierr.ErrDatabase)
+		}
+	}
+
+	// Step 3: Aggregate per-customer data
+	type customerData struct {
+		usageRevenue decimal.Decimal
+		fixedRevenue decimal.Decimal
+		voiceMs      decimal.Decimal
+	}
+	customerMap := make(map[string]*customerData)
+
+	for _, row := range revenueRows {
+		cd, ok := customerMap[row.CustomerID]
+		if !ok {
+			cd = &customerData{}
+			customerMap[row.CustomerID] = cd
+		}
+		if row.PriceType == string(types.PRICE_TYPE_USAGE) {
+			cd.usageRevenue = cd.usageRevenue.Add(row.Amount)
+		} else {
+			cd.fixedRevenue = cd.fixedRevenue.Add(row.Amount)
+		}
+	}
+
+	// Merge voice minutes
+	if hasCustomAnalytics {
+		for _, row := range voiceRows {
+			cd, ok := customerMap[row.CustomerID]
+			if !ok {
+				cd = &customerData{}
+				customerMap[row.CustomerID] = cd
+			}
+			cd.voiceMs = cd.voiceMs.Add(row.UsageMs)
+		}
+	}
+
+	// Step 4: Bulk-fetch customer details for enrichment
+	uniqueCustomerIDs := make([]string, 0, len(customerMap))
+	for custID := range customerMap {
+		uniqueCustomerIDs = append(uniqueCustomerIDs, custID)
+	}
+
+	type customerInfo struct {
+		Name       string
+		ExternalID string
+	}
+	customerInfoMap := make(map[string]customerInfo, len(uniqueCustomerIDs))
+
+	if len(uniqueCustomerIDs) > 0 {
+		custFilter := &types.CustomerFilter{
+			QueryFilter: types.NewNoLimitQueryFilter(),
+			CustomerIDs: uniqueCustomerIDs,
+		}
+		customers, err := s.CustomerRepo.List(ctx, custFilter)
+		if err != nil {
+			s.Logger.WarnwCtx(ctx, "failed to fetch customer details for revenue dashboard", "error", err)
+			// Continue without customer details rather than failing the entire request
+		} else {
+			for _, c := range customers {
+				customerInfoMap[c.ID] = customerInfo{
+					Name:       c.Name,
+					ExternalID: c.ExternalID,
+				}
+			}
+		}
+	}
+
+	// Step 5: Build response — filter zero-revenue customers
+	msPerMinute := decimal.NewFromInt(60000)
+
+	var items []dto.RevenueDashboardCustomer
+	summaryUsage := decimal.Zero
+	summaryFixed := decimal.Zero
+	summaryVoiceMs := decimal.Zero
+
+	for custID, cd := range customerMap {
+		totalRevenue := cd.usageRevenue.Add(cd.fixedRevenue)
+		if totalRevenue.IsZero() {
+			continue
+		}
+
+		summaryUsage = summaryUsage.Add(cd.usageRevenue)
+		summaryFixed = summaryFixed.Add(cd.fixedRevenue)
+		summaryVoiceMs = summaryVoiceMs.Add(cd.voiceMs)
+
+		info := customerInfoMap[custID]
+		cust := dto.RevenueDashboardCustomer{
+			CustomerID:         custID,
+			CustomerName:       info.Name,
+			ExternalCustomerID: info.ExternalID,
+			TotalRevenue:       totalRevenue,
+			TotalUsageRevenue:  cd.usageRevenue,
+			TotalFixedRevenue:  cd.fixedRevenue,
+		}
+
+		if hasCustomAnalytics {
+			voiceMinutes := cd.voiceMs.Div(msPerMinute)
+			cust.VoiceMinutes = &voiceMinutes
+
+			if !cd.voiceMs.IsZero() {
+				cpm := cd.usageRevenue.Div(voiceMinutes)
+				cust.CPM = &cpm
+			}
+		}
+
+		items = append(items, cust)
+	}
+
+	// Build summary
+	summaryTotal := summaryUsage.Add(summaryFixed)
+	summary := dto.RevenueDashboardSummary{
+		TotalRevenue:      summaryTotal,
+		TotalUsageRevenue: summaryUsage,
+		TotalFixedRevenue: summaryFixed,
+	}
+
+	if hasCustomAnalytics {
+		voiceMinutes := summaryVoiceMs.Div(msPerMinute)
+		summary.VoiceMinutes = &voiceMinutes
+
+		if !summaryVoiceMs.IsZero() {
+			cpm := summaryUsage.Div(voiceMinutes)
+			summary.CPM = &cpm
+		}
+	}
+
+	// Sort by total revenue descending so highest-revenue customers appear first
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].TotalRevenue.GreaterThan(items[j].TotalRevenue)
+	})
+
+	if items == nil {
+		items = []dto.RevenueDashboardCustomer{}
+	}
+
+	return &dto.RevenueDashboardResponse{
+		Summary: summary,
+		Items:   items,
+	}, nil
+}
+
+// resolveVoiceMeterID checks the custom_analytics_config setting for the
+// "revenue-per-minute" rule and resolves the target feature to its meter ID.
+// Returns (meterID, true) when custom analytics are active, ("", false) otherwise.
+func (s *dashboardService) resolveVoiceMeterID(ctx context.Context) (string, bool) {
+	setting, err := s.SettingsRepo.GetByKey(ctx, types.SettingKeyCustomAnalytics)
+	if err != nil || setting == nil || setting.Value == nil {
+		return "", false
+	}
+
+	config, err := utils.ToStruct[types.CustomAnalyticsConfig](setting.Value)
+	if err != nil {
+		s.Logger.WarnwCtx(ctx, "failed to parse custom analytics config", "error", err)
+		return "", false
+	}
+
+	// Find the revenue-per-minute rule
+	for _, rule := range config.Rules {
+		if types.CustomAnalyticsRuleID(rule.ID) != types.CustomAnalyticsRuleRevenuePerMinute {
+			continue
+		}
+
+		if rule.TargetType == "feature" {
+			feature, err := s.FeatureRepo.Get(ctx, rule.TargetID)
+			if err != nil || feature == nil {
+				s.Logger.WarnwCtx(ctx, "failed to resolve feature for revenue-per-minute rule",
+					"error", err,
+					"target_id", rule.TargetID,
+				)
+				return "", false
+			}
+			if feature.MeterID == "" {
+				s.Logger.WarnwCtx(ctx, "feature has no meter_id for revenue-per-minute rule",
+					"feature_id", feature.ID,
+				)
+				return "", false
+			}
+			return feature.MeterID, true
+		}
+
+		if rule.TargetType == "meter" {
+			return rule.TargetID, true
+		}
+
+		return "", false
+	}
+
+	return "", false
 }
