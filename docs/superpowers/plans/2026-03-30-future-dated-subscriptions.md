@@ -20,7 +20,7 @@
 | `internal/service/subscription_test.go` | Add: future start_date accepted + cancellation sets EndDate on plan line items |
 | `internal/service/billing_test.go` | Add: billing skips line items with EndDate before period start |
 
-**Import note:** `github.com/samber/lo` is already imported in both `subscription_test.go` and `billing_test.go`. Do not add it again.
+**Import note:** `github.com/samber/lo` and `github.com/shopspring/decimal` are already imported in both `subscription_test.go` and `billing_test.go`. Do not add them again.
 
 ---
 
@@ -239,7 +239,7 @@ func (s *subscriptionService) cancelPlanLineItemsForSubscription(
 
 - [ ] **Step 4: Call the helper from CancelSubscription**
 
-In `internal/service/subscription.go`, after line 1782 (after the `cancelAddonsForSubscription` call block), insert:
+In `internal/service/subscription.go`, after line 1782 (after the `cancelAddonsForSubscription` call block), insert the new call **and** relabel the existing `// Step 7b:` scheduling comment to `// Step 7c:` to avoid duplicate labels:
 
 ```go
 // Step 7b: Terminate plan line items (set EndDate = effectiveDate)
@@ -261,7 +261,7 @@ if err := s.cancelPlanLineItemsForSubscription(ctx, subscription.ID, effectiveDa
     return err
 }
 
-// Step 7b: Handle scheduling for future cancellations (end_of_period and scheduled_date)
+// Step 7c: Handle scheduling for future cancellations (end_of_period and scheduled_date)
 ```
 
 - [ ] **Step 5: Run the test and verify it passes**
@@ -490,7 +490,7 @@ Expected: both PASS
 go test ./internal/service/... -run TestBillingService -v 2>&1 | tail -30
 ```
 
-Expected: all existing tests pass
+Expected: all existing tests pass. The pre-filter in `FilterLineItemsToBeInvoiced` is safe for existing tests because all line items in the billing test fixture (`setupTestData`) are created with zero `EndDate` — the pre-filter skips items only when `!item.EndDate.IsZero()`, so zero-EndDate items are always passed through unchanged.
 
 - [ ] **Step 10: Run all service tests**
 
