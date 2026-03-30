@@ -402,6 +402,11 @@ func (s *temporalService) extractWorkflowContextID(workflowType types.TemporalWo
 		if input, ok := params.(invoiceModels.RecalculateInvoiceWorkflowInput); ok {
 			return input.InvoiceID
 		}
+	case types.TemporalComputeInvoiceWorkflow:
+		// Extract invoice ID from ComputeInvoiceWorkflowInput
+		if input, ok := params.(invoiceModels.ComputeInvoiceWorkflowInput); ok {
+			return input.InvoiceID
+		}
 	case types.TemporalPrepareProcessedEventsWorkflow:
 		// Extract event ID from PrepareProcessedEventsWorkflowInput
 		if input, ok := params.(*models.PrepareProcessedEventsWorkflowInput); ok {
@@ -507,6 +512,8 @@ func (s *temporalService) buildWorkflowInput(ctx context.Context, workflowType t
 		return s.buildProcessInvoiceInput(ctx, tenantID, environmentID, params)
 	case types.TemporalRecalculateInvoiceWorkflow:
 		return s.buildRecalculateInvoiceInput(ctx, tenantID, environmentID, userID, params)
+	case types.TemporalComputeInvoiceWorkflow:
+		return s.buildComputeInvoiceInput(ctx, tenantID, environmentID, userID, params)
 	case types.TemporalReprocessEventsWorkflow:
 		return s.buildReprocessEventsInput(ctx, tenantID, environmentID, userID, params)
 	case types.TemporalReprocessRawEventsWorkflow:
@@ -827,6 +834,34 @@ func (s *temporalService) buildRecalculateInvoiceInput(_ context.Context, tenant
 		Mark(errors.ErrValidation)
 }
 
+// buildComputeInvoiceInput builds input for compute invoice workflow
+func (s *temporalService) buildComputeInvoiceInput(_ context.Context, tenantID, environmentID, userID string, params interface{}) (interface{}, error) {
+	if input, ok := params.(invoiceModels.ComputeInvoiceWorkflowInput); ok {
+		input.TenantID = tenantID
+		input.EnvironmentID = environmentID
+		input.UserID = userID
+		return input, nil
+	}
+	if input, ok := params.(*invoiceModels.ComputeInvoiceWorkflowInput); ok {
+		input.TenantID = tenantID
+		input.EnvironmentID = environmentID
+		input.UserID = userID
+		return *input, nil
+	}
+	// Handle string input (invoice ID)
+	if invoiceID, ok := params.(string); ok && invoiceID != "" {
+		return invoiceModels.ComputeInvoiceWorkflowInput{
+			InvoiceID:     invoiceID,
+			TenantID:      tenantID,
+			EnvironmentID: environmentID,
+			UserID:        userID,
+		}, nil
+	}
+	return nil, errors.NewError("invalid input for compute invoice workflow").
+		WithHint("Provide ComputeInvoiceWorkflowInput with invoice_id").
+		Mark(errors.ErrValidation)
+}
+
 // buildPrepareProcessedEventsInput builds input for prepare processed events workflow
 func (s *temporalService) buildPrepareProcessedEventsInput(_ context.Context, tenantID, environmentID, userID string, params interface{}) (interface{}, error) {
 	// If already correct type, just ensure context is set
@@ -896,6 +931,21 @@ func (s *temporalService) ExecuteWorkflowSync(
 
 	case types.TemporalPrepareProcessedEventsWorkflow:
 		var result models.PrepareProcessedEventsWorkflowResult
+		if err := workflowRun.Get(timeoutCtx, &result); err != nil {
+			return nil, errors.WithError(err).
+				WithHint("Workflow execution failed or timed out").
+				WithReportableDetails(map[string]interface{}{
+					"workflow_id":   workflowRun.GetID(),
+					"run_id":        workflowRun.GetRunID(),
+					"workflow_type": workflowType.String(),
+					"timeout":       timeoutSeconds,
+				}).
+				Mark(errors.ErrInternal)
+		}
+		return &result, nil
+
+	case types.TemporalComputeInvoiceWorkflow:
+		var result invoiceModels.ComputeInvoiceWorkflowResult
 		if err := workflowRun.Get(timeoutCtx, &result); err != nil {
 			return nil, errors.WithError(err).
 				WithHint("Workflow execution failed or timed out").
