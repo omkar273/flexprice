@@ -44,4 +44,11 @@ type LineItemRepository interface {
 	// grouped by customer_id for a specific meter within the given period.
 	// When customerIDs is non-empty, results are scoped to those customers only.
 	GetVoiceMinutesByCustomer(ctx context.Context, periodStart, periodEnd time.Time, meterID string, customerIDs []string) ([]VoiceMinutesRow, error)
+
+	// GetRevenueTimeSeries aggregates invoice line item amounts grouped by time bucket
+	// (date_trunc) and price_type. dateTruncPart must be "day" or "month" for PostgreSQL.
+	GetRevenueTimeSeries(ctx context.Context, periodStart, periodEnd time.Time, dateTruncPart string, customerIDs []string) ([]RevenueTimeSeriesRow, error)
+
+	// GetVoiceMinutesTimeSeries aggregates quantity (ms) by time bucket for a meter.
+	GetVoiceMinutesTimeSeries(ctx context.Context, periodStart, periodEnd time.Time, meterID, dateTruncPart string, customerIDs []string) ([]VoiceMinutesTimeSeriesRow, error)
 }
