@@ -392,7 +392,7 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 			refPoint = types.ReferencePointCancel
 		}
 		billingService := NewBillingService(s.ServiceParams)
-		subInvReq, err := billingService.PrepareSubscriptionInvoiceRequest(ctx, sub, *inv.PeriodStart, *inv.PeriodEnd, refPoint)
+		subInvReq, err := billingService.PrepareSubscriptionInvoiceRequest(ctx, sub, *inv.PeriodStart, *inv.PeriodEnd, refPoint, inv.ID)
 		if err != nil {
 			return false, err
 		}
@@ -2024,7 +2024,7 @@ func (s *invoiceService) GetPreviewInvoice(ctx context.Context, req dto.GetPrevi
 
 	// Prepare invoice request using billing service with the preview reference point
 	invReq, err := billingService.PrepareSubscriptionInvoiceRequest(
-		ctx, sub, *req.PeriodStart, *req.PeriodEnd, types.ReferencePointPreview)
+		ctx, sub, *req.PeriodStart, *req.PeriodEnd, types.ReferencePointPreview, "")
 	if err != nil {
 		return nil, err
 	}
@@ -2186,6 +2186,12 @@ func (s *invoiceService) GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.
 				continue
 			}
 			inv = dto.NewInvoiceResponse(computedInv)
+		}
+
+		// Skip draft invoices whose billing period hasn't ended yet —
+		// their charges are not yet due and should not reduce wallet balance.
+		if inv.InvoiceStatus == types.InvoiceStatusDraft && inv.PeriodEnd != nil && inv.PeriodEnd.After(time.Now().UTC()) {
+			continue
 		}
 
 		// filter by currency
@@ -3052,6 +3058,7 @@ func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, fi
 			*inv.PeriodStart,
 			*inv.PeriodEnd,
 			referencePoint,
+			"",
 		)
 		if err != nil {
 			return err

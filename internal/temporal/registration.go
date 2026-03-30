@@ -271,6 +271,7 @@ func buildWorkerConfig(
 			invoiceWorkflows.ProcessInvoiceWorkflow,
 			invoiceWorkflows.FinalizeDraftInvoiceWorkflow,
 			invoiceWorkflows.ScheduleDraftFinalizationWorkflow,
+			invoiceWorkflows.ComputeInvoiceWorkflow,
 		)
 		activitiesList = append(activitiesList,
 			// Invoice workflow activities
