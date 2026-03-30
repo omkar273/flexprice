@@ -215,14 +215,12 @@ func (h *InvoiceHandler) ComputeInvoice(c *gin.Context) {
 
 		if syncMode {
 			// Synchronous: execute workflow and wait for result
-			result, err := temporalSvc.ExecuteWorkflowSync(ctx, types.TemporalComputeInvoiceWorkflow, workflowInput, 300)
+			skipped, err := h.invoiceService.ComputeInvoice(ctx, id, nil)
 			if err != nil {
-				h.logger.Errorw("failed to execute compute invoice workflow sync", "error", err, "invoice_id", id)
+				h.logger.Errorw("failed to compute invoice", "error", err, "invoice_id", id)
 				c.Error(err)
 				return
 			}
-
-			workflowResult, _ := result.(*invoiceModels.ComputeInvoiceWorkflowResult)
 
 			// Fetch the updated invoice to return
 			invoice, err := h.invoiceService.GetInvoice(ctx, id)
@@ -234,7 +232,7 @@ func (h *InvoiceHandler) ComputeInvoice(c *gin.Context) {
 
 			c.JSON(http.StatusOK, dto.ComputeInvoiceResponse{
 				Invoice: invoice,
-				Skipped: workflowResult.Skipped,
+				Skipped: skipped,
 			})
 			return
 		}

@@ -4620,6 +4620,7 @@ func (s *SubscriptionServiceSuite) TestFilterLineItemsWithEndDate() {
 				tt.periodStart,
 				tt.periodEnd,
 				lineItems,
+				"",
 			)
 			s.NoError(err)
 
