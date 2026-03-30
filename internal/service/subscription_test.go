@@ -108,6 +108,22 @@ func (s *SubscriptionServiceSuite) TestPaymentBehaviorValidation() {
 	}
 }
 
+func (s *SubscriptionServiceSuite) TestCreateSubscription_FutureDateAllowed() {
+	futureDate := time.Now().UTC().Add(30 * 24 * time.Hour) // 30 days from now
+	req := &dto.CreateSubscriptionRequest{
+		CustomerID:         s.testData.customer.ID,
+		PlanID:             s.testData.plan.ID,
+		StartDate:          &futureDate,
+		Currency:           "USD",
+		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+		BillingPeriodCount: 1,
+		BillingCadence:     types.BILLING_CADENCE_RECURRING,
+		BillingCycle:       types.BillingCycleAnniversary,
+	}
+	err := req.Validate()
+	s.NoError(err, "future start_date should be allowed")
+}
+
 func (s *SubscriptionServiceSuite) TestAddAddonToSubscriptionLineItemCommitments() {
 	ctx := s.GetContext()
 
