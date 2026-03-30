@@ -460,11 +460,26 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 			return nil
 		}
 
-		// Apply coupons/discounts only — credits and taxes are deferred to finalization
-		// Note: invoice number is assigned later during finalization
+		// Apply coupons/discounts. For one-off and credit invoices, also apply
+		// credits and taxes here because they are created and finalized in one
+		// shot and RecalculateTaxesOnInvoice is a no-op for non-subscription
+		// invoices. For subscription invoices, credits and taxes are deferred
+		// to the finalization step so wallet debits only happen when the
+		// invoice is actually sealed.
 		if applyReq != nil {
-			if err := s.applyCouponsToInvoice(txCtx, inv, *applyReq); err != nil {
-				return err
+			if inv.InvoiceType == types.InvoiceTypeOneOff || inv.InvoiceType == types.InvoiceTypeCredit {
+				// One-off / credit: apply coupons + credits + taxes now
+				if err := s.applyCreditsAndCouponsToInvoice(txCtx, inv, *applyReq); err != nil {
+					return err
+				}
+				if err := s.applyTaxesToInvoice(txCtx, inv, *applyReq); err != nil {
+					return err
+				}
+			} else {
+				// Subscription: coupons only — credits and taxes deferred to finalization
+				if err := s.applyCouponsToInvoice(txCtx, inv, *applyReq); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -845,44 +860,48 @@ func (s *invoiceService) performFinalizeInvoiceActions(ctx context.Context, inv 
 		}
 
 		// ====================================================================
-		// Apply prepaid credits and taxes before sealing the invoice.
-		// Credits and taxes are deferred from ComputeInvoice to ensure wallet
-		// debits only happen when the invoice is actually finalized.
+		// Apply prepaid credits and taxes for subscription invoices.
+		// One-off and credit invoices already have credits and taxes applied
+		// during ComputeInvoice, so we skip them here.
+		// For subscription invoices, credits and taxes are deferred to this
+		// step so wallet debits only happen when the invoice is sealed.
 		// ====================================================================
 
-		// Load line items — ApplyCreditsToInvoice needs them
-		lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(txCtx, lockedInv.ID)
-		if err != nil {
-			return err
-		}
-		lockedInv.LineItems = lineItems
-
-		if len(lockedInv.LineItems) > 0 {
-			// Apply credits — this debits wallets and updates line items
-			creditAdjustmentService := NewCreditAdjustmentService(s.ServiceParams)
-			creditResult, err := creditAdjustmentService.ApplyCreditsToInvoice(txCtx, lockedInv)
+		if lockedInv.InvoiceType == types.InvoiceTypeSubscription {
+			// Load line items — ApplyCreditsToInvoice needs them
+			lineItems, err := s.InvoiceLineItemRepo.ListByInvoiceID(txCtx, lockedInv.ID)
 			if err != nil {
 				return err
 			}
-			lockedInv.TotalPrepaidCreditsApplied = creditResult.TotalPrepaidCreditsApplied
+			lockedInv.LineItems = lineItems
 
-			// Recalculate total with credits applied
-			newTotal := lockedInv.Subtotal.Sub(lockedInv.TotalDiscount).Sub(lockedInv.TotalPrepaidCreditsApplied)
-			if newTotal.IsNegative() {
-				newTotal = decimal.Zero
-			}
-			lockedInv.Total = newTotal
-			lockedInv.AmountDue = lockedInv.Total
-			lockedInv.AmountRemaining = lockedInv.Total.Sub(lockedInv.AmountPaid)
+			if len(lockedInv.LineItems) > 0 {
+				// Apply credits — this debits wallets and updates line items
+				creditAdjustmentService := NewCreditAdjustmentService(s.ServiceParams)
+				creditResult, err := creditAdjustmentService.ApplyCreditsToInvoice(txCtx, lockedInv)
+				if err != nil {
+					return err
+				}
+				lockedInv.TotalPrepaidCreditsApplied = creditResult.TotalPrepaidCreditsApplied
 
-			// Persist credit-adjusted totals before tax recalculation
-			if err := s.InvoiceRepo.Update(txCtx, lockedInv); err != nil {
-				return err
-			}
+				// Recalculate total with credits applied
+				newTotal := lockedInv.Subtotal.Sub(lockedInv.TotalDiscount).Sub(lockedInv.TotalPrepaidCreditsApplied)
+				if newTotal.IsNegative() {
+					newTotal = decimal.Zero
+				}
+				lockedInv.Total = newTotal
+				lockedInv.AmountDue = lockedInv.Total
+				lockedInv.AmountRemaining = lockedInv.Total.Sub(lockedInv.AmountPaid)
 
-			// Recalculate taxes with credits factored in
-			if err := s.RecalculateTaxesOnInvoice(txCtx, lockedInv); err != nil {
-				return err
+				// Persist credit-adjusted totals before tax recalculation
+				if err := s.InvoiceRepo.Update(txCtx, lockedInv); err != nil {
+					return err
+				}
+
+				// Recalculate taxes with credits factored in
+				if err := s.RecalculateTaxesOnInvoice(txCtx, lockedInv); err != nil {
+					return err
+				}
 			}
 		}
 
