@@ -4,6 +4,7 @@ import (
 	"time"
 
 	ierr "github.com/flexprice/flexprice/internal/errors"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -52,6 +53,14 @@ func (r *RevenueDashboardRequest) Validate() error {
 type RevenueDashboardResponse struct {
 	Summary RevenueDashboardSummary    `json:"summary"`
 	Items   []RevenueDashboardCustomer `json:"items"`
+	// Graph is set only when custom_analytics_config includes the revenue-per-minute rule (same gate as summary cpm / voice_minutes).
+	Graph *RevenueDashboardGraph `json:"graph,omitempty"`
+}
+
+// RevenueDashboardGraph holds time-bucketed series for bar charts (total revenue and voice minutes).
+type RevenueDashboardGraph struct {
+	TotalRevenue []types.RevenueGraphPoint `json:"total_revenue"`
+	VoiceMinutes []types.RevenueGraphPoint `json:"voice_minutes,omitempty"`
 }
 
 // RevenueDashboardSummary represents aggregate revenue metrics across all customers
