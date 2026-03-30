@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"context"
+	"sort"
 	"sync"
 	"time"
 
@@ -216,6 +217,141 @@ func (s *InMemoryInvoiceLineItemStore) GetVoiceMinutesByCustomer(
 			UsageMs:    usageMs,
 		})
 	}
+	return results, nil
+}
+
+func truncateLineItemPeriodUTC(t time.Time, dateTruncPart string) time.Time {
+	t = t.UTC()
+	switch dateTruncPart {
+	case "month":
+		return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	case "day":
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	default:
+		return t
+	}
+}
+
+// GetRevenueTimeSeries implements invoice.LineItemRepository for tests (UTC buckets).
+func (s *InMemoryInvoiceLineItemStore) GetRevenueTimeSeries(
+	_ context.Context,
+	periodStart, periodEnd time.Time,
+	dateTruncPart string,
+	customerIDs []string,
+) ([]invoice.RevenueTimeSeriesRow, error) {
+	if dateTruncPart != "day" && dateTruncPart != "month" {
+		return nil, ierr.NewError("invalid date_trunc granularity").Mark(ierr.ErrValidation)
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	custFilter := make(map[string]bool, len(customerIDs))
+	for _, id := range customerIDs {
+		custFilter[id] = true
+	}
+
+	type pair struct {
+		w  time.Time
+		pt string
+	}
+	agg := make(map[pair]decimal.Decimal)
+
+	for _, item := range s.data {
+		if item.Status != types.StatusPublished {
+			continue
+		}
+		if item.PeriodStart != nil && item.PeriodStart.Before(periodStart) {
+			continue
+		}
+		if item.PeriodEnd != nil && !item.PeriodEnd.Before(periodEnd) {
+			continue
+		}
+		if len(custFilter) > 0 && !custFilter[item.CustomerID] {
+			continue
+		}
+		if item.PeriodStart == nil {
+			continue
+		}
+		pt := "FIXED"
+		if item.PriceType != nil {
+			pt = *item.PriceType
+		}
+		ws := truncateLineItemPeriodUTC(*item.PeriodStart, dateTruncPart)
+		p := pair{w: ws, pt: pt}
+		agg[p] = agg[p].Add(item.Amount)
+	}
+
+	results := make([]invoice.RevenueTimeSeriesRow, 0, len(agg))
+	for k, amount := range agg {
+		results = append(results, invoice.RevenueTimeSeriesRow{
+			WindowStart: k.w,
+			PriceType:   k.pt,
+			Amount:      amount,
+		})
+	}
+	sort.Slice(results, func(i, j int) bool {
+		if !results[i].WindowStart.Equal(results[j].WindowStart) {
+			return results[i].WindowStart.Before(results[j].WindowStart)
+		}
+		return results[i].PriceType < results[j].PriceType
+	})
+	return results, nil
+}
+
+// GetVoiceMinutesTimeSeries implements invoice.LineItemRepository for tests (UTC buckets).
+func (s *InMemoryInvoiceLineItemStore) GetVoiceMinutesTimeSeries(
+	_ context.Context,
+	periodStart, periodEnd time.Time,
+	meterID, dateTruncPart string,
+	customerIDs []string,
+) ([]invoice.VoiceMinutesTimeSeriesRow, error) {
+	if dateTruncPart != "day" && dateTruncPart != "month" {
+		return nil, ierr.NewError("invalid date_trunc granularity").Mark(ierr.ErrValidation)
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	custFilter := make(map[string]bool, len(customerIDs))
+	for _, id := range customerIDs {
+		custFilter[id] = true
+	}
+
+	agg := make(map[time.Time]decimal.Decimal)
+	for _, item := range s.data {
+		if item.Status != types.StatusPublished {
+			continue
+		}
+		if item.MeterID == nil || *item.MeterID != meterID {
+			continue
+		}
+		if item.PeriodStart != nil && item.PeriodStart.Before(periodStart) {
+			continue
+		}
+		if item.PeriodEnd != nil && !item.PeriodEnd.Before(periodEnd) {
+			continue
+		}
+		if len(custFilter) > 0 && !custFilter[item.CustomerID] {
+			continue
+		}
+		if item.PeriodStart == nil {
+			continue
+		}
+		ws := truncateLineItemPeriodUTC(*item.PeriodStart, dateTruncPart)
+		agg[ws] = agg[ws].Add(item.Quantity)
+	}
+
+	results := make([]invoice.VoiceMinutesTimeSeriesRow, 0, len(agg))
+	for ws, usage := range agg {
+		results = append(results, invoice.VoiceMinutesTimeSeriesRow{
+			WindowStart: ws,
+			UsageMs:     usage,
+		})
+	}
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].WindowStart.Before(results[j].WindowStart)
+	})
 	return results, nil
 }
 

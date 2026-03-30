@@ -329,10 +329,87 @@ func (s *dashboardService) GetRevenueDashboard(ctx context.Context, req dto.Reve
 		items = []dto.RevenueDashboardCustomer{}
 	}
 
+	var graph *dto.RevenueDashboardGraph
+	if hasCustomAnalytics && meterID != "" {
+		const dateTruncMonth = "month"
+
+		revenueTS, tsErr := s.InvoiceLineItemRepo.GetRevenueTimeSeries(ctx, req.PeriodStart, req.PeriodEnd, dateTruncMonth, req.CustomerIDs)
+		if tsErr != nil {
+			return nil, ierr.WithError(tsErr).
+				WithHint("failed to fetch revenue time series for graph").
+				Mark(ierr.ErrDatabase)
+		}
+
+		voiceTS, vErr := s.InvoiceLineItemRepo.GetVoiceMinutesTimeSeries(ctx, req.PeriodStart, req.PeriodEnd, meterID, dateTruncMonth, req.CustomerIDs)
+		if vErr != nil {
+			return nil, ierr.WithError(vErr).
+				WithHint("failed to fetch voice minutes time series for graph").
+				Mark(ierr.ErrDatabase)
+		}
+
+		revenueByWindow := aggregateRevenueDashboardByWindow(revenueTS)
+		graph = &dto.RevenueDashboardGraph{
+			TotalRevenue: buildRevenueDashboardGraphPoints(revenueByWindow),
+			VoiceMinutes: buildVoiceMinutesDashboardGraphPoints(voiceTS),
+		}
+	}
+
 	return &dto.RevenueDashboardResponse{
 		Summary: summary,
 		Items:   items,
+		Graph:   graph,
 	}, nil
+}
+
+func aggregateRevenueDashboardByWindow(rows []domaininvoice.RevenueTimeSeriesRow) map[time.Time]decimal.Decimal {
+	out := make(map[time.Time]decimal.Decimal)
+	for _, row := range rows {
+		out[row.WindowStart.UTC()] = out[row.WindowStart.UTC()].Add(row.Amount)
+	}
+	return out
+}
+
+func buildRevenueDashboardGraphPoints(agg map[time.Time]decimal.Decimal) []types.RevenueGraphPoint {
+	if len(agg) == 0 {
+		return []types.RevenueGraphPoint{}
+	}
+	keys := make([]time.Time, 0, len(agg))
+	for k := range agg {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i].Before(keys[j]) })
+
+	points := make([]types.RevenueGraphPoint, 0, len(keys))
+	for _, k := range keys {
+		points = append(points, types.RevenueGraphPoint{
+			Label: revenueDashboardGraphMonthLabel(k),
+			Value: agg[k].String(),
+		})
+	}
+	return points
+}
+
+func buildVoiceMinutesDashboardGraphPoints(rows []domaininvoice.VoiceMinutesTimeSeriesRow) []types.RevenueGraphPoint {
+	if len(rows) == 0 {
+		return []types.RevenueGraphPoint{}
+	}
+	msPerMinute := decimal.NewFromInt(60000)
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].WindowStart.UTC().Before(rows[j].WindowStart.UTC())
+	})
+	points := make([]types.RevenueGraphPoint, 0, len(rows))
+	for _, row := range rows {
+		minutes := row.UsageMs.Div(msPerMinute)
+		points = append(points, types.RevenueGraphPoint{
+			Label: revenueDashboardGraphMonthLabel(row.WindowStart),
+			Value: minutes.String(),
+		})
+	}
+	return points
+}
+
+func revenueDashboardGraphMonthLabel(t time.Time) string {
+	return t.UTC().Format("Jan 2006")
 }
 
 // resolveVoiceMeterID checks the custom_analytics_config setting for the
