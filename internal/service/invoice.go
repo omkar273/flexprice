@@ -174,6 +174,7 @@ func (s *invoiceService) CreateEmptyDraftInvoice(ctx context.Context, req dto.Cr
 			if req.SubscriptionID != nil {
 				scope = idempotency.ScopeSubscriptionInvoice
 				params["subscription_id"] = *req.SubscriptionID
+				params["billing_reason"] = string(req.BillingReason)
 			} else {
 				// For one-off invoices, a timestamp is required to ensure uniqueness
 				params["timestamp"] = time.Now().UTC()
@@ -201,7 +202,7 @@ func (s *invoiceService) CreateEmptyDraftInvoice(ctx context.Context, req dto.Cr
 		// 3. For subscription invoices, check period uniqueness and get billing sequence
 		var billingSeq *int
 		if req.SubscriptionID != nil {
-			existingForPeriod, err := s.InvoiceRepo.GetForPeriod(txCtx, *req.SubscriptionID, *req.PeriodStart, *req.PeriodEnd)
+			existingForPeriod, err := s.InvoiceRepo.GetForPeriod(txCtx, *req.SubscriptionID, *req.PeriodStart, *req.PeriodEnd, string(req.BillingReason))
 			if err != nil && !ierr.IsNotFound(err) {
 				return err
 			}
@@ -240,11 +241,6 @@ func (s *invoiceService) CreateEmptyDraftInvoice(ctx context.Context, req dto.Cr
 		inv.IdempotencyKey = &idempKey
 		inv.BillingSequence = billingSeq
 		inv.InvoiceStatus = types.InvoiceStatusDraft
-
-		// Set correct billing reason based on billing sequence for subscription invoices
-		if req.SubscriptionID != nil && billingSeq != nil && lo.FromPtr(billingSeq) == 1 {
-			inv.BillingReason = string(types.InvoiceBillingReasonSubscriptionCreate)
-		}
 
 		// Validate invoice
 		if err := inv.Validate(); err != nil {
@@ -2040,6 +2036,9 @@ func (s *invoiceService) CreateSubscriptionInvoice(ctx context.Context, req *dto
 		subscription.Currency,
 		string(subscription.BillingPeriod),
 	)
+	if flowType == types.InvoiceFlowSubscriptionCreation {
+		draftReq.BillingReason = types.InvoiceBillingReasonSubscriptionCreate
+	}
 	draft, err := s.CreateEmptyDraftInvoice(ctx, draftReq)
 	if err != nil {
 		return nil, nil, err

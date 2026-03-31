@@ -444,9 +444,9 @@ func provideTemporalWorkerManager(temporalClient client.TemporalClient, log *log
 	return worker.NewTemporalWorkerManager(temporalClient, log)
 }
 
-func provideTemporalService(temporalClient client.TemporalClient, workerManager worker.TemporalWorkerManager, log *logger.Logger, sentryService *sentry.Service) temporalservice.TemporalService {
+func provideTemporalService(temporalClient client.TemporalClient, workerManager worker.TemporalWorkerManager, log *logger.Logger, sentryService *sentry.Service, cfg *config.TemporalConfig) temporalservice.TemporalService {
 	// Initialize the global Temporal service instance with Sentry
-	temporalservice.InitializeGlobalTemporalService(temporalClient, workerManager, log, sentryService)
+	temporalservice.InitializeGlobalTemporalService(temporalClient, workerManager, log, sentryService, cfg)
 
 	// Get the global instance and start it
 	service := temporalservice.GetGlobalTemporalService()

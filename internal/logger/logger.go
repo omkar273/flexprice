@@ -10,14 +10,16 @@ import (
 	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/getsentry/sentry-go"
 	"go.opentelemetry.io/contrib/bridges/otelzap"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // sentryToZapLevel maps a sentry LogLevel to its zapcore equivalent for level-gating.
@@ -98,7 +100,7 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		zapLogger.Sugar().Warn("Fluentd is enabled but host/port not configured properly")
 	}
 
-	// Initialize OpenTelemetry log exporter (for SigNoz / any OTLP backend)
+	// Initialize OpenTelemetry log exporter (for any OTLP backend)
 	var otelLogProvider *sdklog.LoggerProvider
 	if cfg.Logging.OtelEnabled && cfg.Logging.OtelEndpoint != "" {
 		otelLogProvider, err = newOtelLogProvider(context.Background(), cfg)
@@ -106,11 +108,22 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 			zapLogger.Sugar().Warnf("Failed to initialize OTel log exporter: %v, falling back to stdout only", err)
 			otelLogProvider = nil
 		} else {
-			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s)", cfg.Logging.OtelEndpoint)
+			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s, protocol: %s, auth_header: %s, auth_value_set: %v)", cfg.Logging.OtelEndpoint, cfg.Logging.OtelProtocol, cfg.Logging.OtelAuthHeader, cfg.Logging.OtelAuthValue != "")
+		}
+		if cfg.Logging.OtelDebug {
+			// Route otel SDK internal errors (e.g. failed exports, auth errors) to zap so they appear in logs.
+			otel.SetErrorHandler(otel.ErrorHandlerFunc(func(e error) {
+				zapLogger.Sugar().Errorf("OTel export error: %v", e)
+			}))
 		}
 	}
 
-	// Build the final zap logger, optionally tee-ing into the otelzap bridge
+	// Build the final zap logger, optionally tee-ing into the otelzap bridge.
+	// zapcore.NewTee's Enabled() is true if ANY core enables the level. The otelzap
+	// core delegates to OTel Logger.Enabled(), which (with the SDK batch processor)
+	// accepts all severities, so Debug would still flow to OTLP when the main core
+	// is gated to Info. Wrap the otel core with the same LevelEnabler as the
+	// preset logger so OTLP respects logging.level.
 	finalLogger := zapLogger
 	if otelLogProvider != nil {
 		scopeName := cfg.Logging.ServiceName
@@ -118,7 +131,11 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 			scopeName = string(cfg.Deployment.Mode)
 		}
 		otelCore := otelzap.NewCore(scopeName, otelzap.WithLoggerProvider(otelLogProvider))
-		finalLogger = zap.New(zapcore.NewTee(zapLogger.Core(), otelCore), zap.WithCaller(true))
+		otelTeeCore, incrErr := zapcore.NewIncreaseLevelCore(otelCore, config.Level)
+		if incrErr != nil {
+			return nil, incrErr
+		}
+		finalLogger = zap.New(zapcore.NewTee(zapLogger.Core(), otelTeeCore), zap.WithCaller(true))
 	}
 
 	sugar := finalLogger.Sugar()
@@ -134,34 +151,74 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		fluentdLogger:   fluentdLogger,
 		otelLogProvider: otelLogProvider,
 		serviceName:     string(cfg.Deployment.Mode),
-		sentryEnabled:   cfg.Sentry.Enabled,
+		sentryEnabled:   false,
 		sentryCtx:       context.Background(),
 	}, nil
 }
 
-// newOtelLogProvider builds a sdklog.LoggerProvider that exports via OTLP gRPC.
+// newOtelLogProvider builds a sdklog.LoggerProvider that exports via OTLP (gRPC or HTTP).
 func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog.LoggerProvider, error) {
-	opts := []otlploggrpc.Option{
-		otlploggrpc.WithEndpoint(cfg.Logging.OtelEndpoint),
-	}
-	if cfg.Logging.OtelInsecure {
-		opts = append(opts, otlploggrpc.WithDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
-	} else {
-		opts = append(opts, otlploggrpc.WithDialOption(grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, ""))))
-	}
-	if cfg.Logging.OtelIngestionKey != "" {
-		opts = append(opts, otlploggrpc.WithHeaders(map[string]string{
-			"signoz-ingestion-key": cfg.Logging.OtelIngestionKey,
-		}))
+	headers := map[string]string{}
+	if cfg.Logging.OtelAuthHeader != "" && cfg.Logging.OtelAuthValue != "" {
+		headers[cfg.Logging.OtelAuthHeader] = cfg.Logging.OtelAuthValue
 	}
 
-	exporter, err := otlploggrpc.New(ctx, opts...)
+	var exporter sdklog.Exporter
+	var err error
+
+	if cfg.Logging.OtelProtocol == "http" {
+		httpOpts := []otlploghttp.Option{
+			otlploghttp.WithEndpoint(cfg.Logging.OtelEndpoint),
+		}
+		if cfg.Logging.OtelInsecure {
+			httpOpts = append(httpOpts, otlploghttp.WithInsecure())
+		}
+		if len(headers) > 0 {
+			httpOpts = append(httpOpts, otlploghttp.WithHeaders(headers))
+		}
+		exporter, err = otlploghttp.New(ctx, httpOpts...)
+	} else {
+		// default: grpc
+		grpcOpts := []otlploggrpc.Option{
+			otlploggrpc.WithEndpoint(cfg.Logging.OtelEndpoint),
+		}
+		if cfg.Logging.OtelInsecure {
+			grpcOpts = append(grpcOpts, otlploggrpc.WithInsecure())
+		}
+		if len(headers) > 0 {
+			grpcOpts = append(grpcOpts, otlploggrpc.WithHeaders(headers))
+		}
+		exporter, err = otlploggrpc.New(ctx, grpcOpts...)
+	}
 	if err != nil {
 		return nil, err
 	}
 
+	// Build resource with service.name and deployment.environment
+	resAttrs := []attribute.KeyValue{
+		semconv.ServiceName(cfg.Logging.ServiceName),
+	}
+	if cfg.Logging.Environment != "" {
+		resAttrs = append(resAttrs, semconv.DeploymentEnvironmentName(cfg.Logging.Environment))
+	}
+	res, err := resource.New(ctx,
+		resource.WithAttributes(resAttrs...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// OtelDebug: synchronous processor exports immediately — use to confirm delivery without waiting for batch timer.
+	var processor sdklog.Processor
+	if cfg.Logging.OtelDebug {
+		processor = sdklog.NewSimpleProcessor(exporter)
+	} else {
+		processor = sdklog.NewBatchProcessor(exporter)
+	}
+
 	provider := sdklog.NewLoggerProvider(
-		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)),
+		sdklog.WithProcessor(processor),
+		sdklog.WithResource(res),
 	)
 	return provider, nil
 }
