@@ -65,24 +65,29 @@ func (r *SystemEventRepository) OnPublished(
 	client := r.client.Writer(ctx)
 	now := time.Now().UTC()
 
+	payloadMap, err := toPayloadMap(event.Payload)
+	if err != nil {
+		return err
+	}
+
 	u := client.SystemEvent.UpdateOneID(event.ID).
 		SetUpdatedAt(now).
 		SetNillableWebhookMessageID(webhookMessageID).
 		SetPublishedAt(now).
-		SetPayload(toPayloadMap(event.Payload))
+		SetPayload(payloadMap)
 	if event.UserID != "" {
 		u = u.SetUpdatedBy(event.UserID)
 	}
 	return u.Exec(ctx)
 }
 
-func toPayloadMap(raw json.RawMessage) map[string]interface{} {
+func toPayloadMap(raw json.RawMessage) (map[string]interface{}, error) {
 	if len(raw) == 0 {
-		return nil
+		return nil, nil
 	}
 	var m map[string]interface{}
 	if err := json.Unmarshal(raw, &m); err != nil {
-		return nil
+		return nil, err
 	}
-	return m
+	return m, nil
 }
