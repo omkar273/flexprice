@@ -118,7 +118,12 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		}
 	}
 
-	// Build the final zap logger, optionally tee-ing into the otelzap bridge
+	// Build the final zap logger, optionally tee-ing into the otelzap bridge.
+	// zapcore.NewTee's Enabled() is true if ANY core enables the level. The otelzap
+	// core delegates to OTel Logger.Enabled(), which (with the SDK batch processor)
+	// accepts all severities, so Debug would still flow to OTLP when the main core
+	// is gated to Info. Wrap the otel core with the same LevelEnabler as the
+	// preset logger so OTLP respects logging.level.
 	finalLogger := zapLogger
 	if otelLogProvider != nil {
 		scopeName := cfg.Logging.ServiceName
@@ -126,7 +131,11 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 			scopeName = string(cfg.Deployment.Mode)
 		}
 		otelCore := otelzap.NewCore(scopeName, otelzap.WithLoggerProvider(otelLogProvider))
-		finalLogger = zap.New(zapcore.NewTee(zapLogger.Core(), otelCore), zap.WithCaller(true))
+		otelTeeCore, incrErr := zapcore.NewIncreaseLevelCore(otelCore, config.Level)
+		if incrErr != nil {
+			return nil, incrErr
+		}
+		finalLogger = zap.New(zapcore.NewTee(zapLogger.Core(), otelTeeCore), zap.WithCaller(true))
 	}
 
 	sugar := finalLogger.Sugar()
