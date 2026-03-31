@@ -3601,15 +3601,14 @@ func (s *featureUsageTrackingService) fetchCustomers(ctx context.Context, req *d
 			return nil, err
 		}
 		return []*customer.Customer{cust}, nil
-	} else {
-		customers, err := s.CustomerRepo.List(ctx, types.NewNoLimitCustomerFilter())
-		if err != nil {
-			return nil, ierr.WithError(err).
-				WithHint("Failed to fetch customers").
-				Mark(ierr.ErrDatabase)
-		}
-		return customers, nil
 	}
+
+	return nil, ierr.NewError("external_customer_id is required").
+		WithHint("external_customer_id is required").
+		WithReportableDetails(map[string]interface{}{
+			"external_customer_id": req.ExternalCustomerID,
+		}).
+		Mark(ierr.ErrValidation)
 }
 
 // mergeAnalyticsData merges additional analytics data into the aggregated data structure

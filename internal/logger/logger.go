@@ -10,6 +10,7 @@ import (
 	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/getsentry/sentry-go"
 	"go.opentelemetry.io/contrib/bridges/otelzap"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
@@ -107,11 +108,22 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 			zapLogger.Sugar().Warnf("Failed to initialize OTel log exporter: %v, falling back to stdout only", err)
 			otelLogProvider = nil
 		} else {
-			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s, auth_header: %s, auth_value_set: %v)", cfg.Logging.OtelEndpoint, cfg.Logging.OtelAuthHeader, cfg.Logging.OtelAuthValue != "")
+			zapLogger.Sugar().Infof("OTel log exporter initialized (endpoint: %s, protocol: %s, auth_header: %s, auth_value_set: %v)", cfg.Logging.OtelEndpoint, cfg.Logging.OtelProtocol, cfg.Logging.OtelAuthHeader, cfg.Logging.OtelAuthValue != "")
+		}
+		if cfg.Logging.OtelDebug {
+			// Route otel SDK internal errors (e.g. failed exports, auth errors) to zap so they appear in logs.
+			otel.SetErrorHandler(otel.ErrorHandlerFunc(func(e error) {
+				zapLogger.Sugar().Errorf("OTel export error: %v", e)
+			}))
 		}
 	}
 
-	// Build the final zap logger, optionally tee-ing into the otelzap bridge
+	// Build the final zap logger, optionally tee-ing into the otelzap bridge.
+	// zapcore.NewTee's Enabled() is true if ANY core enables the level. The otelzap
+	// core delegates to OTel Logger.Enabled(), which (with the SDK batch processor)
+	// accepts all severities, so Debug would still flow to OTLP when the main core
+	// is gated to Info. Wrap the otel core with the same LevelEnabler as the
+	// preset logger so OTLP respects logging.level.
 	finalLogger := zapLogger
 	if otelLogProvider != nil {
 		scopeName := cfg.Logging.ServiceName
@@ -119,7 +131,11 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 			scopeName = string(cfg.Deployment.Mode)
 		}
 		otelCore := otelzap.NewCore(scopeName, otelzap.WithLoggerProvider(otelLogProvider))
-		finalLogger = zap.New(zapcore.NewTee(zapLogger.Core(), otelCore), zap.WithCaller(true))
+		otelTeeCore, incrErr := zapcore.NewIncreaseLevelCore(otelCore, config.Level)
+		if incrErr != nil {
+			return nil, incrErr
+		}
+		finalLogger = zap.New(zapcore.NewTee(zapLogger.Core(), otelTeeCore), zap.WithCaller(true))
 	}
 
 	sugar := finalLogger.Sugar()
@@ -172,11 +188,7 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 		if len(headers) > 0 {
 			grpcOpts = append(grpcOpts, otlploggrpc.WithHeaders(headers))
 		}
-		// Use a short-timeout context for the initial connection attempt so failures
-		// surface immediately at startup rather than being silently swallowed.
-		dialCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		exporter, err = otlploggrpc.New(dialCtx, grpcOpts...)
+		exporter, err = otlploggrpc.New(ctx, grpcOpts...)
 	}
 	if err != nil {
 		return nil, err
@@ -196,7 +208,7 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 		return nil, err
 	}
 
-	// OtelDebug: use synchronous processor for immediate export (confirms delivery without waiting for batch timer)
+	// OtelDebug: synchronous processor exports immediately — use to confirm delivery without waiting for batch timer.
 	var processor sdklog.Processor
 	if cfg.Logging.OtelDebug {
 		processor = sdklog.NewSimpleProcessor(exporter)

@@ -85,6 +85,7 @@ const (
 	TemporalReprocessRawEventsWorkflow          TemporalWorkflowType = "ReprocessRawEventsWorkflow"
 	TemporalReprocessEventsForPlanWorkflow      TemporalWorkflowType = "ReprocessEventsForPlanWorkflow"
 	TemporalScheduleDraftFinalizationWorkflow   TemporalWorkflowType = "ScheduleDraftFinalizationWorkflow"
+	TemporalComputeInvoiceWorkflow              TemporalWorkflowType = "ComputeInvoiceWorkflow"
 )
 
 // WorkflowTypesExcludedFromTracking are workflow types that are not persisted to the
@@ -144,6 +145,7 @@ func (w TemporalWorkflowType) Validate() error {
 		TemporalReprocessRawEventsWorkflow,          // "ReprocessRawEventsWorkflow"
 		TemporalReprocessEventsForPlanWorkflow,      // "ReprocessEventsForPlanWorkflow"
 		TemporalScheduleDraftFinalizationWorkflow,   // "ScheduleDraftFinalizationWorkflow"
+		TemporalComputeInvoiceWorkflow,              // "ComputeInvoiceWorkflow"
 	}
 	if lo.Contains(allowedWorkflows, w) {
 		return nil
@@ -169,7 +171,7 @@ func (w TemporalWorkflowType) TaskQueue() TemporalTaskQueue {
 		return TemporalTaskQueueSubscription
 	case TemporalRecalculateInvoiceWorkflow:
 		return TemporalTaskQueueSubscription
-	case TemporalProcessInvoiceWorkflow, TemporalFinalizeDraftInvoiceWorkflow, TemporalScheduleDraftFinalizationWorkflow:
+	case TemporalProcessInvoiceWorkflow, TemporalFinalizeDraftInvoiceWorkflow, TemporalScheduleDraftFinalizationWorkflow, TemporalComputeInvoiceWorkflow:
 		return TemporalTaskQueueInvoice
 	case TemporalCustomerOnboardingWorkflow, TemporalPrepareProcessedEventsWorkflow:
 		return TemporalTaskQueueWorkflows
@@ -233,6 +235,7 @@ func GetWorkflowsForTaskQueue(taskQueue TemporalTaskQueue) []TemporalWorkflowTyp
 			TemporalProcessInvoiceWorkflow,
 			TemporalFinalizeDraftInvoiceWorkflow,
 			TemporalScheduleDraftFinalizationWorkflow,
+			TemporalComputeInvoiceWorkflow,
 		}
 	case TemporalTaskQueueWorkflows:
 		return []TemporalWorkflowType{
