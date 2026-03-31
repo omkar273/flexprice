@@ -146,6 +146,7 @@ type LoggingConfig struct {
 	OtelProtocol   string `mapstructure:"otel_protocol" default:"grpc"`          // grpc (default) or http
 	OtelAuthHeader string `mapstructure:"otel_auth_header" validate:"omitempty"` // header name, e.g. signoz-ingestion-key
 	OtelAuthValue  string `mapstructure:"otel_auth_value" validate:"omitempty"`  // header value / token
+	OtelDebug      bool   `mapstructure:"otel_debug" default:"false"`            // use synchronous SimpleProcessor and verbose stderr output
 }
 
 type PostgresConfig struct {
