@@ -68,6 +68,26 @@ func (seu *SystemEventUpdate) ClearUpdatedBy() *SystemEventUpdate {
 	return seu
 }
 
+// SetEventName sets the "event_name" field.
+func (seu *SystemEventUpdate) SetEventName(s string) *SystemEventUpdate {
+	seu.mutation.SetEventName(s)
+	return seu
+}
+
+// SetNillableEventName sets the "event_name" field if the given value is not nil.
+func (seu *SystemEventUpdate) SetNillableEventName(s *string) *SystemEventUpdate {
+	if s != nil {
+		seu.SetEventName(*s)
+	}
+	return seu
+}
+
+// ClearEventName clears the value of the "event_name" field.
+func (seu *SystemEventUpdate) ClearEventName() *SystemEventUpdate {
+	seu.mutation.ClearEventName()
+	return seu
+}
+
 // SetEntityType sets the "entity_type" field.
 func (seu *SystemEventUpdate) SetEntityType(s string) *SystemEventUpdate {
 	seu.mutation.SetEntityType(s)
@@ -228,6 +248,12 @@ func (seu *SystemEventUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if seu.mutation.EnvironmentIDCleared() {
 		_spec.ClearField(systemevent.FieldEnvironmentID, field.TypeString)
 	}
+	if value, ok := seu.mutation.EventName(); ok {
+		_spec.SetField(systemevent.FieldEventName, field.TypeString, value)
+	}
+	if seu.mutation.EventNameCleared() {
+		_spec.ClearField(systemevent.FieldEventName, field.TypeString)
+	}
 	if value, ok := seu.mutation.EntityType(); ok {
 		_spec.SetField(systemevent.FieldEntityType, field.TypeString, value)
 	}
@@ -315,6 +341,26 @@ func (seuo *SystemEventUpdateOne) SetNillableUpdatedBy(s *string) *SystemEventUp
 // ClearUpdatedBy clears the value of the "updated_by" field.
 func (seuo *SystemEventUpdateOne) ClearUpdatedBy() *SystemEventUpdateOne {
 	seuo.mutation.ClearUpdatedBy()
+	return seuo
+}
+
+// SetEventName sets the "event_name" field.
+func (seuo *SystemEventUpdateOne) SetEventName(s string) *SystemEventUpdateOne {
+	seuo.mutation.SetEventName(s)
+	return seuo
+}
+
+// SetNillableEventName sets the "event_name" field if the given value is not nil.
+func (seuo *SystemEventUpdateOne) SetNillableEventName(s *string) *SystemEventUpdateOne {
+	if s != nil {
+		seuo.SetEventName(*s)
+	}
+	return seuo
+}
+
+// ClearEventName clears the value of the "event_name" field.
+func (seuo *SystemEventUpdateOne) ClearEventName() *SystemEventUpdateOne {
+	seuo.mutation.ClearEventName()
 	return seuo
 }
 
@@ -507,6 +553,12 @@ func (seuo *SystemEventUpdateOne) sqlSave(ctx context.Context) (_node *SystemEve
 	}
 	if seuo.mutation.EnvironmentIDCleared() {
 		_spec.ClearField(systemevent.FieldEnvironmentID, field.TypeString)
+	}
+	if value, ok := seuo.mutation.EventName(); ok {
+		_spec.SetField(systemevent.FieldEventName, field.TypeString, value)
+	}
+	if seuo.mutation.EventNameCleared() {
+		_spec.ClearField(systemevent.FieldEventName, field.TypeString)
 	}
 	if value, ok := seuo.mutation.EntityType(); ok {
 		_spec.SetField(systemevent.FieldEntityType, field.TypeString, value)

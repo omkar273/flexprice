@@ -32,6 +32,8 @@ type SystemEvent struct {
 	UpdatedBy string `json:"updated_by,omitempty"`
 	// EnvironmentID holds the value of the "environment_id" field.
 	EnvironmentID string `json:"environment_id,omitempty"`
+	// EventName holds the value of the "event_name" field.
+	EventName string `json:"event_name,omitempty"`
 	// EntityType holds the value of the "entity_type" field.
 	EntityType string `json:"entity_type,omitempty"`
 	// EntityID holds the value of the "entity_id" field.
@@ -52,7 +54,7 @@ func (*SystemEvent) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case systemevent.FieldPayload:
 			values[i] = new([]byte)
-		case systemevent.FieldID, systemevent.FieldTenantID, systemevent.FieldStatus, systemevent.FieldCreatedBy, systemevent.FieldUpdatedBy, systemevent.FieldEnvironmentID, systemevent.FieldEntityType, systemevent.FieldEntityID, systemevent.FieldWebhookMessageID:
+		case systemevent.FieldID, systemevent.FieldTenantID, systemevent.FieldStatus, systemevent.FieldCreatedBy, systemevent.FieldUpdatedBy, systemevent.FieldEnvironmentID, systemevent.FieldEventName, systemevent.FieldEntityType, systemevent.FieldEntityID, systemevent.FieldWebhookMessageID:
 			values[i] = new(sql.NullString)
 		case systemevent.FieldCreatedAt, systemevent.FieldUpdatedAt, systemevent.FieldPublishedAt:
 			values[i] = new(sql.NullTime)
@@ -118,6 +120,12 @@ func (se *SystemEvent) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field environment_id", values[i])
 			} else if value.Valid {
 				se.EnvironmentID = value.String
+			}
+		case systemevent.FieldEventName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field event_name", values[i])
+			} else if value.Valid {
+				se.EventName = value.String
 			}
 		case systemevent.FieldEntityType:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -209,6 +217,9 @@ func (se *SystemEvent) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("environment_id=")
 	builder.WriteString(se.EnvironmentID)
+	builder.WriteString(", ")
+	builder.WriteString("event_name=")
+	builder.WriteString(se.EventName)
 	builder.WriteString(", ")
 	builder.WriteString("entity_type=")
 	builder.WriteString(se.EntityType)

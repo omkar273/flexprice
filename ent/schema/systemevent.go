@@ -26,6 +26,12 @@ func (SystemEvent) Fields() []ent.Field {
 			}).
 			Unique().
 			Immutable(),
+		field.String("event_name").
+			SchemaType(map[string]string{
+				"postgres": "varchar(128)",
+			}).
+			Optional().
+			Default(""),
 		field.String("entity_type").
 			SchemaType(map[string]string{
 				"postgres": "varchar(64)",

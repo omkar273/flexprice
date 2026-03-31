@@ -55821,6 +55821,7 @@ type SystemEventMutation struct {
 	created_by         *string
 	updated_by         *string
 	environment_id     *string
+	event_name         *string
 	entity_type        *string
 	entity_id          *string
 	webhook_message_id *string
@@ -56227,6 +56228,55 @@ func (m *SystemEventMutation) ResetEnvironmentID() {
 	delete(m.clearedFields, systemevent.FieldEnvironmentID)
 }
 
+// SetEventName sets the "event_name" field.
+func (m *SystemEventMutation) SetEventName(s string) {
+	m.event_name = &s
+}
+
+// EventName returns the value of the "event_name" field in the mutation.
+func (m *SystemEventMutation) EventName() (r string, exists bool) {
+	v := m.event_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEventName returns the old "event_name" field's value of the SystemEvent entity.
+// If the SystemEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemEventMutation) OldEventName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEventName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEventName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEventName: %w", err)
+	}
+	return oldValue.EventName, nil
+}
+
+// ClearEventName clears the value of the "event_name" field.
+func (m *SystemEventMutation) ClearEventName() {
+	m.event_name = nil
+	m.clearedFields[systemevent.FieldEventName] = struct{}{}
+}
+
+// EventNameCleared returns if the "event_name" field was cleared in this mutation.
+func (m *SystemEventMutation) EventNameCleared() bool {
+	_, ok := m.clearedFields[systemevent.FieldEventName]
+	return ok
+}
+
+// ResetEventName resets all changes to the "event_name" field.
+func (m *SystemEventMutation) ResetEventName() {
+	m.event_name = nil
+	delete(m.clearedFields, systemevent.FieldEventName)
+}
+
 // SetEntityType sets the "entity_type" field.
 func (m *SystemEventMutation) SetEntityType(s string) {
 	m.entity_type = &s
@@ -56506,7 +56556,7 @@ func (m *SystemEventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SystemEventMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.tenant_id != nil {
 		fields = append(fields, systemevent.FieldTenantID)
 	}
@@ -56527,6 +56577,9 @@ func (m *SystemEventMutation) Fields() []string {
 	}
 	if m.environment_id != nil {
 		fields = append(fields, systemevent.FieldEnvironmentID)
+	}
+	if m.event_name != nil {
+		fields = append(fields, systemevent.FieldEventName)
 	}
 	if m.entity_type != nil {
 		fields = append(fields, systemevent.FieldEntityType)
@@ -56565,6 +56618,8 @@ func (m *SystemEventMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedBy()
 	case systemevent.FieldEnvironmentID:
 		return m.EnvironmentID()
+	case systemevent.FieldEventName:
+		return m.EventName()
 	case systemevent.FieldEntityType:
 		return m.EntityType()
 	case systemevent.FieldEntityID:
@@ -56598,6 +56653,8 @@ func (m *SystemEventMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldUpdatedBy(ctx)
 	case systemevent.FieldEnvironmentID:
 		return m.OldEnvironmentID(ctx)
+	case systemevent.FieldEventName:
+		return m.OldEventName(ctx)
 	case systemevent.FieldEntityType:
 		return m.OldEntityType(ctx)
 	case systemevent.FieldEntityID:
@@ -56665,6 +56722,13 @@ func (m *SystemEventMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEnvironmentID(v)
+		return nil
+	case systemevent.FieldEventName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventName(v)
 		return nil
 	case systemevent.FieldEntityType:
 		v, ok := value.(string)
@@ -56740,6 +56804,9 @@ func (m *SystemEventMutation) ClearedFields() []string {
 	if m.FieldCleared(systemevent.FieldEnvironmentID) {
 		fields = append(fields, systemevent.FieldEnvironmentID)
 	}
+	if m.FieldCleared(systemevent.FieldEventName) {
+		fields = append(fields, systemevent.FieldEventName)
+	}
 	if m.FieldCleared(systemevent.FieldEntityType) {
 		fields = append(fields, systemevent.FieldEntityType)
 	}
@@ -56777,6 +56844,9 @@ func (m *SystemEventMutation) ClearField(name string) error {
 		return nil
 	case systemevent.FieldEnvironmentID:
 		m.ClearEnvironmentID()
+		return nil
+	case systemevent.FieldEventName:
+		m.ClearEventName()
 		return nil
 	case systemevent.FieldEntityType:
 		m.ClearEntityType()
@@ -56821,6 +56891,9 @@ func (m *SystemEventMutation) ResetField(name string) error {
 		return nil
 	case systemevent.FieldEnvironmentID:
 		m.ResetEnvironmentID()
+		return nil
+	case systemevent.FieldEventName:
+		m.ResetEventName()
 		return nil
 	case systemevent.FieldEntityType:
 		m.ResetEntityType()

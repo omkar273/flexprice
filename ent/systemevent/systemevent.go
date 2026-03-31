@@ -27,6 +27,8 @@ const (
 	FieldUpdatedBy = "updated_by"
 	// FieldEnvironmentID holds the string denoting the environment_id field in the database.
 	FieldEnvironmentID = "environment_id"
+	// FieldEventName holds the string denoting the event_name field in the database.
+	FieldEventName = "event_name"
 	// FieldEntityType holds the string denoting the entity_type field in the database.
 	FieldEntityType = "entity_type"
 	// FieldEntityID holds the string denoting the entity_id field in the database.
@@ -51,6 +53,7 @@ var Columns = []string{
 	FieldCreatedBy,
 	FieldUpdatedBy,
 	FieldEnvironmentID,
+	FieldEventName,
 	FieldEntityType,
 	FieldEntityID,
 	FieldWebhookMessageID,
@@ -81,6 +84,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultEnvironmentID holds the default value on creation for the "environment_id" field.
 	DefaultEnvironmentID string
+	// DefaultEventName holds the default value on creation for the "event_name" field.
+	DefaultEventName string
 	// DefaultEntityType holds the default value on creation for the "entity_type" field.
 	DefaultEntityType string
 	// DefaultEntityID holds the default value on creation for the "entity_id" field.
@@ -128,6 +133,11 @@ func ByUpdatedBy(opts ...sql.OrderTermOption) OrderOption {
 // ByEnvironmentID orders the results by the environment_id field.
 func ByEnvironmentID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnvironmentID, opts...).ToFunc()
+}
+
+// ByEventName orders the results by the event_name field.
+func ByEventName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEventName, opts...).ToFunc()
 }
 
 // ByEntityType orders the results by the entity_type field.

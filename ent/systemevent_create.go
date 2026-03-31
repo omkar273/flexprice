@@ -110,6 +110,20 @@ func (sec *SystemEventCreate) SetNillableEnvironmentID(s *string) *SystemEventCr
 	return sec
 }
 
+// SetEventName sets the "event_name" field.
+func (sec *SystemEventCreate) SetEventName(s string) *SystemEventCreate {
+	sec.mutation.SetEventName(s)
+	return sec
+}
+
+// SetNillableEventName sets the "event_name" field if the given value is not nil.
+func (sec *SystemEventCreate) SetNillableEventName(s *string) *SystemEventCreate {
+	if s != nil {
+		sec.SetEventName(*s)
+	}
+	return sec
+}
+
 // SetEntityType sets the "entity_type" field.
 func (sec *SystemEventCreate) SetEntityType(s string) *SystemEventCreate {
 	sec.mutation.SetEntityType(s)
@@ -229,6 +243,10 @@ func (sec *SystemEventCreate) defaults() {
 		v := systemevent.DefaultEnvironmentID
 		sec.mutation.SetEnvironmentID(v)
 	}
+	if _, ok := sec.mutation.EventName(); !ok {
+		v := systemevent.DefaultEventName
+		sec.mutation.SetEventName(v)
+	}
 	if _, ok := sec.mutation.EntityType(); !ok {
 		v := systemevent.DefaultEntityType
 		sec.mutation.SetEntityType(v)
@@ -320,6 +338,10 @@ func (sec *SystemEventCreate) createSpec() (*SystemEvent, *sqlgraph.CreateSpec) 
 	if value, ok := sec.mutation.EnvironmentID(); ok {
 		_spec.SetField(systemevent.FieldEnvironmentID, field.TypeString, value)
 		_node.EnvironmentID = value
+	}
+	if value, ok := sec.mutation.EventName(); ok {
+		_spec.SetField(systemevent.FieldEventName, field.TypeString, value)
+		_node.EventName = value
 	}
 	if value, ok := sec.mutation.EntityType(); ok {
 		_spec.SetField(systemevent.FieldEntityType, field.TypeString, value)
