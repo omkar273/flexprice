@@ -99,7 +99,7 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		zapLogger.Sugar().Warn("Fluentd is enabled but host/port not configured properly")
 	}
 
-	// Initialize OpenTelemetry log exporter (for SigNoz / any OTLP backend)
+	// Initialize OpenTelemetry log exporter (for any OTLP backend)
 	var otelLogProvider *sdklog.LoggerProvider
 	if cfg.Logging.OtelEnabled && cfg.Logging.OtelEndpoint != "" {
 		otelLogProvider, err = newOtelLogProvider(context.Background(), cfg)
@@ -135,7 +135,7 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		fluentdLogger:   fluentdLogger,
 		otelLogProvider: otelLogProvider,
 		serviceName:     string(cfg.Deployment.Mode),
-		sentryEnabled:   cfg.Sentry.Enabled,
+		sentryEnabled:   false,
 		sentryCtx:       context.Background(),
 	}, nil
 }
@@ -178,8 +178,7 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 		return nil, err
 	}
 
-	// Build resource with service.name and deployment.environment so SigNoz can
-	// group and filter logs correctly.
+	// Build resource with service.name and deployment.environment
 	resAttrs := []attribute.KeyValue{
 		semconv.ServiceName(cfg.Logging.ServiceName),
 	}
@@ -193,8 +192,16 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 		return nil, err
 	}
 
+	// OtelDebug: use synchronous processor for immediate export (confirms delivery without waiting for batch timer)
+	var processor sdklog.Processor
+	if cfg.Logging.OtelDebug {
+		processor = sdklog.NewSimpleProcessor(exporter)
+	} else {
+		processor = sdklog.NewBatchProcessor(exporter)
+	}
+
 	provider := sdklog.NewLoggerProvider(
-		sdklog.WithProcessor(sdklog.NewBatchProcessor(exporter)),
+		sdklog.WithProcessor(processor),
 		sdklog.WithResource(res),
 	)
 	return provider, nil
