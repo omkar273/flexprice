@@ -1781,6 +1781,11 @@ func (s *subscriptionService) CancelSubscription(
 			return err
 		}
 
+		// Step 7b: Terminate plan line items (set EndDate = effectiveDate)
+		if err := s.cancelPlanLineItemsForSubscription(ctx, subscription.ID, effectiveDate); err != nil {
+			return err
+		}
+
 		// Step 7b: Handle scheduling for future cancellations (end_of_period and scheduled_date)
 		if req.CancellationType == types.CancellationTypeEndOfPeriod ||
 			req.CancellationType == types.CancellationTypeScheduledDate {
@@ -2146,10 +2151,10 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 	// 400-500 meters down to only 5-7 that have actual usage
 	distinctEventNames, err := s.EventRepo.GetDistinctEventNames(ctx, customer.ExternalID, usageStartTime, usageEndTime)
 	if err != nil {
-		s.Logger.WarnwCtx(ctx, "failed to get distinct event names, proceeding without optimization",
+		s.Logger.ErrorwCtx(ctx, "failed to get distinct event names",
 			"error", err,
 			"external_customer_id", customer.ExternalID)
-		distinctEventNames = nil // Fallback: process all meters if optimization fails
+		return nil, fmt.Errorf("failed to get distinct event names for customer %s: %w", customer.ExternalID, err)
 	}
 
 	// Create a map for fast event name lookup
@@ -2184,7 +2189,6 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 			// which means there is no event data in the database
 			// this is a fallback to ensure that we don't process all meters
 			// if the event data is not available
-
 			s.Logger.DebugwCtx(ctx, "skipping meter as there are no events",
 				"meter_id", lineItem.MeterID,
 				"event_name", meter.EventName,
@@ -2194,8 +2198,10 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 			continue
 		}
 
-		// Performance optimization: Skip meters that don't have any events for this customer
-		// Only skip if we successfully got distinct event names (not nil) and the event doesn't exist
+		// Performance optimization: Skip meters that don't have any events for this customer.
+		// distinctEventNames == nil means the optimization query failed (e.g. context deadline),
+		// so we fall back to processing all meters. A non-nil empty slice means the query
+		// succeeded but found no events, so we can safely skip.
 		if distinctEventNames != nil && !eventNameExists[meter.EventName] {
 			s.Logger.DebugwCtx(ctx, "skipping meter with no events",
 				"meter_id", lineItem.MeterID,
@@ -6161,4 +6167,42 @@ func (s *subscriptionService) TriggerSubscriptionWorkflow(ctx context.Context, s
 	}
 
 	return response, nil
+}
+
+// cancelPlanLineItemsForSubscription sets EndDate on all plan line items for the subscription
+// up to effectiveDate. Items that have not yet started (StartDate > effectiveDate) are skipped
+// because they never became active; the subscription-level EndDate already protects billing.
+// Uses direct repository update (not DeleteSubscriptionLineItem) to avoid the effectiveFrom
+// validation in that service function.
+func (s *subscriptionService) cancelPlanLineItemsForSubscription(
+	ctx context.Context,
+	subscriptionID string,
+	effectiveDate time.Time,
+) error {
+	lineItemFilter := types.NewNoLimitSubscriptionLineItemFilter()
+	lineItemFilter.SubscriptionIDs = []string{subscriptionID}
+	lineItemFilter.EntityType = lo.ToPtr(types.SubscriptionLineItemEntityTypePlan)
+	lineItemFilter.Status = lo.ToPtr(types.StatusPublished)
+
+	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range lineItems {
+		// Skip items that haven't started yet — they never became active
+		if item.StartDate.After(effectiveDate) {
+			continue
+		}
+		// Skip items already terminated at or before effectiveDate
+		if !item.EndDate.IsZero() && !item.EndDate.After(effectiveDate) {
+			continue
+		}
+		item.EndDate = effectiveDate
+		if err := s.SubscriptionLineItemRepo.Update(ctx, item); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

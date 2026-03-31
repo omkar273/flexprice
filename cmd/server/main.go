@@ -576,6 +576,7 @@ func startAPIServer(
 		},
 		OnStop: func(ctx context.Context) error {
 			log.Info("Shutting down server...")
+			log.Shutdown(ctx)
 			return nil
 		},
 	})

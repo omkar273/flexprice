@@ -235,19 +235,3 @@ type ScheduleDraftFinalizationWorkflowResult struct {
 type FinalizeDueDraftsActivityInput struct {
 	BatchSize int `json:"batch_size"`
 }
-
-// DueInvoice represents an invoice that is due for finalization, with tenant context.
-type DueInvoice struct {
-	InvoiceID     string `json:"invoice_id"`
-	TenantID      string `json:"tenant_id"`
-	EnvironmentID string `json:"environment_id"`
-	UserID        string `json:"user_id"`
-}
-
-// FinalizeDueDraftsActivityOutput represents the output for the finalize due drafts activity
-type FinalizeDueDraftsActivityOutput struct {
-	DueInvoices    []DueInvoice `json:"due_invoices"`
-	TotalProcessed int          `json:"total_processed"`
-	SkippedCount   int          `json:"skipped_count"`
-	FailedCount    int          `json:"failed_count"`
-}

@@ -115,25 +115,24 @@ func ProcessInvoiceWorkflow(
 	}
 
 	// ================================================================================
-	// STEP 2: Sync Invoice to External Vendor
+	// STEP 2: Sync Invoice to External Vendor — DISABLED
+	// FinalizeInvoice publishes WebhookEventInvoiceUpdateFinalized to system_events.
+	// The integration consumer handles the fan-out to per-provider sync workflows
+	// asynchronously, so this activity is redundant and would cause duplicate syncs.
 	// ================================================================================
-	logger.Info("Step 2: Syncing invoice to external vendor",
-		"invoice_id", input.InvoiceID)
-
-	var syncOutput invoiceModels.SyncInvoiceActivityOutput
-	syncInput := invoiceModels.SyncInvoiceActivityInput{
-		InvoiceID:     input.InvoiceID,
-		TenantID:      input.TenantID,
-		EnvironmentID: input.EnvironmentID,
-	}
-
-	err = workflow.ExecuteActivity(ctx, ActivitySyncInvoiceToVendor, syncInput).Get(ctx, &syncOutput)
-	if err != nil {
-		logger.Error("Failed to sync invoice to external vendor",
-			"error", err,
-			"invoice_id", input.InvoiceID)
-		return nil, err
-	}
+	// var syncOutput invoiceModels.SyncInvoiceActivityOutput
+	// syncInput := invoiceModels.SyncInvoiceActivityInput{
+	// 	InvoiceID:     input.InvoiceID,
+	// 	TenantID:      input.TenantID,
+	// 	EnvironmentID: input.EnvironmentID,
+	// }
+	// err = workflow.ExecuteActivity(ctx, ActivitySyncInvoiceToVendor, syncInput).Get(ctx, &syncOutput)
+	// if err != nil {
+	// 	logger.Error("Failed to sync invoice to external vendor",
+	// 		"error", err,
+	// 		"invoice_id", input.InvoiceID)
+	// 	return nil, err
+	// }
 
 	// ================================================================================
 	// STEP 3: Attempt Payment

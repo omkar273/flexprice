@@ -2,19 +2,37 @@ package events
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/domain/connection"
+	"github.com/flexprice/flexprice/internal/domain/invoice"
+	"github.com/flexprice/flexprice/internal/domain/subscription"
+	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	temporalmodels "github.com/flexprice/flexprice/internal/temporal/models"
 	temporalservice "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/types"
 )
 
-// InvoiceVendorSyncInput is the minimal data needed to fan out invoice sync workflows.
-type InvoiceVendorSyncInput struct {
+// getConnectionIfExists returns the connection for a provider, or nil if none is configured.
+// A "not found" result is not an error — it simply means the tenant hasn't set up that provider.
+// Real DB errors are still propagated.
+func getConnectionIfExists(ctx context.Context, connRepo connection.Repository, provider types.SecretProvider) (*connection.Connection, error) {
+	conn, err := connRepo.GetByProvider(ctx, provider)
+	if err != nil {
+		if ierr.IsNotFound(err) {
+			return nil, nil // provider not configured for this tenant — skip silently
+		}
+		return nil, fmt.Errorf("provider %s lookup failed: %w", provider, err)
+	}
+	return conn, nil
+}
+
+// invoiceVendorSyncInput holds the resolved data used by the internal provider triggers.
+type invoiceVendorSyncInput struct {
 	TenantID         string
 	EnvironmentID    string
 	UserID           string
@@ -23,34 +41,72 @@ type InvoiceVendorSyncInput struct {
 	CollectionMethod string
 }
 
-// CustomerVendorSyncInput is the minimal data needed to fan out customer sync workflows.
-type CustomerVendorSyncInput struct {
-	TenantID      string
-	EnvironmentID string
-	UserID        string
-	CustomerID    string
-}
-
-// DispatchInvoiceVendorSync starts Temporal invoice-sync workflows for each enabled provider.
-// Used by the integration consumer (on invoice.update.finalized) and by manual SyncInvoiceToExternalVendors.
+// DispatchInvoiceVendorSync resolves the invoice from the event payload, loads its
+// subscription (for collection method), then starts Temporal sync workflows for each
+// enabled provider.  It is the single entry point for both the integration consumer
+// (invoice.update.finalized) and the manual SyncInvoiceToExternalVendors path.
 func DispatchInvoiceVendorSync(
 	ctx context.Context,
 	cfg *config.Configuration,
 	connRepo connection.Repository,
+	invoiceRepo invoice.Repository,
+	subRepo subscription.Repository,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	event *types.WebhookEvent,
+	msgUUID string,
 ) error {
 	if cfg != nil && !cfg.IntegrationEvents.Enabled {
 		return nil
 	}
 
+	// Parse invoice ID from the event payload.
+	var pl struct {
+		InvoiceID string `json:"invoice_id"`
+	}
+	if err := json.Unmarshal(event.Payload, &pl); err != nil || pl.InvoiceID == "" {
+		log.Errorw("integration_events: invalid invoice payload, dropping",
+			"message_uuid", msgUUID,
+			"error", err,
+		)
+		return nil
+	}
+
+	// Load the invoice.
+	inv, err := invoiceRepo.Get(ctx, pl.InvoiceID)
+	if err != nil {
+		log.Errorw("integration_events: failed to load invoice for sync dispatch",
+			"invoice_id", pl.InvoiceID,
+			"error", err,
+		)
+		return err
+	}
+
+	// Load the subscription to get the collection method (best-effort).
+	collectionMethod := ""
+	if inv.SubscriptionID != nil && subRepo != nil {
+		sub, err := subRepo.Get(ctx, *inv.SubscriptionID)
+		if err != nil {
+			log.Warnw("integration_events: failed to get subscription for collection method",
+				"invoice_id", inv.ID,
+				"subscription_id", *inv.SubscriptionID,
+				"error", err)
+		} else if sub != nil {
+			collectionMethod = sub.CollectionMethod
+		}
+	}
+
+	in := invoiceVendorSyncInput{
+		TenantID:         event.TenantID,
+		EnvironmentID:    event.EnvironmentID,
+		UserID:           event.UserID,
+		InvoiceID:        inv.ID,
+		CustomerID:       inv.CustomerID,
+		CollectionMethod: collectionMethod,
+	}
+
 	temporalSvc := temporalservice.GetGlobalTemporalService()
 	if temporalSvc == nil {
 		return errTemporalUnavailable
-	}
-
-	if in.InvoiceID == "" || in.CustomerID == "" {
-		return nil
 	}
 
 	log.Infow("integration_events: dispatching invoice vendor sync",
@@ -197,16 +253,13 @@ func triggerStripeIfEnabled(
 	connRepo connection.Repository,
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	in invoiceVendorSyncInput,
 ) error {
-	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderStripe)
+	conn, err := getConnectionIfExists(ctx, connRepo, types.SecretProviderStripe)
 	if err != nil {
-		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderStripe, err)
+		return err
 	}
-	if conn == nil {
-		return nil
-	}
-	if !conn.IsInvoiceOutboundEnabled() {
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
 		return nil
 	}
 
@@ -225,16 +278,13 @@ func triggerRazorpayIfEnabled(
 	connRepo connection.Repository,
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	in invoiceVendorSyncInput,
 ) error {
-	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderRazorpay)
+	conn, err := getConnectionIfExists(ctx, connRepo, types.SecretProviderRazorpay)
 	if err != nil {
-		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderRazorpay, err)
+		return err
 	}
-	if conn == nil {
-		return nil
-	}
-	if !conn.IsInvoiceOutboundEnabled() {
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
 		return nil
 	}
 
@@ -252,16 +302,13 @@ func triggerChargebeeIfEnabled(
 	connRepo connection.Repository,
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	in invoiceVendorSyncInput,
 ) error {
-	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderChargebee)
+	conn, err := getConnectionIfExists(ctx, connRepo, types.SecretProviderChargebee)
 	if err != nil {
-		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderChargebee, err)
+		return err
 	}
-	if conn == nil {
-		return nil
-	}
-	if !conn.IsInvoiceOutboundEnabled() {
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
 		return nil
 	}
 
@@ -279,16 +326,13 @@ func triggerQuickBooksIfEnabled(
 	connRepo connection.Repository,
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	in invoiceVendorSyncInput,
 ) error {
-	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderQuickBooks)
+	conn, err := getConnectionIfExists(ctx, connRepo, types.SecretProviderQuickBooks)
 	if err != nil {
-		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderQuickBooks, err)
+		return err
 	}
-	if conn == nil {
-		return nil
-	}
-	if !conn.IsInvoiceOutboundEnabled() {
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
 		return nil
 	}
 
@@ -306,16 +350,13 @@ func triggerHubSpotIfEnabled(
 	connRepo connection.Repository,
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	in invoiceVendorSyncInput,
 ) error {
-	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderHubSpot)
+	conn, err := getConnectionIfExists(ctx, connRepo, types.SecretProviderHubSpot)
 	if err != nil {
-		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderHubSpot, err)
+		return err
 	}
-	if conn == nil {
-		return nil
-	}
-	if !conn.IsInvoiceOutboundEnabled() {
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
 		return nil
 	}
 
@@ -333,16 +374,13 @@ func triggerMoyasarIfEnabled(
 	connRepo connection.Repository,
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	in invoiceVendorSyncInput,
 ) error {
-	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderMoyasar)
+	conn, err := getConnectionIfExists(ctx, connRepo, types.SecretProviderMoyasar)
 	if err != nil {
-		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderMoyasar, err)
+		return err
 	}
-	if conn == nil {
-		return nil
-	}
-	if !conn.IsInvoiceOutboundEnabled() {
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
 		return nil
 	}
 
@@ -360,16 +398,13 @@ func triggerNomodIfEnabled(
 	connRepo connection.Repository,
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	in invoiceVendorSyncInput,
 ) error {
-	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderNomod)
+	conn, err := getConnectionIfExists(ctx, connRepo, types.SecretProviderNomod)
 	if err != nil {
-		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderNomod, err)
+		return err
 	}
-	if conn == nil {
-		return nil
-	}
-	if !conn.IsInvoiceOutboundEnabled() {
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
 		return nil
 	}
 
@@ -387,16 +422,13 @@ func triggerPaddleIfEnabled(
 	connRepo connection.Repository,
 	temporalSvc temporalservice.TemporalService,
 	log *logger.Logger,
-	in InvoiceVendorSyncInput,
+	in invoiceVendorSyncInput,
 ) error {
-	conn, err := connRepo.GetByProvider(ctx, types.SecretProviderPaddle)
+	conn, err := getConnectionIfExists(ctx, connRepo, types.SecretProviderPaddle)
 	if err != nil {
-		return fmt.Errorf("provider %s lookup failed: %w", types.SecretProviderPaddle, err)
+		return err
 	}
-	if conn == nil {
-		return nil
-	}
-	if !conn.IsInvoiceOutboundEnabled() {
+	if conn == nil || !conn.IsInvoiceOutboundEnabled() {
 		return nil
 	}
 

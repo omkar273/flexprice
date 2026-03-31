@@ -282,3 +282,28 @@ func (h *ScheduledTaskHandler) ScheduleUpdateBillingPeriod(c *gin.Context) {
 		"message": response,
 	})
 }
+
+// @Summary Schedule draft finalization
+// @ID scheduleDraftFinalization
+// @Description Triggers the draft invoice finalization workflow that scans computed draft invoices whose finalization delay has elapsed and finalizes them (assign invoice number, sync to vendors, attempt payment).
+// @Tags Scheduled Tasks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} object
+// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
+// @Failure 500 {object} ierr.ErrorResponse "Server error"
+// @Router /tasks/scheduled/schedule-draft-finalization [post]
+func (h *ScheduledTaskHandler) ScheduleDraftFinalization(c *gin.Context) {
+
+	response, err := h.service.ScheduleDraftFinalization(c.Request.Context())
+	if err != nil {
+		h.logger.Errorw("failed to schedule draft finalization", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": response,
+	})
+}

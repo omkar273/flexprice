@@ -3,10 +3,13 @@ package invoice
 import (
 	"context"
 
+	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/service"
 	invoiceModels "github.com/flexprice/flexprice/internal/temporal/models/invoice"
+	temporalService "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/types"
+	"go.temporal.io/sdk/activity"
 )
 
 // InvoiceActivities contains all invoice-related activities
@@ -199,58 +202,85 @@ func (s *InvoiceActivities) RecalculateInvoiceActivity(
 	}, nil
 }
 
-// FinalizeDueDraftsActivity scans all draft invoices across tenants and returns those
-// whose finalization delay has elapsed. The workflow then triggers ProcessInvoiceWorkflow
-// for each due invoice (reusing existing Finalize → Sync → Payment activities).
+// FinalizeDueDraftsActivity scans all draft invoices across tenants, checks which are due
+// for finalization, and fires FinalizeDraftInvoiceWorkflow for each. Same pattern as
+// ScheduleBillingActivity: single activity does scan + fire-and-forget workflow starts.
 func (s *InvoiceActivities) FinalizeDueDraftsActivity(
 	ctx context.Context,
 	input invoiceModels.FinalizeDueDraftsActivityInput,
-) (*invoiceModels.FinalizeDueDraftsActivityOutput, error) {
+) (*invoiceModels.ScheduleDraftFinalizationWorkflowResult, error) {
+	logger := activity.GetLogger(ctx)
+	result := &invoiceModels.ScheduleDraftFinalizationWorkflowResult{}
+
 	batchSize := input.BatchSize
 	if batchSize <= 0 {
 		batchSize = 100
 	}
 
-	invoiceService := service.NewInvoiceService(s.serviceParams)
-
-	output := &invoiceModels.FinalizeDueDraftsActivityOutput{
-		DueInvoices: make([]invoiceModels.DueInvoice, 0),
+	// Read max workflows per cron run from app config
+	maxPerRun := 500
+	if cfg, err := config.NewConfig(); err == nil && cfg.Temporal.MaxWorkflowsPerCronRun > 0 {
+		maxPerRun = cfg.Temporal.MaxWorkflowsPerCronRun
 	}
 
+	invoiceService := service.NewInvoiceService(s.serviceParams)
+	temporalSvc := temporalService.GetGlobalTemporalService()
+
 	offset := 0
-	for {
+	capReached := false
+	for !capReached {
 		drafts, err := invoiceService.ListAllTenantDraftInvoices(ctx, batchSize, offset)
 		if err != nil {
-			s.logger.Errorw("failed to list draft invoices", "error", err, "offset", offset)
-			return nil, err
+			logger.Error("Failed to list draft invoices", "offset", offset, "error", err)
+			return result, err
 		}
 		if len(drafts) == 0 {
 			break
 		}
 
 		for _, inv := range drafts {
-			output.TotalProcessed++
+			if result.FinalizedCount >= maxPerRun {
+				logger.Info("Reached max workflows per cron run, remaining processed next cycle",
+					"max", maxPerRun, "triggered", result.FinalizedCount)
+				capReached = true
+				break
+			}
+
+			result.TotalProcessed++
 
 			invCtx := types.SetTenantID(ctx, inv.TenantID)
 			invCtx = types.SetEnvironmentID(invCtx, inv.EnvironmentID)
+			invCtx = types.SetUserID(invCtx, inv.CreatedBy)
 
 			due, err := invoiceService.IsFinalizationDue(invCtx, inv.ID)
 			if err != nil {
-				s.logger.Errorw("failed to check finalization due", "invoice_id", inv.ID, "error", err)
-				output.FailedCount++
+				logger.Error("Failed to check finalization due", "invoice_id", inv.ID, "error", err)
+				result.FailedCount++
 				continue
 			}
 			if !due {
-				output.SkippedCount++
+				result.SkippedCount++
 				continue
 			}
 
-			output.DueInvoices = append(output.DueInvoices, invoiceModels.DueInvoice{
-				InvoiceID:     inv.ID,
-				TenantID:      inv.TenantID,
-				EnvironmentID: inv.EnvironmentID,
-				UserID:        inv.CreatedBy,
-			})
+			// Fire FinalizeDraftInvoiceWorkflow — same pattern as ScheduleBillingActivity
+			_, err = temporalSvc.ExecuteWorkflow(
+				invCtx,
+				types.TemporalFinalizeDraftInvoiceWorkflow,
+				invoiceModels.ProcessInvoiceWorkflowInput{
+					InvoiceID:     inv.ID,
+					TenantID:      inv.TenantID,
+					EnvironmentID: inv.EnvironmentID,
+					UserID:        inv.CreatedBy,
+				},
+			)
+			if err != nil {
+				logger.Error("Failed to trigger FinalizeDraftInvoiceWorkflow",
+					"invoice_id", inv.ID, "error", err)
+				result.FailedCount++
+				continue
+			}
+			result.FinalizedCount++
 		}
 
 		if len(drafts) < batchSize {
@@ -259,11 +289,11 @@ func (s *InvoiceActivities) FinalizeDueDraftsActivity(
 		offset += batchSize
 	}
 
-	s.logger.Infow("finalize due drafts scan completed",
-		"total", output.TotalProcessed,
-		"due", len(output.DueInvoices),
-		"skipped", output.SkippedCount,
-		"failed", output.FailedCount)
+	logger.Info("Completed finalize due drafts",
+		"total_processed", result.TotalProcessed,
+		"finalized", result.FinalizedCount,
+		"skipped", result.SkippedCount,
+		"failed", result.FailedCount)
 
-	return output, nil
+	return result, nil
 }

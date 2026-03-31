@@ -196,7 +196,7 @@ func (p PaymentTerms) Validate() error {
 		return ierr.NewError("invalid payment_terms").
 			WithHint("Payment terms must be one of: 15 NET, 30 NET, 45 NET, 60 NET, 75 NET, 90 NET").
 			WithReportableDetails(map[string]any{
-				"payment_terms":   p,
+				"payment_terms":  p,
 				"allowed_values": AllPaymentTerms,
 			}).
 			Mark(ierr.ErrValidation)

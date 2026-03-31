@@ -356,7 +356,9 @@ func buildWorkerConfig(
 			// Invoice workflow activities
 			invoiceActs.ComputeInvoiceActivity,
 			invoiceActs.FinalizeInvoiceActivity,
-			invoiceActs.SyncInvoiceToVendorActivity,
+			// invoiceActs.SyncInvoiceToVendorActivity, // Disabled: FinalizeInvoice publishes
+			// WebhookEventInvoiceUpdateFinalized; the integration consumer dispatches sync
+			// workflows per-provider, so running this activity would duplicate the sync.
 			invoiceActs.AttemptInvoicePaymentActivity,
 			// Draft finalization cron activity
 			invoiceActs.FinalizeDueDraftsActivity,

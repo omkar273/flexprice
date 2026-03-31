@@ -304,6 +304,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			subscription.DELETE("/lineitems/:id", handlers.Subscription.DeleteSubscriptionLineItem)
 
 			subscription.POST("/temporal/schedule-update-billing-period", handlers.ScheduledTask.ScheduleUpdateBillingPeriod)
+			subscription.POST("/temporal/schedule-draft-finalization", handlers.ScheduledTask.ScheduleDraftFinalization)
 
 			// Trigger subscription billing workflow
 			subscription.POST("/temporal/:subscription_id/trigger-workflow", handlers.Subscription.TriggerSubscriptionWorkflow)
@@ -673,6 +674,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 	dashboardRoutes := v1Private.Group("/dashboard")
 	{
 		dashboardRoutes.POST("/revenues", handlers.Dashboard.GetRevenues)
+		dashboardRoutes.POST("/revenue-dashboard", handlers.Dashboard.GetRevenueDashboard)
 	}
 
 	// Workflow monitoring routes

@@ -1132,6 +1132,25 @@ type CreateSubscriptionInvoiceRequest struct {
 	ReferencePoint types.InvoiceReferencePoint `json:"reference_point"`
 }
 
+// ToDraftRequest builds a CreateDraftInvoiceRequest from the subscription invoice request
+// and pre-fetched subscription fields, avoiding a redundant DB fetch.
+func (r *CreateSubscriptionInvoiceRequest) ToDraftRequest(customerID, subscriptionID, currency, billingPeriod string) CreateDraftInvoiceRequest {
+	req := CreateDraftInvoiceRequest{
+		CustomerID:     customerID,
+		SubscriptionID: lo.ToPtr(subscriptionID),
+		InvoiceType:    types.InvoiceTypeSubscription,
+		Currency:       currency,
+		BillingPeriod:  &billingPeriod,
+		PeriodStart:    &r.PeriodStart,
+		PeriodEnd:      &r.PeriodEnd,
+		BillingReason:  types.InvoiceBillingReasonSubscriptionCycle,
+	}
+	if r.ReferencePoint == types.ReferencePointCancel {
+		req.BillingReason = types.InvoiceBillingReasonProration
+	}
+	return req
+}
+
 func (r *CreateSubscriptionInvoiceRequest) Validate() error {
 	if err := validator.ValidateRequest(r); err != nil {
 		return err

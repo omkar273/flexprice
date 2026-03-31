@@ -246,7 +246,7 @@ func (a *SumAggregator) getNonWindowedQuery(ctx context.Context, params *events.
         FROM (
             SELECT
                 %s anyLast(JSONExtractFloat(assumeNotNull(properties), '%s')) as value
-            FROM events FINAL
+            FROM events
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -295,7 +295,7 @@ func (a *SumAggregator) getWindowedQuery(ctx context.Context, params *events.Usa
 			SELECT
 				%s as bucket_start,
 				sum(JSONExtractFloat(assumeNotNull(properties), '%s')) as bucket_sum
-			FROM events FINAL
+			FROM events
 			PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -357,7 +357,7 @@ func (a *CountAggregator) GetQuery(ctx context.Context, params *events.UsagePara
 	return fmt.Sprintf(`
         SELECT 
             %s count(DISTINCT %s) as total
-        FROM events FINAL
+        FROM events
         PREWHERE tenant_id = '%s'
 			AND environment_id = '%s'
 			AND event_name = '%s'
@@ -419,7 +419,7 @@ func (a *CountUniqueAggregator) GetQuery(ctx context.Context, params *events.Usa
         FROM (
             SELECT
                 %s JSONExtractString(assumeNotNull(properties), '%s') as property_value
-            FROM events FINAL
+            FROM events
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -486,7 +486,7 @@ func (a *AvgAggregator) GetQuery(ctx context.Context, params *events.UsageParams
         FROM (
             SELECT
                 %s anyLast(JSONExtractFloat(assumeNotNull(properties), '%s')) as value
-            FROM events FINAL
+            FROM events
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s' 
@@ -547,7 +547,7 @@ func (a *LatestAggregator) GetQuery(ctx context.Context, params *events.UsagePar
         SELECT 
             %s argMax(JSONExtractFloat(assumeNotNull(properties), '%s'), timestamp) as total
         FROM 
-			events FINAL
+			events
 			PREWHERE tenant_id = '%s'
                 AND environment_id = '%s'
                 AND event_name = '%s'
@@ -614,7 +614,7 @@ func (a *SumWithMultiAggregator) GetQuery(ctx context.Context, params *events.Us
         FROM (
             SELECT
                 %s anyLast(JSONExtractFloat(assumeNotNull(properties), '%s')) as value
-            FROM events FINAL
+            FROM events
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -691,7 +691,7 @@ func (a *MaxAggregator) getNonWindowedQuery(ctx context.Context, params *events.
 		FROM (
 			SELECT
 				%s anyLast(JSONExtractFloat(assumeNotNull(properties), '%s')) as value
-			FROM events FINAL
+			FROM events
 			PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -746,7 +746,7 @@ func (a *MaxAggregator) getWindowedQuery(ctx context.Context, params *events.Usa
 					%s as bucket_start,
 					%s as group_key,
 					max(JSONExtractFloat(assumeNotNull(properties), '%s')) as group_value
-				FROM events FINAL
+				FROM events
 				PREWHERE tenant_id = '%s'
 					AND environment_id = '%s'
 					AND event_name = '%s'
@@ -782,7 +782,7 @@ func (a *MaxAggregator) getWindowedQuery(ctx context.Context, params *events.Usa
 			SELECT
 				%s as bucket_start,
 				max(JSONExtractFloat(assumeNotNull(properties), '%s')) as bucket_max
-			FROM events FINAL
+			FROM events
 			PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -857,7 +857,7 @@ func (a *WeightedSumAggregator) GetQuery(ctx context.Context, params *events.Usa
             SELECT
                 %s timestamp,
                 properties
-            FROM events FINAL
+            FROM events
             PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'

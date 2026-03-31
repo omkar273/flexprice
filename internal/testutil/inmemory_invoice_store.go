@@ -385,8 +385,13 @@ func invoiceFilterFn(ctx context.Context, inv *invoice.Invoice, filter interface
 		return false
 	}
 
-	// Filter by invoice status
-	if len(f.InvoiceStatus) > 0 && !lo.Contains(f.InvoiceStatus, inv.InvoiceStatus) {
+	// Filter by invoice status — mirrors repository default: when no explicit status
+	// filter is set, exclude SKIPPED invoices (zero-dollar drafts with no financial data).
+	if len(f.InvoiceStatus) > 0 {
+		if !lo.Contains(f.InvoiceStatus, inv.InvoiceStatus) {
+			return false
+		}
+	} else if inv.InvoiceStatus == types.InvoiceStatusSkipped {
 		return false
 	}
 
