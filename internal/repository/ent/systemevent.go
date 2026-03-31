@@ -47,10 +47,26 @@ func (r *SystemEventRepository) OnConsumed(ctx context.Context, event *types.Web
 		SetCreatedBy(event.UserID).
 		SetUpdatedBy(event.UserID).
 		Exec(ctx)
-	if err != nil && flexent.IsConstraintError(err) {
-		return nil // duplicate — fine
+	if err == nil {
+		return nil
 	}
-	return err
+	if !flexent.IsConstraintError(err) {
+		return err
+	}
+
+	// Row already exists (created by another consumer process with stale code).
+	// Overwrite entity_type / entity_id so the correct values win.
+	updateQ := client.SystemEvent.UpdateOneID(event.ID).SetUpdatedAt(now)
+	if event.EntityType != "" {
+		updateQ = updateQ.SetEntityType(string(event.EntityType))
+	}
+	if event.EntityID != "" {
+		updateQ = updateQ.SetEntityID(event.EntityID)
+	}
+	if payloadMap != nil {
+		updateQ = updateQ.SetPayload(payloadMap)
+	}
+	return updateQ.Exec(ctx)
 }
 
 // OnDelivered stamps webhook_message_id and published_at once the webhook has been sent.
