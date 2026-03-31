@@ -46,7 +46,7 @@ type Handlers struct {
 	Coupon                   *v1.CouponHandler
 	Webhook                  *v1.WebhookHandler
 	Addon                    *v1.AddonHandler
-	EntityIntegrationMapping *v1.EntityIntegrationMappingHandler
+	IntegrationMappingLink *v1.IntegrationMappingLinkHandler
 	Settings                 *v1.SettingsHandler
 	SetupIntent              *v1.SetupIntentHandler
 	Group                    *v1.GroupHandler
@@ -460,15 +460,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 				apiKeys.POST("", handlers.Secret.CreateAPIKey)
 				apiKeys.DELETE("/:id", handlers.Secret.DeleteAPIKey)
 			}
-
-			// Integration routes
-			integrations := secrets.Group("/integrations")
-			{
-				integrations.GET("/linked", handlers.Secret.ListLinkedIntegrations)
-				integrations.POST("/create/:provider", handlers.Secret.CreateIntegration)
-				integrations.GET("/by-provider/:provider", handlers.Secret.GetIntegration)
-				integrations.DELETE("/:id", handlers.Secret.DeleteIntegration)
-			}
 		}
 
 		// Connection routes
@@ -505,13 +496,10 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			creditNotes.POST("/:id/finalize", handlers.CreditNote.FinalizeCreditNote)
 		}
 
-		// Entity Integration Mapping routes
-		entityIntegrationMappings := v1Private.Group("/entity-integration-mappings")
+		// Integration routes
+		integrations := v1Private.Group("/integrations")
 		{
-			entityIntegrationMappings.POST("", handlers.EntityIntegrationMapping.CreateEntityIntegrationMapping)
-			entityIntegrationMappings.GET("", handlers.EntityIntegrationMapping.ListEntityIntegrationMappings)
-			entityIntegrationMappings.GET("/:id", handlers.EntityIntegrationMapping.GetEntityIntegrationMapping)
-			entityIntegrationMappings.DELETE("/:id", handlers.EntityIntegrationMapping.DeleteEntityIntegrationMapping)
+			integrations.POST("/link", handlers.IntegrationMappingLink.Link)
 		}
 
 		// Coupon routes

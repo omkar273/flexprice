@@ -324,13 +324,6 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 		return nil, err
 	}
 
-	// Publish webhook (original behavior)
-	eventName := types.WebhookEventInvoiceCreateDraft
-	if inv.InvoiceStatus == types.InvoiceStatusFinalized {
-		eventName = types.WebhookEventInvoiceUpdateFinalized
-	}
-	s.publishSystemEvent(ctx, eventName, inv.ID)
-
 	return dto.NewInvoiceResponse(inv), nil
 }
 
@@ -3836,7 +3829,7 @@ func (s *invoiceService) SyncInvoiceToExternalVendors(ctx context.Context, invoi
 		Payload:       payload,
 	}
 	return integrationevents.DispatchInvoiceVendorSync(
-		ctx, s.Config, s.ConnectionRepo, s.InvoiceRepo, s.SubRepo, s.Logger, event, "",
+		ctx, s.Config, s.ConnectionRepo, s.EntityIntegrationMappingRepo, s.InvoiceRepo, s.SubRepo, s.Logger, event, "",
 	)
 }
 
