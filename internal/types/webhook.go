@@ -18,6 +18,8 @@ type WebhookEvent struct {
 	UserID        string           `json:"user_id"`
 	Timestamp     time.Time        `json:"timestamp"`
 	Payload       json.RawMessage  `json:"payload"`
+	EntityType    SystemEntityType `json:"entity_type,omitempty"`
+	EntityID      string           `json:"entity_id,omitempty"`
 }
 
 // invoice event names
