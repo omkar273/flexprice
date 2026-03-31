@@ -123,6 +123,16 @@ var commands = []Command{
 		Description: "Sync a price to all subscriptions with the same plan and start date by creating new line items",
 		Run:         internal.SyncPriceToSubscriptions,
 	},
+	{
+		Name:        "setup-draft-invoices",
+		Description: "Create draft invoices for subscriptions from a JSON file and trigger processing workflows",
+		Run:         internal.SetupDraftInvoices,
+	},
+	{
+		Name:        "setup-dummy-billing-customer",
+		Description: "Create CUSTOMER_COUNT demo customers (default 1), each with subscription, $100 wallet top-up, and 500 meter events (Postgres + Kafka)",
+		Run:         internal.SetupDummyBillingCustomer,
+	},
 }
 
 // runBulkReprocessEventsCommand wraps the bulk reprocess events with command line parameters
@@ -177,6 +187,10 @@ func main() {
 		batchSize          string
 		dryRun             string
 		planID             string
+		meterID            string
+		startDate          string
+		billingCycle       string
+		customerCount      string
 		addonID            string
 		workerCount        string
 	)
@@ -193,6 +207,10 @@ func main() {
 	flag.StringVar(&environmentID, "environment-id", "", "Environment ID for operations")
 	flag.StringVar(&filePath, "file-path", "", "File path for operations")
 	flag.StringVar(&planID, "plan-id", "", "Plan ID for operations")
+	flag.StringVar(&meterID, "meter-id", "", "Meter ID (for setup-dummy-billing-customer)")
+	flag.StringVar(&startDate, "start-date", "", "Subscription start date RFC3339 or YYYY-MM-DD")
+	flag.StringVar(&billingCycle, "billing-cycle", "", "Billing cycle: anniversary or calendar")
+	flag.StringVar(&customerCount, "customer-count", "", "Number of customers to create (setup-dummy-billing-customer); default 1")
 	flag.StringVar(&apiKey, "api-key", "", "API key for operations")
 	flag.StringVar(&externalCustomerID, "external-customer-id", "", "External customer ID for reprocessing events")
 	flag.StringVar(&eventName, "event-name", "", "Event name filter for reprocessing")
@@ -246,6 +264,18 @@ func main() {
 	}
 	if planID != "" {
 		os.Setenv("PLAN_ID", planID)
+	}
+	if meterID != "" {
+		os.Setenv("METER_ID", meterID)
+	}
+	if startDate != "" {
+		os.Setenv("START_DATE", startDate)
+	}
+	if billingCycle != "" {
+		os.Setenv("BILLING_CYCLE", billingCycle)
+	}
+	if customerCount != "" {
+		os.Setenv("CUSTOMER_COUNT", customerCount)
 	}
 	if addonID != "" {
 		os.Setenv("ADDON_ID", addonID)

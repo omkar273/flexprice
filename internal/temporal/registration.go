@@ -352,10 +352,12 @@ func buildWorkerConfig(
 			invoiceWorkflows.FinalizeDraftInvoiceWorkflow,
 			invoiceWorkflows.ScheduleDraftFinalizationWorkflow,
 			invoiceWorkflows.ComputeInvoiceWorkflow,
+			invoiceWorkflows.DraftAndComputeSubscriptionInvoiceWorkflow,
 		)
 		activitiesList = append(activitiesList,
 			// Invoice workflow activities
 			invoiceActs.ComputeInvoiceActivity,
+			invoiceActs.CreateDraftForCurrentSubscriptionPeriodActivity,
 			invoiceActs.FinalizeInvoiceActivity,
 			// invoiceActs.SyncInvoiceToVendorActivity, // Disabled: FinalizeInvoice publishes
 			// WebhookEventInvoiceUpdateFinalized; the integration consumer dispatches sync

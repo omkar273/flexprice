@@ -507,6 +507,10 @@ func (s *temporalService) extractWorkflowContextID(workflowType types.TemporalWo
 		if input, ok := params.(invoiceModels.ComputeInvoiceWorkflowInput); ok {
 			return input.InvoiceID
 		}
+	case types.TemporalDraftAndComputeSubscriptionInvoiceWorkflow:
+		if input, ok := params.(invoiceModels.DraftAndComputeSubscriptionInvoiceWorkflowInput); ok {
+			return input.SubscriptionID
+		}
 	case types.TemporalPrepareProcessedEventsWorkflow:
 		// Extract event ID from PrepareProcessedEventsWorkflowInput
 		if input, ok := params.(*models.PrepareProcessedEventsWorkflowInput); ok {
@@ -634,6 +638,8 @@ func (s *temporalService) buildWorkflowInput(ctx context.Context, workflowType t
 		return s.buildRecalculateInvoiceInput(ctx, tenantID, environmentID, userID, params)
 	case types.TemporalComputeInvoiceWorkflow:
 		return s.buildComputeInvoiceInput(ctx, tenantID, environmentID, userID, params)
+	case types.TemporalDraftAndComputeSubscriptionInvoiceWorkflow:
+		return s.buildDraftAndComputeSubscriptionInvoiceInput(ctx, tenantID, environmentID, userID, params)
 	case types.TemporalReprocessEventsWorkflow:
 		return s.buildReprocessEventsInput(ctx, tenantID, environmentID, userID, params)
 	case types.TemporalReprocessRawEventsWorkflow:
@@ -1147,6 +1153,43 @@ func (s *temporalService) buildComputeInvoiceInput(_ context.Context, tenantID, 
 	}
 	return nil, errors.NewError("invalid input for compute invoice workflow").
 		WithHint("Provide ComputeInvoiceWorkflowInput with invoice_id").
+		Mark(errors.ErrValidation)
+}
+
+// buildDraftAndComputeSubscriptionInvoiceInput builds input for DraftAndComputeSubscriptionInvoiceWorkflow.
+func (s *temporalService) buildDraftAndComputeSubscriptionInvoiceInput(_ context.Context, tenantID, environmentID, userID string, params interface{}) (interface{}, error) {
+	if input, ok := params.(invoiceModels.DraftAndComputeSubscriptionInvoiceWorkflowInput); ok {
+		input.TenantID = tenantID
+		input.EnvironmentID = environmentID
+		input.UserID = userID
+		if err := input.Validate(); err != nil {
+			return nil, err
+		}
+		return input, nil
+	}
+	if input, ok := params.(*invoiceModels.DraftAndComputeSubscriptionInvoiceWorkflowInput); ok && input != nil {
+		input.TenantID = tenantID
+		input.EnvironmentID = environmentID
+		input.UserID = userID
+		if err := input.Validate(); err != nil {
+			return nil, err
+		}
+		return *input, nil
+	}
+	if subscriptionID, ok := params.(string); ok && subscriptionID != "" {
+		input := invoiceModels.DraftAndComputeSubscriptionInvoiceWorkflowInput{
+			SubscriptionID: subscriptionID,
+			TenantID:       tenantID,
+			EnvironmentID:  environmentID,
+			UserID:         userID,
+		}
+		if err := input.Validate(); err != nil {
+			return nil, err
+		}
+		return input, nil
+	}
+	return nil, errors.NewError("invalid input for draft-and-compute subscription invoice workflow").
+		WithHint("Provide DraftAndComputeSubscriptionInvoiceWorkflowInput or subscription_id string").
 		Mark(errors.ErrValidation)
 }
 
