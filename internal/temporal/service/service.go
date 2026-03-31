@@ -375,6 +375,31 @@ func (s *temporalService) ExecuteWorkflow(ctx context.Context, workflowType type
 	return s.StartWorkflow(ctx, options, workflowType, input)
 }
 
+func (s *temporalService) ExecuteWorkflowWithDelay(ctx context.Context, workflowType types.TemporalWorkflowType, params interface{}, delaySeconds int) (models.WorkflowRun, error) {
+	// Check if service is initialized
+	if s == nil {
+		return nil, errors.NewError("temporal service not initialized").
+			WithHint("Temporal service must be initialized before use").
+			Mark(errors.ErrInternal)
+	}
+
+	// Build input with context validation
+	input, err := s.buildWorkflowInput(ctx, workflowType, params)
+	if err != nil {
+		return nil, err
+	}
+
+	workflowID := s.generateWorkflowID(workflowType, input)
+	options := models.StartWorkflowOptions{
+		ID:         workflowID,
+		TaskQueue:  workflowType.TaskQueueName(),
+		StartDelay: time.Duration(delaySeconds) * time.Second,
+	}
+
+	// Execute workflow using existing StartWorkflow method
+	return s.StartWorkflow(ctx, options, workflowType, input)
+}
+
 func (s *temporalService) generateWorkflowID(workflowType types.TemporalWorkflowType, params interface{}) string {
 	contextID := s.extractWorkflowContextID(workflowType, params)
 	if contextID != "" {
