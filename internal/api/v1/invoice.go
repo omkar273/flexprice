@@ -161,24 +161,6 @@ func (h *InvoiceHandler) FinalizeInvoice(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "invoice finalized successfully"})
 }
 
-// ComputeInvoice godoc
-// @Summary Compute draft invoice
-// @ID computeInvoice
-// @Description Recomputes a draft invoice in-place using the same logic as ComputeInvoice (subscription line items from billing, coupons/taxes; or one-off/credit payload when provided). Omits body for subscription drafts; send InvoiceComputeRequest for one-off/credit drafts. Use sync=true query param to wait for the result; otherwise the workflow is triggered asynchronously (default).
-// @Tags Invoices
-// @x-scope "write"
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param id path string true "Invoice ID"
-// @Param sync query string false "If 'true', execute synchronously and return invoice. Default is async."
-// @Param request body dto.InvoiceComputeRequest false "Optional compute payload (one-off/credit drafts)"
-// @Success 200 {object} dto.ComputeInvoiceResponse "Sync mode response"
-// @Success 202 {object} models.TemporalWorkflowResult "Async mode response"
-// @Failure 400 {object} ierr.ErrorResponse "Invalid request or invoice is not draft"
-// @Failure 404 {object} ierr.ErrorResponse "Invoice not found"
-// @Failure 500 {object} ierr.ErrorResponse "Server error"
-// @Router /invoices/{id}/compute [post]
 func (h *InvoiceHandler) ComputeInvoice(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -193,12 +175,12 @@ func (h *InvoiceHandler) ComputeInvoice(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	if existing.InvoiceStatus != types.InvoiceStatusDraft {
-		c.Error(ierr.NewError("invoice is not in draft status").
-			WithHint("Only draft invoices can be computed").
+	if existing.InvoiceStatus != types.InvoiceStatusDraft && existing.InvoiceStatus != types.InvoiceStatusSkipped {
+		c.Error(ierr.NewError("invoice is not in draft or skipped status").
+			WithHint("Only draft or skipped invoices can be computed").
 			WithReportableDetails(map[string]interface{}{
 				"invoice_id":     id,
-				"current_status": existing.InvoiceStatus,
+				"current_status": existing.InvoiceStatus.String(),
 			}).
 			Mark(ierr.ErrValidation))
 		return

@@ -915,7 +915,7 @@ func (s *invoiceService) IsFinalizationDue(ctx context.Context, invoiceID string
 		return true, nil
 	}
 
-	dueAt := inv.CreatedAt.Add(time.Duration(invoiceConfig.FinalizationDelaySeconds) * time.Second)
+	dueAt := inv.LastComputedAt.Add(time.Duration(invoiceConfig.FinalizationDelaySeconds) * time.Second)
 	return time.Now().UTC().After(dueAt), nil
 }
 
