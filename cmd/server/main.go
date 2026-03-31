@@ -13,6 +13,7 @@ import (
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/dynamodb"
 	"github.com/flexprice/flexprice/internal/httpclient"
+	integrationevents "github.com/flexprice/flexprice/internal/integration/events"
 	"github.com/flexprice/flexprice/internal/kafka"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/pdf"
@@ -172,6 +173,7 @@ func main() {
 			repository.NewSubscriptionScheduleRepository,
 			repository.NewSettingsRepository,
 			repository.NewAlertLogsRepository,
+			repository.NewSystemEventRepository,
 			repository.NewGroupRepository,
 			repository.NewScheduledTaskRepository,
 			repository.NewPriceUnitRepository,
@@ -188,6 +190,9 @@ func main() {
 
 	// Webhook module (must be initialised before services)
 	opts = append(opts, webhook.Module)
+
+	// Integration events module — isolated consumer group on system_events topic (webhook-shaped events).
+	opts = append(opts, integrationevents.Module)
 
 	// Provide Wallet Balance Alert PubSub
 	opts = append(opts,
@@ -347,54 +352,54 @@ func provideHandlers(
 	workflowService service.WorkflowService,
 ) api.Handlers {
 	return api.Handlers{
-		Events:                   v1.NewEventsHandler(eventService, eventPostProcessingService, featureUsageTrackingService, rawEventsReprocessingService, rawEventConsumptionService, cfg, logger),
-		Meter:                    v1.NewMeterHandler(meterService, logger),
-		Auth:                     v1.NewAuthHandler(cfg, authService, logger),
-		User:                     v1.NewUserHandler(userService, logger),
-		Environment:              v1.NewEnvironmentHandler(environmentService, logger),
-		Health:                   v1.NewHealthHandler(logger),
-		Price:                    v1.NewPriceHandler(priceService, logger),
-		PriceUnit:                v1.NewPriceUnitHandler(priceUnitService, logger),
-		Customer:                 v1.NewCustomerHandler(customerService, billingService, logger),
-		Plan:                     v1.NewPlanHandler(planService, entitlementService, creditGrantService, temporalService, logger),
-		Subscription:             v1.NewSubscriptionHandler(subscriptionService, logger),
-		SubscriptionPause:        v1.NewSubscriptionPauseHandler(subscriptionService, logger),
-		SubscriptionChange:       v1.NewSubscriptionChangeHandler(subscriptionChangeService, logger),
-		SubscriptionSchedule:     v1.NewSubscriptionScheduleHandler(subscriptionScheduleService),
-		Wallet:                   v1.NewWalletHandler(walletService, logger),
-		Tenant:                   v1.NewTenantHandler(tenantService, logger),
-		Invoice:                  v1.NewInvoiceHandler(invoiceService, logger),
-		Feature:                  v1.NewFeatureHandler(featureService, logger),
-		Entitlement:              v1.NewEntitlementHandler(entitlementService, logger),
-		Payment:                  v1.NewPaymentHandler(paymentService, paymentProcessorService, logger),
-		Task:                     v1.NewTaskHandler(taskService, temporalService, logger),
-		Secret:                   v1.NewSecretHandler(secretService, logger),
-		Tax:                      v1.NewTaxHandler(taxService, logger),
-		Onboarding:               v1.NewOnboardingHandler(onboardingService, logger),
-		CronSubscription:         cron.NewSubscriptionHandler(subscriptionService, logger),
-		CronWallet:               cron.NewWalletCronHandler(logger, walletService, tenantService, environmentService, featureService, alertLogsService),
-		CronInvoice:              cron.NewInvoiceHandler(invoiceService, subscriptionService, connectionService, tenantService, environmentService, integrationFactory, logger),
-		CreditGrant:              v1.NewCreditGrantHandler(creditGrantService, logger),
-		Costsheet:                v1.NewCostsheetHandler(costsheetService, logger),
-		RevenueAnalytics:         v1.NewRevenueAnalyticsHandler(revenueAnalyticsService, costsheetUsageTrackingService, cfg, logger),
-		CronCreditGrant:          cron.NewCreditGrantCronHandler(creditGrantService, logger),
-		CreditNote:               v1.NewCreditNoteHandler(creditNoteService, logger),
-		Connection:               v1.NewConnectionHandler(connectionService, logger),
-		EntityIntegrationMapping: v1.NewEntityIntegrationMappingHandler(entityIntegrationMappingService, logger),
-		Webhook:                  v1.NewWebhookHandler(cfg, svixClient, logger, integrationFactory, customerService, paymentService, invoiceService, planService, subscriptionService, entityIntegrationMappingService, db),
-		Coupon:                   v1.NewCouponHandler(couponService, logger),
-		Addon:                    v1.NewAddonHandler(addonService, entitlementService, logger),
-		Settings:                 v1.NewSettingsHandler(settingsService, logger),
-		SetupIntent:              v1.NewSetupIntentHandler(integrationFactory, customerService, logger),
-		Group:                    v1.NewGroupHandler(groupService, logger),
-		ScheduledTask:            v1.NewScheduledTaskHandler(scheduledTaskService, logger),
-		AlertLogsHandler:         v1.NewAlertLogsHandler(alertLogsService, customerService, walletService, featureService, logger),
-		RBAC:                     v1.NewRBACHandler(rbacService, userService, logger),
-		OAuth:                    v1.NewOAuthHandler(oauthService, cfg.OAuth.RedirectURI, logger),
-		CronKafkaLagMonitoring:   cron.NewKafkaLagMonitoringHandler(logger, eventService),
-		CustomerPortal:           v1.NewCustomerPortalHandler(customerPortalService, logger),
-		Dashboard:                v1.NewDashboardHandler(dashboardService, logger),
-		Workflow:                 v1.NewWorkflowHandler(workflowService, logger),
+		Events:                 v1.NewEventsHandler(eventService, eventPostProcessingService, featureUsageTrackingService, rawEventsReprocessingService, rawEventConsumptionService, cfg, logger),
+		Meter:                  v1.NewMeterHandler(meterService, logger),
+		Auth:                   v1.NewAuthHandler(cfg, authService, logger),
+		User:                   v1.NewUserHandler(userService, logger),
+		Environment:            v1.NewEnvironmentHandler(environmentService, logger),
+		Health:                 v1.NewHealthHandler(logger),
+		Price:                  v1.NewPriceHandler(priceService, logger),
+		PriceUnit:              v1.NewPriceUnitHandler(priceUnitService, logger),
+		Customer:               v1.NewCustomerHandler(customerService, billingService, entityIntegrationMappingService, logger),
+		Plan:                   v1.NewPlanHandler(planService, entitlementService, creditGrantService, temporalService, logger),
+		Subscription:           v1.NewSubscriptionHandler(subscriptionService, logger),
+		SubscriptionPause:      v1.NewSubscriptionPauseHandler(subscriptionService, logger),
+		SubscriptionChange:     v1.NewSubscriptionChangeHandler(subscriptionChangeService, logger),
+		SubscriptionSchedule:   v1.NewSubscriptionScheduleHandler(subscriptionScheduleService),
+		Wallet:                 v1.NewWalletHandler(walletService, logger),
+		Tenant:                 v1.NewTenantHandler(tenantService, logger),
+		Invoice:                v1.NewInvoiceHandler(invoiceService, logger),
+		Feature:                v1.NewFeatureHandler(featureService, logger),
+		Entitlement:            v1.NewEntitlementHandler(entitlementService, logger),
+		Payment:                v1.NewPaymentHandler(paymentService, paymentProcessorService, logger),
+		Task:                   v1.NewTaskHandler(taskService, temporalService, logger),
+		Secret:                 v1.NewSecretHandler(secretService, logger),
+		Tax:                    v1.NewTaxHandler(taxService, logger),
+		Onboarding:             v1.NewOnboardingHandler(onboardingService, logger),
+		CronSubscription:       cron.NewSubscriptionHandler(subscriptionService, logger),
+		CronWallet:             cron.NewWalletCronHandler(logger, walletService, tenantService, environmentService, featureService, alertLogsService),
+		CronInvoice:            cron.NewInvoiceHandler(invoiceService, subscriptionService, connectionService, tenantService, environmentService, integrationFactory, logger),
+		CreditGrant:            v1.NewCreditGrantHandler(creditGrantService, logger),
+		Costsheet:              v1.NewCostsheetHandler(costsheetService, logger),
+		RevenueAnalytics:       v1.NewRevenueAnalyticsHandler(revenueAnalyticsService, costsheetUsageTrackingService, cfg, logger),
+		CronCreditGrant:        cron.NewCreditGrantCronHandler(creditGrantService, logger),
+		CreditNote:             v1.NewCreditNoteHandler(creditNoteService, logger),
+		Connection:             v1.NewConnectionHandler(connectionService, logger),
+		IntegrationMappingLink: v1.NewIntegrationMappingLinkHandler(entityIntegrationMappingService, logger),
+		Webhook:                v1.NewWebhookHandler(cfg, svixClient, logger, integrationFactory, customerService, paymentService, invoiceService, planService, subscriptionService, entityIntegrationMappingService, db),
+		Coupon:                 v1.NewCouponHandler(couponService, logger),
+		Addon:                  v1.NewAddonHandler(addonService, entitlementService, logger),
+		Settings:               v1.NewSettingsHandler(settingsService, logger),
+		SetupIntent:            v1.NewSetupIntentHandler(integrationFactory, customerService, logger),
+		Group:                  v1.NewGroupHandler(groupService, logger),
+		ScheduledTask:          v1.NewScheduledTaskHandler(scheduledTaskService, logger),
+		AlertLogsHandler:       v1.NewAlertLogsHandler(alertLogsService, customerService, walletService, featureService, logger),
+		RBAC:                   v1.NewRBACHandler(rbacService, userService, logger),
+		OAuth:                  v1.NewOAuthHandler(oauthService, cfg.OAuth.RedirectURI, logger),
+		CronKafkaLagMonitoring: cron.NewKafkaLagMonitoringHandler(logger, eventService),
+		CustomerPortal:         v1.NewCustomerPortalHandler(customerPortalService, logger),
+		Dashboard:              v1.NewDashboardHandler(dashboardService, logger),
+		Workflow:               v1.NewWorkflowHandler(workflowService, logger),
 	}
 }
 
@@ -470,6 +475,7 @@ func startServer(
 	temporalClient client.TemporalClient,
 	temporalService temporalservice.TemporalService,
 	webhookService *webhook.WebhookService,
+	integrationEventService *integrationevents.IntegrationEventService,
 	router *pubsubRouter.Router,
 	onboardingService service.OnboardingService,
 	log *logger.Logger,
@@ -494,21 +500,21 @@ func startServer(
 		startAPIServer(lc, r, cfg, log)
 
 		// Register all handlers and start router once
-		registerRouterHandlers(router, webhookService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, cfg, true)
+		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, cfg, true)
 		startRouter(lc, router, log)
 		startTemporalWorker(lc, temporalService, params)
 	case types.ModeAPI:
 		startAPIServer(lc, r, cfg, log)
 
 		// Register all handlers and start router once (no event consumption)
-		registerRouterHandlers(router, webhookService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, cfg, false)
+		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, cfg, false)
 		startRouter(lc, router, log)
 
 	case types.ModeTemporalWorker:
 		// Register webhook handler and start router so that webhook events
 		// published by temporal activities (e.g. invoice finalization) are
 		// consumed and delivered via Svix/native in the same process.
-		registerRouterHandlers(router, webhookService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, cfg, false)
+		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, cfg, false)
 		startRouter(lc, router, log)
 		startTemporalWorker(lc, temporalService, params)
 	case types.ModeConsumer:
@@ -517,7 +523,7 @@ func startServer(
 		}
 
 		// Register all handlers and start router once
-		registerRouterHandlers(router, webhookService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, cfg, true)
+		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, cfg, true)
 		startRouter(lc, router, log)
 	default:
 		log.Fatalf("Unknown deployment mode: %s", mode)
@@ -570,6 +576,7 @@ func startAPIServer(
 		},
 		OnStop: func(ctx context.Context) error {
 			log.Info("Shutting down server...")
+			log.Shutdown(ctx)
 			return nil
 		},
 	})
@@ -578,6 +585,7 @@ func startAPIServer(
 func registerRouterHandlers(
 	router *pubsubRouter.Router,
 	webhookService *webhook.WebhookService,
+	integrationEventService *integrationevents.IntegrationEventService,
 	onboardingService service.OnboardingService,
 	eventPostProcessingSvc service.EventPostProcessingService,
 	eventConsumptionSvc service.EventConsumptionService,
@@ -588,10 +596,10 @@ func registerRouterHandlers(
 	cfg *config.Configuration,
 	includeProcessingHandlers bool,
 ) {
-
 	if includeProcessingHandlers {
 		onboardingService.RegisterHandler(router)
 		webhookService.RegisterHandler(router)
+		integrationEventService.RegisterHandler(router)
 		eventConsumptionSvc.RegisterHandler(router, cfg)
 		eventConsumptionSvc.RegisterHandlerLazy(router, cfg)
 		// eventPostProcessingSvc.RegisterHandler(router, cfg)
