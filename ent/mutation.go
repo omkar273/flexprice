@@ -55821,6 +55821,8 @@ type SystemEventMutation struct {
 	created_by         *string
 	updated_by         *string
 	environment_id     *string
+	entity_type        *string
+	entity_id          *string
 	webhook_message_id *string
 	published_at       *time.Time
 	payload            *map[string]interface{}
@@ -56225,6 +56227,104 @@ func (m *SystemEventMutation) ResetEnvironmentID() {
 	delete(m.clearedFields, systemevent.FieldEnvironmentID)
 }
 
+// SetEntityType sets the "entity_type" field.
+func (m *SystemEventMutation) SetEntityType(s string) {
+	m.entity_type = &s
+}
+
+// EntityType returns the value of the "entity_type" field in the mutation.
+func (m *SystemEventMutation) EntityType() (r string, exists bool) {
+	v := m.entity_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEntityType returns the old "entity_type" field's value of the SystemEvent entity.
+// If the SystemEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemEventMutation) OldEntityType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEntityType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEntityType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEntityType: %w", err)
+	}
+	return oldValue.EntityType, nil
+}
+
+// ClearEntityType clears the value of the "entity_type" field.
+func (m *SystemEventMutation) ClearEntityType() {
+	m.entity_type = nil
+	m.clearedFields[systemevent.FieldEntityType] = struct{}{}
+}
+
+// EntityTypeCleared returns if the "entity_type" field was cleared in this mutation.
+func (m *SystemEventMutation) EntityTypeCleared() bool {
+	_, ok := m.clearedFields[systemevent.FieldEntityType]
+	return ok
+}
+
+// ResetEntityType resets all changes to the "entity_type" field.
+func (m *SystemEventMutation) ResetEntityType() {
+	m.entity_type = nil
+	delete(m.clearedFields, systemevent.FieldEntityType)
+}
+
+// SetEntityID sets the "entity_id" field.
+func (m *SystemEventMutation) SetEntityID(s string) {
+	m.entity_id = &s
+}
+
+// EntityID returns the value of the "entity_id" field in the mutation.
+func (m *SystemEventMutation) EntityID() (r string, exists bool) {
+	v := m.entity_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEntityID returns the old "entity_id" field's value of the SystemEvent entity.
+// If the SystemEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemEventMutation) OldEntityID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEntityID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEntityID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEntityID: %w", err)
+	}
+	return oldValue.EntityID, nil
+}
+
+// ClearEntityID clears the value of the "entity_id" field.
+func (m *SystemEventMutation) ClearEntityID() {
+	m.entity_id = nil
+	m.clearedFields[systemevent.FieldEntityID] = struct{}{}
+}
+
+// EntityIDCleared returns if the "entity_id" field was cleared in this mutation.
+func (m *SystemEventMutation) EntityIDCleared() bool {
+	_, ok := m.clearedFields[systemevent.FieldEntityID]
+	return ok
+}
+
+// ResetEntityID resets all changes to the "entity_id" field.
+func (m *SystemEventMutation) ResetEntityID() {
+	m.entity_id = nil
+	delete(m.clearedFields, systemevent.FieldEntityID)
+}
+
 // SetWebhookMessageID sets the "webhook_message_id" field.
 func (m *SystemEventMutation) SetWebhookMessageID(s string) {
 	m.webhook_message_id = &s
@@ -56406,7 +56506,7 @@ func (m *SystemEventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SystemEventMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 12)
 	if m.tenant_id != nil {
 		fields = append(fields, systemevent.FieldTenantID)
 	}
@@ -56427,6 +56527,12 @@ func (m *SystemEventMutation) Fields() []string {
 	}
 	if m.environment_id != nil {
 		fields = append(fields, systemevent.FieldEnvironmentID)
+	}
+	if m.entity_type != nil {
+		fields = append(fields, systemevent.FieldEntityType)
+	}
+	if m.entity_id != nil {
+		fields = append(fields, systemevent.FieldEntityID)
 	}
 	if m.webhook_message_id != nil {
 		fields = append(fields, systemevent.FieldWebhookMessageID)
@@ -56459,6 +56565,10 @@ func (m *SystemEventMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedBy()
 	case systemevent.FieldEnvironmentID:
 		return m.EnvironmentID()
+	case systemevent.FieldEntityType:
+		return m.EntityType()
+	case systemevent.FieldEntityID:
+		return m.EntityID()
 	case systemevent.FieldWebhookMessageID:
 		return m.WebhookMessageID()
 	case systemevent.FieldPublishedAt:
@@ -56488,6 +56598,10 @@ func (m *SystemEventMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldUpdatedBy(ctx)
 	case systemevent.FieldEnvironmentID:
 		return m.OldEnvironmentID(ctx)
+	case systemevent.FieldEntityType:
+		return m.OldEntityType(ctx)
+	case systemevent.FieldEntityID:
+		return m.OldEntityID(ctx)
 	case systemevent.FieldWebhookMessageID:
 		return m.OldWebhookMessageID(ctx)
 	case systemevent.FieldPublishedAt:
@@ -56552,6 +56666,20 @@ func (m *SystemEventMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEnvironmentID(v)
 		return nil
+	case systemevent.FieldEntityType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEntityType(v)
+		return nil
+	case systemevent.FieldEntityID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEntityID(v)
+		return nil
 	case systemevent.FieldWebhookMessageID:
 		v, ok := value.(string)
 		if !ok {
@@ -56612,6 +56740,12 @@ func (m *SystemEventMutation) ClearedFields() []string {
 	if m.FieldCleared(systemevent.FieldEnvironmentID) {
 		fields = append(fields, systemevent.FieldEnvironmentID)
 	}
+	if m.FieldCleared(systemevent.FieldEntityType) {
+		fields = append(fields, systemevent.FieldEntityType)
+	}
+	if m.FieldCleared(systemevent.FieldEntityID) {
+		fields = append(fields, systemevent.FieldEntityID)
+	}
 	if m.FieldCleared(systemevent.FieldWebhookMessageID) {
 		fields = append(fields, systemevent.FieldWebhookMessageID)
 	}
@@ -56643,6 +56777,12 @@ func (m *SystemEventMutation) ClearField(name string) error {
 		return nil
 	case systemevent.FieldEnvironmentID:
 		m.ClearEnvironmentID()
+		return nil
+	case systemevent.FieldEntityType:
+		m.ClearEntityType()
+		return nil
+	case systemevent.FieldEntityID:
+		m.ClearEntityID()
 		return nil
 	case systemevent.FieldWebhookMessageID:
 		m.ClearWebhookMessageID()
@@ -56681,6 +56821,12 @@ func (m *SystemEventMutation) ResetField(name string) error {
 		return nil
 	case systemevent.FieldEnvironmentID:
 		m.ResetEnvironmentID()
+		return nil
+	case systemevent.FieldEntityType:
+		m.ResetEntityType()
+		return nil
+	case systemevent.FieldEntityID:
+		m.ResetEntityID()
 		return nil
 	case systemevent.FieldWebhookMessageID:
 		m.ResetWebhookMessageID()

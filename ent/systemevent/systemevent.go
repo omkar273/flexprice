@@ -27,6 +27,10 @@ const (
 	FieldUpdatedBy = "updated_by"
 	// FieldEnvironmentID holds the string denoting the environment_id field in the database.
 	FieldEnvironmentID = "environment_id"
+	// FieldEntityType holds the string denoting the entity_type field in the database.
+	FieldEntityType = "entity_type"
+	// FieldEntityID holds the string denoting the entity_id field in the database.
+	FieldEntityID = "entity_id"
 	// FieldWebhookMessageID holds the string denoting the webhook_message_id field in the database.
 	FieldWebhookMessageID = "webhook_message_id"
 	// FieldPublishedAt holds the string denoting the published_at field in the database.
@@ -47,6 +51,8 @@ var Columns = []string{
 	FieldCreatedBy,
 	FieldUpdatedBy,
 	FieldEnvironmentID,
+	FieldEntityType,
+	FieldEntityID,
 	FieldWebhookMessageID,
 	FieldPublishedAt,
 	FieldPayload,
@@ -75,6 +81,10 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultEnvironmentID holds the default value on creation for the "environment_id" field.
 	DefaultEnvironmentID string
+	// DefaultEntityType holds the default value on creation for the "entity_type" field.
+	DefaultEntityType string
+	// DefaultEntityID holds the default value on creation for the "entity_id" field.
+	DefaultEntityID string
 )
 
 // OrderOption defines the ordering options for the SystemEvent queries.
@@ -118,6 +128,16 @@ func ByUpdatedBy(opts ...sql.OrderTermOption) OrderOption {
 // ByEnvironmentID orders the results by the environment_id field.
 func ByEnvironmentID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnvironmentID, opts...).ToFunc()
+}
+
+// ByEntityType orders the results by the entity_type field.
+func ByEntityType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEntityType, opts...).ToFunc()
+}
+
+// ByEntityID orders the results by the entity_id field.
+func ByEntityID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEntityID, opts...).ToFunc()
 }
 
 // ByWebhookMessageID orders the results by the webhook_message_id field.

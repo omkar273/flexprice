@@ -2645,6 +2645,8 @@ func (s *invoiceService) publishSystemEvent(ctx context.Context, eventName types
 		UserID:        types.GetUserID(ctx),
 		Timestamp:     time.Now().UTC(),
 		Payload:       json.RawMessage(webhookPayload),
+		EntityType:    types.SystemEntityTypeInvoice,
+		EntityID:      invoiceID,
 	}
 	s.Logger.InfowCtx(ctx, "attempting to publish webhook event",
 		"webhook_id", webhookEvent.ID,

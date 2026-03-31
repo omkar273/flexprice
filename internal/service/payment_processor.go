@@ -789,6 +789,8 @@ func (p *paymentProcessor) publishSystemEvent(ctx context.Context, eventName typ
 		UserID:        types.GetUserID(ctx),
 		Timestamp:     time.Now().UTC(),
 		Payload:       json.RawMessage(webhookPayload),
+		EntityType:    types.SystemEntityTypePayment,
+		EntityID:      paymentID,
 	}
 	if err := p.WebhookPublisher.PublishWebhook(ctx, webhookEvent); err != nil {
 		p.Logger.ErrorfCtx(ctx, "failed to publish %s event: %v", webhookEvent.EventName, err)

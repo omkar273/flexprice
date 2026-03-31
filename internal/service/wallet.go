@@ -1832,6 +1832,8 @@ func (s *walletService) publishInternalWalletWebhookEvent(ctx context.Context, e
 		UserID:        types.GetUserID(ctx),
 		Timestamp:     time.Now().UTC(),
 		Payload:       json.RawMessage(webhookPayload),
+		EntityType:    types.SystemEntityTypeWallet,
+		EntityID:      walletID,
 	}
 	if err := s.WebhookPublisher.PublishWebhook(ctx, webhookEvent); err != nil {
 		s.Logger.ErrorfCtx(ctx, "failed to publish %s event: %v", webhookEvent.EventName, err)
@@ -1866,6 +1868,8 @@ func (s *walletService) publishInternalTransactionWebhookEvent(ctx context.Conte
 		UserID:        types.GetUserID(ctx),
 		Timestamp:     time.Now().UTC(),
 		Payload:       json.RawMessage(webhookPayload),
+		EntityType:    types.SystemEntityTypeWallet,
+		EntityID:      transactionID,
 	}
 	if err := s.WebhookPublisher.PublishWebhook(ctx, webhookEvent); err != nil {
 		s.Logger.ErrorfCtx(ctx, "failed to publish %s event: %v", webhookEvent.EventName, err)
@@ -2048,6 +2052,8 @@ func (s *walletService) PublishEvent(ctx context.Context, eventName types.Webhoo
 		UserID:        types.GetUserID(ctx),
 		Timestamp:     time.Now().UTC(),
 		Payload:       eventJSON,
+		EntityType:    types.SystemEntityTypeWallet,
+		EntityID:      w.ID,
 	}
 
 	s.Logger.InfowCtx(ctx, "publishing webhook event",

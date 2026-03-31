@@ -32,6 +32,10 @@ type SystemEvent struct {
 	UpdatedBy string `json:"updated_by,omitempty"`
 	// EnvironmentID holds the value of the "environment_id" field.
 	EnvironmentID string `json:"environment_id,omitempty"`
+	// EntityType holds the value of the "entity_type" field.
+	EntityType string `json:"entity_type,omitempty"`
+	// EntityID holds the value of the "entity_id" field.
+	EntityID string `json:"entity_id,omitempty"`
 	// WebhookMessageID holds the value of the "webhook_message_id" field.
 	WebhookMessageID *string `json:"webhook_message_id,omitempty"`
 	// PublishedAt holds the value of the "published_at" field.
@@ -48,7 +52,7 @@ func (*SystemEvent) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case systemevent.FieldPayload:
 			values[i] = new([]byte)
-		case systemevent.FieldID, systemevent.FieldTenantID, systemevent.FieldStatus, systemevent.FieldCreatedBy, systemevent.FieldUpdatedBy, systemevent.FieldEnvironmentID, systemevent.FieldWebhookMessageID:
+		case systemevent.FieldID, systemevent.FieldTenantID, systemevent.FieldStatus, systemevent.FieldCreatedBy, systemevent.FieldUpdatedBy, systemevent.FieldEnvironmentID, systemevent.FieldEntityType, systemevent.FieldEntityID, systemevent.FieldWebhookMessageID:
 			values[i] = new(sql.NullString)
 		case systemevent.FieldCreatedAt, systemevent.FieldUpdatedAt, systemevent.FieldPublishedAt:
 			values[i] = new(sql.NullTime)
@@ -114,6 +118,18 @@ func (se *SystemEvent) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field environment_id", values[i])
 			} else if value.Valid {
 				se.EnvironmentID = value.String
+			}
+		case systemevent.FieldEntityType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field entity_type", values[i])
+			} else if value.Valid {
+				se.EntityType = value.String
+			}
+		case systemevent.FieldEntityID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field entity_id", values[i])
+			} else if value.Valid {
+				se.EntityID = value.String
 			}
 		case systemevent.FieldWebhookMessageID:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -193,6 +209,12 @@ func (se *SystemEvent) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("environment_id=")
 	builder.WriteString(se.EnvironmentID)
+	builder.WriteString(", ")
+	builder.WriteString("entity_type=")
+	builder.WriteString(se.EntityType)
+	builder.WriteString(", ")
+	builder.WriteString("entity_id=")
+	builder.WriteString(se.EntityID)
 	builder.WriteString(", ")
 	if v := se.WebhookMessageID; v != nil {
 		builder.WriteString("webhook_message_id=")

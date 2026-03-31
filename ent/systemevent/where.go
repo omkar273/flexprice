@@ -99,6 +99,16 @@ func EnvironmentID(v string) predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldEQ(FieldEnvironmentID, v))
 }
 
+// EntityType applies equality check predicate on the "entity_type" field. It's identical to EntityTypeEQ.
+func EntityType(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEQ(FieldEntityType, v))
+}
+
+// EntityID applies equality check predicate on the "entity_id" field. It's identical to EntityIDEQ.
+func EntityID(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEQ(FieldEntityID, v))
+}
+
 // WebhookMessageID applies equality check predicate on the "webhook_message_id" field. It's identical to WebhookMessageIDEQ.
 func WebhookMessageID(v string) predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldEQ(FieldWebhookMessageID, v))
@@ -542,6 +552,156 @@ func EnvironmentIDEqualFold(v string) predicate.SystemEvent {
 // EnvironmentIDContainsFold applies the ContainsFold predicate on the "environment_id" field.
 func EnvironmentIDContainsFold(v string) predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldContainsFold(FieldEnvironmentID, v))
+}
+
+// EntityTypeEQ applies the EQ predicate on the "entity_type" field.
+func EntityTypeEQ(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEQ(FieldEntityType, v))
+}
+
+// EntityTypeNEQ applies the NEQ predicate on the "entity_type" field.
+func EntityTypeNEQ(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNEQ(FieldEntityType, v))
+}
+
+// EntityTypeIn applies the In predicate on the "entity_type" field.
+func EntityTypeIn(vs ...string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldIn(FieldEntityType, vs...))
+}
+
+// EntityTypeNotIn applies the NotIn predicate on the "entity_type" field.
+func EntityTypeNotIn(vs ...string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNotIn(FieldEntityType, vs...))
+}
+
+// EntityTypeGT applies the GT predicate on the "entity_type" field.
+func EntityTypeGT(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldGT(FieldEntityType, v))
+}
+
+// EntityTypeGTE applies the GTE predicate on the "entity_type" field.
+func EntityTypeGTE(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldGTE(FieldEntityType, v))
+}
+
+// EntityTypeLT applies the LT predicate on the "entity_type" field.
+func EntityTypeLT(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldLT(FieldEntityType, v))
+}
+
+// EntityTypeLTE applies the LTE predicate on the "entity_type" field.
+func EntityTypeLTE(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldLTE(FieldEntityType, v))
+}
+
+// EntityTypeContains applies the Contains predicate on the "entity_type" field.
+func EntityTypeContains(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldContains(FieldEntityType, v))
+}
+
+// EntityTypeHasPrefix applies the HasPrefix predicate on the "entity_type" field.
+func EntityTypeHasPrefix(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldHasPrefix(FieldEntityType, v))
+}
+
+// EntityTypeHasSuffix applies the HasSuffix predicate on the "entity_type" field.
+func EntityTypeHasSuffix(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldHasSuffix(FieldEntityType, v))
+}
+
+// EntityTypeIsNil applies the IsNil predicate on the "entity_type" field.
+func EntityTypeIsNil() predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldIsNull(FieldEntityType))
+}
+
+// EntityTypeNotNil applies the NotNil predicate on the "entity_type" field.
+func EntityTypeNotNil() predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNotNull(FieldEntityType))
+}
+
+// EntityTypeEqualFold applies the EqualFold predicate on the "entity_type" field.
+func EntityTypeEqualFold(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEqualFold(FieldEntityType, v))
+}
+
+// EntityTypeContainsFold applies the ContainsFold predicate on the "entity_type" field.
+func EntityTypeContainsFold(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldContainsFold(FieldEntityType, v))
+}
+
+// EntityIDEQ applies the EQ predicate on the "entity_id" field.
+func EntityIDEQ(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEQ(FieldEntityID, v))
+}
+
+// EntityIDNEQ applies the NEQ predicate on the "entity_id" field.
+func EntityIDNEQ(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNEQ(FieldEntityID, v))
+}
+
+// EntityIDIn applies the In predicate on the "entity_id" field.
+func EntityIDIn(vs ...string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldIn(FieldEntityID, vs...))
+}
+
+// EntityIDNotIn applies the NotIn predicate on the "entity_id" field.
+func EntityIDNotIn(vs ...string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNotIn(FieldEntityID, vs...))
+}
+
+// EntityIDGT applies the GT predicate on the "entity_id" field.
+func EntityIDGT(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldGT(FieldEntityID, v))
+}
+
+// EntityIDGTE applies the GTE predicate on the "entity_id" field.
+func EntityIDGTE(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldGTE(FieldEntityID, v))
+}
+
+// EntityIDLT applies the LT predicate on the "entity_id" field.
+func EntityIDLT(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldLT(FieldEntityID, v))
+}
+
+// EntityIDLTE applies the LTE predicate on the "entity_id" field.
+func EntityIDLTE(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldLTE(FieldEntityID, v))
+}
+
+// EntityIDContains applies the Contains predicate on the "entity_id" field.
+func EntityIDContains(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldContains(FieldEntityID, v))
+}
+
+// EntityIDHasPrefix applies the HasPrefix predicate on the "entity_id" field.
+func EntityIDHasPrefix(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldHasPrefix(FieldEntityID, v))
+}
+
+// EntityIDHasSuffix applies the HasSuffix predicate on the "entity_id" field.
+func EntityIDHasSuffix(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldHasSuffix(FieldEntityID, v))
+}
+
+// EntityIDIsNil applies the IsNil predicate on the "entity_id" field.
+func EntityIDIsNil() predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldIsNull(FieldEntityID))
+}
+
+// EntityIDNotNil applies the NotNil predicate on the "entity_id" field.
+func EntityIDNotNil() predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNotNull(FieldEntityID))
+}
+
+// EntityIDEqualFold applies the EqualFold predicate on the "entity_id" field.
+func EntityIDEqualFold(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEqualFold(FieldEntityID, v))
+}
+
+// EntityIDContainsFold applies the ContainsFold predicate on the "entity_id" field.
+func EntityIDContainsFold(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldContainsFold(FieldEntityID, v))
 }
 
 // WebhookMessageIDEQ applies the EQ predicate on the "webhook_message_id" field.

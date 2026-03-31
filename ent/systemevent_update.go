@@ -68,6 +68,46 @@ func (seu *SystemEventUpdate) ClearUpdatedBy() *SystemEventUpdate {
 	return seu
 }
 
+// SetEntityType sets the "entity_type" field.
+func (seu *SystemEventUpdate) SetEntityType(s string) *SystemEventUpdate {
+	seu.mutation.SetEntityType(s)
+	return seu
+}
+
+// SetNillableEntityType sets the "entity_type" field if the given value is not nil.
+func (seu *SystemEventUpdate) SetNillableEntityType(s *string) *SystemEventUpdate {
+	if s != nil {
+		seu.SetEntityType(*s)
+	}
+	return seu
+}
+
+// ClearEntityType clears the value of the "entity_type" field.
+func (seu *SystemEventUpdate) ClearEntityType() *SystemEventUpdate {
+	seu.mutation.ClearEntityType()
+	return seu
+}
+
+// SetEntityID sets the "entity_id" field.
+func (seu *SystemEventUpdate) SetEntityID(s string) *SystemEventUpdate {
+	seu.mutation.SetEntityID(s)
+	return seu
+}
+
+// SetNillableEntityID sets the "entity_id" field if the given value is not nil.
+func (seu *SystemEventUpdate) SetNillableEntityID(s *string) *SystemEventUpdate {
+	if s != nil {
+		seu.SetEntityID(*s)
+	}
+	return seu
+}
+
+// ClearEntityID clears the value of the "entity_id" field.
+func (seu *SystemEventUpdate) ClearEntityID() *SystemEventUpdate {
+	seu.mutation.ClearEntityID()
+	return seu
+}
+
 // SetWebhookMessageID sets the "webhook_message_id" field.
 func (seu *SystemEventUpdate) SetWebhookMessageID(s string) *SystemEventUpdate {
 	seu.mutation.SetWebhookMessageID(s)
@@ -188,6 +228,18 @@ func (seu *SystemEventUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if seu.mutation.EnvironmentIDCleared() {
 		_spec.ClearField(systemevent.FieldEnvironmentID, field.TypeString)
 	}
+	if value, ok := seu.mutation.EntityType(); ok {
+		_spec.SetField(systemevent.FieldEntityType, field.TypeString, value)
+	}
+	if seu.mutation.EntityTypeCleared() {
+		_spec.ClearField(systemevent.FieldEntityType, field.TypeString)
+	}
+	if value, ok := seu.mutation.EntityID(); ok {
+		_spec.SetField(systemevent.FieldEntityID, field.TypeString, value)
+	}
+	if seu.mutation.EntityIDCleared() {
+		_spec.ClearField(systemevent.FieldEntityID, field.TypeString)
+	}
 	if value, ok := seu.mutation.WebhookMessageID(); ok {
 		_spec.SetField(systemevent.FieldWebhookMessageID, field.TypeString, value)
 	}
@@ -263,6 +315,46 @@ func (seuo *SystemEventUpdateOne) SetNillableUpdatedBy(s *string) *SystemEventUp
 // ClearUpdatedBy clears the value of the "updated_by" field.
 func (seuo *SystemEventUpdateOne) ClearUpdatedBy() *SystemEventUpdateOne {
 	seuo.mutation.ClearUpdatedBy()
+	return seuo
+}
+
+// SetEntityType sets the "entity_type" field.
+func (seuo *SystemEventUpdateOne) SetEntityType(s string) *SystemEventUpdateOne {
+	seuo.mutation.SetEntityType(s)
+	return seuo
+}
+
+// SetNillableEntityType sets the "entity_type" field if the given value is not nil.
+func (seuo *SystemEventUpdateOne) SetNillableEntityType(s *string) *SystemEventUpdateOne {
+	if s != nil {
+		seuo.SetEntityType(*s)
+	}
+	return seuo
+}
+
+// ClearEntityType clears the value of the "entity_type" field.
+func (seuo *SystemEventUpdateOne) ClearEntityType() *SystemEventUpdateOne {
+	seuo.mutation.ClearEntityType()
+	return seuo
+}
+
+// SetEntityID sets the "entity_id" field.
+func (seuo *SystemEventUpdateOne) SetEntityID(s string) *SystemEventUpdateOne {
+	seuo.mutation.SetEntityID(s)
+	return seuo
+}
+
+// SetNillableEntityID sets the "entity_id" field if the given value is not nil.
+func (seuo *SystemEventUpdateOne) SetNillableEntityID(s *string) *SystemEventUpdateOne {
+	if s != nil {
+		seuo.SetEntityID(*s)
+	}
+	return seuo
+}
+
+// ClearEntityID clears the value of the "entity_id" field.
+func (seuo *SystemEventUpdateOne) ClearEntityID() *SystemEventUpdateOne {
+	seuo.mutation.ClearEntityID()
 	return seuo
 }
 
@@ -415,6 +507,18 @@ func (seuo *SystemEventUpdateOne) sqlSave(ctx context.Context) (_node *SystemEve
 	}
 	if seuo.mutation.EnvironmentIDCleared() {
 		_spec.ClearField(systemevent.FieldEnvironmentID, field.TypeString)
+	}
+	if value, ok := seuo.mutation.EntityType(); ok {
+		_spec.SetField(systemevent.FieldEntityType, field.TypeString, value)
+	}
+	if seuo.mutation.EntityTypeCleared() {
+		_spec.ClearField(systemevent.FieldEntityType, field.TypeString)
+	}
+	if value, ok := seuo.mutation.EntityID(); ok {
+		_spec.SetField(systemevent.FieldEntityID, field.TypeString, value)
+	}
+	if seuo.mutation.EntityIDCleared() {
+		_spec.ClearField(systemevent.FieldEntityID, field.TypeString)
 	}
 	if value, ok := seuo.mutation.WebhookMessageID(); ok {
 		_spec.SetField(systemevent.FieldWebhookMessageID, field.TypeString, value)

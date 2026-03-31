@@ -1920,6 +1920,8 @@ var (
 		{Name: "created_by", Type: field.TypeString, Nullable: true},
 		{Name: "updated_by", Type: field.TypeString, Nullable: true},
 		{Name: "environment_id", Type: field.TypeString, Nullable: true, Default: "", SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "entity_type", Type: field.TypeString, Nullable: true, Default: "", SchemaType: map[string]string{"postgres": "varchar(64)"}},
+		{Name: "entity_id", Type: field.TypeString, Nullable: true, Default: "", SchemaType: map[string]string{"postgres": "varchar(50)"}},
 		{Name: "webhook_message_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(128)"}},
 		{Name: "published_at", Type: field.TypeTime, Nullable: true},
 		{Name: "payload", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
@@ -1931,9 +1933,9 @@ var (
 		PrimaryKey: []*schema.Column{SystemEventsColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "idx_system_events_tenant_env_message_created",
+				Name:    "idx_system_events_tenant_env",
 				Unique:  false,
-				Columns: []*schema.Column{SystemEventsColumns[1], SystemEventsColumns[7], SystemEventsColumns[8], SystemEventsColumns[3]},
+				Columns: []*schema.Column{SystemEventsColumns[1], SystemEventsColumns[7]},
 			},
 		},
 	}
