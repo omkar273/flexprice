@@ -11,16 +11,13 @@ import (
 	"time"
 
 	"github.com/flexprice/flexprice/internal/cache"
-	"github.com/flexprice/flexprice/internal/clickhouse"
 	"github.com/flexprice/flexprice/internal/config"
 	domainInvoice "github.com/flexprice/flexprice/internal/domain/invoice"
 	"github.com/flexprice/flexprice/internal/idempotency"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/postgres"
-	chRepo "github.com/flexprice/flexprice/internal/repository/clickhouse"
 	entRepo "github.com/flexprice/flexprice/internal/repository/ent"
 	"github.com/flexprice/flexprice/internal/sentry"
-	"github.com/flexprice/flexprice/internal/service"
 	temporalClient "github.com/flexprice/flexprice/internal/temporal/client"
 	temporalModels "github.com/flexprice/flexprice/internal/temporal/models"
 	invoiceModels "github.com/flexprice/flexprice/internal/temporal/models/invoice"
@@ -39,9 +36,9 @@ type setupDraftInvoicesParams struct {
 	DryRun        bool
 }
 
-// SetupDraftInvoices reads subscription IDs from a JSON file, creates empty draft invoices
-// for all completed billing periods (from current_period_start up to now), bulk-inserts them,
-// and fires ProcessInvoiceWorkflow for each created invoice.
+// SetupDraftInvoices reads subscription IDs from a JSON file, creates one empty draft invoice
+// per subscription for the current billing window (subscription CurrentPeriodStart → CurrentPeriodEnd),
+// bulk-inserts them, and fires ComputeInvoiceWorkflow for each created invoice.
 func SetupDraftInvoices() error {
 	tenantID := os.Getenv("TENANT_ID")
 	environmentID := os.Getenv("ENVIRONMENT_ID")
@@ -110,11 +107,6 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 
 	sentryService := sentry.NewSentryService(cfg, appLogger)
 
-	chStore, err := clickhouse.NewClickHouseStore(cfg, sentryService)
-	if err != nil {
-		return fmt.Errorf("failed to connect to clickhouse: %w", err)
-	}
-
 	entClient, err := postgres.NewEntClients(cfg, appLogger)
 	if err != nil {
 		return fmt.Errorf("failed to connect to postgres: %w", err)
@@ -122,35 +114,8 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 	client := postgres.NewClient(entClient, appLogger, sentry.NewSentryService(cfg, appLogger))
 	cacheClient := cache.NewInMemoryCache()
 
-	// Create repositories
-	customerRepo := entRepo.NewCustomerRepository(client, appLogger, cacheClient)
-	planRepo := entRepo.NewPlanRepository(client, appLogger, cacheClient)
 	subscriptionRepo := entRepo.NewSubscriptionRepository(client, appLogger, cacheClient)
-	priceRepo := entRepo.NewPriceRepository(client, appLogger, cacheClient)
-	meterRepo := entRepo.NewMeterRepository(client, appLogger, cacheClient)
 	invoiceRepo := entRepo.NewInvoiceRepository(client, appLogger, cacheClient)
-	featureRepo := entRepo.NewFeatureRepository(client, appLogger, cacheClient)
-	entitlementRepo := entRepo.NewEntitlementRepository(client, appLogger, cacheClient)
-	eventRepo := chRepo.NewEventRepository(chStore, appLogger)
-	processedEventRepo := chRepo.NewProcessedEventRepository(chStore, appLogger)
-
-	serviceParams := service.ServiceParams{
-		Logger:             appLogger,
-		Config:             cfg,
-		DB:                 client,
-		CustomerRepo:       customerRepo,
-		PlanRepo:           planRepo,
-		SubRepo:            subscriptionRepo,
-		PriceRepo:          priceRepo,
-		MeterRepo:          meterRepo,
-		EntitlementRepo:    entitlementRepo,
-		InvoiceRepo:        invoiceRepo,
-		FeatureRepo:        featureRepo,
-		EventRepo:          eventRepo,
-		ProcessedEventRepo: processedEventRepo,
-	}
-
-	subscriptionSvc := service.NewSubscriptionService(serviceParams)
 
 	// 3. Initialize Temporal client (for firing workflows)
 	if !params.DryRun {
@@ -181,7 +146,7 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 	ctx = types.SetEnvironmentID(ctx, params.EnvironmentID)
 	ctx = types.SetUserID(ctx, "system")
 
-	// 5. Process subscriptions: calculate periods and build draft invoices
+	// 5. Process subscriptions: one draft per subscription for the current period
 	idempGen := idempotency.NewGenerator()
 
 	var allInvoices []*domainInvoice.Invoice
@@ -192,23 +157,6 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 	for i, subID := range subscriptionIDs {
 		log.Printf("[%d/%d] Processing subscription %s\n", i+1, len(subscriptionIDs), subID)
 
-		periods, err := subscriptionSvc.CalculateBillingPeriods(ctx, subID)
-		if err != nil {
-			log.Printf("  ERROR: failed to calculate billing periods for %s: %v\n", subID, err)
-			totalSubsErrored++
-			continue
-		}
-
-		// Only completed periods (all except the last/current one)
-		if len(periods) <= 1 {
-			log.Printf("  SKIP: no completed periods for %s (periods=%d)\n", subID, len(periods))
-			totalSubsSkipped++
-			continue
-		}
-
-		completedPeriods := periods[:len(periods)-1]
-
-		// Fetch subscription to get metadata for invoice creation
 		sub, _, err := subscriptionRepo.GetWithLineItems(ctx, subID)
 		if err != nil {
 			log.Printf("  ERROR: failed to get subscription %s: %v\n", subID, err)
@@ -216,51 +164,61 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 			continue
 		}
 
+		periodStart := sub.CurrentPeriodStart
+		periodEnd := sub.CurrentPeriodEnd
+		if periodStart.IsZero() || periodEnd.IsZero() {
+			log.Printf("  SKIP: missing current period bounds for %s\n", subID)
+			totalSubsSkipped++
+			continue
+		}
+		if periodEnd.Before(periodStart) {
+			log.Printf("  SKIP: invalid current period for %s (end before start)\n", subID)
+			totalSubsSkipped++
+			continue
+		}
+
 		invoicingCustomerID := sub.GetInvoicingCustomerID()
 		billingPeriodStr := string(sub.BillingPeriod)
 
-		for _, period := range completedPeriods {
-			periodStart := period.Start.Truncate(time.Minute)
-			periodEnd := period.End.Truncate(time.Minute)
+		idempStart := periodStart.Truncate(time.Minute)
+		idempEnd := periodEnd.Truncate(time.Minute)
 
-			idempKey := idempGen.GenerateKey(idempotency.ScopeSubscriptionInvoice, map[string]interface{}{
-				"tenant_id":       params.TenantID,
-				"environment_id":  params.EnvironmentID,
-				"customer_id":     invoicingCustomerID,
-				"subscription_id": sub.ID,
-				"period_start":    &periodStart,
-				"period_end":      &periodEnd,
-			})
+		idempKey := idempGen.GenerateKey(idempotency.ScopeSubscriptionInvoice, map[string]interface{}{
+			"tenant_id":       params.TenantID,
+			"environment_id":  params.EnvironmentID,
+			"customer_id":     invoicingCustomerID,
+			"subscription_id": sub.ID,
+			"period_start":    &idempStart,
+			"period_end":      &idempEnd,
+		})
 
-			inv := &domainInvoice.Invoice{
-				ID:              types.GenerateUUIDWithPrefix(types.UUID_PREFIX_INVOICE),
-				CustomerID:      invoicingCustomerID,
-				SubscriptionID:  lo.ToPtr(sub.ID),
-				InvoiceType:     types.InvoiceTypeSubscription,
-				InvoiceStatus:   types.InvoiceStatusDraft,
-				PaymentStatus:   types.PaymentStatusPending,
-				Currency:        strings.ToLower(sub.Currency),
-				AmountDue:       decimal.Zero,
-				AmountPaid:      decimal.Zero,
-				AmountRemaining: decimal.Zero,
-				Total:           decimal.Zero,
-				Subtotal:        decimal.Zero,
-				TotalDiscount:   decimal.Zero,
-				TotalTax:        decimal.Zero,
-				BillingPeriod:   &billingPeriodStr,
-				PeriodStart:     &period.Start,
-				PeriodEnd:       &period.End,
-				BillingReason:   string(types.InvoiceBillingReasonSubscriptionCycle),
-				IdempotencyKey:  &idempKey,
-				BaseModel:       types.GetDefaultBaseModel(ctx),
-				EnvironmentID:   params.EnvironmentID,
-			}
-
-			allInvoices = append(allInvoices, inv)
+		inv := &domainInvoice.Invoice{
+			ID:              types.GenerateUUIDWithPrefix(types.UUID_PREFIX_INVOICE),
+			CustomerID:      invoicingCustomerID,
+			SubscriptionID:  lo.ToPtr(sub.ID),
+			InvoiceType:     types.InvoiceTypeSubscription,
+			InvoiceStatus:   types.InvoiceStatusDraft,
+			PaymentStatus:   types.PaymentStatusPending,
+			Currency:        strings.ToLower(sub.Currency),
+			AmountDue:       decimal.Zero,
+			AmountPaid:      decimal.Zero,
+			AmountRemaining: decimal.Zero,
+			Total:           decimal.Zero,
+			Subtotal:        decimal.Zero,
+			TotalDiscount:   decimal.Zero,
+			TotalTax:        decimal.Zero,
+			BillingPeriod:   &billingPeriodStr,
+			PeriodStart:     &periodStart,
+			PeriodEnd:       &periodEnd,
+			BillingReason:   string(types.InvoiceBillingReasonSubscriptionCycle),
+			IdempotencyKey:  &idempKey,
+			BaseModel:       types.GetDefaultBaseModel(ctx),
+			EnvironmentID:   params.EnvironmentID,
 		}
 
+		allInvoices = append(allInvoices, inv)
 		totalSubsProcessed++
-		log.Printf("  OK: %s → %d draft invoices prepared\n", subID, len(completedPeriods))
+		log.Printf("  OK: %s → current-period draft prepared (%s – %s)\n", subID, periodStart, periodEnd)
 	}
 
 	log.Printf("\n=== Subscription Summary ===\n")
@@ -328,12 +286,11 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 		for _, invoiceID := range invoiceIDs[i:end] {
 			_, err := temporalSvc.ExecuteWorkflow(
 				ctx,
-				types.TemporalProcessInvoiceWorkflow,
-				invoiceModels.ProcessInvoiceWorkflowInput{
+				types.TemporalComputeInvoiceWorkflow,
+				invoiceModels.ComputeInvoiceWorkflowInput{
 					InvoiceID:     invoiceID,
 					TenantID:      params.TenantID,
 					EnvironmentID: params.EnvironmentID,
-					UserID:        "system",
 				},
 			)
 			if err != nil {
@@ -360,4 +317,3 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 
 	return nil
 }
-
