@@ -969,7 +969,7 @@ func (s *invoiceService) IsFinalizationDue(ctx context.Context, invoiceID string
 		return false, nil
 	}
 
-	if inv.LastComputedAt != nil && inv.LastComputedAt.Before(*inv.PeriodEnd) {
+	if inv.LastComputedAt != nil && inv.LastComputedAt.Before(*inv.PeriodEnd) && inv.BillingReason == string(types.InvoiceBillingReasonSubscriptionCycle) {
 		return false, nil
 	}
 
