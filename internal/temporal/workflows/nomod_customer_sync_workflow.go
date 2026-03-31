@@ -23,5 +23,8 @@ func NomodCustomerSyncWorkflow(ctx workflow.Context, input models.NomodCustomerS
 			MaximumAttempts: 3,
 		},
 	})
+	if err := workflow.Sleep(ctx, 2*time.Second); err != nil {
+		return err
+	}
 	return workflow.ExecuteActivity(ctx, ActivitySyncCustomerToNomod, input).Get(ctx, nil)
 }

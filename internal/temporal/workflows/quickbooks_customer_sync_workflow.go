@@ -23,5 +23,8 @@ func QuickBooksCustomerSyncWorkflow(ctx workflow.Context, input models.QuickBook
 			MaximumAttempts: 3,
 		},
 	})
+	if err := workflow.Sleep(ctx, 2*time.Second); err != nil {
+		return err
+	}
 	return workflow.ExecuteActivity(ctx, ActivitySyncCustomerToQuickBooks, input).Get(ctx, nil)
 }

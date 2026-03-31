@@ -23,5 +23,8 @@ func StripeCustomerSyncWorkflow(ctx workflow.Context, input models.StripeCustome
 			MaximumAttempts: 3,
 		},
 	})
+	if err := workflow.Sleep(ctx, 2*time.Second); err != nil {
+		return err
+	}
 	return workflow.ExecuteActivity(ctx, ActivitySyncCustomerToStripe, input).Get(ctx, nil)
 }
