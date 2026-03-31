@@ -324,14 +324,6 @@ func (s *invoiceService) CreateInvoice(ctx context.Context, req dto.CreateInvoic
 		return nil, err
 	}
 
-	// NOTE: FinalizeInvoice (via performFinalizeInvoiceActions) already publishes
-	// invoice.update.finalized. Publishing again here would cause duplicate external
-	// syncs (e.g. two Razorpay invoices for the same FlexPrice invoice).
-	// For non-finalized paths (draft-only), publish the draft event.
-	if inv.InvoiceStatus != types.InvoiceStatusFinalized {
-		s.publishSystemEvent(ctx, types.WebhookEventInvoiceCreateDraft, inv.ID)
-	}
-
 	return dto.NewInvoiceResponse(inv), nil
 }
 
