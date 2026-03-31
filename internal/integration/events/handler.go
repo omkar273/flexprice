@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/domain/connection"
+	"github.com/flexprice/flexprice/internal/domain/entityintegrationmapping"
 	"github.com/flexprice/flexprice/internal/domain/invoice"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
+	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/pubsub"
 	pubsubRouter "github.com/flexprice/flexprice/internal/pubsub/router"
@@ -25,6 +28,7 @@ type Handler interface {
 // Deps holds the external dependencies injected into the handler.
 type Deps struct {
 	ConnectionRepo connection.Repository
+	EIMRepo        entityintegrationmapping.Repository
 	InvoiceRepo    invoice.Repository
 	SubRepo        subscription.Repository
 	Logger         *logger.Logger
@@ -44,11 +48,23 @@ type eventProcessor func(context.Context, *types.WebhookEvent, *message.Message)
 func NewHandler(deps Deps) Handler {
 	h := &handler{deps: deps}
 	h.processors = map[types.WebhookEventName]eventProcessor{
+		types.WebhookEventCustomerCreated: func(ctx context.Context, event *types.WebhookEvent, msg *message.Message) error {
+			return DispatchCustomerVendorSync(
+				ctx,
+				h.deps.Config,
+				h.deps.ConnectionRepo,
+				h.deps.EIMRepo,
+				h.deps.Logger,
+				event,
+				msg.UUID,
+			)
+		},
 		types.WebhookEventInvoiceUpdateFinalized: func(ctx context.Context, event *types.WebhookEvent, msg *message.Message) error {
 			return DispatchInvoiceVendorSync(
 				ctx,
 				h.deps.Config,
 				h.deps.ConnectionRepo,
+				h.deps.EIMRepo,
 				h.deps.InvoiceRepo,
 				h.deps.SubRepo,
 				h.deps.Logger,
@@ -83,6 +99,34 @@ func (h *handler) RegisterHandler(router *pubsubRouter.Router) {
 	)
 }
 
+// integrationMissingDataError is true when the failure is permanent (referenced entity missing).
+// Those cases should ack and not consume router-level retries or DLQ.
+func integrationMissingDataError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return ierr.IsNotFound(err) || ent.IsNotFound(err)
+}
+
+// processIntegrationError turns missing-data errors into nil so the Kafka offset commits.
+// Other errors propagate to pubsub.Router middleware (Retry, then PoisonQueue / ack).
+func (h *handler) processIntegrationError(err error, event *types.WebhookEvent, messageUUID, step string) error {
+	if err == nil {
+		return nil
+	}
+	if !integrationMissingDataError(err) {
+		return err
+	}
+	h.deps.Logger.Errorw("integration_events: skipping event; referenced data not found (ack, no retry)",
+		"error", err,
+		"step", step,
+		"message_uuid", messageUUID,
+		"event_name", event.EventName,
+		"tenant_id", event.TenantID,
+	)
+	return nil
+}
+
 // processMessage unmarshals types.WebhookEvent (same envelope as customer webhooks).
 // It dispatches to event-specific processors; unknown events are ACKed and ignored.
 func (h *handler) processMessage(msg *message.Message) error {
@@ -112,5 +156,5 @@ func (h *handler) processMessage(msg *message.Message) error {
 		"environment_id", event.EnvironmentID,
 	)
 
-	return processor(ctx, &event, msg)
+	return h.processIntegrationError(processor(ctx, &event, msg), &event, msg.UUID, "dispatch")
 }

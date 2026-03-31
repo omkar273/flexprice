@@ -38,18 +38,15 @@ func TestProcessMessage_IgnoresUnknownEvent(t *testing.T) {
 }
 
 func TestProcessMessage_CustomerCreatedDispatchError(t *testing.T) {
-	h := &handler{
-		deps: Deps{
-			Logger: testLogger(),
-			Config: &config.Configuration{
-				IntegrationEvents: config.IntegrationEventsConfig{Enabled: true},
-			},
+	h, ok := NewHandler(Deps{
+		Logger: testLogger(),
+		Config: &config.Configuration{
+			IntegrationEvents: config.IntegrationEventsConfig{Enabled: true},
 		},
-		processors: map[types.WebhookEventName]eventProcessor{
-			types.WebhookEventCustomerCreated: nil, // replaced by constructor path below
-		},
+	}).(*handler)
+	if !ok {
+		t.Fatalf("expected concrete *handler")
 	}
-	h.processors[types.WebhookEventCustomerCreated] = h.processCustomerCreated
 
 	ev := types.WebhookEvent{
 		EventName:     types.WebhookEventCustomerCreated,

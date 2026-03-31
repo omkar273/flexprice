@@ -3,6 +3,7 @@ package events
 import (
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/domain/connection"
+	"github.com/flexprice/flexprice/internal/domain/entityintegrationmapping"
 	"github.com/flexprice/flexprice/internal/domain/invoice"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	"github.com/flexprice/flexprice/internal/logger"
@@ -38,6 +39,7 @@ func provideIntegrationPubSub(
 
 func provideIntegrationHandler(
 	connectionRepo connection.Repository,
+	eimRepo entityintegrationmapping.Repository,
 	invoiceRepo invoice.Repository,
 	subRepo subscription.Repository,
 	ps types.IntegrationEventsPubSub,
@@ -46,6 +48,7 @@ func provideIntegrationHandler(
 ) Handler {
 	return NewHandler(Deps{
 		ConnectionRepo: connectionRepo,
+		EIMRepo:        eimRepo,
 		InvoiceRepo:    invoiceRepo,
 		SubRepo:        subRepo,
 		Logger:         log,

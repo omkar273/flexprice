@@ -397,6 +397,67 @@ func (s *temporalService) extractWorkflowContextID(workflowType types.TemporalWo
 		if input, ok := params.(invoiceModels.ProcessInvoiceWorkflowInput); ok {
 			return input.InvoiceID
 		}
+
+	// Vendor invoice sync workflows — deterministic IDs prevent duplicate concurrent syncs
+	// for the same invoice when the same Kafka message is consumed by multiple consumers.
+	case types.TemporalStripeInvoiceSyncWorkflow:
+		if input, ok := params.(models.StripeInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
+	case types.TemporalRazorpayInvoiceSyncWorkflow:
+		if input, ok := params.(models.RazorpayInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
+	case types.TemporalChargebeeInvoiceSyncWorkflow:
+		if input, ok := params.(models.ChargebeeInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
+	case types.TemporalQuickBooksInvoiceSyncWorkflow:
+		if input, ok := params.(models.QuickBooksInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
+	case types.TemporalHubSpotInvoiceSyncWorkflow:
+		if input, ok := params.(models.HubSpotInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
+	case types.TemporalMoyasarInvoiceSyncWorkflow:
+		if input, ok := params.(models.MoyasarInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
+	case types.TemporalNomodInvoiceSyncWorkflow:
+		if input, ok := params.(models.NomodInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
+	case types.TemporalPaddleInvoiceSyncWorkflow:
+		if input, ok := params.(models.PaddleInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
+
+	// Vendor customer sync workflows — deterministic IDs prevent duplicate concurrent syncs.
+	case types.TemporalStripeCustomerSyncWorkflow:
+		if input, ok := params.(models.StripeCustomerSyncWorkflowInput); ok {
+			return input.CustomerID
+		}
+	case types.TemporalRazorpayCustomerSyncWorkflow:
+		if input, ok := params.(models.RazorpayCustomerSyncWorkflowInput); ok {
+			return input.CustomerID
+		}
+	case types.TemporalChargebeeCustomerSyncWorkflow:
+		if input, ok := params.(models.ChargebeeCustomerSyncWorkflowInput); ok {
+			return input.CustomerID
+		}
+	case types.TemporalQuickBooksCustomerSyncWorkflow:
+		if input, ok := params.(models.QuickBooksCustomerSyncWorkflowInput); ok {
+			return input.CustomerID
+		}
+	case types.TemporalNomodCustomerSyncWorkflow:
+		if input, ok := params.(models.NomodCustomerSyncWorkflowInput); ok {
+			return input.CustomerID
+		}
+	case types.TemporalPaddleCustomerSyncWorkflow:
+		if input, ok := params.(models.PaddleCustomerSyncWorkflowInput); ok {
+			return input.CustomerID
+		}
 	case types.TemporalRecalculateInvoiceWorkflow:
 		// Extract invoice ID from RecalculateInvoiceWorkflowInput
 		if input, ok := params.(invoiceModels.RecalculateInvoiceWorkflowInput); ok {

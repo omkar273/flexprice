@@ -7,7 +7,9 @@ import (
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
+	"github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/internal/config"
+	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/httpclient"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/pubsub"
@@ -80,6 +82,34 @@ func (h *handler) RegisterHandler(router *pubsubRouter.Router) {
 	)
 }
 
+// webhookMissingDataError is true when the failure is permanent (referenced entity missing).
+// Those cases should ack and not consume router-level retries or DLQ.
+func webhookMissingDataError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return ierr.IsNotFound(err) || ent.IsNotFound(err)
+}
+
+// processWebhookError turns missing-data errors into nil so the Kafka offset commits.
+// Other errors propagate to pubsub.Router middleware (Retry, then PoisonQueue / ack).
+func (h *handler) processWebhookError(err error, event *types.WebhookEvent, messageUUID, step string) error {
+	if err == nil {
+		return nil
+	}
+	if !webhookMissingDataError(err) {
+		return err
+	}
+	h.logger.Errorw("skipping webhook; referenced data not found (ack, no retry)",
+		"error", err,
+		"step", step,
+		"message_uuid", messageUUID,
+		"event_name", event.EventName,
+		"tenant_id", event.TenantID,
+	)
+	return nil
+}
+
 // processMessage processes a single webhook message from the system_events topic:
 // 1) unmarshal and verify, 2) call deliverWebhook to send to Svix or native HTTP.
 func (h *handler) processMessage(msg *message.Message) error {
@@ -137,7 +167,7 @@ func (h *handler) processMessageSvix(ctx context.Context, event *types.WebhookEv
 	// Build event payload
 	builder, err := h.factory.GetBuilder(event.EventName)
 	if err != nil {
-		return err
+		return h.processWebhookError(err, event, messageUUID, "get_builder")
 	}
 
 	h.logger.Debugw("building webhook payload",
@@ -147,7 +177,7 @@ func (h *handler) processMessageSvix(ctx context.Context, event *types.WebhookEv
 
 	webHookPayload, err := builder.BuildPayload(ctx, event.EventName, event.Payload)
 	if err != nil {
-		return err
+		return h.processWebhookError(err, event, messageUUID, "build_payload")
 	}
 
 	// Send to Svix
@@ -206,7 +236,7 @@ func (h *handler) processMessageNative(ctx context.Context, event *types.Webhook
 	// Build event payload
 	builder, err := h.factory.GetBuilder(event.EventName)
 	if err != nil {
-		return err
+		return h.processWebhookError(err, event, messageUUID, "get_builder")
 	}
 
 	h.logger.Debugw("building webhook payload",
@@ -216,7 +246,7 @@ func (h *handler) processMessageNative(ctx context.Context, event *types.Webhook
 
 	webHookPayload, err := builder.BuildPayload(ctx, event.EventName, event.Payload)
 	if err != nil {
-		return err
+		return h.processWebhookError(err, event, messageUUID, "build_payload")
 	}
 
 	h.logger.Debugw("built webhook payload",
