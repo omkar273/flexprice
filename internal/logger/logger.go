@@ -172,7 +172,11 @@ func newOtelLogProvider(ctx context.Context, cfg *config.Configuration) (*sdklog
 		if len(headers) > 0 {
 			grpcOpts = append(grpcOpts, otlploggrpc.WithHeaders(headers))
 		}
-		exporter, err = otlploggrpc.New(ctx, grpcOpts...)
+		// Use a short-timeout context for the initial connection attempt so failures
+		// surface immediately at startup rather than being silently swallowed.
+		dialCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+		exporter, err = otlploggrpc.New(dialCtx, grpcOpts...)
 	}
 	if err != nil {
 		return nil, err
