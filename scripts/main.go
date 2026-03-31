@@ -123,6 +123,11 @@ var commands = []Command{
 		Description: "Sync a price to all subscriptions with the same plan and start date by creating new line items",
 		Run:         internal.SyncPriceToSubscriptions,
 	},
+	{
+		Name:        "migrate-calendar-billing-csv",
+		Description: "From CSV: schedule-cancel each subscription and create a new calendar-billing subscription (atomic per row)",
+		Run:         internal.MigrateCalendarBillingCSV,
+	},
 }
 
 // runBulkReprocessEventsCommand wraps the bulk reprocess events with command line parameters
@@ -179,6 +184,10 @@ func main() {
 		planID             string
 		addonID            string
 		workerCount        string
+		effectiveDate      string
+		failedOutput       string
+		positionalCSV      bool
+		positionalSkipHdr  bool
 	)
 
 	flag.BoolVar(&listCommands, "list", false, "List all available commands")
@@ -202,6 +211,10 @@ func main() {
 	flag.StringVar(&dryRun, "dry-run", "false", "Dry run mode (true/false)")
 	flag.StringVar(&addonID, "addon-id", "", "Addon ID for operations")
 	flag.StringVar(&workerCount, "worker-count", "10", "Number of concurrent workers for parallel processing")
+	flag.StringVar(&effectiveDate, "effective-date", "", "Effective date for calendar billing migration (RFC3339 or YYYY-MM-DD)")
+	flag.StringVar(&failedOutput, "failed-output", "", "Path for failed rows CSV (migrate-calendar-billing-csv)")
+	flag.BoolVar(&positionalCSV, "positional-csv", false, "Subscriptions export has no header; columns follow PostgreSQL table order (migrate-calendar-billing-csv)")
+	flag.BoolVar(&positionalSkipHdr, "positional-skip-header", false, "With -positional-csv, skip first line (e.g. header row)")
 	flag.Parse()
 
 	if listCommands {
@@ -273,6 +286,18 @@ func main() {
 	}
 	if workerCount != "" {
 		os.Setenv("WORKER_COUNT", workerCount)
+	}
+	if effectiveDate != "" {
+		os.Setenv("EFFECTIVE_DATE", effectiveDate)
+	}
+	if failedOutput != "" {
+		os.Setenv("FAILED_OUTPUT_PATH", failedOutput)
+	}
+	if positionalCSV {
+		os.Setenv("POSITIONAL_CSV", "true")
+	}
+	if positionalSkipHdr {
+		os.Setenv("POSITIONAL_SKIP_HEADER", "true")
 	}
 
 	// Find and run the command
