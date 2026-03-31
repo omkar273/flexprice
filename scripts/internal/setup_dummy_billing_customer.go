@@ -34,7 +34,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-const dummyBillingEventCount = 50
+const dummyBillingEventCount = 10
 
 type noopWebhookPublisher struct{}
 

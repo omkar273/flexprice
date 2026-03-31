@@ -141,7 +141,7 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 		defer tc.Stop(ctx)
 
 		wm := temporalWorker.NewTemporalWorkerManager(tc, appLogger)
-		temporalService.InitializeGlobalTemporalService(tc, wm, appLogger, sentryService)
+		temporalService.InitializeGlobalTemporalService(tc, wm, appLogger, sentryService, &cfg.Temporal)
 	}
 
 	// 4. Set up context with tenant/environment
