@@ -173,6 +173,7 @@ func main() {
 			repository.NewSubscriptionScheduleRepository,
 			repository.NewSettingsRepository,
 			repository.NewAlertLogsRepository,
+			repository.NewSystemEventRepository,
 			repository.NewGroupRepository,
 			repository.NewScheduledTaskRepository,
 			repository.NewPriceUnitRepository,
