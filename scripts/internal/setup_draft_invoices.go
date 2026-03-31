@@ -12,20 +12,17 @@ import (
 
 	"github.com/flexprice/flexprice/internal/cache"
 	"github.com/flexprice/flexprice/internal/config"
-	domainInvoice "github.com/flexprice/flexprice/internal/domain/invoice"
-	"github.com/flexprice/flexprice/internal/idempotency"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/postgres"
 	entRepo "github.com/flexprice/flexprice/internal/repository/ent"
 	"github.com/flexprice/flexprice/internal/sentry"
+	"github.com/flexprice/flexprice/internal/service"
 	temporalClient "github.com/flexprice/flexprice/internal/temporal/client"
 	temporalModels "github.com/flexprice/flexprice/internal/temporal/models"
 	invoiceModels "github.com/flexprice/flexprice/internal/temporal/models/invoice"
 	temporalService "github.com/flexprice/flexprice/internal/temporal/service"
 	temporalWorker "github.com/flexprice/flexprice/internal/temporal/worker"
 	"github.com/flexprice/flexprice/internal/types"
-	"github.com/samber/lo"
-	"github.com/shopspring/decimal"
 )
 
 type setupDraftInvoicesParams struct {
@@ -36,9 +33,9 @@ type setupDraftInvoicesParams struct {
 	DryRun        bool
 }
 
-// SetupDraftInvoices reads subscription IDs from a JSON file, creates one empty draft invoice
+// SetupDraftInvoices reads subscription IDs from a JSON file, creates one idempotent draft invoice
 // per subscription for the current billing window (subscription CurrentPeriodStart → CurrentPeriodEnd),
-// bulk-inserts them, and fires ComputeInvoiceWorkflow for each created invoice.
+// and fires ComputeInvoiceWorkflow for each returned invoice.
 func SetupDraftInvoices() error {
 	tenantID := os.Getenv("TENANT_ID")
 	environmentID := os.Getenv("ENVIRONMENT_ID")
@@ -116,6 +113,13 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 
 	subscriptionRepo := entRepo.NewSubscriptionRepository(client, appLogger, cacheClient)
 	invoiceRepo := entRepo.NewInvoiceRepository(client, appLogger, cacheClient)
+	invoiceSvc := service.NewInvoiceService(service.ServiceParams{
+		Logger:      appLogger,
+		Config:      cfg,
+		DB:          client,
+		SubRepo:     subscriptionRepo,
+		InvoiceRepo: invoiceRepo,
+	})
 
 	// 3. Initialize Temporal client (for firing workflows)
 	if !params.DryRun {
@@ -146,10 +150,8 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 	ctx = types.SetEnvironmentID(ctx, params.EnvironmentID)
 	ctx = types.SetUserID(ctx, "system")
 
-	// 5. Process subscriptions: one draft per subscription for the current period
-	idempGen := idempotency.NewGenerator()
-
-	var allInvoices []*domainInvoice.Invoice
+	// 5. Process subscriptions: one idempotent draft per subscription for the current period
+	var invoiceIDs []string
 	totalSubsProcessed := 0
 	totalSubsSkipped := 0
 	totalSubsErrored := 0
@@ -177,48 +179,22 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 			continue
 		}
 
-		invoicingCustomerID := sub.GetInvoicingCustomerID()
-		billingPeriodStr := string(sub.BillingPeriod)
-
-		idempStart := periodStart.Truncate(time.Minute)
-		idempEnd := periodEnd.Truncate(time.Minute)
-
-		idempKey := idempGen.GenerateKey(idempotency.ScopeSubscriptionInvoice, map[string]interface{}{
-			"tenant_id":       params.TenantID,
-			"environment_id":  params.EnvironmentID,
-			"customer_id":     invoicingCustomerID,
-			"subscription_id": sub.ID,
-			"period_start":    &idempStart,
-			"period_end":      &idempEnd,
-		})
-
-		inv := &domainInvoice.Invoice{
-			ID:              types.GenerateUUIDWithPrefix(types.UUID_PREFIX_INVOICE),
-			CustomerID:      invoicingCustomerID,
-			SubscriptionID:  lo.ToPtr(sub.ID),
-			InvoiceType:     types.InvoiceTypeSubscription,
-			InvoiceStatus:   types.InvoiceStatusDraft,
-			PaymentStatus:   types.PaymentStatusPending,
-			Currency:        strings.ToLower(sub.Currency),
-			AmountDue:       decimal.Zero,
-			AmountPaid:      decimal.Zero,
-			AmountRemaining: decimal.Zero,
-			Total:           decimal.Zero,
-			Subtotal:        decimal.Zero,
-			TotalDiscount:   decimal.Zero,
-			TotalTax:        decimal.Zero,
-			BillingPeriod:   &billingPeriodStr,
-			PeriodStart:     &periodStart,
-			PeriodEnd:       &periodEnd,
-			BillingReason:   string(types.InvoiceBillingReasonSubscriptionCycle),
-			IdempotencyKey:  &idempKey,
-			BaseModel:       types.GetDefaultBaseModel(ctx),
-			EnvironmentID:   params.EnvironmentID,
+		invoiceResp, err := invoiceSvc.CreateDraftInvoiceForSubscription(
+			ctx,
+			subID,
+			periodStart,
+			periodEnd,
+			types.ReferencePointPeriodEnd,
+		)
+		if err != nil {
+			log.Printf("  ERROR: failed to create/get draft invoice for %s: %v\n", subID, err)
+			totalSubsErrored++
+			continue
 		}
 
-		allInvoices = append(allInvoices, inv)
+		invoiceIDs = append(invoiceIDs, invoiceResp.ID)
 		totalSubsProcessed++
-		log.Printf("  OK: %s → current-period draft prepared (%s – %s)\n", subID, periodStart, periodEnd)
+		log.Printf("  OK: %s → draft invoice %s ready (%s – %s)\n", subID, invoiceResp.ID, periodStart, periodEnd)
 	}
 
 	log.Printf("\n=== Subscription Summary ===\n")
@@ -226,48 +202,20 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 	log.Printf("Processed:      %d\n", totalSubsProcessed)
 	log.Printf("Skipped:        %d\n", totalSubsSkipped)
 	log.Printf("Errored:        %d\n", totalSubsErrored)
-	log.Printf("Invoices built: %d\n", len(allInvoices))
+	log.Printf("Invoices ready: %d\n", len(invoiceIDs))
 
 	if params.DryRun {
 		log.Println("\n[DRY RUN] No invoices created and no workflows triggered.")
 		return nil
 	}
 
-	if len(allInvoices) == 0 {
+	if len(invoiceIDs) == 0 {
 		log.Println("No invoices to create.")
 		return nil
 	}
 
-	// 6. Bulk insert invoices into DB in batches
-	log.Printf("\nBulk inserting %d invoices (batch size %d)...\n", len(allInvoices), params.BatchSize)
-
-	for i := 0; i < len(allInvoices); i += params.BatchSize {
-		end := i + params.BatchSize
-		if end > len(allInvoices) {
-			end = len(allInvoices)
-		}
-		batch := allInvoices[i:end]
-
-		if err := invoiceRepo.CreateBulk(ctx, batch); err != nil {
-			log.Printf("  ERROR: bulk insert batch [%d:%d] failed: %v\n", i, end, err)
-			log.Printf("  Falling back to one-by-one insert for this batch...\n")
-			for _, inv := range batch {
-				if err := invoiceRepo.Create(ctx, inv); err != nil {
-					log.Printf("    SKIP (duplicate or error) invoice %s: %v\n", inv.ID, err)
-				}
-			}
-		} else {
-			log.Printf("  Inserted batch [%d:%d] (%d invoices)\n", i, end, len(batch))
-		}
-	}
-
-	// 7. Collect invoice IDs and fire ProcessInvoiceWorkflow
-	invoiceIDs := make([]string, len(allInvoices))
-	for i, inv := range allInvoices {
-		invoiceIDs[i] = inv.ID
-	}
-
-	log.Printf("\nTriggering ProcessInvoiceWorkflow for %d invoices...\n", len(invoiceIDs))
+	// 6. Trigger ComputeInvoiceWorkflow for all draft invoice IDs.
+	log.Printf("\nTriggering ComputeInvoiceWorkflow for %d invoices...\n", len(invoiceIDs))
 
 	temporalSvc := temporalService.GetGlobalTemporalService()
 	if temporalSvc == nil {
@@ -311,7 +259,7 @@ func setupDraftInvoices(params setupDraftInvoicesParams) error {
 	}
 
 	log.Printf("\n=== Final Summary ===\n")
-	log.Printf("Invoices created:       %d\n", len(allInvoices))
+	log.Printf("Invoices ready:         %d\n", len(invoiceIDs))
 	log.Printf("Workflows triggered:    %d\n", totalTriggered)
 	log.Printf("Workflows failed:       %d\n", totalFailed)
 
