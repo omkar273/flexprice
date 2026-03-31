@@ -9,8 +9,6 @@ import (
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/domain/connection"
 	"github.com/flexprice/flexprice/internal/domain/entityintegrationmapping"
-	"github.com/flexprice/flexprice/internal/domain/invoice"
-	"github.com/flexprice/flexprice/internal/domain/subscription"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/pubsub"
@@ -29,8 +27,6 @@ type Handler interface {
 type Deps struct {
 	ConnectionRepo connection.Repository
 	EIMRepo        entityintegrationmapping.Repository
-	InvoiceRepo    invoice.Repository
-	SubRepo        subscription.Repository
 	Logger         *logger.Logger
 	Config         *config.Configuration
 	PubSub         pubsub.PubSub
@@ -65,8 +61,6 @@ func NewHandler(deps Deps) Handler {
 				h.deps.Config,
 				h.deps.ConnectionRepo,
 				h.deps.EIMRepo,
-				h.deps.InvoiceRepo,
-				h.deps.SubRepo,
 				h.deps.Logger,
 				event,
 				msg.UUID,

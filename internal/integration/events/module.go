@@ -4,8 +4,6 @@ import (
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/domain/connection"
 	"github.com/flexprice/flexprice/internal/domain/entityintegrationmapping"
-	"github.com/flexprice/flexprice/internal/domain/invoice"
-	"github.com/flexprice/flexprice/internal/domain/subscription"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/pubsub/kafka"
 	"github.com/flexprice/flexprice/internal/types"
@@ -40,8 +38,6 @@ func provideIntegrationPubSub(
 func provideIntegrationHandler(
 	connectionRepo connection.Repository,
 	eimRepo entityintegrationmapping.Repository,
-	invoiceRepo invoice.Repository,
-	subRepo subscription.Repository,
 	ps types.IntegrationEventsPubSub,
 	cfg *config.Configuration,
 	log *logger.Logger,
@@ -49,8 +45,6 @@ func provideIntegrationHandler(
 	return NewHandler(Deps{
 		ConnectionRepo: connectionRepo,
 		EIMRepo:        eimRepo,
-		InvoiceRepo:    invoiceRepo,
-		SubRepo:        subRepo,
 		Logger:         log,
 		Config:         cfg,
 		PubSub:         ps.PubSub,

@@ -23,5 +23,8 @@ func ChargebeeCustomerSyncWorkflow(ctx workflow.Context, input models.ChargebeeC
 			MaximumAttempts: 3,
 		},
 	})
+	if err := workflow.Sleep(ctx, 2*time.Second); err != nil {
+		return err
+	}
 	return workflow.ExecuteActivity(ctx, ActivitySyncCustomerToChargebee, input).Get(ctx, nil)
 }

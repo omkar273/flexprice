@@ -9,8 +9,6 @@ import (
 	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/domain/connection"
 	"github.com/flexprice/flexprice/internal/domain/entityintegrationmapping"
-	"github.com/flexprice/flexprice/internal/domain/invoice"
-	"github.com/flexprice/flexprice/internal/domain/subscription"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	temporalmodels "github.com/flexprice/flexprice/internal/temporal/models"
@@ -63,14 +61,14 @@ func customerAlreadySynced(ctx context.Context, eimRepo entityintegrationmapping
 	return err == nil && count > 0
 }
 
-// invoiceVendorSyncInput holds the resolved data used by the internal provider triggers.
+// invoiceVendorSyncInput holds the minimal data needed to dispatch a provider trigger.
+// Invoice and subscription details are fetched inside the Temporal activity after a
+// short sleep, avoiding races where the event arrives before the DB transaction commits.
 type invoiceVendorSyncInput struct {
-	TenantID         string
-	EnvironmentID    string
-	UserID           string
-	InvoiceID        string
-	CustomerID       string
-	CollectionMethod string
+	TenantID      string
+	EnvironmentID string
+	UserID        string
+	InvoiceID     string
 }
 
 type customerVendorSyncInput struct {
@@ -80,18 +78,16 @@ type customerVendorSyncInput struct {
 	CustomerID    string
 }
 
-// DispatchInvoiceVendorSync resolves the invoice from the event payload, loads its
-// subscription (for collection method), then starts Temporal sync workflows for each
-// enabled provider.  It is the single entry point for both the integration consumer
-// (invoice.update.finalized) and the manual SyncInvoiceToExternalVendors path.
+// DispatchInvoiceVendorSync parses the invoice ID from the event payload and starts
+// Temporal sync workflows for each enabled provider. No DB reads are performed here —
+// the invoice is fetched inside the Temporal activity after a short sleep, avoiding
+// the race condition where the event arrives before the DB transaction commits.
 // eimRepo is used for idempotency: if a mapping already exists the provider trigger is skipped.
 func DispatchInvoiceVendorSync(
 	ctx context.Context,
 	cfg *config.Configuration,
 	connRepo connection.Repository,
 	eimRepo entityintegrationmapping.Repository,
-	invoiceRepo invoice.Repository,
-	subRepo subscription.Repository,
 	log *logger.Logger,
 	event *types.WebhookEvent,
 	msgUUID string,
@@ -100,7 +96,7 @@ func DispatchInvoiceVendorSync(
 		return nil
 	}
 
-	// Parse invoice ID from the event payload.
+	// Parse invoice ID from the event payload — no DB calls at this stage.
 	var pl struct {
 		InvoiceID string `json:"invoice_id"`
 	}
@@ -112,37 +108,11 @@ func DispatchInvoiceVendorSync(
 		return nil
 	}
 
-	// Load the invoice.
-	inv, err := invoiceRepo.Get(ctx, pl.InvoiceID)
-	if err != nil {
-		log.Errorw("integration_events: failed to load invoice for sync dispatch",
-			"invoice_id", pl.InvoiceID,
-			"error", err,
-		)
-		return err
-	}
-
-	// Load the subscription to get the collection method (best-effort).
-	collectionMethod := ""
-	if inv.SubscriptionID != nil && subRepo != nil {
-		sub, err := subRepo.Get(ctx, *inv.SubscriptionID)
-		if err != nil {
-			log.Warnw("integration_events: failed to get subscription for collection method",
-				"invoice_id", inv.ID,
-				"subscription_id", *inv.SubscriptionID,
-				"error", err)
-		} else if sub != nil {
-			collectionMethod = sub.CollectionMethod
-		}
-	}
-
 	in := invoiceVendorSyncInput{
-		TenantID:         event.TenantID,
-		EnvironmentID:    event.EnvironmentID,
-		UserID:           event.UserID,
-		InvoiceID:        inv.ID,
-		CustomerID:       inv.CustomerID,
-		CollectionMethod: collectionMethod,
+		TenantID:      event.TenantID,
+		EnvironmentID: event.EnvironmentID,
+		UserID:        event.UserID,
+		InvoiceID:     pl.InvoiceID,
 	}
 
 	temporalSvc := temporalservice.GetGlobalTemporalService()
@@ -152,7 +122,6 @@ func DispatchInvoiceVendorSync(
 
 	log.Infow("integration_events: dispatching invoice vendor sync",
 		"invoice_id", in.InvoiceID,
-		"customer_id", in.CustomerID,
 		"tenant_id", in.TenantID,
 		"environment_id", in.EnvironmentID,
 	)
@@ -237,9 +206,15 @@ func DispatchCustomerVendorSync(
 	var dispatchErrs []error
 	for _, trigger := range []func() error{
 		func() error { return triggerStripeCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in) },
-		func() error { return triggerRazorpayCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in) },
-		func() error { return triggerChargebeeCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in) },
-		func() error { return triggerQuickBooksCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in) },
+		func() error {
+			return triggerRazorpayCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in)
+		},
+		func() error {
+			return triggerChargebeeCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in)
+		},
+		func() error {
+			return triggerQuickBooksCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in)
+		},
 		func() error { return triggerNomodCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in) },
 		func() error { return triggerPaddleCustomerSyncIfEnabled(ctx, connRepo, eimRepo, temporalSvc, log, in) },
 	} {
@@ -336,11 +311,9 @@ func triggerStripeIfEnabled(
 	}
 
 	input := &temporalmodels.StripeInvoiceSyncWorkflowInput{
-		InvoiceID:        in.InvoiceID,
-		CustomerID:       in.CustomerID,
-		CollectionMethod: in.CollectionMethod,
-		TenantID:         in.TenantID,
-		EnvironmentID:    in.EnvironmentID,
+		InvoiceID:     in.InvoiceID,
+		TenantID:      in.TenantID,
+		EnvironmentID: in.EnvironmentID,
 	}
 	return executeWorkflow(ctx, temporalSvc, log, types.TemporalStripeInvoiceSyncWorkflow, input, types.SecretProviderStripe, in.InvoiceID)
 }
@@ -367,7 +340,6 @@ func triggerRazorpayIfEnabled(
 
 	input := &temporalmodels.RazorpayInvoiceSyncWorkflowInput{
 		InvoiceID:     in.InvoiceID,
-		CustomerID:    in.CustomerID,
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
@@ -396,7 +368,6 @@ func triggerChargebeeIfEnabled(
 
 	input := &temporalmodels.ChargebeeInvoiceSyncWorkflowInput{
 		InvoiceID:     in.InvoiceID,
-		CustomerID:    in.CustomerID,
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
@@ -425,7 +396,6 @@ func triggerQuickBooksIfEnabled(
 
 	input := &temporalmodels.QuickBooksInvoiceSyncWorkflowInput{
 		InvoiceID:     in.InvoiceID,
-		CustomerID:    in.CustomerID,
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
@@ -454,7 +424,6 @@ func triggerHubSpotIfEnabled(
 
 	input := &temporalmodels.HubSpotInvoiceSyncWorkflowInput{
 		InvoiceID:     in.InvoiceID,
-		CustomerID:    in.CustomerID,
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
@@ -483,7 +452,6 @@ func triggerMoyasarIfEnabled(
 
 	input := &temporalmodels.MoyasarInvoiceSyncWorkflowInput{
 		InvoiceID:     in.InvoiceID,
-		CustomerID:    in.CustomerID,
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
@@ -512,7 +480,6 @@ func triggerNomodIfEnabled(
 
 	input := &temporalmodels.NomodInvoiceSyncWorkflowInput{
 		InvoiceID:     in.InvoiceID,
-		CustomerID:    in.CustomerID,
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
@@ -541,7 +508,6 @@ func triggerPaddleIfEnabled(
 
 	input := &temporalmodels.PaddleInvoiceSyncWorkflowInput{
 		InvoiceID:     in.InvoiceID,
-		CustomerID:    in.CustomerID,
 		TenantID:      in.TenantID,
 		EnvironmentID: in.EnvironmentID,
 	}
