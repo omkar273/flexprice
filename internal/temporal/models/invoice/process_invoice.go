@@ -231,6 +231,43 @@ type ScheduleDraftFinalizationWorkflowResult struct {
 	FailedCount    int `json:"failed_count"`
 }
 
+// ===================== Compute Invoice Workflow Models =====================
+
+// ComputeInvoiceWorkflowInput represents the input for the compute invoice workflow
+type ComputeInvoiceWorkflowInput struct {
+	InvoiceID     string `json:"invoice_id"`
+	TenantID      string `json:"tenant_id"`
+	EnvironmentID string `json:"environment_id"`
+	UserID        string `json:"user_id"`
+}
+
+// Validate validates the compute invoice workflow input
+func (i *ComputeInvoiceWorkflowInput) Validate() error {
+	if i.InvoiceID == "" {
+		return ierr.NewError("invoice_id is required").
+			WithHint("Invoice ID is required").
+			Mark(ierr.ErrValidation)
+	}
+	if i.TenantID == "" {
+		return ierr.NewError("tenant_id is required").
+			WithHint("Tenant ID is required").
+			Mark(ierr.ErrValidation)
+	}
+	if i.EnvironmentID == "" {
+		return ierr.NewError("environment_id is required").
+			WithHint("Environment ID is required").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
+// ComputeInvoiceWorkflowResult represents the result of computing an invoice
+type ComputeInvoiceWorkflowResult struct {
+	Success     bool      `json:"success"`
+	Skipped     bool      `json:"skipped"`
+	CompletedAt time.Time `json:"completed_at"`
+}
+
 // FinalizeDueDraftsActivityInput represents the input for the finalize due drafts activity
 type FinalizeDueDraftsActivityInput struct {
 	BatchSize int `json:"batch_size"`

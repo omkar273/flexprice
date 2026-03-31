@@ -1786,7 +1786,7 @@ func (s *subscriptionService) CancelSubscription(
 			return err
 		}
 
-		// Step 7b: Handle scheduling for future cancellations (end_of_period and scheduled_date)
+		// Step 7c: Handle scheduling for future cancellations (end_of_period and scheduled_date)
 		if req.CancellationType == types.CancellationTypeEndOfPeriod ||
 			req.CancellationType == types.CancellationTypeScheduledDate {
 			// Cancel all pending schedules (especially plan changes) before creating cancellation schedule
@@ -6181,30 +6181,52 @@ func (s *subscriptionService) cancelPlanLineItemsForSubscription(
 	subscriptionID string,
 	effectiveDate time.Time,
 ) error {
+	logger := s.Logger.With(
+		zap.String("subscription_id", subscriptionID),
+		zap.Time("effective_date", effectiveDate),
+	)
+
 	lineItemFilter := types.NewNoLimitSubscriptionLineItemFilter()
 	lineItemFilter.SubscriptionIDs = []string{subscriptionID}
 	lineItemFilter.EntityType = lo.ToPtr(types.SubscriptionLineItemEntityTypePlan)
-	lineItemFilter.Status = lo.ToPtr(types.StatusPublished)
 
 	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
 	if err != nil {
-		return err
+		logger.Errorw("failed to list plan line items for cancellation", "error", err)
+		return ierr.WithError(err).
+			WithHint("Failed to list plan line items for cancellation").
+			Mark(ierr.ErrDatabase)
 	}
 
+	terminated := 0
 	for _, item := range lineItems {
 		// Skip items that haven't started yet — they never became active
 		if item.StartDate.After(effectiveDate) {
+			logger.Debugw("skipping plan line item not yet started",
+				"line_item_id", item.ID,
+				"start_date", item.StartDate)
 			continue
 		}
 		// Skip items already terminated at or before effectiveDate
 		if !item.EndDate.IsZero() && !item.EndDate.After(effectiveDate) {
+			logger.Debugw("skipping plan line item already terminated",
+				"line_item_id", item.ID,
+				"end_date", item.EndDate)
 			continue
 		}
 		item.EndDate = effectiveDate
 		if err := s.SubscriptionLineItemRepo.Update(ctx, item); err != nil {
-			return err
+			logger.Errorw("failed to update plan line item end date",
+				"line_item_id", item.ID,
+				"error", err)
+			return ierr.WithError(err).
+				WithHintf("Failed to set EndDate on plan line item %s", item.ID).
+				Mark(ierr.ErrDatabase)
 		}
+		terminated++
 	}
 
+	logger.Infow("terminated plan line items for subscription",
+		"line_items_terminated", terminated)
 	return nil
 }
