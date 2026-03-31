@@ -242,11 +242,6 @@ func (s *invoiceService) CreateEmptyDraftInvoice(ctx context.Context, req dto.Cr
 		inv.BillingSequence = billingSeq
 		inv.InvoiceStatus = types.InvoiceStatusDraft
 
-		// Set correct billing reason based on billing sequence for subscription invoices
-		if req.SubscriptionID != nil && billingSeq != nil && lo.FromPtr(billingSeq) == 1 {
-			inv.BillingReason = string(types.InvoiceBillingReasonSubscriptionCreate)
-		}
-
 		// Validate invoice
 		if err := inv.Validate(); err != nil {
 			return err
@@ -2041,6 +2036,9 @@ func (s *invoiceService) CreateSubscriptionInvoice(ctx context.Context, req *dto
 		subscription.Currency,
 		string(subscription.BillingPeriod),
 	)
+	if flowType == types.InvoiceFlowSubscriptionCreation {
+		draftReq.BillingReason = types.InvoiceBillingReasonSubscriptionCreate
+	}
 	draft, err := s.CreateEmptyDraftInvoice(ctx, draftReq)
 	if err != nil {
 		return nil, nil, err
