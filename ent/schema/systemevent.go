@@ -49,7 +49,7 @@ func (SystemEvent) Edges() []ent.Edge {
 
 func (SystemEvent) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("tenant_id", "environment_id", "webhook_message_id", "created_at").
-			StorageKey("idx_system_events_tenant_env_message_created"),
+		index.Fields("tenant_id", "environment_id").
+			StorageKey("idx_system_events_tenant_env"),
 	}
 }

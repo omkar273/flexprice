@@ -164,7 +164,7 @@ func (h *handler) processMessageSvix(ctx context.Context, event *types.WebhookEv
 		return err
 	}
 
-	// Send to Svix — capture the Svix message id for the audit row.
+	// Send to Svix — capture the Svix message id.
 	svixOut, err := h.svixClient.SendMessage(ctx, appID, event.EventName, json.RawMessage(webHookPayload))
 	if err != nil {
 		h.logger.Errorw("failed to send webhook via Svix",
@@ -176,13 +176,13 @@ func (h *handler) processMessageSvix(ctx context.Context, event *types.WebhookEv
 		return err
 	}
 
-	// Update system_events row with delivery info.
-	// svixOut is the Svix msg_… id that uniquely identifies the message in the Svix dashboard.
-	var webhookMessageID *string
-	if svixOut != "" {
-		webhookMessageID = lo.ToPtr(svixOut)
+	// svixOut == "" means Svix was disabled or had no application for this tenant — message was not sent.
+	// OnConsumed already recorded the row; don't mark it as published.
+	if svixOut == "" {
+		return nil
 	}
-	if err := h.systemEventRepo.OnPublished(ctx, event, webhookMessageID, rawToMap(webHookPayload)); err != nil {
+
+	if err := h.systemEventRepo.OnPublished(ctx, event, lo.ToPtr(svixOut)); err != nil {
 		h.logger.Warnw("system_events OnPublished failed",
 			"error", err,
 			"event_id", event.ID,
@@ -279,8 +279,7 @@ func (h *handler) processMessageNative(ctx context.Context, event *types.Webhook
 		"status_code", resp.StatusCode,
 	)
 
-	// Update system_events row with outbound payload; no Svix id for native delivery.
-	if err := h.systemEventRepo.OnPublished(ctx, event, nil, rawToMap(webHookPayload)); err != nil {
+	if err := h.systemEventRepo.OnPublished(ctx, event, nil); err != nil {
 		h.logger.Warnw("system_events OnPublished failed",
 			"error", err,
 			"event_id", event.ID,
@@ -289,15 +288,4 @@ func (h *handler) processMessageNative(ctx context.Context, event *types.Webhook
 	}
 
 	return nil
-}
-
-func rawToMap(b []byte) map[string]interface{} {
-	if len(b) == 0 {
-		return nil
-	}
-	var m map[string]interface{}
-	if err := json.Unmarshal(b, &m); err != nil {
-		return nil
-	}
-	return m
 }
