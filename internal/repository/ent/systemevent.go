@@ -39,6 +39,7 @@ func (r *SystemEventRepository) OnConsumed(ctx context.Context, event *types.Web
 		SetID(event.ID).
 		SetTenantID(event.TenantID).
 		SetEnvironmentID(event.EnvironmentID).
+		SetEventName(string(event.EventName)).
 		SetEntityType(string(event.EntityType)).
 		SetEntityID(event.EntityID).
 		SetPayload(payloadMap).
@@ -57,6 +58,9 @@ func (r *SystemEventRepository) OnConsumed(ctx context.Context, event *types.Web
 	// Row already exists (created by another consumer process with stale code).
 	// Overwrite entity_type / entity_id so the correct values win.
 	updateQ := client.SystemEvent.UpdateOneID(event.ID).SetUpdatedAt(now)
+	if event.EventName != "" {
+		updateQ = updateQ.SetEventName(string(event.EventName))
+	}
 	if event.EntityType != "" {
 		updateQ = updateQ.SetEntityType(string(event.EntityType))
 	}

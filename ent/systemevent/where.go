@@ -99,6 +99,11 @@ func EnvironmentID(v string) predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldEQ(FieldEnvironmentID, v))
 }
 
+// EventName applies equality check predicate on the "event_name" field. It's identical to EventNameEQ.
+func EventName(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEQ(FieldEventName, v))
+}
+
 // EntityType applies equality check predicate on the "entity_type" field. It's identical to EntityTypeEQ.
 func EntityType(v string) predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldEQ(FieldEntityType, v))
@@ -552,6 +557,81 @@ func EnvironmentIDEqualFold(v string) predicate.SystemEvent {
 // EnvironmentIDContainsFold applies the ContainsFold predicate on the "environment_id" field.
 func EnvironmentIDContainsFold(v string) predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldContainsFold(FieldEnvironmentID, v))
+}
+
+// EventNameEQ applies the EQ predicate on the "event_name" field.
+func EventNameEQ(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEQ(FieldEventName, v))
+}
+
+// EventNameNEQ applies the NEQ predicate on the "event_name" field.
+func EventNameNEQ(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNEQ(FieldEventName, v))
+}
+
+// EventNameIn applies the In predicate on the "event_name" field.
+func EventNameIn(vs ...string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldIn(FieldEventName, vs...))
+}
+
+// EventNameNotIn applies the NotIn predicate on the "event_name" field.
+func EventNameNotIn(vs ...string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNotIn(FieldEventName, vs...))
+}
+
+// EventNameGT applies the GT predicate on the "event_name" field.
+func EventNameGT(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldGT(FieldEventName, v))
+}
+
+// EventNameGTE applies the GTE predicate on the "event_name" field.
+func EventNameGTE(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldGTE(FieldEventName, v))
+}
+
+// EventNameLT applies the LT predicate on the "event_name" field.
+func EventNameLT(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldLT(FieldEventName, v))
+}
+
+// EventNameLTE applies the LTE predicate on the "event_name" field.
+func EventNameLTE(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldLTE(FieldEventName, v))
+}
+
+// EventNameContains applies the Contains predicate on the "event_name" field.
+func EventNameContains(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldContains(FieldEventName, v))
+}
+
+// EventNameHasPrefix applies the HasPrefix predicate on the "event_name" field.
+func EventNameHasPrefix(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldHasPrefix(FieldEventName, v))
+}
+
+// EventNameHasSuffix applies the HasSuffix predicate on the "event_name" field.
+func EventNameHasSuffix(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldHasSuffix(FieldEventName, v))
+}
+
+// EventNameIsNil applies the IsNil predicate on the "event_name" field.
+func EventNameIsNil() predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldIsNull(FieldEventName))
+}
+
+// EventNameNotNil applies the NotNil predicate on the "event_name" field.
+func EventNameNotNil() predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNotNull(FieldEventName))
+}
+
+// EventNameEqualFold applies the EqualFold predicate on the "event_name" field.
+func EventNameEqualFold(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEqualFold(FieldEventName, v))
+}
+
+// EventNameContainsFold applies the ContainsFold predicate on the "event_name" field.
+func EventNameContainsFold(v string) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldContainsFold(FieldEventName, v))
 }
 
 // EntityTypeEQ applies the EQ predicate on the "entity_type" field.
