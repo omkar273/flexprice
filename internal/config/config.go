@@ -197,13 +197,13 @@ type PyroscopeConfig struct {
 }
 
 type TemporalConfig struct {
-	Address                string `mapstructure:"address" validate:"required"`
-	TaskQueue              string `mapstructure:"task_queue" validate:"required"`
-	Namespace              string `mapstructure:"namespace" validate:"required"`
-	APIKey                 string `mapstructure:"api_key"`
-	APIKeyName             string `mapstructure:"api_key_name"`
-	TLS                    bool   `mapstructure:"tls"`
-	MaxWorkflowsPerCronRun int    `mapstructure:"max_workflows_per_cron_run"`
+	Address                string               `mapstructure:"address" validate:"required"`
+	TaskQueue              string               `mapstructure:"task_queue" validate:"required"`
+	Namespace              string               `mapstructure:"namespace" validate:"required"`
+	APIKey                 string               `mapstructure:"api_key"`
+	APIKeyName             string               `mapstructure:"api_key_name"`
+	TLS                    bool                 `mapstructure:"tls"`
+	MaxWorkflowsPerCronRun int                  `mapstructure:"max_workflows_per_cron_run"`
 	Worker                 TemporalWorkerConfig `mapstructure:"worker"`
 }
 
@@ -380,7 +380,7 @@ func NewConfig() (*Configuration, error) {
 	v := viper.New()
 
 	// Step 1: Load `.env` if it exists
-	_ = godotenv.Load(".env.prod")
+	_ = godotenv.Load()
 
 	// Step 2: Initialize Viper
 	v.SetConfigName("config")
