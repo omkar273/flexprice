@@ -41,7 +41,7 @@ func (s *EntityIntegrationMappingServiceSuite) TestCreateEntityIntegrationMappin
 	// Test data
 	req := dto.CreateEntityIntegrationMappingRequest{
 		EntityID:         "cust_123",
-		EntityType:       "customer",
+		EntityType:       types.IntegrationEntityTypeCustomer,
 		ProviderType:     "stripe",
 		ProviderEntityID: "cus_stripe_456",
 		Metadata: map[string]interface{}{
@@ -73,7 +73,7 @@ func (s *EntityIntegrationMappingServiceSuite) TestGetEntityIntegrationMapping()
 	// Create a mapping first
 	req := dto.CreateEntityIntegrationMappingRequest{
 		EntityID:         "cust_123",
-		EntityType:       "customer",
+		EntityType:       types.IntegrationEntityTypeCustomer,
 		ProviderType:     "stripe",
 		ProviderEntityID: "cus_stripe_456",
 	}
@@ -102,7 +102,7 @@ func (s *EntityIntegrationMappingServiceSuite) TestGetByEntityAndProvider() {
 	// Create a mapping first
 	req := dto.CreateEntityIntegrationMappingRequest{
 		EntityID:         "cust_123",
-		EntityType:       "customer",
+		EntityType:       types.IntegrationEntityTypeCustomer,
 		ProviderType:     "stripe",
 		ProviderEntityID: "cus_stripe_456",
 	}
@@ -137,7 +137,7 @@ func (s *EntityIntegrationMappingServiceSuite) TestGetByProviderEntity() {
 	// Create a mapping first
 	req := dto.CreateEntityIntegrationMappingRequest{
 		EntityID:         "cust_123",
-		EntityType:       "customer",
+		EntityType:       types.IntegrationEntityTypeCustomer,
 		ProviderType:     "stripe",
 		ProviderEntityID: "cus_stripe_456",
 	}
