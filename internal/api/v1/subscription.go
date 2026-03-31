@@ -652,18 +652,6 @@ func (h *SubscriptionHandler) TriggerSubscriptionWorkflow(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// TriggerSubscriptionDraftAndComputeWorkflow godoc
-// @Summary Start draft-and-compute invoice workflow for current period
-// @ID triggerSubscriptionDraftAndComputeWorkflow
-// @Description Creates an idempotent subscription invoice draft for the subscription's current billing period and runs compute (Temporal workflow on the invoice task queue). Not the same as POST .../trigger-workflow (full billing rollover).
-// @Tags Subscriptions
-// @x-scope "write"
-// @Produce json
-// @Param subscription_id path string true "Subscription ID"
-// @Success 202 {object} dto.TriggerSubscriptionWorkflowResponse
-// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
-// @Failure 500 {object} ierr.ErrorResponse "Server error"
-// @Router /subscriptions/temporal/{subscription_id}/draft-and-compute [post]
 func (h *SubscriptionHandler) TriggerSubscriptionDraftAndComputeWorkflow(c *gin.Context) {
 	subscriptionID := c.Param("subscription_id")
 	if subscriptionID == "" {
