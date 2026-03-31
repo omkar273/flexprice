@@ -138,11 +138,14 @@ type LoggingConfig struct {
 	FluentdHost    string `mapstructure:"fluentd_host" validate:"omitempty"`
 	FluentdPort    int    `mapstructure:"fluentd_port" validate:"omitempty"`
 
-	// OpenTelemetry / SigNoz log export configuration
-	OtelEnabled      bool   `mapstructure:"otel_enabled" default:"false"`
-	OtelEndpoint     string `mapstructure:"otel_endpoint" validate:"omitempty"`      // e.g. ingest.us.signoz.cloud:443
-	OtelInsecure     bool   `mapstructure:"otel_insecure" default:"false"`           // set true for local collector without TLS
-	OtelIngestionKey string `mapstructure:"otel_ingestion_key" validate:"omitempty"` // SigNoz ingestion key
+	// OpenTelemetry log export configuration (works with SigNoz, Grafana, Datadog, etc.)
+	OtelEnabled    bool   `mapstructure:"otel_enabled" default:"false"`
+	OtelEndpoint   string `mapstructure:"otel_endpoint" validate:"omitempty"`    // e.g. <host>:<port>
+	OtelInsecure   bool   `mapstructure:"otel_insecure" default:"false"`         // set true for local collector without TLS
+	OtelProtocol   string `mapstructure:"otel_protocol" default:"grpc"`          // grpc (default) or http
+	OtelAuthHeader string `mapstructure:"otel_auth_header" validate:"omitempty"` // header name
+	OtelAuthValue  string `mapstructure:"otel_auth_value" validate:"omitempty"`  // header value / token
+	OtelDebug      bool   `mapstructure:"otel_debug" default:"false"`            // use synchronous SimpleProcessor and verbose stderr output
 }
 
 type PostgresConfig struct {
@@ -378,6 +381,15 @@ func NewConfig() (*Configuration, error) {
 	// Bind bare env vars (no FLEXPRICE_ prefix) for service identity fields
 	_ = v.BindEnv("logging.service_name", "SERVICE_NAME")
 	_ = v.BindEnv("logging.environment", "ENVIRONMENT")
+
+	// Explicitly bind OTel logging vars — AutomaticEnv can miss nested keys with underscores
+	_ = v.BindEnv("logging.otel_enabled", "FLEXPRICE_LOGGING_OTEL_ENABLED")
+	_ = v.BindEnv("logging.otel_endpoint", "FLEXPRICE_LOGGING_OTEL_ENDPOINT")
+	_ = v.BindEnv("logging.otel_insecure", "FLEXPRICE_LOGGING_OTEL_INSECURE")
+	_ = v.BindEnv("logging.otel_protocol", "FLEXPRICE_LOGGING_OTEL_PROTOCOL")
+	_ = v.BindEnv("logging.otel_auth_header", "FLEXPRICE_LOGGING_OTEL_AUTH_HEADER")
+	_ = v.BindEnv("logging.otel_auth_value", "FLEXPRICE_LOGGING_OTEL_AUTH_VALUE")
+	_ = v.BindEnv("logging.otel_debug", "FLEXPRICE_LOGGING_OTEL_DEBUG")
 
 	// Step 5: Read the YAML file
 	if err := v.ReadInConfig(); err != nil {
