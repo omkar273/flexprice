@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/sentry"
@@ -31,22 +32,24 @@ type temporalService struct {
 	workerManager worker.TemporalWorkerManager
 	logger        *logger.Logger
 	sentry        *sentry.Service
+	workerConfig  config.TemporalWorkerConfig
 }
 
 // NewTemporalService creates a new temporal service instance
-func NewTemporalService(client client.TemporalClient, workerManager worker.TemporalWorkerManager, logger *logger.Logger, sentryService *sentry.Service) TemporalService {
+func NewTemporalService(client client.TemporalClient, workerManager worker.TemporalWorkerManager, logger *logger.Logger, sentryService *sentry.Service, cfg *config.TemporalConfig) TemporalService {
 	return &temporalService{
 		client:        client,
 		workerManager: workerManager,
 		logger:        logger,
 		sentry:        sentryService,
+		workerConfig:  cfg.Worker,
 	}
 }
 
 // InitializeGlobalTemporalService initializes the global Temporal service instance
-func InitializeGlobalTemporalService(client client.TemporalClient, workerManager worker.TemporalWorkerManager, logger *logger.Logger, sentryService *sentry.Service) {
+func InitializeGlobalTemporalService(client client.TemporalClient, workerManager worker.TemporalWorkerManager, logger *logger.Logger, sentryService *sentry.Service, cfg *config.TemporalConfig) {
 	globalTemporalOnce.Do(func() {
-		globalTemporalService = NewTemporalService(client, workerManager, logger, sentryService)
+		globalTemporalService = NewTemporalService(client, workerManager, logger, sentryService, cfg)
 	})
 }
 
@@ -234,18 +237,7 @@ func (s *temporalService) RegisterWorkflow(taskQueue types.TemporalTaskQueue, wo
 			Mark(errors.ErrValidation)
 	}
 
-	// Create worker options with Sentry and Workflow Tracking interceptors
-	options := models.DefaultWorkerOptions()
-	if s.sentry != nil && s.sentry.IsEnabled() {
-		options.Interceptors = []interceptor.WorkerInterceptor{
-			temporalInterceptor.NewSentryInterceptor(s.sentry),
-			temporalInterceptor.NewWorkflowTrackingInterceptor(),
-		}
-	} else {
-		options.Interceptors = []interceptor.WorkerInterceptor{
-			temporalInterceptor.NewWorkflowTrackingInterceptor(),
-		}
-	}
+	options := s.buildWorkerOptions()
 
 	w, err := s.workerManager.GetOrCreateWorker(taskQueue, options)
 	if err != nil {
@@ -270,18 +262,7 @@ func (s *temporalService) RegisterActivity(taskQueue types.TemporalTaskQueue, ac
 			Mark(errors.ErrValidation)
 	}
 
-	// Create worker options with Sentry and Workflow Tracking interceptors
-	options := models.DefaultWorkerOptions()
-	if s.sentry != nil && s.sentry.IsEnabled() {
-		options.Interceptors = []interceptor.WorkerInterceptor{
-			temporalInterceptor.NewSentryInterceptor(s.sentry),
-			temporalInterceptor.NewWorkflowTrackingInterceptor(),
-		}
-	} else {
-		options.Interceptors = []interceptor.WorkerInterceptor{
-			temporalInterceptor.NewWorkflowTrackingInterceptor(),
-		}
-	}
+	options := s.buildWorkerOptions()
 
 	w, err := s.workerManager.GetOrCreateWorker(taskQueue, options)
 	if err != nil {
@@ -313,6 +294,39 @@ func (s *temporalService) StopWorker(taskQueue types.TemporalTaskQueue) error {
 	}
 
 	return s.workerManager.StopWorker(taskQueue)
+}
+
+// buildWorkerOptions creates worker options from config with interceptors
+func (s *temporalService) buildWorkerOptions() *models.WorkerOptions {
+	options := models.DefaultWorkerOptions()
+
+	// Apply config overrides (0 values mean use defaults)
+	if s.workerConfig.MaxConcurrentActivityExecutionSize > 0 {
+		options.MaxConcurrentActivityExecutionSize = s.workerConfig.MaxConcurrentActivityExecutionSize
+	}
+	if s.workerConfig.MaxConcurrentWorkflowTaskExecutionSize > 0 {
+		options.MaxConcurrentWorkflowTaskExecutionSize = s.workerConfig.MaxConcurrentWorkflowTaskExecutionSize
+	}
+	if s.workerConfig.WorkerActivitiesPerSecond > 0 {
+		options.WorkerActivitiesPerSecond = s.workerConfig.WorkerActivitiesPerSecond
+	}
+	if s.workerConfig.TaskQueueActivitiesPerSecond > 0 {
+		options.TaskQueueActivitiesPerSecond = s.workerConfig.TaskQueueActivitiesPerSecond
+	}
+
+	// Add interceptors
+	if s.sentry != nil && s.sentry.IsEnabled() {
+		options.Interceptors = []interceptor.WorkerInterceptor{
+			temporalInterceptor.NewSentryInterceptor(s.sentry),
+			temporalInterceptor.NewWorkflowTrackingInterceptor(),
+		}
+	} else {
+		options.Interceptors = []interceptor.WorkerInterceptor{
+			temporalInterceptor.NewWorkflowTrackingInterceptor(),
+		}
+	}
+
+	return options
 }
 
 // StopAllWorkers implements TemporalService

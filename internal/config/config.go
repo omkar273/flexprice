@@ -203,6 +203,22 @@ type TemporalConfig struct {
 	APIKeyName             string `mapstructure:"api_key_name"`
 	TLS                    bool   `mapstructure:"tls"`
 	MaxWorkflowsPerCronRun int    `mapstructure:"max_workflows_per_cron_run"`
+	Worker                 TemporalWorkerConfig `mapstructure:"worker"`
+}
+
+type TemporalWorkerConfig struct {
+	// MaxConcurrentActivityExecutionSize is the max number of activities executed concurrently per worker.
+	// Default: 10
+	MaxConcurrentActivityExecutionSize int `mapstructure:"max_concurrent_activity_execution_size"`
+	// MaxConcurrentWorkflowTaskExecutionSize is the max number of workflow tasks executed concurrently per worker.
+	// Default: 10
+	MaxConcurrentWorkflowTaskExecutionSize int `mapstructure:"max_concurrent_workflow_task_execution_size"`
+	// WorkerActivitiesPerSecond is the rate limit for activities per second per worker. 0 means unlimited.
+	// Default: 5
+	WorkerActivitiesPerSecond float64 `mapstructure:"worker_activities_per_second"`
+	// TaskQueueActivitiesPerSecond is the rate limit for activities per second across all workers for the task queue. 0 means unlimited.
+	// Default: 0 (unlimited)
+	TaskQueueActivitiesPerSecond float64 `mapstructure:"task_queue_activities_per_second"`
 }
 
 type SecretsConfig struct {
