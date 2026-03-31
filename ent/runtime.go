@@ -1900,6 +1900,14 @@ func init() {
 	systemeventDescEnvironmentID := systemeventMixinFields1[0].Descriptor()
 	// systemevent.DefaultEnvironmentID holds the default value on creation for the environment_id field.
 	systemevent.DefaultEnvironmentID = systemeventDescEnvironmentID.Default.(string)
+	// systemeventDescEntityType is the schema descriptor for entity_type field.
+	systemeventDescEntityType := systemeventFields[1].Descriptor()
+	// systemevent.DefaultEntityType holds the default value on creation for the entity_type field.
+	systemevent.DefaultEntityType = systemeventDescEntityType.Default.(string)
+	// systemeventDescEntityID is the schema descriptor for entity_id field.
+	systemeventDescEntityID := systemeventFields[2].Descriptor()
+	// systemevent.DefaultEntityID holds the default value on creation for the entity_id field.
+	systemevent.DefaultEntityID = systemeventDescEntityID.Default.(string)
 	taskMixin := schema.Task{}.Mixin()
 	taskMixinFields0 := taskMixin[0].Fields()
 	_ = taskMixinFields0

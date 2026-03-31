@@ -596,6 +596,8 @@ func (s *creditNoteService) publishSystemEvent(ctx context.Context, eventType st
 		UserID:        types.GetUserID(ctx),
 		Timestamp:     time.Now().UTC(),
 		Payload:       json.RawMessage(webhookPayload),
+		EntityType:    types.SystemEntityTypeCreditNote,
+		EntityID:      creditNoteID,
 	}
 	if err := s.WebhookPublisher.PublishWebhook(ctx, webhookEvent); err != nil {
 		s.Logger.Errorw("failed to publish webhook event", "error", err, "event_name", eventType)

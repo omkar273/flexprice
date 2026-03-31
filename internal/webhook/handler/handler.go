@@ -182,8 +182,8 @@ func (h *handler) processMessageSvix(ctx context.Context, event *types.WebhookEv
 		return nil
 	}
 
-	if err := h.systemEventRepo.OnPublished(ctx, event, lo.ToPtr(svixOut)); err != nil {
-		h.logger.Warnw("system_events OnPublished failed",
+	if err := h.systemEventRepo.OnDelivered(ctx, event.ID, lo.ToPtr(svixOut)); err != nil {
+		h.logger.Warnw("system_events OnDelivered failed",
 			"error", err,
 			"event_id", event.ID,
 			"event_name", event.EventName,
@@ -279,8 +279,8 @@ func (h *handler) processMessageNative(ctx context.Context, event *types.Webhook
 		"status_code", resp.StatusCode,
 	)
 
-	if err := h.systemEventRepo.OnPublished(ctx, event, nil); err != nil {
-		h.logger.Warnw("system_events OnPublished failed",
+	if err := h.systemEventRepo.OnDelivered(ctx, event.ID, nil); err != nil {
+		h.logger.Warnw("system_events OnDelivered failed",
 			"error", err,
 			"event_id", event.ID,
 			"event_name", event.EventName,

@@ -401,6 +401,8 @@ func (s *alertLogsService) publishSystemEvent(ctx context.Context, eventName typ
 		UserID:        types.GetUserID(ctx),
 		Timestamp:     time.Now().UTC(),
 		Payload:       json.RawMessage(webhookPayload),
+		EntityType:    types.SystemEntityType(alertLog.EntityType),
+		EntityID:      alertLog.EntityID,
 	}
 
 	if err := s.WebhookPublisher.PublishWebhook(ctx, webhookEvent); err != nil {

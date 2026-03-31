@@ -26,6 +26,18 @@ func (SystemEvent) Fields() []ent.Field {
 			}).
 			Unique().
 			Immutable(),
+		field.String("entity_type").
+			SchemaType(map[string]string{
+				"postgres": "varchar(64)",
+			}).
+			Optional().
+			Default(""),
+		field.String("entity_id").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Optional().
+			Default(""),
 		field.String("webhook_message_id").
 			SchemaType(map[string]string{
 				"postgres": "varchar(128)",

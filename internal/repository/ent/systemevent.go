@@ -19,20 +19,29 @@ func NewSystemEventRepository(client postgres.IClient) *SystemEventRepository {
 	return &SystemEventRepository{client: client}
 }
 
-// OnConsumed creates a bare system_events row the moment the consumer reads the Kafka message.
-// published_at / webhook_message_id / payload are filled in later by OnPublished.
+// OnConsumed creates a full system_events row when the consumer reads the Kafka message.
+// All fields are populated from the event — only webhook_message_id and published_at are left
+// empty until the webhook is actually delivered (see OnDelivered).
 func (r *SystemEventRepository) OnConsumed(ctx context.Context, event *types.WebhookEvent) error {
 	if event == nil || event.ID == "" {
 		return nil
 	}
 
+	payloadMap, err := toPayloadMap(event.Payload)
+	if err != nil {
+		return err
+	}
+
 	client := r.client.Writer(ctx)
 	now := time.Now().UTC()
 
-	err := client.SystemEvent.Create().
+	err = client.SystemEvent.Create().
 		SetID(event.ID).
 		SetTenantID(event.TenantID).
 		SetEnvironmentID(event.EnvironmentID).
+		SetEntityType(string(event.EntityType)).
+		SetEntityID(event.EntityID).
+		SetPayload(payloadMap).
 		SetCreatedAt(now).
 		SetUpdatedAt(now).
 		SetCreatedBy(event.UserID).
@@ -44,41 +53,21 @@ func (r *SystemEventRepository) OnConsumed(ctx context.Context, event *types.Web
 	return err
 }
 
-// OnPublished fills in delivery metadata once the webhook has actually been sent.
+// OnDelivered stamps webhook_message_id and published_at once the webhook has been sent.
 // webhookMessageID is the Svix msg_… id; nil for native HTTP delivery.
-// Saves the internal Kafka envelope payload (event.Payload), not the outbound body.
-func (r *SystemEventRepository) OnPublished(
-	ctx context.Context,
-	event *types.WebhookEvent,
-	webhookMessageID *string,
-) error {
-	if event == nil || event.ID == "" {
+func (r *SystemEventRepository) OnDelivered(ctx context.Context, eventID string, webhookMessageID *string) error {
+	if eventID == "" {
 		return nil
-	}
-
-	// Ensure the row exists — delegates to OnConsumed to avoid duplicate create logic.
-	// OnConsumed is idempotent so calling it here is safe even when the row already exists.
-	if err := r.OnConsumed(ctx, event); err != nil {
-		return err
 	}
 
 	client := r.client.Writer(ctx)
 	now := time.Now().UTC()
 
-	payloadMap, err := toPayloadMap(event.Payload)
-	if err != nil {
-		return err
-	}
-
-	u := client.SystemEvent.UpdateOneID(event.ID).
+	return client.SystemEvent.UpdateOneID(eventID).
 		SetUpdatedAt(now).
 		SetNillableWebhookMessageID(webhookMessageID).
 		SetPublishedAt(now).
-		SetPayload(payloadMap)
-	if event.UserID != "" {
-		u = u.SetUpdatedBy(event.UserID)
-	}
-	return u.Exec(ctx)
+		Exec(ctx)
 }
 
 func toPayloadMap(raw json.RawMessage) (map[string]interface{}, error) {

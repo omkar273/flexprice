@@ -110,6 +110,34 @@ func (sec *SystemEventCreate) SetNillableEnvironmentID(s *string) *SystemEventCr
 	return sec
 }
 
+// SetEntityType sets the "entity_type" field.
+func (sec *SystemEventCreate) SetEntityType(s string) *SystemEventCreate {
+	sec.mutation.SetEntityType(s)
+	return sec
+}
+
+// SetNillableEntityType sets the "entity_type" field if the given value is not nil.
+func (sec *SystemEventCreate) SetNillableEntityType(s *string) *SystemEventCreate {
+	if s != nil {
+		sec.SetEntityType(*s)
+	}
+	return sec
+}
+
+// SetEntityID sets the "entity_id" field.
+func (sec *SystemEventCreate) SetEntityID(s string) *SystemEventCreate {
+	sec.mutation.SetEntityID(s)
+	return sec
+}
+
+// SetNillableEntityID sets the "entity_id" field if the given value is not nil.
+func (sec *SystemEventCreate) SetNillableEntityID(s *string) *SystemEventCreate {
+	if s != nil {
+		sec.SetEntityID(*s)
+	}
+	return sec
+}
+
 // SetWebhookMessageID sets the "webhook_message_id" field.
 func (sec *SystemEventCreate) SetWebhookMessageID(s string) *SystemEventCreate {
 	sec.mutation.SetWebhookMessageID(s)
@@ -201,6 +229,14 @@ func (sec *SystemEventCreate) defaults() {
 		v := systemevent.DefaultEnvironmentID
 		sec.mutation.SetEnvironmentID(v)
 	}
+	if _, ok := sec.mutation.EntityType(); !ok {
+		v := systemevent.DefaultEntityType
+		sec.mutation.SetEntityType(v)
+	}
+	if _, ok := sec.mutation.EntityID(); !ok {
+		v := systemevent.DefaultEntityID
+		sec.mutation.SetEntityID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -284,6 +320,14 @@ func (sec *SystemEventCreate) createSpec() (*SystemEvent, *sqlgraph.CreateSpec) 
 	if value, ok := sec.mutation.EnvironmentID(); ok {
 		_spec.SetField(systemevent.FieldEnvironmentID, field.TypeString, value)
 		_node.EnvironmentID = value
+	}
+	if value, ok := sec.mutation.EntityType(); ok {
+		_spec.SetField(systemevent.FieldEntityType, field.TypeString, value)
+		_node.EntityType = value
+	}
+	if value, ok := sec.mutation.EntityID(); ok {
+		_spec.SetField(systemevent.FieldEntityID, field.TypeString, value)
+		_node.EntityID = value
 	}
 	if value, ok := sec.mutation.WebhookMessageID(); ok {
 		_spec.SetField(systemevent.FieldWebhookMessageID, field.TypeString, value)
