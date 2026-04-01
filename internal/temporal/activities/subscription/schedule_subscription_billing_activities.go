@@ -73,13 +73,11 @@ func (s *SubscriptionActivities) ScheduleBillingActivity(ctx context.Context, in
 				Offset: lo.ToPtr(offset),
 				Status: lo.ToPtr(types.StatusPublished),
 			},
-			SubscriptionStatus: []types.SubscriptionStatus{types.SubscriptionStatusActive},
-			TimeRangeFilter: &types.TimeRangeFilter{
-				EndTime: &now,
-			},
+			SubscriptionStatus:     []types.SubscriptionStatus{types.SubscriptionStatusActive},
+			EffectiveDateForUpdate: &now,
 		}
 
-		subs, err := s.subscriptionService.ListAllTenantSubscriptions(ctx, filter)
+		subs, err := s.subscriptionService.GetSubscriptionsForBillingPeriodUpdate(ctx, filter)
 		if err != nil {
 			logger.Error("Failed to list subscriptions", "offset", offset, "error", err)
 			return response, err
