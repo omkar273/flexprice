@@ -22,11 +22,6 @@ type WebhookEvent struct {
 	EntityID      string           `json:"entity_id,omitempty"`
 }
 
-// invoice event names
-const (
-	WebhookEventInvoiceCreateDraft WebhookEventName = "invoice.create.drafted"
-)
-
 // subscription event names
 const (
 	WebhookEventSubscriptionCreated      WebhookEventName = "subscription.created"
