@@ -118,7 +118,7 @@ type SubscriptionService interface {
 	GetAggregatedSubscriptionEntitlements(ctx context.Context, subscriptionID string, req *dto.GetSubscriptionEntitlementsRequest) (*dto.SubscriptionEntitlementsResponse, error)
 
 	// List all tenant subscriptions
-	ListAllTenantSubscriptions(ctx context.Context, filter *types.SubscriptionFilter) (*dto.ListSubscriptionsResponse, error)
+	GetSubscriptionsForBillingPeriodUpdate(ctx context.Context, filter *types.SubscriptionFilter) (*dto.ListSubscriptionsResponse, error)
 
 	// Credit grant applications
 	GetUpcomingCreditGrantApplications(ctx context.Context, req *dto.GetUpcomingCreditGrantApplicationsRequest) (*dto.ListCreditGrantApplicationsResponse, error)
