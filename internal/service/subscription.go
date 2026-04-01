@@ -2506,13 +2506,11 @@ func (s *subscriptionService) UpdateBillingPeriods(ctx context.Context) (*dto.Su
 				Offset: lo.ToPtr(offset),
 				Status: lo.ToPtr(types.StatusPublished),
 			},
-			SubscriptionStatus: []types.SubscriptionStatus{types.SubscriptionStatusActive},
-			TimeRangeFilter: &types.TimeRangeFilter{
-				EndTime: &now,
-			},
+			SubscriptionStatus:     []types.SubscriptionStatus{types.SubscriptionStatusActive},
+			EffectiveDateForUpdate: &now,
 		}
 
-		subs, err := s.SubRepo.ListAllTenant(ctx, filter)
+		subs, err := s.SubRepo.GetSubscriptionsForBillingPeriodUpdate(ctx, filter)
 		if err != nil {
 			return response, err
 		}
@@ -5837,11 +5835,11 @@ func (s *subscriptionService) ProcessSubscriptionEntitlementOverrides(
 	return nil
 }
 
-func (s *subscriptionService) ListAllTenantSubscriptions(ctx context.Context, filter *types.SubscriptionFilter) (*dto.ListSubscriptionsResponse, error) {
+func (s *subscriptionService) GetSubscriptionsForBillingPeriodUpdate(ctx context.Context, filter *types.SubscriptionFilter) (*dto.ListSubscriptionsResponse, error) {
 	if filter == nil {
 		filter = types.NewNoLimitSubscriptionFilter()
 	}
-	subs, err := s.SubRepo.ListAllTenant(ctx, filter)
+	subs, err := s.SubRepo.GetSubscriptionsForBillingPeriodUpdate(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
