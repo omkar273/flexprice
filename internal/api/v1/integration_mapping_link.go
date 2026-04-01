@@ -30,7 +30,7 @@ func NewIntegrationMappingLinkHandler(service service.EntityIntegrationMappingSe
 // @Success 200 {object} dto.LinkIntegrationMappingResponse
 // @Failure 400 {object} ierr.ErrorResponse
 // @Failure 500 {object} ierr.ErrorResponse
-// @Router /integrations/mappings/link [post]
+// @Router /integrations/link [post]
 func (h *IntegrationMappingLinkHandler) Link(c *gin.Context) {
 	var req dto.LinkIntegrationMappingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
