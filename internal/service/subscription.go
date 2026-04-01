@@ -2760,10 +2760,14 @@ func (s *subscriptionService) processSubscriptionPeriod(ctx context.Context, sub
 		currentEnd = nextEnd
 	}
 
-	// Mid-period scheduled cancellation: cancel_at has passed but the current period hasn't ended
-	// yet, so the period loop above produced only 1 entry. Shorten the current period to cancel_at
-	// so the existing billing loop invoices the partial period and executes the cancellation,
-	// exactly as it would for a normal period-end cancellation.
+	// A scheduled_date cancellation can fire mid-period: cancel_at falls before current_period_end,
+	// so the period loop above never advanced and produced only 1 entry. The billing loop below
+	// only invoices completed periods, so without intervention the cancellation would be silently
+	// deferred until the period end — potentially weeks late.
+	//
+	// Fix: treat cancel_at as a synthetic period boundary. Shortening periods[0] to end at
+	// cancel_at and appending a trailing stub causes the billing loop to invoice the partial
+	// period and then trigger the existing cancellation logic exactly as for a period-end cancel.
 	if len(periods) == 1 && sub.CancelAtPeriodEnd && sub.CancelAt != nil && !sub.CancelAt.After(now) {
 		s.Logger.InfowCtx(ctx, "mid-period scheduled cancellation: adjusting period end to cancel_at",
 			"subscription_id", sub.ID,
