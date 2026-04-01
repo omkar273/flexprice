@@ -154,6 +154,15 @@ func (h *handler) processMessage(msg *message.Message) error {
 		)
 	}
 
+	// Suppress draft invoice creation webhooks
+	if event.EventName == types.WebhookEventInvoiceCreateDraft {
+		h.logger.Debugw("skipping webhook for invoice.create.drafted event",
+			"message_uuid", msg.UUID,
+			"tenant_id", event.TenantID,
+		)
+		return nil
+	}
+
 	// After verify: deliver the webhook (Svix or native endpoint)
 	if h.config.Svix.Enabled {
 		return h.processMessageSvix(ctx, &event, msg.UUID)
