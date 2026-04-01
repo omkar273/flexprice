@@ -267,12 +267,9 @@ func (s *invoiceService) CreateEmptyDraftInvoice(ctx context.Context, req dto.Cr
 		return nil, err
 	}
 
-	eventName := types.WebhookEventInvoiceCreateDraft
 	if resp.InvoiceStatus == types.InvoiceStatusFinalized {
-		eventName = types.WebhookEventInvoiceUpdateFinalized
+		s.publishSystemEvent(ctx, types.WebhookEventInvoiceUpdateFinalized, resp.ID)
 	}
-
-	s.publishSystemEvent(ctx, eventName, resp.ID)
 
 	return resp, nil
 }
@@ -2944,7 +2941,7 @@ func (s *invoiceService) RecalculateInvoiceV2(ctx context.Context, id string, fi
 	}
 
 	// Publish webhook event for invoice recalculation
-	s.publishSystemEvent(ctx, types.WebhookEventInvoiceCreateDraft, inv.ID)
+	s.publishSystemEvent(ctx, types.WebhookEventInvoiceUpdate, inv.ID)
 
 	// Finalize the invoice if requested
 	if finalize {
@@ -3213,7 +3210,6 @@ func (s *invoiceService) TriggerCommunication(ctx context.Context, id string) er
 func (s *invoiceService) TriggerWebhook(ctx context.Context, invoiceID string, eventName types.WebhookEventName) error {
 	// Validate event name
 	validEvents := []types.WebhookEventName{
-		types.WebhookEventInvoiceCreateDraft,
 		types.WebhookEventInvoiceUpdateFinalized,
 		types.WebhookEventInvoiceUpdatePayment,
 		types.WebhookEventInvoiceUpdateVoided,
@@ -3230,7 +3226,7 @@ func (s *invoiceService) TriggerWebhook(ctx context.Context, invoiceID string, e
 
 	if !isValid {
 		return ierr.NewError("invalid event name").
-			WithHint("Event must be one of: invoice.draft.created, invoice.update.finalized, invoice.payment.updated, invoice.voided, invoice.communication.triggered").
+			WithHint("Event must be one of: invoice.update.finalized, invoice.update.payment, invoice.update.voided, invoice.communication.triggered").
 			WithReportableDetails(map[string]interface{}{
 				"event_name":   eventName,
 				"valid_events": validEvents,
