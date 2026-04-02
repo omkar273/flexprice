@@ -346,6 +346,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 
 		invoices := v1Private.Group("/invoices")
 		{
+			invoices.POST("/temporal/:invoice_id/finalize-draft", handlers.Invoice.TriggerFinalizeDraftInvoiceWorkflow)
 			invoices.POST("/search", handlers.Invoice.QueryInvoices)
 			invoices.POST("", handlers.Invoice.CreateOneOffInvoice)
 			invoices.GET("", handlers.Invoice.ListInvoices)
