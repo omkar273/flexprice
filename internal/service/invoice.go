@@ -927,6 +927,14 @@ func (s *invoiceService) performFinalizeInvoiceActions(ctx context.Context, inv 
 			lockedInv.PaymentStatus = types.PaymentStatusSucceeded
 		}
 
+		// Handle auto_complete_purchased_credit_transaction: if the wallet service
+		// flagged this invoice as auto-completed via metadata, mark it as paid.
+		if lockedInv.Metadata != nil && lockedInv.Metadata["auto_completed"] == "true" {
+			lockedInv.PaymentStatus = types.PaymentStatusSucceeded
+			lockedInv.AmountPaid = lockedInv.AmountDue
+			lockedInv.AmountRemaining = decimal.Zero
+		}
+
 		now := time.Now().UTC()
 		lockedInv.InvoiceStatus = types.InvoiceStatusFinalized
 		lockedInv.FinalizedAt = &now

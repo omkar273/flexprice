@@ -365,6 +365,59 @@ func (h *InvoiceHandler) RecalculateInvoice(c *gin.Context) {
 	})
 }
 
+func (h *InvoiceHandler) TriggerFinalizeDraftInvoiceWorkflow(c *gin.Context) {
+	invoiceID := c.Param("invoice_id")
+	if invoiceID == "" {
+		c.Error(ierr.NewError("invoice_id is required").
+			WithHint("Please provide a valid invoice ID").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	ctx := c.Request.Context()
+	inv, err := h.invoiceService.GetInvoice(ctx, invoiceID)
+	if err != nil {
+		h.logger.Errorw("failed to load invoice for finalize draft workflow", "error", err, "invoice_id", invoiceID)
+		c.Error(err)
+		return
+	}
+	if inv.InvoiceStatus != types.InvoiceStatusDraft {
+		c.Error(ierr.NewError("invoice must be in draft status to trigger finalize draft workflow").
+			WithHintf("Current status is %s", inv.InvoiceStatus).
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	temporalSvc := temporalservice.GetGlobalTemporalService()
+	if temporalSvc == nil {
+		h.logger.Errorw("temporal service not available for finalize draft invoice", "invoice_id", invoiceID)
+		c.Error(ierr.NewError("temporal service not available").
+			WithHint("Try again later.").
+			Mark(ierr.ErrServiceUnavailable))
+		return
+	}
+
+	workflowInput := invoiceModels.ProcessInvoiceWorkflowInput{
+		InvoiceID:     invoiceID,
+		TenantID:      types.GetTenantID(ctx),
+		EnvironmentID: types.GetEnvironmentID(ctx),
+		UserID:        types.GetUserID(ctx),
+	}
+
+	workflowRun, err := temporalSvc.ExecuteWorkflow(ctx, types.TemporalFinalizeDraftInvoiceWorkflow, workflowInput)
+	if err != nil {
+		h.logger.Errorw("failed to start finalize draft invoice workflow", "error", err, "invoice_id", invoiceID)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.TemporalWorkflowResult{
+		Message:    "finalize draft invoice workflow started",
+		WorkflowID: workflowRun.GetID(),
+		RunID:      workflowRun.GetRunID(),
+	})
+}
+
 // UpdatePaymentStatus godoc
 // @Summary Update invoice payment status
 // @ID updateInvoicePaymentStatus
