@@ -365,19 +365,6 @@ func (h *InvoiceHandler) RecalculateInvoice(c *gin.Context) {
 	})
 }
 
-// TriggerFinalizeDraftInvoiceWorkflow godoc
-// @Summary Trigger finalize draft invoice workflow
-// @ID triggerFinalizeDraftInvoiceWorkflow
-// @Description Starts an async Temporal workflow that finalizes a draft invoice (assigns invoice number, seals, attempts payment) without re-running compute. The invoice must already have line items and totals. Same workflow used by scheduled draft finalization.
-// @Tags Invoices
-// @Produce json
-// @Security ApiKeyAuth
-// @Param invoice_id path string true "Invoice ID"
-// @Success 202 {object} models.TemporalWorkflowResult
-// @Failure 400 {object} ierr.ErrorResponse "Invalid request or invoice is not a draft"
-// @Failure 404 {object} ierr.ErrorResponse "Invoice not found"
-// @Failure 503 {object} ierr.ErrorResponse "Temporal unavailable"
-// @Router /invoices/temporal/{invoice_id}/finalize-draft [post]
 func (h *InvoiceHandler) TriggerFinalizeDraftInvoiceWorkflow(c *gin.Context) {
 	invoiceID := c.Param("invoice_id")
 	if invoiceID == "" {

@@ -15,47 +15,47 @@ import (
 )
 
 type Handlers struct {
-	Events                   *v1.EventsHandler
-	Meter                    *v1.MeterHandler
-	Auth                     *v1.AuthHandler
-	User                     *v1.UserHandler
-	Environment              *v1.EnvironmentHandler
-	Health                   *v1.HealthHandler
-	Price                    *v1.PriceHandler
-	PriceUnit                *v1.PriceUnitHandler
-	Customer                 *v1.CustomerHandler
-	Connection               *v1.ConnectionHandler
-	Plan                     *v1.PlanHandler
-	Subscription             *v1.SubscriptionHandler
-	SubscriptionPause        *v1.SubscriptionPauseHandler
-	SubscriptionChange       *v1.SubscriptionChangeHandler
-	SubscriptionSchedule     *v1.SubscriptionScheduleHandler
-	Wallet                   *v1.WalletHandler
-	Tenant                   *v1.TenantHandler
-	Invoice                  *v1.InvoiceHandler
-	Feature                  *v1.FeatureHandler
-	Entitlement              *v1.EntitlementHandler
-	CreditGrant              *v1.CreditGrantHandler
-	Payment                  *v1.PaymentHandler
-	Task                     *v1.TaskHandler
-	Secret                   *v1.SecretHandler
-	Costsheet                *v1.CostsheetHandler
-	RevenueAnalytics         *v1.RevenueAnalyticsHandler
-	CreditNote               *v1.CreditNoteHandler
-	Tax                      *v1.TaxHandler
-	Coupon                   *v1.CouponHandler
-	Webhook                  *v1.WebhookHandler
-	Addon                    *v1.AddonHandler
+	Events                 *v1.EventsHandler
+	Meter                  *v1.MeterHandler
+	Auth                   *v1.AuthHandler
+	User                   *v1.UserHandler
+	Environment            *v1.EnvironmentHandler
+	Health                 *v1.HealthHandler
+	Price                  *v1.PriceHandler
+	PriceUnit              *v1.PriceUnitHandler
+	Customer               *v1.CustomerHandler
+	Connection             *v1.ConnectionHandler
+	Plan                   *v1.PlanHandler
+	Subscription           *v1.SubscriptionHandler
+	SubscriptionPause      *v1.SubscriptionPauseHandler
+	SubscriptionChange     *v1.SubscriptionChangeHandler
+	SubscriptionSchedule   *v1.SubscriptionScheduleHandler
+	Wallet                 *v1.WalletHandler
+	Tenant                 *v1.TenantHandler
+	Invoice                *v1.InvoiceHandler
+	Feature                *v1.FeatureHandler
+	Entitlement            *v1.EntitlementHandler
+	CreditGrant            *v1.CreditGrantHandler
+	Payment                *v1.PaymentHandler
+	Task                   *v1.TaskHandler
+	Secret                 *v1.SecretHandler
+	Costsheet              *v1.CostsheetHandler
+	RevenueAnalytics       *v1.RevenueAnalyticsHandler
+	CreditNote             *v1.CreditNoteHandler
+	Tax                    *v1.TaxHandler
+	Coupon                 *v1.CouponHandler
+	Webhook                *v1.WebhookHandler
+	Addon                  *v1.AddonHandler
 	IntegrationMappingLink *v1.IntegrationMappingLinkHandler
-	Settings                 *v1.SettingsHandler
-	SetupIntent              *v1.SetupIntentHandler
-	Group                    *v1.GroupHandler
-	ScheduledTask            *v1.ScheduledTaskHandler
-	AlertLogsHandler         *v1.AlertLogsHandler
-	RBAC                     *v1.RBACHandler
-	OAuth                    *v1.OAuthHandler
-	Dashboard                *v1.DashboardHandler
-	Workflow                 *v1.WorkflowHandler
+	Settings               *v1.SettingsHandler
+	SetupIntent            *v1.SetupIntentHandler
+	Group                  *v1.GroupHandler
+	ScheduledTask          *v1.ScheduledTaskHandler
+	AlertLogsHandler       *v1.AlertLogsHandler
+	RBAC                   *v1.RBACHandler
+	OAuth                  *v1.OAuthHandler
+	Dashboard              *v1.DashboardHandler
+	Workflow               *v1.WorkflowHandler
 
 	// Portal handlers
 	Onboarding     *v1.OnboardingHandler
@@ -346,7 +346,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 
 		invoices := v1Private.Group("/invoices")
 		{
-			invoices.POST("/temporal/:invoice_id/finalize-draft", handlers.Invoice.TriggerFinalizeDraftInvoiceWorkflow)
+			invoices.POST("/temporal/:invoice_id/finalize", handlers.Invoice.TriggerFinalizeDraftInvoiceWorkflow)
 			invoices.POST("/search", handlers.Invoice.QueryInvoices)
 			invoices.POST("", handlers.Invoice.CreateOneOffInvoice)
 			invoices.GET("", handlers.Invoice.ListInvoices)
