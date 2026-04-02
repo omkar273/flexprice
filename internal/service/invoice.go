@@ -2259,6 +2259,10 @@ func (s *invoiceService) GetInvoicePDFUrl(ctx context.Context, id string, forceG
 		return "", err
 	}
 
+	if inv.InvoicePDFURL != nil {
+		return lo.FromPtr(inv.InvoicePDFURL), nil
+	}
+
 	if s.S3 == nil {
 		return "", ierr.NewError("s3 is not enabled").
 			WithHint("s3 is not enabled but is required to generate invoice pdf url.").

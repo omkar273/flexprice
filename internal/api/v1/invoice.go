@@ -572,7 +572,7 @@ func (h *InvoiceHandler) AttemptPayment(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Param url query bool false "Return presigned URL from s3 instead of PDF"
-// @Param force_generate query bool false "Force regeneration of the PDF even if one already exists in S3 (default: false)"
+// @Param force_generate query bool false "Force regeneration of the PDF even if one already exists in S3 (default: false). Note: force_generate has no effect if invoice_pdf_url is already set on the invoice."
 // @Success 200 {file} application/pdf
 // @Failure 400 {object} ierr.ErrorResponse "Invalid request"
 // @Failure 404 {object} ierr.ErrorResponse "Resource not found"
