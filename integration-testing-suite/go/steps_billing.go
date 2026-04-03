@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
 // runBillingSteps executes Phase 2: Entitlements & Billing Entities.
@@ -12,7 +14,6 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 
 	// ── Create Entitlement for Feature A on Plan ────────────────────────
 	// SDK: client.Entitlements.CreateEntitlement(ctx, types.DtoCreateEntitlementRequest{...})
-	// API: POST /v1/entitlements
 
 	if !r.require(r.planID, "Create Plan", "Create Entitlement (Feature A)") ||
 		!r.require(r.featureAID, "Feature A", "Create Entitlement (Feature A)") {
@@ -21,57 +22,63 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 	}
 
 	r.run("Create Entitlement (Feature A)", "Entitlements.CreateEntitlement", false, func() error {
-		body := map[string]interface{}{
-			"plan_id":            r.planID,
-			"feature_id":        r.featureAID,
-			"feature_type":      "metered",
-			"is_enabled":        true,
-			"usage_limit":       1000,
-			"usage_reset_period": "MONTHLY",
-			"is_soft_limit":     true,
-			"entity_type":       "PLAN",
-			"entity_id":         r.planID,
+		usageReset := types.EntitlementUsageResetPeriodMonthly
+		req := types.DtoCreateEntitlementRequest{
+			FeatureID:   r.featureAID,
+			FeatureType: types.FeatureTypeMetered,
+			PlanID:      strPtr(r.planID),
+			IsEnabled:   boolPtr(true),
+			UsageLimit:  int64Ptr(1000),
+			UsageResetPeriod: &usageReset,
+			IsSoftLimit: boolPtr(true),
+			EntityType:  types.EntitlementEntityTypePlan.ToPointer(),
+			EntityID:    strPtr(r.planID),
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/entitlements", body)
+		resp, err := r.client.Entitlements.CreateEntitlement(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in entitlement response: %v", resp)
+		ent := resp.DtoEntitlementResponse
+		if ent == nil || ent.ID == nil {
+			return fmt.Errorf("create entitlement returned no body")
 		}
-		r.entitlementID = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("ent_id=%s, plan-level, metered, limit=1000 tokens, soft limit", id)
+		r.entitlementID = *ent.ID
+		r.lastResult().EntityID = *ent.ID
+		r.lastResult().Details = fmt.Sprintf("ent_id=%s, plan-level, metered, limit=1000 tokens, soft limit", *ent.ID)
 		return nil
 	})
 
 	// ── Verify Plan Entitlements ────────────────────────────────────────
-	// SDK: client.Plans.GetPlanEntitlements(ctx, planID)
-	// API: GET /v1/plans/:id/entitlements
+	// SDK: client.Entitlements via raw HTTP (SDK GetPlanEntitlements may differ)
+	// Fallback to raw HTTP for plan entitlements query
 
-	r.run("Verify Plan Entitlements", "Plans.GetPlanEntitlements", false, func() error {
-		resp, _, err := r.raw.Get(ctx, fmt.Sprintf("/plans/%s/entitlements", r.planID))
+	r.run("Verify Plan Entitlements", "Entitlements.GetPlanEntitlements", false, func() error {
+		resp, err := r.client.Entitlements.GetPlanEntitlements(ctx, r.planID)
 		if err != nil {
 			return err
 		}
+		plan := resp.DtoPlanResponse
+		if plan == nil {
+			return fmt.Errorf("get plan entitlements returned no body")
+		}
 
-		items := getSlice(resp, "items")
-		if len(items) == 0 {
+		entitlements := plan.Entitlements
+		if len(entitlements) == 0 {
 			return fmt.Errorf("expected at least 1 entitlement on plan, got 0")
 		}
 
 		// Verify Feature A entitlement is present.
 		found := false
-		for _, item := range items {
-			if ent, ok := item.(map[string]interface{}); ok {
-				if getString(ent, "feature_id") == r.featureAID {
-					found = true
-					limit := getFloat(ent, "usage_limit")
-					r.lastResult().Details = fmt.Sprintf("found Feature A entitlement, limit=%.0f", limit)
-					break
+		for _, ent := range entitlements {
+			if ent.FeatureID != nil && *ent.FeatureID == r.featureAID {
+				found = true
+				limit := int64(0)
+				if ent.UsageLimit != nil {
+					limit = *ent.UsageLimit
 				}
+				r.lastResult().Details = fmt.Sprintf("found Feature A entitlement, limit=%d", limit)
+				break
 			}
 		}
 		if !found {
@@ -82,56 +89,59 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 
 skipTax:
 	// ── Create Tax Rate ─────────────────────────────────────────────────
-	// SDK: client.TaxRates.CreateTaxRate(ctx, req)   [missing from SDK]
-	// API: POST /v1/taxes/rates
+	// SDK: client.TaxRates.CreateTaxRate(ctx, types.DtoCreateTaxRateRequest{...})
 
-	r.run("Create Tax Rate (18% GST)", "TaxRates.CreateTaxRate", true, func() error {
+	r.run("Create Tax Rate (18% GST)", "TaxRates.CreateTaxRate", false, func() error {
 		taxCode := fmt.Sprintf("GST18_%d", ts())
-		body := map[string]interface{}{
-			"name":             fmt.Sprintf("GST 18%% %d", ts()),
-			"code":             taxCode,
-			"percentage_value": "18.00",
-			"tax_rate_type":    "percentage",
-			"description":      "Goods and Services Tax",
-			"scope":            "INTERNAL",
+		taxRateType := types.TaxRateTypePercentage
+		scope := types.TaxRateScopeInternal
+
+		req := types.DtoCreateTaxRateRequest{
+			Name:            fmt.Sprintf("GST 18%% %d", ts()),
+			Code:            taxCode,
+			PercentageValue: strPtr("18.00"),
+			TaxRateType:     &taxRateType,
+			Description:     strPtr("Goods and Services Tax"),
+			Scope:           &scope,
 		}
-		resp, _, err := r.raw.Post(ctx, "/taxes/rates", body)
+
+		resp, err := r.client.TaxRates.CreateTaxRate(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in tax rate response: %v", resp)
+		taxRate := resp.DtoTaxRateResponse
+		if taxRate == nil || taxRate.ID == nil {
+			return fmt.Errorf("create tax rate returned no body")
 		}
-		r.taxRateID = id
+		r.taxRateID = *taxRate.ID
 		r.taxRateCode = taxCode
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("tax_id=%s, code=%s, rate=18%%", id, taxCode)
+		r.lastResult().EntityID = *taxRate.ID
+		r.lastResult().Details = fmt.Sprintf("tax_id=%s, code=%s, rate=18%%", *taxRate.ID, taxCode)
 		return nil
 	})
 
 	// ── Create Coupon ───────────────────────────────────────────────────
-	// SDK: client.Coupons.CreateCoupon(ctx, req)   [missing from SDK]
-	// API: POST /v1/coupons
+	// SDK: client.Coupons.CreateCoupon(ctx, types.DtoCreateCouponRequest{...})
 
-	r.run("Create Coupon (10% off)", "Coupons.CreateCoupon", true, func() error {
-		body := map[string]interface{}{
-			"name":           fmt.Sprintf("Sanity 10pct Off %d", ts()),
-			"type":           "percentage",
-			"cadence":        "once",
-			"percentage_off": "10",
+	r.run("Create Coupon (10% off)", "Coupons.CreateCoupon", false, func() error {
+		req := types.DtoCreateCouponRequest{
+			Name:          fmt.Sprintf("Sanity 10pct Off %d", ts()),
+			Type:          types.CouponTypePercentage,
+			Cadence:       types.CouponCadenceOnce,
+			PercentageOff: strPtr("10"),
 		}
-		resp, _, err := r.raw.Post(ctx, "/coupons", body)
+
+		resp, err := r.client.Coupons.CreateCoupon(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in coupon response: %v", resp)
+		coupon := resp.DtoCouponResponse
+		if coupon == nil || coupon.ID == nil {
+			return fmt.Errorf("create coupon returned no body")
 		}
-		r.couponID = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("coupon_id=%s, type=percentage, 10%% off", id)
+		r.couponID = *coupon.ID
+		r.lastResult().EntityID = *coupon.ID
+		r.lastResult().Details = fmt.Sprintf("coupon_id=%s, type=percentage, 10%% off", *coupon.ID)
 		return nil
 	})
 }

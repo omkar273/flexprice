@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	flexprice "github.com/flexprice/go-sdk/v2"
 )
 
 const defaultAPIHost = "localhost:8080/v1"
@@ -52,13 +54,19 @@ func main() {
 	}
 	serverURL := scheme + apiHost
 
-	// ── Initialize raw HTTP client ──────────────────────────────────────
+	// ── Initialize SDK client ───────────────────────────────────────────
 
+	client := flexprice.New(
+		flexprice.WithServerURL(serverURL),
+		flexprice.WithSecurity(apiKey),
+	)
+
+	// Also keep a raw HTTP client as fallback for any edge cases.
 	raw := NewRawClient(serverURL, apiKey)
 
 	// ── Run orchestrated sanity test ────────────────────────────────────
 
-	runner := &SanityRunner{raw: raw}
+	runner := &SanityRunner{client: client, raw: raw}
 	ctx := contextWithTimeout()
 	start := time.Now()
 

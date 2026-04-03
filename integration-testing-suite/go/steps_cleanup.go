@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
 // runCleanupSteps executes Phase 7: Cleanup.
@@ -16,7 +18,7 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 	// ── 1. Void invoice ──────────────────────────────────────────────────
 	if r.invoiceID != "" {
 		r.run("Cleanup: Void Invoice", "Invoices.VoidInvoice", false, func() error {
-			_, _, err := r.raw.Post(ctx, fmt.Sprintf("/invoices/%s/void", r.invoiceID), map[string]interface{}{})
+			_, err := r.client.Invoices.VoidInvoice(ctx, r.invoiceID)
 			if err != nil {
 				if strings.Contains(err.Error(), "already voided") || strings.Contains(err.Error(), "VOIDED") {
 					r.lastResult().Details = fmt.Sprintf("invoice_id=%s, already voided", r.invoiceID)
@@ -32,10 +34,10 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 	// ── 2. Cancel subscription ───────────────────────────────────────────
 	if r.subscriptionID != "" {
 		r.run("Cleanup: Cancel Subscription", "Subscriptions.CancelSubscription", false, func() error {
-			body := map[string]interface{}{
-				"cancellation_type": "immediate",
+			req := types.DtoCancelSubscriptionRequest{
+				CancellationType: types.CancellationTypeImmediate,
 			}
-			_, _, err := r.raw.Post(ctx, fmt.Sprintf("/subscriptions/%s/cancel", r.subscriptionID), body)
+			_, err := r.client.Subscriptions.CancelSubscription(ctx, r.subscriptionID, req)
 			if err != nil {
 				r.lastResult().Details = fmt.Sprintf("sub_id=%s, already cancelled (expected)", r.subscriptionID)
 				return nil
@@ -48,7 +50,7 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 	// ── 3. Delete entitlement ────────────────────────────────────────────
 	if r.entitlementID != "" {
 		r.run("Cleanup: Delete Entitlement", "Entitlements.DeleteEntitlement", false, func() error {
-			_, err := r.raw.Delete(ctx, fmt.Sprintf("/entitlements/%s", r.entitlementID))
+			_, err := r.client.Entitlements.DeleteEntitlement(ctx, r.entitlementID)
 			if err != nil {
 				return fmt.Errorf("delete entitlement: %w", err)
 			}
@@ -74,7 +76,8 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 		priceID := p.id
 		priceName := p.name
 		r.run(fmt.Sprintf("Cleanup: Delete Price (%s)", priceName), "Prices.DeletePrice", false, func() error {
-			_, _, err := r.raw.DeleteWithBody(ctx, fmt.Sprintf("/prices/%s", priceID), map[string]interface{}{})
+			deleteReq := types.DtoDeletePriceRequest{}
+			_, err := r.client.Prices.DeletePrice(ctx, priceID, deleteReq)
 			if err != nil {
 				return fmt.Errorf("delete price %s: %w", priceName, err)
 			}
@@ -86,7 +89,7 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 	// ── 5. Delete plan ───────────────────────────────────────────────────
 	if r.planID != "" {
 		r.run("Cleanup: Delete Plan", "Plans.DeletePlan", false, func() error {
-			_, err := r.raw.Delete(ctx, fmt.Sprintf("/plans/%s", r.planID))
+			_, err := r.client.Plans.DeletePlan(ctx, r.planID)
 			if err != nil {
 				return fmt.Errorf("delete plan: %w", err)
 			}
@@ -101,8 +104,8 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 			continue
 		}
 		featureID := fid
-		r.run(fmt.Sprintf("Cleanup: Delete Feature"), "Features.DeleteFeature", false, func() error {
-			_, err := r.raw.Delete(ctx, fmt.Sprintf("/features/%s", featureID))
+		r.run("Cleanup: Delete Feature", "Features.DeleteFeature", false, func() error {
+			_, err := r.client.Features.DeleteFeature(ctx, featureID)
 			if err != nil {
 				return fmt.Errorf("delete feature: %w", err)
 			}
@@ -112,58 +115,17 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 	}
 
 	// ── 7. Terminate wallet(s) for customer ──────────────────────────────
-	if r.customerID != "" {
-		r.run("Cleanup: Terminate Wallet(s)", "Wallets.TerminateWallet", false, func() error {
-			wallets, _, err := r.raw.GetArray(ctx, fmt.Sprintf("/customers/%s/wallets", r.customerID))
+	if r.walletID != "" {
+		r.run("Cleanup: Terminate Wallet", "Wallets.TerminateWallet", false, func() error {
+			_, err := r.client.Wallets.TerminateWallet(ctx, r.walletID)
 			if err != nil {
-				if r.walletID != "" {
-					_, _, termErr := r.raw.Post(ctx, fmt.Sprintf("/wallets/%s/terminate", r.walletID), map[string]interface{}{})
-					if termErr != nil {
-						return fmt.Errorf("terminate wallet %s: %w", r.walletID, termErr)
-					}
-					r.lastResult().Details = fmt.Sprintf("wallet_id=%s, terminated (direct)", r.walletID)
+				if strings.Contains(err.Error(), "already terminated") || strings.Contains(err.Error(), "TERMINATED") {
+					r.lastResult().Details = fmt.Sprintf("wallet_id=%s, already terminated", r.walletID)
 					return nil
 				}
-				return fmt.Errorf("list customer wallets: %w", err)
+				return fmt.Errorf("terminate wallet: %w", err)
 			}
-
-			if len(wallets) == 0 {
-				r.lastResult().Details = "no wallets found"
-				return nil
-			}
-
-			terminated := 0
-			ids := []string{}
-			var lastErr error
-			for _, w := range wallets {
-				wallet, ok := w.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				wID := getString(wallet, "id")
-				wStatus := getString(wallet, "wallet_status")
-				if wID == "" {
-					continue
-				}
-				if wStatus == "terminated" || wStatus == "TERMINATED" || wStatus == "closed" {
-					terminated++
-					ids = append(ids, wID)
-					continue
-				}
-				_, _, termErr := r.raw.Post(ctx, fmt.Sprintf("/wallets/%s/terminate", wID), map[string]interface{}{})
-				if termErr != nil {
-					lastErr = fmt.Errorf("terminate wallet %s: %w", wID, termErr)
-				} else {
-					terminated++
-					ids = append(ids, wID)
-				}
-			}
-
-			r.lastResult().Details = fmt.Sprintf("wallet_ids=[%s], terminated %d/%d",
-				strings.Join(ids, ", "), terminated, len(wallets))
-			if lastErr != nil {
-				return lastErr
-			}
+			r.lastResult().Details = fmt.Sprintf("wallet_id=%s, terminated", r.walletID)
 			return nil
 		})
 	}
@@ -171,7 +133,7 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 	// ── 8. Delete customer ───────────────────────────────────────────────
 	if r.customerID != "" {
 		r.run("Cleanup: Delete Customer", "Customers.DeleteCustomer", false, func() error {
-			_, err := r.raw.Delete(ctx, fmt.Sprintf("/customers/%s", r.customerID))
+			_, err := r.client.Customers.DeleteCustomer(ctx, r.customerID)
 			if err != nil {
 				return fmt.Errorf("delete customer: %w", err)
 			}
@@ -182,8 +144,8 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 
 	// ── 9. Delete coupon ─────────────────────────────────────────────────
 	if r.couponID != "" {
-		r.run("Cleanup: Delete Coupon", "Coupons.DeleteCoupon", true, func() error {
-			_, err := r.raw.Delete(ctx, fmt.Sprintf("/coupons/%s", r.couponID))
+		r.run("Cleanup: Delete Coupon", "Coupons.DeleteCoupon", false, func() error {
+			_, err := r.client.Coupons.DeleteCoupon(ctx, r.couponID)
 			if err != nil {
 				return fmt.Errorf("delete coupon: %w", err)
 			}
@@ -194,8 +156,8 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 
 	// ── 10. Delete tax rate ──────────────────────────────────────────────
 	if r.taxRateID != "" {
-		r.run("Cleanup: Delete Tax Rate", "TaxRates.DeleteTaxRate", true, func() error {
-			_, err := r.raw.Delete(ctx, fmt.Sprintf("/taxes/rates/%s", r.taxRateID))
+		r.run("Cleanup: Delete Tax Rate", "TaxRates.DeleteTaxRate", false, func() error {
+			_, err := r.client.TaxRates.DeleteTaxRate(ctx, r.taxRateID)
 			if err != nil {
 				return fmt.Errorf("delete tax rate: %w", err)
 			}
@@ -210,8 +172,8 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 			continue
 		}
 		groupID := gid
-		r.run("Cleanup: Delete Group", "Groups.DeleteGroup", true, func() error {
-			_, err := r.raw.Delete(ctx, fmt.Sprintf("/groups/%s", groupID))
+		r.run("Cleanup: Delete Group", "Groups.DeleteGroup", false, func() error {
+			_, err := r.client.Groups.DeleteGroup(ctx, groupID)
 			if err != nil {
 				return fmt.Errorf("delete group: %w", err)
 			}

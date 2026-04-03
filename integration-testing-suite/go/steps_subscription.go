@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
 // runSubscriptionSteps executes Phase 3: Customer & Subscription.
@@ -13,35 +15,33 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 
 	// ── Create Customer ─────────────────────────────────────────────────
 	// SDK: client.Customers.CreateCustomer(ctx, types.DtoCreateCustomerRequest{...})
-	// API: POST /v1/customers
 
 	r.run("Create Customer", "Customers.CreateCustomer", false, func() error {
 		r.externalCustID = fmt.Sprintf("sanity-cust-%d", ts())
 
-		body := map[string]interface{}{
-			"external_id": r.externalCustID,
-			"name":        fmt.Sprintf("Sanity Test Customer %d", ts()),
-			"email":       fmt.Sprintf("sanity-%d@test.flexprice.io", ts()),
-			"metadata":    map[string]string{"source": "sanity_test"},
+		req := types.DtoCreateCustomerRequest{
+			ExternalID: r.externalCustID,
+			Name:       strPtr(fmt.Sprintf("Sanity Test Customer %d", ts())),
+			Email:      strPtr(fmt.Sprintf("sanity-%d@test.flexprice.io", ts())),
+			Metadata:   map[string]string{"source": "sanity_test"},
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/customers", body)
+		resp, err := r.client.Customers.CreateCustomer(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in customer response: %v", resp)
+		customer := resp.DtoCustomerResponse
+		if customer == nil || customer.ID == nil {
+			return fmt.Errorf("create customer returned no body")
 		}
-		r.customerID = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("cust_id=%s, external_id=%s", id, r.externalCustID)
+		r.customerID = *customer.ID
+		r.lastResult().EntityID = *customer.ID
+		r.lastResult().Details = fmt.Sprintf("cust_id=%s, external_id=%s", *customer.ID, r.externalCustID)
 		return nil
 	})
 
 	// ── Create Subscription ─────────────────────────────────────────────
 	// SDK: client.Subscriptions.CreateSubscription(ctx, types.DtoCreateSubscriptionRequest{...})
-	// API: POST /v1/subscriptions
 
 	if !r.require(r.customerID, "Create Customer", "Create Subscription") ||
 		!r.require(r.planID, "Create Plan", "Create Subscription") {
@@ -53,48 +53,49 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 
 	r.run("Create Subscription", "Subscriptions.CreateSubscription", false, func() error {
 		startDate := time.Now().Format(time.RFC3339)
+		billingCycle := types.BillingCycleAnniversary
 
-		body := map[string]interface{}{
-			"customer_id":        r.customerID,
-			"plan_id":            r.planID,
-			"currency":           "usd",
-			"billing_cadence":    "RECURRING",
-			"billing_period":     "MONTHLY",
-			"billing_period_count": 1,
-			"billing_cycle":      "anniversary",
-			"start_date":         startDate,
-			"metadata":           map[string]string{"source": "sanity_test"},
+		req := types.DtoCreateSubscriptionRequest{
+			CustomerID:         strPtr(r.customerID),
+			PlanID:             r.planID,
+			Currency:           "usd",
+			BillingCadence:     types.BillingCadenceRecurring,
+			BillingPeriod:      types.BillingPeriodMonthly,
+			BillingPeriodCount: int64Ptr(1),
+			BillingCycle:       &billingCycle,
+			StartDate:          strPtr(startDate),
+			Metadata:           map[string]string{"source": "sanity_test"},
 		}
 
 		// Attach coupon if available.
 		if r.couponID != "" {
-			body["coupons"] = []string{r.couponID}
+			req.Coupons = []string{r.couponID}
 		}
 
 		// Attach tax rate override if available (uses code + currency, both required).
 		if r.taxRateCode != "" {
-			body["tax_rate_overrides"] = []map[string]interface{}{
+			req.TaxRateOverrides = []types.DtoTaxRateOverride{
 				{
-					"tax_rate_code": r.taxRateCode,
-					"currency":      "usd",
-					"auto_apply":    true,
-					"priority":      1,
+					TaxRateCode: r.taxRateCode,
+					Currency:    "usd",
+					AutoApply:   boolPtr(true),
+					Priority:    int64Ptr(1),
 				},
 			}
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/subscriptions", body)
+		resp, err := r.client.Subscriptions.CreateSubscription(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in subscription response: %v", resp)
+		sub := resp.DtoSubscriptionResponse
+		if sub == nil || sub.ID == nil {
+			return fmt.Errorf("create subscription returned no body")
 		}
-		r.subscriptionID = id
-		r.lastResult().EntityID = id
+		r.subscriptionID = *sub.ID
+		r.lastResult().EntityID = *sub.ID
 
-		details := fmt.Sprintf("sub_id=%s, plan=%s, customer=%s", id, r.planID, r.customerID)
+		details := fmt.Sprintf("sub_id=%s, plan=%s, customer=%s", *sub.ID, r.planID, r.customerID)
 		if r.couponID != "" {
 			details += ", coupon=" + r.couponID
 		}
@@ -107,8 +108,6 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 
 	// ── Verify Subscription Active ──────────────────────────────────────
 	// SDK: client.Subscriptions.GetSubscription(ctx, subID)
-	// SDK: client.Subscriptions.ActivateSubscription(ctx, subID, req) if DRAFT
-	// API: GET /v1/subscriptions/:id, POST /v1/subscriptions/:id/activate
 
 	if !r.require(r.subscriptionID, "Create Subscription", "Verify Subscription Active") {
 		r.skip("Verify Subscription Entitlements", "depends on subscription")
@@ -117,30 +116,37 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 	}
 
 	r.run("Verify Subscription Active", "Subscriptions.GetSubscription", false, func() error {
-		resp, _, err := r.raw.Get(ctx, fmt.Sprintf("/subscriptions/%s", r.subscriptionID))
+		resp, err := r.client.Subscriptions.GetSubscription(ctx, r.subscriptionID)
 		if err != nil {
 			return err
 		}
+		sub := resp.DtoSubscriptionResponse
+		if sub == nil {
+			return fmt.Errorf("get subscription returned no body")
+		}
 
-		status := getString(resp, "subscription_status")
-		if status == "" {
-			status = getString(resp, "status")
+		status := ""
+		if sub.SubscriptionStatus != nil {
+			status = string(*sub.SubscriptionStatus)
 		}
 
 		// If DRAFT, activate it.
 		if status == "draft" || status == "DRAFT" {
-			_, _, err := r.raw.Post(ctx, fmt.Sprintf("/subscriptions/%s/activate", r.subscriptionID), map[string]interface{}{})
+			activateReq := types.DtoActivateDraftSubscriptionRequest{
+				StartDate: time.Now().Format(time.RFC3339),
+			}
+			_, err := r.client.Subscriptions.ActivateSubscription(ctx, r.subscriptionID, activateReq)
 			if err != nil {
 				return fmt.Errorf("activate subscription: %w", err)
 			}
 			// Re-fetch to confirm.
-			resp, _, err = r.raw.Get(ctx, fmt.Sprintf("/subscriptions/%s", r.subscriptionID))
+			resp, err = r.client.Subscriptions.GetSubscription(ctx, r.subscriptionID)
 			if err != nil {
 				return fmt.Errorf("re-fetch after activate: %w", err)
 			}
-			status = getString(resp, "subscription_status")
-			if status == "" {
-				status = getString(resp, "status")
+			sub = resp.DtoSubscriptionResponse
+			if sub != nil && sub.SubscriptionStatus != nil {
+				status = string(*sub.SubscriptionStatus)
 			}
 		}
 
@@ -153,36 +159,33 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 	})
 
 	// ── Verify Subscription Entitlements ─────────────────────────────────
-	// SDK: client.Subscriptions.GetSubscriptionEntitlements(ctx, subID)
-	// API: GET /v1/subscriptions/:id/entitlements
+	// SDK: client.Subscriptions.GetSubscriptionEntitlements(ctx, subID, featureIds)
 
 	r.run("Verify Subscription Entitlements", "Subscriptions.GetSubscriptionEntitlements", false, func() error {
-		resp, _, err := r.raw.Get(ctx, fmt.Sprintf("/subscriptions/%s/entitlements", r.subscriptionID))
+		resp, err := r.client.Subscriptions.GetSubscriptionEntitlements(ctx, r.subscriptionID, nil)
 		if err != nil {
 			return err
 		}
+		entResp := resp.DtoSubscriptionEntitlementsResponse
+		if entResp == nil {
+			return fmt.Errorf("get subscription entitlements returned no body")
+		}
 
-		// Response shape: { "features": [ { "feature": {...}, "entitlement": {...}, "sources": [...] } ] }
-		features := getSlice(resp, "features")
+		features := entResp.Features
 		if len(features) == 0 {
 			return fmt.Errorf("expected at least 1 entitlement on subscription, got 0")
 		}
 
 		found := false
-		for _, item := range features {
-			if af, ok := item.(map[string]interface{}); ok {
-				feat := getMap(af, "feature")
-				if feat != nil && getString(feat, "id") == r.featureAID {
-					found = true
-					ent := getMap(af, "entitlement")
-					if ent != nil {
-						limit := getFloat(ent, "usage_limit")
-						r.lastResult().Details = fmt.Sprintf("Feature A entitlement found, limit=%.0f", limit)
-					} else {
-						r.lastResult().Details = "Feature A found but entitlement is nil"
-					}
-					break
+		for _, af := range features {
+			if af.Feature != nil && af.Feature.ID != nil && *af.Feature.ID == r.featureAID {
+				found = true
+				details := "Feature A entitlement found"
+				if af.Entitlement != nil && af.Entitlement.UsageLimit != nil {
+					details += fmt.Sprintf(", limit=%d", *af.Entitlement.UsageLimit)
 				}
+				r.lastResult().Details = details
+				break
 			}
 		}
 		if !found {
@@ -194,29 +197,28 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 
 	// ── Verify Customer Entitlements ────────────────────────────────────
 	// SDK: client.Customers.GetCustomerEntitlements(ctx, customerID)
-	// API: GET /v1/customers/:id/entitlements
 
 	r.run("Verify Customer Entitlements", "Customers.GetCustomerEntitlements", false, func() error {
-		resp, _, err := r.raw.Get(ctx, fmt.Sprintf("/customers/%s/entitlements", r.customerID))
+		resp, err := r.client.Customers.GetCustomerEntitlements(ctx, r.customerID)
 		if err != nil {
 			return err
 		}
+		entResp := resp.DtoCustomerEntitlementsResponse
+		if entResp == nil {
+			return fmt.Errorf("get customer entitlements returned no body")
+		}
 
-		// Response shape: { "customer_id": "...", "features": [ { "feature": {...}, "entitlement": {...} } ] }
-		features := getSlice(resp, "features")
+		features := entResp.Features
 		if len(features) == 0 {
 			return fmt.Errorf("expected at least 1 customer entitlement, got 0")
 		}
 
 		found := false
-		for _, item := range features {
-			if af, ok := item.(map[string]interface{}); ok {
-				feat := getMap(af, "feature")
-				if feat != nil && getString(feat, "id") == r.featureAID {
-					found = true
-					r.lastResult().Details = "Feature A entitlement visible on customer"
-					break
-				}
+		for _, af := range features {
+			if af.Feature != nil && af.Feature.ID != nil && *af.Feature.ID == r.featureAID {
+				found = true
+				r.lastResult().Details = "Feature A entitlement visible on customer"
+				break
 			}
 		}
 		if !found {

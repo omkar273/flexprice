@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
 // runWalletSteps executes Phase 3b: Wallet Operations.
@@ -18,35 +20,32 @@ func (r *SanityRunner) runWalletSteps(ctx context.Context) {
 
 	// ── Create Wallet ──────────────────────────────────────────────────
 	// SDK: client.Wallets.CreateWallet(ctx, types.DtoCreateWalletRequest{...})
-	// API: POST /v1/wallets
 
 	r.run("Create Wallet", "Wallets.CreateWallet", false, func() error {
-		body := map[string]interface{}{
-			"customer_id":    r.customerID,
-			"currency":       "USD",
-			"wallet_type":    "PRE_PAID",
-			"name":           fmt.Sprintf("Sanity Test Wallet %d", ts()),
-			"description":    "Integration test prepaid wallet",
-			"metadata":       map[string]string{"source": "sanity_test"},
+		req := types.DtoCreateWalletRequest{
+			CustomerID:  strPtr(r.customerID),
+			Currency:    "USD",
+			Description: strPtr("Integration test prepaid wallet"),
+			Metadata:    map[string]string{"source": "sanity_test"},
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/wallets", body)
+		resp, err := r.client.Wallets.CreateWallet(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in wallet response: %v", resp)
+		wallet := resp.DtoWalletResponse
+		if wallet == nil || wallet.ID == nil {
+			return fmt.Errorf("create wallet returned no body")
 		}
-		r.walletID = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("wallet_id=%s, type=PRE_PAID, currency=USD, customer=%s", id, r.customerID)
+		r.walletID = *wallet.ID
+		r.lastResult().EntityID = *wallet.ID
+		r.lastResult().Details = fmt.Sprintf("wallet_id=%s, currency=%s, customer=%s",
+			*wallet.ID, derefStr(wallet.Currency), r.customerID)
 		return nil
 	})
 
 	// ── Top-Up Wallet ──────────────────────────────────────────────────
 	// SDK: client.Wallets.TopUpWallet(ctx, walletID, types.DtoTopUpWalletRequest{...})
-	// API: POST /v1/wallets/:id/top-up
 
 	if !r.require(r.walletID, "Create Wallet", "Top-Up Wallet") {
 		r.skip("Verify Wallet Balance", "depends on top-up")
@@ -54,42 +53,40 @@ func (r *SanityRunner) runWalletSteps(ctx context.Context) {
 	}
 
 	r.run("Top-Up Wallet (500 credits)", "Wallets.TopUpWallet", false, func() error {
-		body := map[string]interface{}{
-			"credits_to_add":     "500.00",
-			"transaction_reason": "PURCHASED_CREDIT_DIRECT",
-			"description":        "Integration test top-up",
+		req := types.DtoTopUpWalletRequest{
+			Amount:            strPtr("500.00"),
+			TransactionReason: types.TransactionReasonPurchasedCreditDirect,
+			Description:       strPtr("Integration test top-up"),
 		}
 
-		resp, _, err := r.raw.Post(ctx, fmt.Sprintf("/wallets/%s/top-up", r.walletID), body)
+		_, err := r.client.Wallets.TopUpWallet(ctx, r.walletID, req)
 		if err != nil {
 			return err
 		}
 
-		txnID := getString(resp, "id")
-		details := "500 credits added"
-		if txnID != "" {
-			details += fmt.Sprintf(", txn=%s", truncate(txnID, 18))
-		}
-		r.lastResult().Details = details
+		r.lastResult().Details = "500 credits added"
 		return nil
 	})
 
 	// ── Verify Wallet Balance ──────────────────────────────────────────
-	// SDK: client.Wallets.GetWalletBalance(ctx, walletID)
-	// API: GET /v1/wallets/:id/balance/real-time
+	// SDK: client.Wallets.GetWalletBalance(ctx, walletID, nil)
 
 	r.run("Verify Wallet Balance", "Wallets.GetWalletBalance", false, func() error {
-		resp, _, err := r.raw.Get(ctx, fmt.Sprintf("/wallets/%s/balance/real-time", r.walletID))
+		resp, err := r.client.Wallets.GetWalletBalance(ctx, r.walletID, nil)
 		if err != nil {
 			return err
 		}
 
+		balance := resp.DtoWalletBalanceResponse
 		details := "balance retrieved"
-		if balance := getString(resp, "balance"); balance != "" {
-			details = fmt.Sprintf("balance=%s", balance)
+		if balance != nil && balance.Balance != nil {
+			details = fmt.Sprintf("balance=%s", *balance.Balance)
 		}
-		if credits := getString(resp, "credits_available"); credits != "" {
-			details += fmt.Sprintf(", credits_available=%s", credits)
+		if balance != nil && balance.CreditBalance != nil {
+			details += fmt.Sprintf(", credit_balance=%s", *balance.CreditBalance)
+		}
+		if balance != nil && balance.RealTimeCreditBalance != nil {
+			details += fmt.Sprintf(", realtime_credit_balance=%s", *balance.RealTimeCreditBalance)
 		}
 		r.lastResult().Details = details
 		return nil

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
 // runCatalogSteps executes Phase 1: Product Catalog.
@@ -11,169 +13,169 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	r.printPhaseHeader(r.phase)
 
 	// ── Create Feature Group ────────────────────────────────────────────
-	// SDK: client.Groups.CreateGroup(ctx, req)   [missing from SDK]
-	// API: POST /v1/groups
+	// SDK: client.Groups.CreateGroup(ctx, types.DtoCreateGroupRequest{...})
 
-	r.run("Create Feature Group", "Groups.CreateGroup", true, func() error {
-		body := map[string]interface{}{
-			"name":        fmt.Sprintf("sanity-feature-group-%d", ts()),
-			"entity_type": "feature",
-			"lookup_key":  fmt.Sprintf("sanity_feat_grp_%d", ts()),
+	r.run("Create Feature Group", "Groups.CreateGroup", false, func() error {
+		req := types.DtoCreateGroupRequest{
+			Name:       fmt.Sprintf("sanity-feature-group-%d", ts()),
+			EntityType: "feature",
+			LookupKey:  fmt.Sprintf("sanity_feat_grp_%d", ts()),
 		}
-		resp, _, err := r.raw.Post(ctx, "/groups", body)
+
+		resp, err := r.client.Groups.CreateGroup(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in response: %v", resp)
+		group := resp.DtoGroupResponse
+		if group == nil || group.ID == nil {
+			return fmt.Errorf("create group returned no body")
 		}
-		r.featureGroupID = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("group_id=%s, entity_type=feature", id)
+		r.featureGroupID = *group.ID
+		r.lastResult().EntityID = *group.ID
+		r.lastResult().Details = fmt.Sprintf("group_id=%s, entity_type=feature", *group.ID)
 		return nil
 	})
 
 	// ── Create Price Group ──────────────────────────────────────────────
-	// SDK: client.Groups.CreateGroup(ctx, req)   [missing from SDK]
-	// API: POST /v1/groups
+	// SDK: client.Groups.CreateGroup(ctx, types.DtoCreateGroupRequest{...})
 
-	r.run("Create Price Group", "Groups.CreateGroup", true, func() error {
-		body := map[string]interface{}{
-			"name":        fmt.Sprintf("sanity-price-group-%d", ts()),
-			"entity_type": "price",
-			"lookup_key":  fmt.Sprintf("sanity_price_grp_%d", ts()),
+	r.run("Create Price Group", "Groups.CreateGroup", false, func() error {
+		req := types.DtoCreateGroupRequest{
+			Name:       fmt.Sprintf("sanity-price-group-%d", ts()),
+			EntityType: "price",
+			LookupKey:  fmt.Sprintf("sanity_price_grp_%d", ts()),
 		}
-		resp, _, err := r.raw.Post(ctx, "/groups", body)
+
+		resp, err := r.client.Groups.CreateGroup(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in response: %v", resp)
+		group := resp.DtoGroupResponse
+		if group == nil || group.ID == nil {
+			return fmt.Errorf("create group returned no body")
 		}
-		r.priceGroupID = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("group_id=%s, entity_type=price", id)
+		r.priceGroupID = *group.ID
+		r.lastResult().EntityID = *group.ID
+		r.lastResult().Details = fmt.Sprintf("group_id=%s, entity_type=price", *group.ID)
 		return nil
 	})
 
 	// ── Create Metered Feature A (grouped) ──────────────────────────────
 	// SDK: client.Features.CreateFeature(ctx, types.DtoCreateFeatureRequest{...})
-	// API: POST /v1/features
 
 	r.run("Create Metered Feature A (grouped)", "Features.CreateFeature", false, func() error {
 		r.eventNameA = fmt.Sprintf("api_call_%d", ts())
-		body := map[string]interface{}{
-			"name":       fmt.Sprintf("API Calls %d", ts()),
-			"type":       "metered",
-			"lookup_key": fmt.Sprintf("api_calls_%d", ts()),
-			"meter": map[string]interface{}{
-				"name":       fmt.Sprintf("api_call_meter_%d", ts()),
-				"event_name": r.eventNameA,
-				"aggregation": map[string]interface{}{
-					"type":  "SUM",
-					"field": "tokens",
+
+		aggType := types.AggregationTypeSum
+		req := types.DtoCreateFeatureRequest{
+			Name:      fmt.Sprintf("API Calls %d", ts()),
+			Type:      types.FeatureTypeMetered,
+			LookupKey: strPtr(fmt.Sprintf("api_calls_%d", ts())),
+			Meter: &types.DtoCreateMeterRequest{
+				Name:      fmt.Sprintf("api_call_meter_%d", ts()),
+				EventName: r.eventNameA,
+				Aggregation: types.MeterAggregation{
+					Type:  &aggType,
+					Field: strPtr("tokens"),
 				},
-				"reset_usage": "BILLING_PERIOD",
+				ResetUsage: types.ResetUsageBillingPeriod,
 			},
-			"group_id": r.featureGroupID,
-			"metadata": map[string]string{"source": "sanity_test"},
+			GroupID:  strPtr(r.featureGroupID),
+			Metadata: map[string]string{"source": "sanity_test"},
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/features", body)
+		resp, err := r.client.Features.CreateFeature(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in feature response: %v", resp)
+		feature := resp.DtoFeatureResponse
+		if feature == nil || feature.ID == nil {
+			return fmt.Errorf("create feature returned no body")
 		}
-		r.featureAID = id
-		r.lastResult().EntityID = id
+		r.featureAID = *feature.ID
+		r.lastResult().EntityID = *feature.ID
 
 		// Extract meter ID.
-		if meterID := getString(resp, "meter_id"); meterID != "" {
-			r.meterAID = meterID
-		} else if meter := getMap(resp, "meter"); meter != nil {
-			r.meterAID = getString(meter, "id")
+		if feature.MeterID != nil {
+			r.meterAID = *feature.MeterID
+		} else if feature.Meter != nil && feature.Meter.ID != nil {
+			r.meterAID = *feature.Meter.ID
 		}
 
-		r.lastResult().Details = fmt.Sprintf("feat_id=%s, meter_id=%s, event=%s", id, r.meterAID, r.eventNameA)
+		r.lastResult().Details = fmt.Sprintf("feat_id=%s, meter_id=%s, event=%s", *feature.ID, r.meterAID, r.eventNameA)
 		return nil
 	})
 
 	// ── Create Metered Feature B (ungrouped) ────────────────────────────
 	// SDK: client.Features.CreateFeature(ctx, types.DtoCreateFeatureRequest{...})
-	// API: POST /v1/features
 
 	r.run("Create Metered Feature B", "Features.CreateFeature", false, func() error {
 		r.eventNameB = fmt.Sprintf("storage_usage_%d", ts())
-		body := map[string]interface{}{
-			"name":       fmt.Sprintf("Storage Usage %d", ts()),
-			"type":       "metered",
-			"lookup_key": fmt.Sprintf("storage_usage_%d", ts()),
-			"meter": map[string]interface{}{
-				"name":       fmt.Sprintf("storage_meter_%d", ts()),
-				"event_name": r.eventNameB,
-				"aggregation": map[string]interface{}{
-					"type":  "SUM",
-					"field": "gb_hours",
+
+		aggType := types.AggregationTypeSum
+		req := types.DtoCreateFeatureRequest{
+			Name:      fmt.Sprintf("Storage Usage %d", ts()),
+			Type:      types.FeatureTypeMetered,
+			LookupKey: strPtr(fmt.Sprintf("storage_usage_%d", ts())),
+			Meter: &types.DtoCreateMeterRequest{
+				Name:      fmt.Sprintf("storage_meter_%d", ts()),
+				EventName: r.eventNameB,
+				Aggregation: types.MeterAggregation{
+					Type:  &aggType,
+					Field: strPtr("gb_hours"),
 				},
-				"reset_usage": "BILLING_PERIOD",
+				ResetUsage: types.ResetUsageBillingPeriod,
 			},
-			"metadata": map[string]string{"source": "sanity_test"},
+			Metadata: map[string]string{"source": "sanity_test"},
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/features", body)
+		resp, err := r.client.Features.CreateFeature(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in feature response: %v", resp)
+		feature := resp.DtoFeatureResponse
+		if feature == nil || feature.ID == nil {
+			return fmt.Errorf("create feature returned no body")
 		}
-		r.featureBID = id
-		r.lastResult().EntityID = id
+		r.featureBID = *feature.ID
+		r.lastResult().EntityID = *feature.ID
 
-		if meterID := getString(resp, "meter_id"); meterID != "" {
-			r.meterBID = meterID
-		} else if meter := getMap(resp, "meter"); meter != nil {
-			r.meterBID = getString(meter, "id")
+		if feature.MeterID != nil {
+			r.meterBID = *feature.MeterID
+		} else if feature.Meter != nil && feature.Meter.ID != nil {
+			r.meterBID = *feature.Meter.ID
 		}
 
-		r.lastResult().Details = fmt.Sprintf("feat_id=%s, meter_id=%s, event=%s", id, r.meterBID, r.eventNameB)
+		r.lastResult().Details = fmt.Sprintf("feat_id=%s, meter_id=%s, event=%s", *feature.ID, r.meterBID, r.eventNameB)
 		return nil
 	})
 
 	// ── Create Plan ─────────────────────────────────────────────────────
 	// SDK: client.Plans.CreatePlan(ctx, types.DtoCreatePlanRequest{...})
-	// API: POST /v1/plans
 
 	r.run("Create Plan", "Plans.CreatePlan", false, func() error {
-		body := map[string]interface{}{
-			"name":        fmt.Sprintf("Sanity Plan %d", ts()),
-			"lookup_key":  fmt.Sprintf("sanity_plan_%d", ts()),
-			"description": "Integration test plan with recurring + usage charges",
+		req := types.DtoCreatePlanRequest{
+			Name:        fmt.Sprintf("Sanity Plan %d", ts()),
+			LookupKey:   strPtr(fmt.Sprintf("sanity_plan_%d", ts())),
+			Description: strPtr("Integration test plan with recurring + usage charges"),
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/plans", body)
+		resp, err := r.client.Plans.CreatePlan(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in plan response: %v", resp)
+		plan := resp.DtoPlanResponse
+		if plan == nil || plan.ID == nil {
+			return fmt.Errorf("create plan returned no body")
 		}
-		r.planID = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("plan_id=%s, name=%s", id, getString(resp, "name"))
+		r.planID = *plan.ID
+		r.lastResult().EntityID = *plan.ID
+		r.lastResult().Details = fmt.Sprintf("plan_id=%s, name=%s", *plan.ID, derefStr(plan.Name))
 		return nil
 	})
 
 	// ── Add Recurring Price 1 (grouped) ─────────────────────────────────
 	// SDK: client.Prices.CreatePrice(ctx, types.DtoCreatePriceRequest{...})
-	// API: POST /v1/prices
 
 	if !r.require(r.planID, "Create Plan", "Add Recurring Price 1 (grouped)") {
 		r.skip("Add Recurring Price 2", "depends on Create Plan which failed")
@@ -183,65 +185,65 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	}
 
 	r.run("Add Recurring Price 1 (grouped)", "Prices.CreatePrice", false, func() error {
-		body := map[string]interface{}{
-			"entity_id":          r.planID,
-			"entity_type":        "PLAN",
-			"type":               "FIXED",
-			"billing_model":      "FLAT_FEE",
-			"billing_cadence":    "RECURRING",
-			"billing_period":     "MONTHLY",
-			"billing_period_count": 1,
-			"invoice_cadence":    "ARREAR",
-			"price_unit_type":    "FIAT",
-			"amount":             "49.99",
-			"currency":           "USD",
-			"display_name":       "Platform Fee (Grouped)",
-			"group_id":           r.priceGroupID,
+		req := types.DtoCreatePriceRequest{
+			EntityID:           r.planID,
+			EntityType:         types.PriceEntityTypePlan,
+			Type:               types.PriceTypeFixed,
+			BillingModel:       types.BillingModelFlatFee,
+			BillingCadence:     types.BillingCadenceRecurring,
+			BillingPeriod:      types.BillingPeriodMonthly,
+			BillingPeriodCount: int64Ptr(1),
+			InvoiceCadence:     types.InvoiceCadenceArrear,
+			PriceUnitType:      types.PriceUnitTypeFiat,
+			Amount:             strPtr("49.99"),
+			Currency:           "USD",
+			DisplayName:        strPtr("Platform Fee (Grouped)"),
+			GroupID:            strPtr(r.priceGroupID),
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/prices", body)
+		resp, err := r.client.Prices.CreatePrice(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in price response: %v", resp)
+		price := resp.DtoPriceResponse
+		if price == nil || price.ID == nil {
+			return fmt.Errorf("create price returned no body")
 		}
-		r.priceRecurr1 = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("price_id=%s, amount=$49.99, grouped, plan=%s", id, r.planID)
+		r.priceRecurr1 = *price.ID
+		r.lastResult().EntityID = *price.ID
+		r.lastResult().Details = fmt.Sprintf("price_id=%s, amount=$49.99, grouped, plan=%s", *price.ID, r.planID)
 		return nil
 	})
 
 	// ── Add Recurring Price 2 (ungrouped) ───────────────────────────────
 
 	r.run("Add Recurring Price 2", "Prices.CreatePrice", false, func() error {
-		body := map[string]interface{}{
-			"entity_id":          r.planID,
-			"entity_type":        "PLAN",
-			"type":               "FIXED",
-			"billing_model":      "FLAT_FEE",
-			"billing_cadence":    "RECURRING",
-			"billing_period":     "MONTHLY",
-			"billing_period_count": 1,
-			"invoice_cadence":    "ARREAR",
-			"price_unit_type":    "FIAT",
-			"amount":             "19.99",
-			"currency":           "USD",
-			"display_name":       "Base Fee",
+		req := types.DtoCreatePriceRequest{
+			EntityID:           r.planID,
+			EntityType:         types.PriceEntityTypePlan,
+			Type:               types.PriceTypeFixed,
+			BillingModel:       types.BillingModelFlatFee,
+			BillingCadence:     types.BillingCadenceRecurring,
+			BillingPeriod:      types.BillingPeriodMonthly,
+			BillingPeriodCount: int64Ptr(1),
+			InvoiceCadence:     types.InvoiceCadenceArrear,
+			PriceUnitType:      types.PriceUnitTypeFiat,
+			Amount:             strPtr("19.99"),
+			Currency:           "USD",
+			DisplayName:        strPtr("Base Fee"),
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/prices", body)
+		resp, err := r.client.Prices.CreatePrice(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in price response: %v", resp)
+		price := resp.DtoPriceResponse
+		if price == nil || price.ID == nil {
+			return fmt.Errorf("create price returned no body")
 		}
-		r.priceRecurr2 = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("price_id=%s, amount=$19.99, ungrouped, plan=%s", id, r.planID)
+		r.priceRecurr2 = *price.ID
+		r.lastResult().EntityID = *price.ID
+		r.lastResult().Details = fmt.Sprintf("price_id=%s, amount=$19.99, ungrouped, plan=%s", *price.ID, r.planID)
 		return nil
 	})
 
@@ -253,33 +255,33 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	}
 
 	r.run("Add Usage Price (Feature A)", "Prices.CreatePrice", false, func() error {
-		body := map[string]interface{}{
-			"entity_id":          r.planID,
-			"entity_type":        "PLAN",
-			"type":               "USAGE",
-			"billing_model":      "FLAT_FEE",
-			"billing_cadence":    "RECURRING",
-			"billing_period":     "MONTHLY",
-			"billing_period_count": 1,
-			"invoice_cadence":    "ARREAR",
-			"price_unit_type":    "FIAT",
-			"amount":             "0.01",
-			"currency":           "USD",
-			"meter_id":           r.meterAID,
-			"display_name":       "API Call Usage",
+		req := types.DtoCreatePriceRequest{
+			EntityID:           r.planID,
+			EntityType:         types.PriceEntityTypePlan,
+			Type:               types.PriceTypeUsage,
+			BillingModel:       types.BillingModelFlatFee,
+			BillingCadence:     types.BillingCadenceRecurring,
+			BillingPeriod:      types.BillingPeriodMonthly,
+			BillingPeriodCount: int64Ptr(1),
+			InvoiceCadence:     types.InvoiceCadenceArrear,
+			PriceUnitType:      types.PriceUnitTypeFiat,
+			Amount:             strPtr("0.01"),
+			Currency:           "USD",
+			MeterID:            strPtr(r.meterAID),
+			DisplayName:        strPtr("API Call Usage"),
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/prices", body)
+		resp, err := r.client.Prices.CreatePrice(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in price response: %v", resp)
+		price := resp.DtoPriceResponse
+		if price == nil || price.ID == nil {
+			return fmt.Errorf("create price returned no body")
 		}
-		r.priceUsageA = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("price_id=%s, per_unit=$0.01/token, meter=%s", id, r.meterAID)
+		r.priceUsageA = *price.ID
+		r.lastResult().EntityID = *price.ID
+		r.lastResult().Details = fmt.Sprintf("price_id=%s, per_unit=$0.01/token, meter=%s", *price.ID, r.meterAID)
 		return nil
 	})
 
@@ -290,33 +292,33 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	}
 
 	r.run("Add Usage Price (Feature B)", "Prices.CreatePrice", false, func() error {
-		body := map[string]interface{}{
-			"entity_id":          r.planID,
-			"entity_type":        "PLAN",
-			"type":               "USAGE",
-			"billing_model":      "FLAT_FEE",
-			"billing_cadence":    "RECURRING",
-			"billing_period":     "MONTHLY",
-			"billing_period_count": 1,
-			"invoice_cadence":    "ARREAR",
-			"price_unit_type":    "FIAT",
-			"amount":             "0.05",
-			"currency":           "USD",
-			"meter_id":           r.meterBID,
-			"display_name":       "Storage Usage",
+		req := types.DtoCreatePriceRequest{
+			EntityID:           r.planID,
+			EntityType:         types.PriceEntityTypePlan,
+			Type:               types.PriceTypeUsage,
+			BillingModel:       types.BillingModelFlatFee,
+			BillingCadence:     types.BillingCadenceRecurring,
+			BillingPeriod:      types.BillingPeriodMonthly,
+			BillingPeriodCount: int64Ptr(1),
+			InvoiceCadence:     types.InvoiceCadenceArrear,
+			PriceUnitType:      types.PriceUnitTypeFiat,
+			Amount:             strPtr("0.05"),
+			Currency:           "USD",
+			MeterID:            strPtr(r.meterBID),
+			DisplayName:        strPtr("Storage Usage"),
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/prices", body)
+		resp, err := r.client.Prices.CreatePrice(ctx, req)
 		if err != nil {
 			return err
 		}
-		id := getString(resp, "id")
-		if id == "" {
-			return fmt.Errorf("missing id in price response: %v", resp)
+		price := resp.DtoPriceResponse
+		if price == nil || price.ID == nil {
+			return fmt.Errorf("create price returned no body")
 		}
-		r.priceUsageB = id
-		r.lastResult().EntityID = id
-		r.lastResult().Details = fmt.Sprintf("price_id=%s, per_unit=$0.05/gb_hour, meter=%s", id, r.meterBID)
+		r.priceUsageB = *price.ID
+		r.lastResult().EntityID = *price.ID
+		r.lastResult().Details = fmt.Sprintf("price_id=%s, per_unit=$0.05/gb_hour, meter=%s", *price.ID, r.meterBID)
 		return nil
 	})
 }

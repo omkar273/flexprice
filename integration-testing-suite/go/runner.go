@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	flexprice "github.com/flexprice/go-sdk/v2"
 )
 
 // StepResult captures the outcome of a single orchestration step.
@@ -24,14 +26,15 @@ type StepResult struct {
 
 // SanityRunner orchestrates the end-to-end sanity test.
 type SanityRunner struct {
-	raw     *RawClient
+	client  *flexprice.Flexprice
+	raw     *RawClient // fallback for any endpoints not in SDK
 	results []StepResult
 	step    int
 	phase   string
 
 	// Tracks SDK coverage.
-	sdkCovered   []string // API calls that the SDK DOES cover
-	sdkMissing   []string // API calls that the SDK does NOT cover
+	sdkCovered []string // API calls that the SDK DOES cover
+	sdkMissing []string // API calls that the SDK does NOT cover
 
 	// Entity IDs collected during the run.
 	featureGroupID string
@@ -259,6 +262,10 @@ func (r *SanityRunner) printReport(totalDuration time.Duration) {
 
 func strPtr(s string) *string { return &s }
 
+func int64Ptr(n int64) *int64 { return &n }
+
+func boolPtr(b bool) *bool { return &b }
+
 func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
@@ -278,6 +285,14 @@ func uniqueStrings(ss []string) []string {
 	return out
 }
 
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+// getString extracts a string from a generic map (used for raw HTTP responses only).
 func getString(m map[string]interface{}, key string) string {
 	if v, ok := m[key]; ok {
 		if s, ok := v.(string); ok {
@@ -287,6 +302,7 @@ func getString(m map[string]interface{}, key string) string {
 	return ""
 }
 
+// getFloat extracts a float64 from a generic map.
 func getFloat(m map[string]interface{}, key string) float64 {
 	if v, ok := m[key]; ok {
 		switch n := v.(type) {
@@ -299,6 +315,7 @@ func getFloat(m map[string]interface{}, key string) float64 {
 	return 0
 }
 
+// getMap extracts a sub-map from a generic map.
 func getMap(m map[string]interface{}, key string) map[string]interface{} {
 	if v, ok := m[key]; ok {
 		if sub, ok := v.(map[string]interface{}); ok {
@@ -308,6 +325,7 @@ func getMap(m map[string]interface{}, key string) map[string]interface{} {
 	return nil
 }
 
+// getSlice extracts a slice from a generic map.
 func getSlice(m map[string]interface{}, key string) []interface{} {
 	if v, ok := m[key]; ok {
 		if arr, ok := v.([]interface{}); ok {

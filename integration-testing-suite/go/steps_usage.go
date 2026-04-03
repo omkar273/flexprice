@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
 // runUsageSteps executes Phase 4: Usage Ingestion.
@@ -23,10 +25,9 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 
 	// ── Bulk Ingest 50 Events ───────────────────────────────────────────
 	// SDK: client.Events.IngestEventsBulk(ctx, types.DtoBulkIngestEventRequest{...})
-	// API: POST /v1/events/bulk
 
 	r.run("Bulk Ingest 50 Events", "Events.IngestEventsBulk", false, func() error {
-		events := make([]map[string]interface{}, 0, 50)
+		events := make([]types.DtoIngestEventRequest, 0, 50)
 
 		// 30 events for Feature A (api_call).
 		r.totalTokensIngested = 0
@@ -34,14 +35,14 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 			tokens := float64(rand.Intn(50) + 1) // 1-50 tokens per event
 			r.totalTokensIngested += tokens
 
-			events = append(events, map[string]interface{}{
-				"event_name":           r.eventNameA,
-				"external_customer_id": r.externalCustID,
-				"properties": map[string]interface{}{
+			events = append(events, types.DtoIngestEventRequest{
+				EventName:          r.eventNameA,
+				ExternalCustomerID: r.externalCustID,
+				Properties: map[string]string{
 					"tokens": fmt.Sprintf("%.0f", tokens),
 				},
-				"source":    "sanity_test",
-				"timestamp": time.Now().Add(-time.Duration(i) * time.Second).Format(time.RFC3339),
+				Source:    strPtr("sanity_test"),
+				Timestamp: strPtr(time.Now().Add(-time.Duration(i) * time.Second).Format(time.RFC3339)),
 			})
 		}
 
@@ -51,22 +52,22 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 			gbHours := float64(rand.Intn(10) + 1) // 1-10 GB-hours per event
 			r.totalGBHoursIngested += gbHours
 
-			events = append(events, map[string]interface{}{
-				"event_name":           r.eventNameB,
-				"external_customer_id": r.externalCustID,
-				"properties": map[string]interface{}{
+			events = append(events, types.DtoIngestEventRequest{
+				EventName:          r.eventNameB,
+				ExternalCustomerID: r.externalCustID,
+				Properties: map[string]string{
 					"gb_hours": fmt.Sprintf("%.0f", gbHours),
 				},
-				"source":    "sanity_test",
-				"timestamp": time.Now().Add(-time.Duration(i) * time.Second).Format(time.RFC3339),
+				Source:    strPtr("sanity_test"),
+				Timestamp: strPtr(time.Now().Add(-time.Duration(i) * time.Second).Format(time.RFC3339)),
 			})
 		}
 
-		body := map[string]interface{}{
-			"events": events,
+		req := types.DtoBulkIngestEventRequest{
+			Events: events,
 		}
 
-		_, _, err := r.raw.Post(ctx, "/events/bulk", body)
+		_, err := r.client.Events.IngestEventsBulk(ctx, req)
 		if err != nil {
 			return err
 		}
@@ -87,8 +88,7 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 	})
 
 	// ── Verify Usage Counts ─────────────────────────────────────────────
-	// SDK: client.Subscriptions.GetSubscriptionUsage(ctx, types.DtoGetUsageBySubscriptionRequest{...})
-	// API: POST /v1/subscriptions/usage
+	// Using raw HTTP for subscription usage query (POST /v1/subscriptions/usage)
 
 	if !r.require(r.subscriptionID, "Create Subscription", "Verify Usage Counts") {
 		r.skip("Verify Entitlement Usage", "depends on subscription")
@@ -96,54 +96,48 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 	}
 
 	r.run("Verify Usage Counts", "Subscriptions.GetSubscriptionUsage", false, func() error {
-		body := map[string]interface{}{
-			"subscription_id": r.subscriptionID,
+		req := types.DtoGetUsageBySubscriptionRequest{
+			SubscriptionID: r.subscriptionID,
 		}
 
-		resp, _, err := r.raw.Post(ctx, "/subscriptions/usage", body)
+		_, err := r.client.Subscriptions.GetSubscriptionUsage(ctx, req)
 		if err != nil {
 			return err
 		}
 
 		r.lastResult().Details = fmt.Sprintf(
-			"expected: %.0f tokens + %.0f gb_hours ingested, response keys: %v",
-			r.totalTokensIngested, r.totalGBHoursIngested, mapKeys(resp),
+			"expected: %.0f tokens + %.0f gb_hours ingested, usage query succeeded",
+			r.totalTokensIngested, r.totalGBHoursIngested,
 		)
 		return nil
 	})
 
 	// ── Verify Entitlement Usage ────────────────────────────────────────
 	// SDK: client.Customers.GetCustomerEntitlements(ctx, customerID)
-	// API: GET /v1/customers/:id/entitlements
 
 	if !r.require(r.customerID, "Create Customer", "Verify Entitlement Usage") {
 		return
 	}
 
 	r.run("Verify Entitlement Usage", "Customers.GetCustomerEntitlements", false, func() error {
-		resp, _, err := r.raw.Get(ctx, fmt.Sprintf("/customers/%s/entitlements", r.customerID))
+		resp, err := r.client.Customers.GetCustomerEntitlements(ctx, r.customerID)
 		if err != nil {
 			return err
 		}
+		entResp := resp.DtoCustomerEntitlementsResponse
+		if entResp == nil {
+			return fmt.Errorf("get customer entitlements returned no body")
+		}
 
-		// Response shape: { "customer_id": "...", "features": [ { "feature": {...}, "entitlement": {...} } ] }
-		features := getSlice(resp, "features")
-		for _, item := range features {
-			if af, ok := item.(map[string]interface{}); ok {
-				feat := getMap(af, "feature")
-				if feat != nil && getString(feat, "id") == r.featureAID {
-					details := "Feature A entitlement found"
-					ent := getMap(af, "entitlement")
-					if ent != nil {
-						limit := getFloat(ent, "usage_limit")
-						if limit > 0 {
-							details += fmt.Sprintf(", limit=%.0f", limit)
-						}
-					}
-					details += fmt.Sprintf(" (ingested %.0f tokens)", r.totalTokensIngested)
-					r.lastResult().Details = details
-					return nil
+		for _, af := range entResp.Features {
+			if af.Feature != nil && af.Feature.ID != nil && *af.Feature.ID == r.featureAID {
+				details := "Feature A entitlement found"
+				if af.Entitlement != nil && af.Entitlement.UsageLimit != nil {
+					details += fmt.Sprintf(", limit=%d", *af.Entitlement.UsageLimit)
 				}
+				details += fmt.Sprintf(" (ingested %.0f tokens)", r.totalTokensIngested)
+				r.lastResult().Details = details
+				return nil
 			}
 		}
 
@@ -151,10 +145,3 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 	})
 }
 
-func mapKeys(m map[string]interface{}) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
-}
