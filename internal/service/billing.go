@@ -464,6 +464,8 @@ func (s *billingService) CalculateUsageCharges(
 					EndTime:            item.GetPeriodEnd(periodEnd),
 					WindowSize:         meter.Aggregation.BucketSize,
 					BillingAnchor:      &sub.BillingAnchor,
+					Filters:            meter.ToFilterMap(),
+					Meter:              meter,
 				}
 				usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
 				if err != nil {
@@ -533,6 +535,8 @@ func (s *billingService) CalculateUsageCharges(
 							StartTime:          item.GetPeriodStart(periodStart),
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							WindowSize:         types.WindowSizeDay, // Use daily window size
+							Filters:            meter.ToFilterMap(),
+							Meter:              meter,
 						}
 
 						// Get usage data with daily windows
@@ -590,6 +594,8 @@ func (s *billingService) CalculateUsageCharges(
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							BillingAnchor:      &sub.BillingAnchor,
 							WindowSize:         types.WindowSizeMonth, // Use monthly window size
+							Filters:            meter.ToFilterMap(),
+							Meter:              meter,
 						}
 
 						// Get usage data with monthly windows
@@ -702,6 +708,8 @@ func (s *billingService) CalculateUsageCharges(
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							WindowSize:         meter.Aggregation.BucketSize,
 							BillingAnchor:      &sub.BillingAnchor,
+							Meter:              meter,
+							Filters:            meter.ToFilterMap(),
 						}
 
 						usageResult, err := eventService.GetUsageByMeter(ctx, usageRequest)
@@ -1258,6 +1266,8 @@ func (s *billingService) CalculateFeatureUsageCharges(
 							StartTime:          item.GetPeriodStart(periodStart),
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							WindowSize:         types.WindowSizeDay, // Use daily window size
+							Filters:            meter.ToFilterMap(),
+							Meter:              meter,
 						}
 
 						// Get usage data with daily windows
@@ -1314,7 +1324,9 @@ func (s *billingService) CalculateFeatureUsageCharges(
 							StartTime:          item.GetPeriodStart(periodStart),
 							EndTime:            item.GetPeriodEnd(periodEnd),
 							BillingAnchor:      &sub.BillingAnchor,
-							WindowSize:         types.WindowSizeMonth, // Use monthly window size
+							WindowSize:         types.WindowSizeMonth,
+							Meter:              meter,
+							Filters:            meter.ToFilterMap(), // Use monthly window size
 						}
 
 						// Get usage data with monthly windows
