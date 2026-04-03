@@ -39,8 +39,15 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 			}
 			_, err := r.client.Subscriptions.CancelSubscription(ctx, r.subscriptionID, req)
 			if err != nil {
-				r.lastResult().Details = fmt.Sprintf("sub_id=%s, already cancelled (expected)", r.subscriptionID)
-				return nil
+				errStr := err.Error()
+				if strings.Contains(errStr, "already cancelled") ||
+					strings.Contains(errStr, "CANCELLED") ||
+					strings.Contains(errStr, "cancelled") ||
+					strings.Contains(errStr, "not active") {
+					r.lastResult().Details = fmt.Sprintf("sub_id=%s, already cancelled (expected)", r.subscriptionID)
+					return nil
+				}
+				return fmt.Errorf("cancel subscription: %w", err)
 			}
 			r.lastResult().Details = fmt.Sprintf("sub_id=%s, cancelled", r.subscriptionID)
 			return nil
