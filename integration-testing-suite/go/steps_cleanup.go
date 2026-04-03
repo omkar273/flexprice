@@ -180,12 +180,20 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 				return nil
 			}
 
-			// SDK failed — fall back to raw HTTP.
+			// SDK BUG: DeleteGroup expects 204 but backend returns 200.
+			// If the error says "Status 200", the server DID delete it — treat as success.
+			if strings.Contains(sdkErr.Error(), "Status 200") {
+				r.markSDKFallback("Groups.DeleteGroup", sdkErr)
+				r.lastResult().Details += fmt.Sprintf("\n        → group_id=%s, deleted (SDK bug: returned error on 200 OK, but server did delete)", groupID)
+				return nil
+			}
+
+			// Genuine SDK failure — fall back to raw HTTP.
 			r.markSDKFallback("Groups.DeleteGroup", sdkErr)
 
 			_, rawErr := r.raw.Delete(ctx, fmt.Sprintf("/groups/%s", groupID))
 			if rawErr != nil {
-				return fmt.Errorf("delete group (raw HTTP also failed): %w", rawErr)
+				return fmt.Errorf("delete group (raw HTTP also failed): SDK: %v | raw: %w", sdkErr, rawErr)
 			}
 			r.lastResult().Details += fmt.Sprintf("\n        → group_id=%s, deleted via raw HTTP", groupID)
 			return nil
