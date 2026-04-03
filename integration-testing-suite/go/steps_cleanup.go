@@ -173,11 +173,21 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 		}
 		groupID := gid
 		r.run("Cleanup: Delete Group", "Groups.DeleteGroup", false, func() error {
-			_, err := r.client.Groups.DeleteGroup(ctx, groupID)
-			if err != nil {
-				return fmt.Errorf("delete group: %w", err)
+			// Try SDK first.
+			_, sdkErr := r.client.Groups.DeleteGroup(ctx, groupID)
+			if sdkErr == nil {
+				r.lastResult().Details = fmt.Sprintf("group_id=%s, deleted", groupID)
+				return nil
 			}
-			r.lastResult().Details = fmt.Sprintf("group_id=%s, deleted", groupID)
+
+			// SDK failed — fall back to raw HTTP.
+			r.markSDKFallback("Groups.DeleteGroup", sdkErr)
+
+			_, rawErr := r.raw.Delete(ctx, fmt.Sprintf("/groups/%s", groupID))
+			if rawErr != nil {
+				return fmt.Errorf("delete group (raw HTTP also failed): %w", rawErr)
+			}
+			r.lastResult().Details += fmt.Sprintf("\n        → group_id=%s, deleted via raw HTTP", groupID)
 			return nil
 		})
 	}

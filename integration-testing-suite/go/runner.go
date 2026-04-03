@@ -19,9 +19,10 @@ type StepResult struct {
 	EntityID   string // ID of created entity (for debugging)
 	Error      error
 	Details    string // Additional context (e.g. expected vs actual)
-	SDKMethod  string // The SDK method that SHOULD be used (for coverage report)
-	RawHTTP    bool   // true = raw HTTP because SDK does not expose this resource
-	SkipReason string
+	SDKMethod   string // The SDK method that SHOULD be used (for coverage report)
+	RawHTTP     bool   // true = raw HTTP because SDK does not expose this resource
+	SDKFallback bool   // true = SDK was tried first but failed, fell back to raw HTTP
+	SkipReason  string
 }
 
 // SanityRunner orchestrates the end-to-end sanity test.
@@ -35,6 +36,7 @@ type SanityRunner struct {
 	// Tracks SDK coverage.
 	sdkCovered []string // API calls that the SDK DOES cover
 	sdkMissing []string // API calls that the SDK does NOT cover
+	sdkBroken  []string // API calls where SDK failed and we fell back to raw HTTP
 
 	// Entity IDs collected during the run.
 	featureGroupID string
@@ -136,6 +138,21 @@ func (r *SanityRunner) lastResult() *StepResult {
 	return &r.results[len(r.results)-1]
 }
 
+// markSDKFallback flags the current step as having fallen back from SDK to raw HTTP.
+// Call this inside a step's fn() when the SDK call fails and you retry with raw HTTP.
+func (r *SanityRunner) markSDKFallback(sdkMethod string, sdkErr error) {
+	res := r.lastResult()
+	res.SDKFallback = true
+	r.sdkBroken = append(r.sdkBroken, sdkMethod)
+	// Prepend the SDK failure info to details.
+	failNote := fmt.Sprintf("SDK %s FAILED: %v → retrying via raw HTTP", sdkMethod, sdkErr)
+	if res.Details != "" {
+		res.Details = failNote + "\n        " + res.Details
+	} else {
+		res.Details = failNote
+	}
+}
+
 // ---------- Printing helpers ----------
 
 func (r *SanityRunner) printPhaseHeader(name string) {
@@ -155,7 +172,9 @@ func (r *SanityRunner) printStep(s StepResult) {
 	}
 
 	rawTag := ""
-	if s.RawHTTP {
+	if s.SDKFallback {
+		rawTag = "  [SDK BROKEN → RAW HTTP]"
+	} else if s.RawHTTP {
 		rawTag = "  [RAW HTTP]"
 	}
 
@@ -252,6 +271,11 @@ func (r *SanityRunner) printReport(totalDuration time.Duration) {
 	}
 	if len(missingUniq) > 0 {
 		fmt.Printf("  Missing from SDK: %s\n", strings.Join(missingUniq, ", "))
+	}
+	brokenUniq := uniqueStrings(r.sdkBroken)
+	if len(brokenUniq) > 0 {
+		fmt.Printf("  SDK BROKEN:       %s\n", strings.Join(brokenUniq, ", "))
+		fmt.Printf("                    (SDK was tried first, returned bad data/error, fell back to raw HTTP)\n")
 	}
 
 	fmt.Println()

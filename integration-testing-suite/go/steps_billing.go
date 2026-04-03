@@ -54,31 +54,58 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 	// Fallback to raw HTTP for plan entitlements query
 
 	r.run("Verify Plan Entitlements", "Entitlements.GetPlanEntitlements", false, func() error {
-		resp, err := r.client.Entitlements.GetPlanEntitlements(ctx, r.planID)
-		if err != nil {
-			return err
-		}
-		plan := resp.DtoPlanResponse
-		if plan == nil {
-			return fmt.Errorf("get plan entitlements returned no body")
-		}
-
-		entitlements := plan.Entitlements
-		if len(entitlements) == 0 {
-			return fmt.Errorf("expected at least 1 entitlement on plan, got 0")
-		}
-
-		// Verify Feature A entitlement is present.
-		found := false
-		for _, ent := range entitlements {
-			if ent.FeatureID != nil && *ent.FeatureID == r.featureAID {
-				found = true
-				limit := int64(0)
-				if ent.UsageLimit != nil {
-					limit = *ent.UsageLimit
+		// Try SDK first.
+		sdkErr := func() error {
+			resp, err := r.client.Entitlements.GetPlanEntitlements(ctx, r.planID)
+			if err != nil {
+				return fmt.Errorf("SDK call failed: %w", err)
+			}
+			plan := resp.DtoPlanResponse
+			if plan == nil {
+				return fmt.Errorf("SDK returned nil body")
+			}
+			if len(plan.Entitlements) == 0 {
+				return fmt.Errorf("SDK returned 0 entitlements (likely SDK response mapping issue)")
+			}
+			for _, ent := range plan.Entitlements {
+				if ent.FeatureID != nil && *ent.FeatureID == r.featureAID {
+					limit := int64(0)
+					if ent.UsageLimit != nil {
+						limit = *ent.UsageLimit
+					}
+					r.lastResult().Details = fmt.Sprintf("found Feature A entitlement, limit=%d", limit)
+					return nil
 				}
-				r.lastResult().Details = fmt.Sprintf("found Feature A entitlement, limit=%d", limit)
-				break
+			}
+			return fmt.Errorf("Feature A not found in %d entitlements", len(plan.Entitlements))
+		}()
+
+		if sdkErr == nil {
+			return nil
+		}
+
+		// SDK failed — fall back to raw HTTP.
+		r.markSDKFallback("Entitlements.GetPlanEntitlements", sdkErr)
+
+		rawResp, _, err := r.raw.Get(ctx, fmt.Sprintf("/plans/%s/entitlements", r.planID))
+		if err != nil {
+			return fmt.Errorf("raw HTTP also failed: %w", err)
+		}
+
+		items := getSlice(rawResp, "items")
+		if len(items) == 0 {
+			return fmt.Errorf("expected at least 1 entitlement on plan, got 0 (both SDK and raw)")
+		}
+
+		found := false
+		for _, item := range items {
+			if ent, ok := item.(map[string]interface{}); ok {
+				if getString(ent, "feature_id") == r.featureAID {
+					found = true
+					limit := getFloat(ent, "usage_limit")
+					r.lastResult().Details += fmt.Sprintf("\n        → found Feature A entitlement via raw HTTP, limit=%.0f", limit)
+					break
+				}
 			}
 		}
 		if !found {
