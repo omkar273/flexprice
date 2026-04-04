@@ -33,7 +33,7 @@ func main() {
 
 	// Sync: ingest one event
 	customerID := fmt.Sprintf("sample-customer-%d", time.Now().Unix())
-	req := types.DtoIngestEventRequest{
+	req := types.IngestEventRequest{
 		EventName:          "Sample Event",
 		ExternalCustomerID: customerID,
 		Properties:         map[string]string{"source": "sample_app", "environment": "test"},
