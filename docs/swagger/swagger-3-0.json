@@ -13419,6 +13419,9 @@
       "coupon_association.CouponAssociation": {
         "type": "object",
         "properties": {
+          "coupon": {
+            "$ref": "#/components/schemas/DomainCoupon"
+          },
           "coupon_id": {
             "type": "string"
           },
@@ -14251,6 +14254,9 @@
       "CouponAssociationResponse": {
         "type": "object",
         "properties": {
+          "coupon": {
+            "$ref": "#/components/schemas/DomainCoupon"
+          },
           "coupon_id": {
             "type": "string"
           },
@@ -16189,6 +16195,9 @@
             "type": "string",
             "description": "currency is the three-letter ISO currency code (e.g., USD, EUR) for the credit note"
           },
+          "customer": {
+            "$ref": "#/components/schemas/DomainCustomer"
+          },
           "customer_id": {
             "type": "string",
             "description": "customer_id is the unique identifier of the customer who owns this credit note"
@@ -16353,6 +16362,12 @@
       "CustomerLookupResult": {
         "type": "object",
         "properties": {
+          "customer": {
+            "$ref": "#/components/schemas/DomainCustomer"
+          },
+          "error": {
+            "$ref": "#/components/schemas/errors.ErrorResponse"
+          },
           "status": {
             "$ref": "#/components/schemas/types.DebugTrackerStatus"
           }
@@ -17897,7 +17912,7 @@
           },
           "recalculated_invoice_id": {
             "type": "string",
-            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent→child link from this (voided) invoice to the new replacement invoice."
+            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent\u2192child link from this (voided) invoice to the new replacement invoice."
           },
           "refunded_amount": {
             "type": "string",
@@ -18182,6 +18197,9 @@
       "MeterMatchingResult": {
         "type": "object",
         "properties": {
+          "error": {
+            "$ref": "#/components/schemas/errors.ErrorResponse"
+          },
           "matched_meters": {
             "type": "array",
             "items": {
@@ -18576,6 +18594,9 @@
       "PriceLookupResult": {
         "type": "object",
         "properties": {
+          "error": {
+            "$ref": "#/components/schemas/errors.ErrorResponse"
+          },
           "matched_prices": {
             "type": "array",
             "items": {
@@ -19225,6 +19246,9 @@
       "SubscriptionLineItemLookupResult": {
         "type": "object",
         "properties": {
+          "error": {
+            "$ref": "#/components/schemas/errors.ErrorResponse"
+          },
           "matched_line_items": {
             "type": "array",
             "items": {
@@ -21204,6 +21228,9 @@
           "add_on_id": {
             "type": "string"
           },
+          "addon": {
+            "$ref": "#/components/schemas/DomainAddon"
+          },
           "aggregation_type": {
             "$ref": "#/components/schemas/types.AggregationType"
           },
@@ -21220,6 +21247,9 @@
           "event_name": {
             "type": "string"
           },
+          "feature": {
+            "$ref": "#/components/schemas/DomainFeature"
+          },
           "feature_id": {
             "type": "string"
           },
@@ -21235,6 +21265,9 @@
           },
           "name": {
             "type": "string"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/DomainPlan"
           },
           "plan_id": {
             "type": "string"
@@ -21279,6 +21312,9 @@
           "subscription_id": {
             "type": "string",
             "description": "Subscription ID"
+          },
+          "subscription_line_item": {
+            "$ref": "#/components/schemas/subscription.SubscriptionLineItem"
           },
           "total_cost": {
             "type": "string"
@@ -21725,6 +21761,320 @@
             "type": "string"
           },
           "message": {
+            "type": "string"
+          }
+        }
+      },
+      "DomainAddon": {
+        "type": "object",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "environment_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lookup_key": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/types.Status"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/types.AddonType"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by": {
+            "type": "string"
+          }
+        }
+      },
+      "DomainCoupon": {
+        "type": "object",
+        "properties": {
+          "amount_off": {
+            "type": "string"
+          },
+          "cadence": {
+            "$ref": "#/components/schemas/types.CouponCadence"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "duration_in_periods": {
+            "type": "integer"
+          },
+          "environment_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "max_redemptions": {
+            "type": "integer"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "type": "string"
+          },
+          "percentage_off": {
+            "type": "string"
+          },
+          "redeem_after": {
+            "type": "string"
+          },
+          "redeem_before": {
+            "type": "string"
+          },
+          "rules": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/types.Status"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "total_redemptions": {
+            "type": "integer"
+          },
+          "type": {
+            "$ref": "#/components/schemas/types.CouponType"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by": {
+            "type": "string"
+          }
+        }
+      },
+      "DomainCustomer": {
+        "type": "object",
+        "properties": {
+          "address_city": {
+            "type": "string",
+            "description": "AddressCity is the city of the customer's address"
+          },
+          "address_country": {
+            "type": "string",
+            "description": "AddressCountry is the country of the customer's address (ISO 3166-1 alpha-2)"
+          },
+          "address_line1": {
+            "type": "string",
+            "description": "AddressLine1 is the first line of the customer's address"
+          },
+          "address_line2": {
+            "type": "string",
+            "description": "AddressLine2 is the second line of the customer's address"
+          },
+          "address_postal_code": {
+            "type": "string",
+            "description": "AddressPostalCode is the postal code of the customer's address"
+          },
+          "address_state": {
+            "type": "string",
+            "description": "AddressState is the state of the customer's address"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email is the email of the customer"
+          },
+          "environment_id": {
+            "type": "string",
+            "description": "EnvironmentID is the environment identifier for the customer"
+          },
+          "external_id": {
+            "type": "string",
+            "description": "ExternalID is the external identifier for the customer"
+          },
+          "id": {
+            "type": "string",
+            "description": "ID is the unique identifier for the customer"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Metadata"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name is the name of the customer"
+          },
+          "parent_customer_id": {
+            "type": "string",
+            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer."
+          },
+          "status": {
+            "$ref": "#/components/schemas/types.Status"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by": {
+            "type": "string"
+          }
+        }
+      },
+      "DomainFeature": {
+        "type": "object",
+        "properties": {
+          "alert_settings": {
+            "$ref": "#/components/schemas/types.AlertSettings"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "environment_id": {
+            "type": "string"
+          },
+          "group": {
+            "$ref": "#/components/schemas/group.Group"
+          },
+          "group_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lookup_key": {
+            "type": "string"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/types.Metadata"
+          },
+          "meter_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reporting_unit": {
+            "$ref": "#/components/schemas/types.ReportingUnit"
+          },
+          "status": {
+            "$ref": "#/components/schemas/types.Status"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/types.FeatureType"
+          },
+          "unit_plural": {
+            "type": "string"
+          },
+          "unit_singular": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by": {
+            "type": "string"
+          }
+        }
+      },
+      "DomainPlan": {
+        "type": "object",
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "display_order": {
+            "type": "integer"
+          },
+          "environment_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lookup_key": {
+            "type": "string"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/types.Metadata"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/types.Status"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_by": {
             "type": "string"
           }
         }
@@ -22697,6 +23047,9 @@
       "types.FailurePoint": {
         "type": "object",
         "properties": {
+          "error": {
+            "$ref": "#/components/schemas/errors.ErrorResponse"
+          },
           "failure_point_type": {
             "$ref": "#/components/schemas/types.FailurePointType"
           }
@@ -24568,7 +24921,6 @@
       "types.WindowSize": {
         "type": "string",
         "enum": [
-          "MONTH",
           "MINUTE",
           "15MIN",
           "30MIN",
@@ -24578,10 +24930,10 @@
           "12HOUR",
           "DAY",
           "WEEK",
+          "MONTH",
           "MONTH"
         ],
         "x-enum-varnames": [
-          "DefaultWindowSize",
           "WindowSizeMinute",
           "WindowSize15Min",
           "WindowSize30Min",
@@ -24591,7 +24943,8 @@
           "WindowSize12Hour",
           "WindowSizeDay",
           "WindowSizeWeek",
-          "WindowSizeMonth"
+          "WindowSizeMonth",
+          "DefaultWindowSize"
         ],
         "x-speakeasy-name-override": "WindowSize"
       },

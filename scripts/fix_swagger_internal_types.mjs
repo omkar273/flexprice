@@ -63,6 +63,21 @@ function main() {
     }
   }
 
+  // 1b. Strip github_com_flexprice_flexprice_internal_domain_<pkg>. prefixes in all files.
+  //     Transforms e.g. "github_com_flexprice_flexprice_internal_domain_addon.Addon" → "DomainAddon".
+  const domainPrefixRe = /github_com_flexprice_flexprice_internal_domain_[a-z_]+\./g;
+  for (const rel of FILES) {
+    const path = resolve(repoRoot, rel);
+    if (!existsSync(path)) continue;
+    let s = readFileSync(path, 'utf8');
+    const before = s;
+    s = s.replace(domainPrefixRe, 'Domain');
+    if (s !== before) {
+      writeFileSync(path, s, 'utf8');
+      console.log(`Stripped domain package prefixes in ${rel}`);
+    }
+  }
+
   // 2. Strip "dto." prefix from all schema/definition names in all files.
   //    Uses a regex to avoid mangling "webhookDto." or similar compound prefixes.
   const dtoPrefixRe = /(?<![A-Za-z0-9_])dto\./g;

@@ -257,6 +257,8 @@ definitions:
     type: object
   coupon_association.CouponAssociation:
     properties:
+      coupon:
+        $ref: '#/definitions/DomainCoupon'
       coupon_id:
         type: string
       created_at:
@@ -830,6 +832,8 @@ definitions:
     type: object
   CouponAssociationResponse:
     properties:
+      coupon:
+        $ref: '#/definitions/DomainCoupon'
       coupon_id:
         type: string
       created_at:
@@ -2389,6 +2393,11 @@ definitions:
         description: currency is the three-letter ISO currency code (e.g., USD, EUR)
           for the credit note
         type: string
+      customer:
+        allOf:
+        - $ref: '#/definitions/DomainCustomer'
+        description: customer contains the customer information associated with this
+          credit note
       customer_id:
         description: customer_id is the unique identifier of the customer who owns
           this credit note
@@ -2532,6 +2541,10 @@ definitions:
     type: object
   CustomerLookupResult:
     properties:
+      customer:
+        $ref: '#/definitions/DomainCustomer'
+      error:
+        $ref: '#/definitions/errors.ErrorResponse'
       status:
         $ref: '#/definitions/types.DebugTrackerStatus'
     type: object
@@ -3878,6 +3891,8 @@ definitions:
     type: object
   MeterMatchingResult:
     properties:
+      error:
+        $ref: '#/definitions/errors.ErrorResponse'
       matched_meters:
         items:
           $ref: '#/definitions/MatchedMeter'
@@ -4173,6 +4188,8 @@ definitions:
     type: object
   PriceLookupResult:
     properties:
+      error:
+        $ref: '#/definitions/errors.ErrorResponse'
       matched_prices:
         items:
           $ref: '#/definitions/MatchedPrice'
@@ -4697,6 +4714,8 @@ definitions:
     type: object
   SubscriptionLineItemLookupResult:
     properties:
+      error:
+        $ref: '#/definitions/errors.ErrorResponse'
       matched_line_items:
         items:
           $ref: '#/definitions/MatchedSubscriptionLineItem'
@@ -6168,6 +6187,10 @@ definitions:
     properties:
       add_on_id:
         type: string
+      addon:
+        allOf:
+        - $ref: '#/definitions/DomainAddon'
+        description: Full addon object (only if expand includes "addon")
       aggregation_type:
         $ref: '#/definitions/types.AggregationType'
       commitment_info:
@@ -6179,6 +6202,10 @@ definitions:
         type: integer
       event_name:
         type: string
+      feature:
+        allOf:
+        - $ref: '#/definitions/DomainFeature'
+        description: Full feature object (only if expand includes "feature")
       feature_id:
         type: string
       group:
@@ -6194,6 +6221,10 @@ definitions:
         type: string
       name:
         type: string
+      plan:
+        allOf:
+        - $ref: '#/definitions/DomainPlan'
+        description: Full plan object (only if expand includes "plan")
       plan_id:
         type: string
       points:
@@ -6231,6 +6262,10 @@ definitions:
       subscription_id:
         description: Subscription ID
         type: string
+      subscription_line_item:
+        allOf:
+        - $ref: '#/definitions/subscription.SubscriptionLineItem'
+        description: Full line item (only if expand includes "subscription_line_item")
       total_cost:
         type: string
       total_usage:
@@ -6548,6 +6583,219 @@ definitions:
       internal_error:
         type: string
       message:
+        type: string
+    type: object
+  DomainAddon:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      environment_id:
+        type: string
+      id:
+        type: string
+      lookup_key:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/types.Status'
+      tenant_id:
+        type: string
+      type:
+        $ref: '#/definitions/types.AddonType'
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  DomainCoupon:
+    properties:
+      amount_off:
+        type: string
+      cadence:
+        $ref: '#/definitions/types.CouponCadence'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      currency:
+        type: string
+      duration_in_periods:
+        type: integer
+      environment_id:
+        type: string
+      id:
+        type: string
+      max_redemptions:
+        type: integer
+      metadata:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      percentage_off:
+        type: string
+      redeem_after:
+        type: string
+      redeem_before:
+        type: string
+      rules:
+        additionalProperties: true
+        type: object
+      status:
+        $ref: '#/definitions/types.Status'
+      tenant_id:
+        type: string
+      total_redemptions:
+        type: integer
+      type:
+        $ref: '#/definitions/types.CouponType'
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  DomainCustomer:
+    properties:
+      address_city:
+        description: AddressCity is the city of the customer's address
+        type: string
+      address_country:
+        description: AddressCountry is the country of the customer's address (ISO
+          3166-1 alpha-2)
+        type: string
+      address_line1:
+        description: AddressLine1 is the first line of the customer's address
+        type: string
+      address_line2:
+        description: AddressLine2 is the second line of the customer's address
+        type: string
+      address_postal_code:
+        description: AddressPostalCode is the postal code of the customer's address
+        type: string
+      address_state:
+        description: AddressState is the state of the customer's address
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      email:
+        description: Email is the email of the customer
+        type: string
+      environment_id:
+        description: EnvironmentID is the environment identifier for the customer
+        type: string
+      external_id:
+        description: ExternalID is the external identifier for the customer
+        type: string
+      id:
+        description: ID is the unique identifier for the customer
+        type: string
+      metadata:
+        additionalProperties:
+          type: string
+        description: Metadata
+        type: object
+      name:
+        description: Name is the name of the customer
+        type: string
+      parent_customer_id:
+        description: |-
+          Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.
+          Retained for backward compatibility; no hierarchy rules are enforced at the service layer.
+          ParentCustomerID is the parent customer identifier for the customer.
+        type: string
+      status:
+        $ref: '#/definitions/types.Status'
+      tenant_id:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  DomainFeature:
+    properties:
+      alert_settings:
+        $ref: '#/definitions/types.AlertSettings'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      environment_id:
+        type: string
+      group:
+        allOf:
+        - $ref: '#/definitions/group.Group'
+        description: Group is populated by the service layer when building responses;
+          repository/FromEnt do not set it.
+      group_id:
+        type: string
+      id:
+        type: string
+      lookup_key:
+        type: string
+      metadata:
+        $ref: '#/definitions/types.Metadata'
+      meter_id:
+        type: string
+      name:
+        type: string
+      reporting_unit:
+        $ref: '#/definitions/types.ReportingUnit'
+      status:
+        $ref: '#/definitions/types.Status'
+      tenant_id:
+        type: string
+      type:
+        $ref: '#/definitions/types.FeatureType'
+      unit_plural:
+        type: string
+      unit_singular:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  DomainPlan:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      display_order:
+        type: integer
+      environment_id:
+        type: string
+      id:
+        type: string
+      lookup_key:
+        type: string
+      metadata:
+        $ref: '#/definitions/types.Metadata'
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/types.Status'
+      tenant_id:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
         type: string
     type: object
   errors.ErrorResponse:
@@ -7220,6 +7468,8 @@ definitions:
     - EventProcessingStatusTypeFailed
   types.FailurePoint:
     properties:
+      error:
+        $ref: '#/definitions/errors.ErrorResponse'
       failure_point_type:
         $ref: '#/definitions/types.FailurePointType'
     type: object
@@ -8588,7 +8838,6 @@ definitions:
     - WebhookEventCreditNoteUpdated
   types.WindowSize:
     enum:
-    - MONTH
     - MINUTE
     - 15MIN
     - 30MIN
@@ -8599,9 +8848,9 @@ definitions:
     - DAY
     - WEEK
     - MONTH
+    - MONTH
     type: string
     x-enum-varnames:
-    - DefaultWindowSize
     - WindowSizeMinute
     - WindowSize15Min
     - WindowSize30Min
@@ -8612,6 +8861,7 @@ definitions:
     - WindowSizeDay
     - WindowSizeWeek
     - WindowSizeMonth
+    - DefaultWindowSize
   types.WorkflowExecutionFilter:
     properties:
       end_time:

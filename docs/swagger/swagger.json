@@ -11456,6 +11456,9 @@
         "coupon_association.CouponAssociation": {
             "type": "object",
             "properties": {
+                "coupon": {
+                    "$ref": "#/definitions/DomainCoupon"
+                },
                 "coupon_id": {
                     "type": "string"
                 },
@@ -12269,6 +12272,9 @@
         "CouponAssociationResponse": {
             "type": "object",
             "properties": {
+                "coupon": {
+                    "$ref": "#/definitions/DomainCoupon"
+                },
                 "coupon_id": {
                     "type": "string"
                 },
@@ -14209,6 +14215,10 @@
                     "description": "currency is the three-letter ISO currency code (e.g., USD, EUR) for the credit note",
                     "type": "string"
                 },
+                "customer": {
+                    "description": "customer contains the customer information associated with this credit note",
+                    "$ref": "#/definitions/DomainCustomer"
+                },
                 "customer_id": {
                     "description": "customer_id is the unique identifier of the customer who owns this credit note",
                     "type": "string"
@@ -14375,6 +14385,12 @@
         "CustomerLookupResult": {
             "type": "object",
             "properties": {
+                "customer": {
+                    "$ref": "#/definitions/DomainCustomer"
+                },
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
                 "status": {
                     "$ref": "#/definitions/types.DebugTrackerStatus"
                 }
@@ -16162,6 +16178,9 @@
         "MeterMatchingResult": {
             "type": "object",
             "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
                 "matched_meters": {
                     "type": "array",
                     "items": {
@@ -16546,6 +16565,9 @@
         "PriceLookupResult": {
             "type": "object",
             "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
                 "matched_prices": {
                     "type": "array",
                     "items": {
@@ -17204,6 +17226,9 @@
         "SubscriptionLineItemLookupResult": {
             "type": "object",
             "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
                 "matched_line_items": {
                     "type": "array",
                     "items": {
@@ -19134,6 +19159,10 @@
                 "add_on_id": {
                     "type": "string"
                 },
+                "addon": {
+                    "description": "Full addon object (only if expand includes \"addon\")",
+                    "$ref": "#/definitions/DomainAddon"
+                },
                 "aggregation_type": {
                     "$ref": "#/definitions/types.AggregationType"
                 },
@@ -19149,6 +19178,10 @@
                 },
                 "event_name": {
                     "type": "string"
+                },
+                "feature": {
+                    "description": "Full feature object (only if expand includes \"feature\")",
+                    "$ref": "#/definitions/DomainFeature"
                 },
                 "feature_id": {
                     "type": "string"
@@ -19167,6 +19200,10 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "plan": {
+                    "description": "Full plan object (only if expand includes \"plan\")",
+                    "$ref": "#/definitions/DomainPlan"
                 },
                 "plan_id": {
                     "type": "string"
@@ -19213,6 +19250,10 @@
                 "subscription_id": {
                     "description": "Subscription ID",
                     "type": "string"
+                },
+                "subscription_line_item": {
+                    "description": "Full line item (only if expand includes \"subscription_line_item\")",
+                    "$ref": "#/definitions/subscription.SubscriptionLineItem"
                 },
                 "total_cost": {
                     "type": "string"
@@ -19650,6 +19691,311 @@
                     "type": "string"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "DomainAddon": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.AddonType"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "DomainCoupon": {
+            "type": "object",
+            "properties": {
+                "amount_off": {
+                    "type": "string"
+                },
+                "cadence": {
+                    "$ref": "#/definitions/types.CouponCadence"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "duration_in_periods": {
+                    "type": "integer"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "max_redemptions": {
+                    "type": "integer"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "percentage_off": {
+                    "type": "string"
+                },
+                "redeem_after": {
+                    "type": "string"
+                },
+                "redeem_before": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "total_redemptions": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.CouponType"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "DomainCustomer": {
+            "type": "object",
+            "properties": {
+                "address_city": {
+                    "description": "AddressCity is the city of the customer's address",
+                    "type": "string"
+                },
+                "address_country": {
+                    "description": "AddressCountry is the country of the customer's address (ISO 3166-1 alpha-2)",
+                    "type": "string"
+                },
+                "address_line1": {
+                    "description": "AddressLine1 is the first line of the customer's address",
+                    "type": "string"
+                },
+                "address_line2": {
+                    "description": "AddressLine2 is the second line of the customer's address",
+                    "type": "string"
+                },
+                "address_postal_code": {
+                    "description": "AddressPostalCode is the postal code of the customer's address",
+                    "type": "string"
+                },
+                "address_state": {
+                    "description": "AddressState is the state of the customer's address",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Email is the email of the customer",
+                    "type": "string"
+                },
+                "environment_id": {
+                    "description": "EnvironmentID is the environment identifier for the customer",
+                    "type": "string"
+                },
+                "external_id": {
+                    "description": "ExternalID is the external identifier for the customer",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID is the unique identifier for the customer",
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "Metadata",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "description": "Name is the name of the customer",
+                    "type": "string"
+                },
+                "parent_customer_id": {
+                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer.",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "DomainFeature": {
+            "type": "object",
+            "properties": {
+                "alert_settings": {
+                    "$ref": "#/definitions/types.AlertSettings"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "group": {
+                    "description": "Group is populated by the service layer when building responses; repository/FromEnt do not set it.",
+                    "$ref": "#/definitions/group.Group"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
+                "meter_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reporting_unit": {
+                    "$ref": "#/definitions/types.ReportingUnit"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/types.FeatureType"
+                },
+                "unit_plural": {
+                    "type": "string"
+                },
+                "unit_singular": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "DomainPlan": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "display_order": {
+                    "type": "integer"
+                },
+                "environment_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lookup_key": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/types.Metadata"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.Status"
+                },
+                "tenant_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
                     "type": "string"
                 }
             }
@@ -20568,6 +20914,9 @@
         "types.FailurePoint": {
             "type": "object",
             "properties": {
+                "error": {
+                    "$ref": "#/definitions/errors.ErrorResponse"
+                },
                 "failure_point_type": {
                     "$ref": "#/definitions/types.FailurePointType"
                 }
@@ -22350,7 +22699,6 @@
         "types.WindowSize": {
             "type": "string",
             "enum": [
-                "MONTH",
                 "MINUTE",
                 "15MIN",
                 "30MIN",
@@ -22360,10 +22708,10 @@
                 "12HOUR",
                 "DAY",
                 "WEEK",
+                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
-                "DefaultWindowSize",
                 "WindowSizeMinute",
                 "WindowSize15Min",
                 "WindowSize30Min",
@@ -22373,7 +22721,8 @@
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth"
+                "WindowSizeMonth",
+                "DefaultWindowSize"
             ]
         },
         "types.WorkflowExecutionFilter": {
