@@ -18,6 +18,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/chargebee/chargebee-go/v3 v3.39.0
 	github.com/cockroachdb/errors v1.11.3
+	github.com/flexprice/go-sdk/v2 v2.0.16
 	github.com/fluent/fluent-logger-golang v1.10.1
 	github.com/getsentry/sentry-go v0.43.0
 	github.com/getsentry/sentry-go/gin v0.43.0
@@ -49,7 +50,7 @@ require (
 	github.com/svix/svix-webhooks v1.68.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
-	github.com/swaggo/swag v1.16.4
+	github.com/swaggo/swag v1.16.6
 	github.com/teris-io/shortid v0.0.0-20220617161101-71ec9f2aa569
 	github.com/xdg-go/scram v1.1.1
 	go.opentelemetry.io/contrib/bridges/otelzap v0.16.0
