@@ -20,7 +20,7 @@ type CouponAssociation struct {
 	EndDate                *time.Time        `json:"end_date,omitempty" db:"end_date"` // Optional
 	Metadata               map[string]string `json:"metadata,omitempty" db:"metadata"`
 	EnvironmentID          string            `json:"environment_id" db:"environment_id"`
-	Coupon                 *coupon.Coupon    `json:"coupon,omitempty" db:"coupon"`
+	Coupon                 *coupon.Coupon    `json:"coupon,omitempty" db:"coupon" swaggerignore:"true"`
 	types.BaseModel
 }
 

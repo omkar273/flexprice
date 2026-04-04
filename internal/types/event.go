@@ -13,7 +13,7 @@ const (
 
 type FailurePoint struct {
 	FailurePointType FailurePointType    `json:"failure_point_type"`
-	Error            *ierr.ErrorResponse `json:"error,omitempty"`
+	Error            *ierr.ErrorResponse `json:"error,omitempty" swaggerignore:"true"`
 }
 
 type DebugTrackerStatus string
