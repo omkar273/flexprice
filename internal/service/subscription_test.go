@@ -1166,14 +1166,18 @@ func (s *SubscriptionServiceSuite) TestGetFeatureUsageBySubscription_ParentAggre
 	}
 	s.NoError(s.GetStores().SubscriptionRepo.Create(ctx, inherited))
 
+	liFilter := types.NewNoLimitSubscriptionLineItemFilter()
+	liFilter.SubscriptionIDs = []string{parentSub.ID}
+	lineItems, err := s.GetStores().SubscriptionLineItemRepo.List(ctx, liFilter)
+	s.NoError(err)
 	var apiLI *subscription.SubscriptionLineItem
-	for _, li := range s.testData.subscription.LineItems {
+	for _, li := range lineItems {
 		if li.MeterID == s.testData.meters.apiCalls.ID {
 			apiLI = li
 			break
 		}
 	}
-	s.NotNil(apiLI)
+	s.Require().NotNil(apiLI, "expected API calls subscription line item in repo for subscription %s", parentSub.ID)
 
 	fuStore := s.GetStores().FeatureUsageRepo.(*testutil.InMemoryFeatureUsageStore)
 	s.NoError(fuStore.InsertProcessedEvent(ctx, &events.FeatureUsage{

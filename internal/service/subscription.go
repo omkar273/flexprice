@@ -289,12 +289,6 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 			return err
 		}
 
-		for _, childID := range childCustomerIDs {
-			if err := s.createInheritedSubscriptions(ctx, sub, childID); err != nil {
-				return err
-			}
-		}
-
 		if len(req.Addons) > 0 {
 			if err = s.handleSubscriptionAddons(ctx, sub, req.Addons); err != nil {
 				return err
@@ -394,6 +388,14 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 				}
 			}
 		}
+
+		// Inherited children must see the parent's final status/period fields after invoice + activation.
+		for _, childID := range childCustomerIDs {
+			if err := s.createInheritedSubscriptions(ctx, sub, childID); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
