@@ -345,10 +345,10 @@ type UsageAnalyticItem struct {
 	SubscriptionID       string                             `json:"subscription_id,omitempty"`        // Subscription ID
 	Price                *PriceResponse                     `json:"price,omitempty"`                  // Full price object (only if expand includes "price")
 	Meter                *meter.Meter                       `json:"meter,omitempty"`                  // Full meter object (only if expand includes "meter")
-	Feature              *feature.Feature                   `json:"feature,omitempty" swaggerignore:"true"`                // Full feature object (only if expand includes "feature")
-	SubscriptionLineItem *subscription.SubscriptionLineItem `json:"subscription_line_item,omitempty" swaggerignore:"true"` // Full line item (only if expand includes "subscription_line_item")
-	Plan                 *plan.Plan                         `json:"plan,omitempty" swaggerignore:"true"`                   // Full plan object (only if expand includes "plan")
-	Addon                *addon.Addon                       `json:"addon,omitempty" swaggerignore:"true"`                  // Full addon object (only if expand includes "addon")
+	Feature              *feature.Feature                   `json:"feature,omitempty"`                // Full feature object (only if expand includes "feature")
+	SubscriptionLineItem *subscription.SubscriptionLineItem `json:"subscription_line_item,omitempty"` // Full line item (only if expand includes "subscription_line_item")
+	Plan                 *plan.Plan                         `json:"plan,omitempty"`                   // Full plan object (only if expand includes "plan")
+	Addon                *addon.Addon                       `json:"addon,omitempty"`                  // Full addon object (only if expand includes "addon")
 	FeatureName          string                             `json:"name,omitempty"`
 	EventName            string                             `json:"event_name,omitempty"`
 	Source               string                             `json:"source,omitempty"`
@@ -520,14 +520,14 @@ type DebugTracker struct {
 
 type CustomerLookupResult struct {
 	Status   types.DebugTrackerStatus `json:"status"`
-	Customer *customer.Customer       `json:"customer,omitempty" swaggerignore:"true"`
-	Error    *ierr.ErrorResponse      `json:"error,omitempty" swaggerignore:"true"`
+	Customer *customer.Customer       `json:"customer,omitempty"`
+	Error    *ierr.ErrorResponse      `json:"error,omitempty"`
 }
 
 type MeterMatchingResult struct {
 	Status        types.DebugTrackerStatus `json:"status"`
 	MatchedMeters []MatchedMeter           `json:"matched_meters,omitempty"`
-	Error         *ierr.ErrorResponse      `json:"error,omitempty" swaggerignore:"true"`
+	Error         *ierr.ErrorResponse      `json:"error,omitempty"`
 }
 
 type MatchedMeter struct {
@@ -539,7 +539,7 @@ type MatchedMeter struct {
 type PriceLookupResult struct {
 	Status        types.DebugTrackerStatus `json:"status"`
 	MatchedPrices []MatchedPrice           `json:"matched_prices,omitempty"`
-	Error         *ierr.ErrorResponse      `json:"error,omitempty" swaggerignore:"true"`
+	Error         *ierr.ErrorResponse      `json:"error,omitempty"`
 }
 
 type MatchedPrice struct {
@@ -552,7 +552,7 @@ type MatchedPrice struct {
 type SubscriptionLineItemLookupResult struct {
 	Status           types.DebugTrackerStatus      `json:"status"`
 	MatchedLineItems []MatchedSubscriptionLineItem `json:"matched_line_items,omitempty"`
-	Error            *ierr.ErrorResponse           `json:"error,omitempty" swaggerignore:"true"`
+	Error            *ierr.ErrorResponse           `json:"error,omitempty"`
 }
 
 type MatchedSubscriptionLineItem struct {

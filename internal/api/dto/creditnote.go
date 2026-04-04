@@ -141,7 +141,7 @@ type CreditNoteResponse struct {
 	Subscription *SubscriptionResponse `json:"subscription,omitempty"`
 
 	// customer contains the customer information associated with this credit note
-	Customer *customer.Customer `json:"customer,omitempty" swaggerignore:"true"`
+	Customer *customer.Customer `json:"customer,omitempty"`
 }
 
 // ListCreditNotesResponse represents the paginated response for listing credit notes
