@@ -14,7 +14,12 @@
   },
   "servers": [
     {
-      "url": "/v1"
+      "url": "https://us.api.flexprice.io/v1",
+      "description": "US Region"
+    },
+    {
+      "url": "https://api.cloud.flexprice.io/v1",
+      "description": "India Region"
     }
   ],
   "paths": {
@@ -17511,7 +17516,7 @@
           },
           "recalculated_invoice_id": {
             "type": "string",
-            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent→child link from this (voided) invoice to the new replacement invoice."
+            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent\u2192child link from this (voided) invoice to the new replacement invoice."
           },
           "refunded_amount": {
             "type": "string",
@@ -21606,16 +21611,6 @@
         "x-enum-comments": {
           "AggregationSumWithMultiplier": "Sum with a multiplier - [sum(value) * multiplier]"
         },
-        "x-enum-descriptions": [
-          "",
-          "",
-          "",
-          "",
-          "",
-          "Sum with a multiplier - [sum(value) * multiplier]",
-          "",
-          ""
-        ],
         "x-enum-varnames": [
           "AggregationCount",
           "AggregationSum",
@@ -23296,10 +23291,6 @@
           "ProrationBehaviorCreateProrations": "Default: Create credits/charges on invoice",
           "ProrationBehaviorNone": "Calculate but don't apply (e.g., for previews)"
         },
-        "x-enum-descriptions": [
-          "Default: Create credits/charges on invoice",
-          "Calculate but don't apply (e.g., for previews)"
-        ],
         "x-enum-varnames": [
           "ProrationBehaviorCreateProrations",
           "ProrationBehaviorNone"
@@ -23509,13 +23500,6 @@
         "x-enum-comments": {
           "ScheduledTaskIntervalCustom": "10 minutes for testing"
         },
-        "x-enum-descriptions": [
-          "",
-          "",
-          "10 minutes for testing",
-          "",
-          ""
-        ],
         "x-enum-varnames": [
           "ScheduledTaskIntervalEvery15Minutes",
           "ScheduledTaskIntervalEvery30Minutes",

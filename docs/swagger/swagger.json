@@ -19778,16 +19778,6 @@
             "x-enum-comments": {
                 "AggregationSumWithMultiplier": "Sum with a multiplier - [sum(value) * multiplier]"
             },
-            "x-enum-descriptions": [
-                "",
-                "",
-                "",
-                "",
-                "",
-                "Sum with a multiplier - [sum(value) * multiplier]",
-                "",
-                ""
-            ],
             "x-enum-varnames": [
                 "AggregationCount",
                 "AggregationSum",
@@ -21396,10 +21386,6 @@
                 "ProrationBehaviorCreateProrations": "Default: Create credits/charges on invoice",
                 "ProrationBehaviorNone": "Calculate but don't apply (e.g., for previews)"
             },
-            "x-enum-descriptions": [
-                "Default: Create credits/charges on invoice",
-                "Calculate but don't apply (e.g., for previews)"
-            ],
             "x-enum-varnames": [
                 "ProrationBehaviorCreateProrations",
                 "ProrationBehaviorNone"
@@ -21599,13 +21585,6 @@
             "x-enum-comments": {
                 "ScheduledTaskIntervalCustom": "10 minutes for testing"
             },
-            "x-enum-descriptions": [
-                "",
-                "",
-                "10 minutes for testing",
-                "",
-                ""
-            ],
             "x-enum-varnames": [
                 "ScheduledTaskIntervalEvery15Minutes",
                 "ScheduledTaskIntervalEvery30Minutes",

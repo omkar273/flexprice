@@ -4,7 +4,7 @@ swagger-clean:
 
 .PHONY: install-swag
 install-swag:
-	@which swag > /dev/null || (go install github.com/swaggo/swag/cmd/swag@latest)
+	@which swag > /dev/null || (go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5)
 
 .PHONY: swagger
 swagger: swagger-2-0 swagger-3-0
