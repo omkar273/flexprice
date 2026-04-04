@@ -1178,7 +1178,7 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionSubscriberRejectedWhenC
 		CollectionMethod:   lo.ToPtr(types.CollectionMethodSendInvoice),
 	}
 	_, err := s.service.CreateSubscription(ctx, req)
-	s.Error(err)
+	s.Require().Error(err)
 	s.True(ierr.IsValidation(err), "expected validation error, got %v", err)
 	s.Contains(err.Error(), "inherited subscription")
 
