@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
-	"github.com/flexprice/flexprice/internal/domain/customer"
 	"github.com/flexprice/flexprice/internal/domain/entitlement"
 	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/invoice"
@@ -406,8 +405,7 @@ func (s *billingService) CalculateUsageCharges(
 		meterMap[m.ID] = m
 	}
 
-	// Get customer for usage request (once, outside the loop)
-	customer, err := s.CustomerRepo.Get(ctx, sub.CustomerID)
+	extCustomerIDsForUsage, err := s.getChildExternalCustomerIDsForSubscription(ctx, sub)
 	if err != nil {
 		return nil, decimal.Zero, err
 	}
@@ -459,7 +457,7 @@ func (s *billingService) CalculateUsageCharges(
 				usageRequest := &dto.GetUsageByMeterRequest{
 					MeterID:             item.MeterID,
 					PriceID:             item.PriceID,
-					ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+					ExternalCustomerIDs: extCustomerIDsForUsage,
 					StartTime:           item.GetPeriodStart(periodStart),
 					EndTime:             item.GetPeriodEnd(periodEnd),
 					WindowSize:          meter.Aggregation.BucketSize,
@@ -531,7 +529,7 @@ func (s *billingService) CalculateUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:             item.MeterID,
 							PriceID:             item.PriceID,
-							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							ExternalCustomerIDs: extCustomerIDsForUsage,
 							StartTime:           item.GetPeriodStart(periodStart),
 							EndTime:             item.GetPeriodEnd(periodEnd),
 							WindowSize:          types.WindowSizeDay, // Use daily window size
@@ -589,7 +587,7 @@ func (s *billingService) CalculateUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:             item.MeterID,
 							PriceID:             item.PriceID,
-							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							ExternalCustomerIDs: extCustomerIDsForUsage,
 							StartTime:           item.GetPeriodStart(periodStart),
 							EndTime:             item.GetPeriodEnd(periodEnd),
 							BillingAnchor:       &sub.BillingAnchor,
@@ -641,7 +639,7 @@ func (s *billingService) CalculateUsageCharges(
 					} else if matchingEntitlement.UsageResetPeriod == types.ENTITLEMENT_USAGE_RESET_PERIOD_NEVER {
 						// Calculate usage for never reset entitlements using helper function
 						usageAllowed := decimal.NewFromFloat(float64(*matchingEntitlement.UsageLimit))
-						quantityForCalculation, err = s.calculateNeverResetUsage(ctx, sub, item, customer, eventService, periodStart, periodEnd, usageAllowed)
+						quantityForCalculation, err = s.calculateNeverResetUsage(ctx, sub, item, extCustomerIDsForUsage, eventService, periodStart, periodEnd, usageAllowed)
 						if err != nil {
 							return nil, decimal.Zero, err
 						}
@@ -703,7 +701,7 @@ func (s *billingService) CalculateUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:             item.MeterID,
 							PriceID:             item.PriceID,
-							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							ExternalCustomerIDs: extCustomerIDsForUsage,
 							StartTime:           item.GetPeriodStart(periodStart),
 							EndTime:             item.GetPeriodEnd(periodEnd),
 							WindowSize:          meter.Aggregation.BucketSize,
@@ -1124,8 +1122,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 		meterMap[m.ID] = m
 	}
 
-	// Get customer for usage request (once, outside the loop)
-	customer, err := s.CustomerRepo.Get(ctx, sub.CustomerID)
+	extCustomerIDsForUsage, err := s.getChildExternalCustomerIDsForSubscription(ctx, sub)
 	if err != nil {
 		return nil, decimal.Zero, err
 	}
@@ -1176,7 +1173,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 			// Cache bucketed usage result to avoid a duplicate ClickHouse call when the same
 			// line item also has windowed commitment. The bucketed meter section and the
 			// windowed commitment section query feature_usage with the same parameters
-			// (price, meter, customer, time range, window size), so we reuse the result.
+			// (price, meter, external customers, time range, window size), so we reuse the result.
 			var cachedBucketedUsageResult *events.AggregationResult
 
 			// Handle bucketed meters (max or sum) - uses optimized feature_usage table
@@ -1193,13 +1190,13 @@ func (s *billingService) CalculateFeatureUsageCharges(
 					Source:        querySource,
 					SubLineItemID: item.ID,
 					UsageParams: &events.UsageParams{
-						ExternalCustomerID: customer.ExternalID,
-						AggregationType:    aggType,
-						StartTime:          item.GetPeriodStart(periodStart),
-						EndTime:            item.GetPeriodEnd(periodEnd),
-						WindowSize:         meter.Aggregation.BucketSize,
-						BillingAnchor:      &sub.BillingAnchor,
-						GroupByProperty:    groupBy,
+						ExternalCustomerIDs: extCustomerIDsForUsage,
+						AggregationType:     aggType,
+						StartTime:           item.GetPeriodStart(periodStart),
+						EndTime:             item.GetPeriodEnd(periodEnd),
+						WindowSize:          meter.Aggregation.BucketSize,
+						BillingAnchor:       &sub.BillingAnchor,
+						GroupByProperty:     groupBy,
 					},
 				}
 				usageResult, err := s.FeatureUsageRepo.GetUsageForBucketedMeters(ctx, usageRequest)
@@ -1262,7 +1259,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:             item.MeterID,
 							PriceID:             item.PriceID,
-							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							ExternalCustomerIDs: extCustomerIDsForUsage,
 							StartTime:           item.GetPeriodStart(periodStart),
 							EndTime:             item.GetPeriodEnd(periodEnd),
 							WindowSize:          types.WindowSizeDay, // Use daily window size
@@ -1320,7 +1317,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 						usageRequest := &dto.GetUsageByMeterRequest{
 							MeterID:             item.MeterID,
 							PriceID:             item.PriceID,
-							ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+							ExternalCustomerIDs: extCustomerIDsForUsage,
 							StartTime:           item.GetPeriodStart(periodStart),
 							EndTime:             item.GetPeriodEnd(periodEnd),
 							BillingAnchor:       &sub.BillingAnchor,
@@ -1372,7 +1369,7 @@ func (s *billingService) CalculateFeatureUsageCharges(
 					} else if matchingEntitlement.UsageResetPeriod == types.ENTITLEMENT_USAGE_RESET_PERIOD_NEVER {
 						// Calculate usage for never reset entitlements using helper function
 						usageAllowed := decimal.NewFromFloat(float64(*matchingEntitlement.UsageLimit))
-						quantityForCalculation, err = s.calculateNeverResetUsage(ctx, sub, item, customer, eventService, periodStart, periodEnd, usageAllowed)
+						quantityForCalculation, err = s.calculateNeverResetUsage(ctx, sub, item, extCustomerIDsForUsage, eventService, periodStart, periodEnd, usageAllowed)
 						if err != nil {
 							return nil, decimal.Zero, err
 						}
@@ -1503,13 +1500,13 @@ func (s *billingService) CalculateFeatureUsageCharges(
 								SubLineItemID: item.ID,
 								Source:        querySource,
 								UsageParams: &events.UsageParams{
-									ExternalCustomerID: customer.ExternalID,
-									AggregationType:    meter.Aggregation.Type,
-									StartTime:          linePeriodStart,
-									EndTime:            effectiveCommitmentEnd,
-									WindowSize:         meter.Aggregation.BucketSize,
-									BillingAnchor:      &sub.BillingAnchor,
-									GroupByProperty:    meter.Aggregation.GroupBy,
+									ExternalCustomerIDs: extCustomerIDsForUsage,
+									AggregationType:     meter.Aggregation.Type,
+									StartTime:           linePeriodStart,
+									EndTime:             effectiveCommitmentEnd,
+									WindowSize:          meter.Aggregation.BucketSize,
+									BillingAnchor:       &sub.BillingAnchor,
+									GroupByProperty:     meter.Aggregation.GroupBy,
 								},
 							}
 
@@ -3289,7 +3286,7 @@ func (s *billingService) calculateNeverResetUsage(
 	ctx context.Context,
 	sub *subscription.Subscription,
 	item *subscription.SubscriptionLineItem,
-	customer *customer.Customer,
+	externalCustomerIDs []string,
 	eventService EventService,
 	periodStart,
 	periodEnd time.Time,
@@ -3307,7 +3304,7 @@ func (s *billingService) calculateNeverResetUsage(
 	totalUsageRequest := &dto.GetUsageByMeterRequest{
 		MeterID:             item.MeterID,
 		PriceID:             item.PriceID,
-		ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+		ExternalCustomerIDs: externalCustomerIDs,
 		StartTime:           sub.StartDate,
 		EndTime:             lineItemPeriodEnd,
 		BillingAnchor:       &sub.BillingAnchor,
@@ -3323,7 +3320,7 @@ func (s *billingService) calculateNeverResetUsage(
 	previousPeriodUsageRequest := &dto.GetUsageByMeterRequest{
 		MeterID:             item.MeterID,
 		PriceID:             item.PriceID,
-		ExternalCustomerIDs: lo.Ternary(customer.ExternalID != "", []string{customer.ExternalID}, nil),
+		ExternalCustomerIDs: externalCustomerIDs,
 		StartTime:           sub.StartDate,
 		EndTime:             lineItemPeriodStart,
 	}
