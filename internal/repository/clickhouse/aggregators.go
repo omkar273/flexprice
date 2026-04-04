@@ -295,7 +295,7 @@ func (a *SumAggregator) getWindowedQuery(ctx context.Context, params *events.Usa
 			SELECT
 				%s as bucket_start,
 				sum(JSONExtractFloat(assumeNotNull(properties), '%s')) as bucket_sum
-			FROM events
+			FROM events FINAL
 			PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'
@@ -746,7 +746,7 @@ func (a *MaxAggregator) getWindowedQuery(ctx context.Context, params *events.Usa
 					%s as bucket_start,
 					%s as group_key,
 					max(JSONExtractFloat(assumeNotNull(properties), '%s')) as group_value
-				FROM events
+				FROM events FINAL
 				PREWHERE tenant_id = '%s'
 					AND environment_id = '%s'
 					AND event_name = '%s'
@@ -782,7 +782,7 @@ func (a *MaxAggregator) getWindowedQuery(ctx context.Context, params *events.Usa
 			SELECT
 				%s as bucket_start,
 				max(JSONExtractFloat(assumeNotNull(properties), '%s')) as bucket_max
-			FROM events
+			FROM events FINAL
 			PREWHERE tenant_id = '%s'
 				AND environment_id = '%s'
 				AND event_name = '%s'

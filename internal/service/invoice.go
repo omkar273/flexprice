@@ -49,7 +49,7 @@ type InvoiceService interface {
 	GetCustomerMultiCurrencyInvoiceSummary(ctx context.Context, customerID string) (*dto.CustomerMultiCurrencyInvoiceSummary, error)
 	AttemptPayment(ctx context.Context, id string) error
 	GetInvoicePDF(ctx context.Context, id string) ([]byte, error)
-	GetInvoicePDFUrl(ctx context.Context, id string) (string, error)
+	GetInvoicePDFUrl(ctx context.Context, id string, forceGenerate bool) (string, error)
 	RecalculateInvoice(ctx context.Context, id string) (*dto.InvoiceResponse, error)
 	RecalculateInvoiceV2(ctx context.Context, id string, finalize bool) (*dto.InvoiceResponse, error)
 	RecalculateInvoiceAmounts(ctx context.Context, invoiceID string) error
@@ -925,6 +925,14 @@ func (s *invoiceService) performFinalizeInvoiceActions(ctx context.Context, inv 
 
 		if lockedInv.Total.IsZero() {
 			lockedInv.PaymentStatus = types.PaymentStatusSucceeded
+		}
+
+		// Handle auto_complete_purchased_credit_transaction: if the wallet service
+		// flagged this invoice as auto-completed via metadata, mark it as paid.
+		if lockedInv.Metadata != nil && lockedInv.Metadata["auto_completed"] == "true" {
+			lockedInv.PaymentStatus = types.PaymentStatusSucceeded
+			lockedInv.AmountPaid = lockedInv.AmountDue
+			lockedInv.AmountRemaining = decimal.Zero
 		}
 
 		now := time.Now().UTC()
@@ -2243,7 +2251,7 @@ func (s *invoiceService) attemptPaymentForSubscriptionInvoice(ctx context.Contex
 	return nil
 }
 
-func (s *invoiceService) GetInvoicePDFUrl(ctx context.Context, id string) (string, error) {
+func (s *invoiceService) GetInvoicePDFUrl(ctx context.Context, id string, forceGenerate bool) (string, error) {
 
 	// get invoice
 	inv, err := s.InvoiceRepo.Get(ctx, id)
@@ -2263,6 +2271,18 @@ func (s *invoiceService) GetInvoicePDFUrl(ctx context.Context, id string) (strin
 
 	key := fmt.Sprintf("%s/%s", inv.TenantID, id)
 
+	if !forceGenerate {
+		// Check if the file already exists in S3 and return a presigned URL without regenerating
+		exists, err := s.S3.Exists(ctx, key, s3.DocumentTypeInvoice)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return s.S3.GetPresignedUrl(ctx, key, s3.DocumentTypeInvoice)
+		}
+	}
+
+	// Generate the PDF and upload to S3
 	data, err := s.GetInvoicePDF(ctx, id)
 	if err != nil {
 		return "", err
@@ -2273,12 +2293,7 @@ func (s *invoiceService) GetInvoicePDFUrl(ctx context.Context, id string) (strin
 		return "", err
 	}
 
-	url, err := s.S3.GetPresignedUrl(ctx, key, s3.DocumentTypeInvoice)
-	if err != nil {
-		return "", err
-	}
-
-	return url, nil
+	return s.S3.GetPresignedUrl(ctx, key, s3.DocumentTypeInvoice)
 }
 
 // GetInvoicePDF implements InvoiceService.

@@ -365,6 +365,59 @@ func (h *InvoiceHandler) RecalculateInvoice(c *gin.Context) {
 	})
 }
 
+func (h *InvoiceHandler) TriggerFinalizeDraftInvoiceWorkflow(c *gin.Context) {
+	invoiceID := c.Param("invoice_id")
+	if invoiceID == "" {
+		c.Error(ierr.NewError("invoice_id is required").
+			WithHint("Please provide a valid invoice ID").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	ctx := c.Request.Context()
+	inv, err := h.invoiceService.GetInvoice(ctx, invoiceID)
+	if err != nil {
+		h.logger.Errorw("failed to load invoice for finalize draft workflow", "error", err, "invoice_id", invoiceID)
+		c.Error(err)
+		return
+	}
+	if inv.InvoiceStatus != types.InvoiceStatusDraft {
+		c.Error(ierr.NewError("invoice must be in draft status to trigger finalize draft workflow").
+			WithHintf("Current status is %s", inv.InvoiceStatus).
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	temporalSvc := temporalservice.GetGlobalTemporalService()
+	if temporalSvc == nil {
+		h.logger.Errorw("temporal service not available for finalize draft invoice", "invoice_id", invoiceID)
+		c.Error(ierr.NewError("temporal service not available").
+			WithHint("Try again later.").
+			Mark(ierr.ErrServiceUnavailable))
+		return
+	}
+
+	workflowInput := invoiceModels.ProcessInvoiceWorkflowInput{
+		InvoiceID:     invoiceID,
+		TenantID:      types.GetTenantID(ctx),
+		EnvironmentID: types.GetEnvironmentID(ctx),
+		UserID:        types.GetUserID(ctx),
+	}
+
+	workflowRun, err := temporalSvc.ExecuteWorkflow(ctx, types.TemporalFinalizeDraftInvoiceWorkflow, workflowInput)
+	if err != nil {
+		h.logger.Errorw("failed to start finalize draft invoice workflow", "error", err, "invoice_id", invoiceID)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, models.TemporalWorkflowResult{
+		Message:    "finalize draft invoice workflow started",
+		WorkflowID: workflowRun.GetID(),
+		RunID:      workflowRun.GetRunID(),
+	})
+}
+
 // UpdatePaymentStatus godoc
 // @Summary Update invoice payment status
 // @ID updateInvoicePaymentStatus
@@ -514,11 +567,12 @@ func (h *InvoiceHandler) AttemptPayment(c *gin.Context) {
 // GetInvoicePDF godoc
 // @Summary Get invoice PDF
 // @ID getInvoicePdf
-// @Description Use when delivering an invoice PDF to the customer (e.g. email attachment or download). Use url=true for a presigned URL instead of binary.
+// @Description Use when delivering an invoice PDF to the customer (e.g. email attachment or download). Use url=true for a presigned URL instead of binary. Use force_generate=true to regenerate and re-upload the PDF even if one already exists in S3.
 // @Tags Invoices
 // @Security ApiKeyAuth
 // @Param id path string true "Invoice ID"
 // @Param url query bool false "Return presigned URL from s3 instead of PDF"
+// @Param force_generate query bool false "Force regeneration of the PDF even if one already exists in S3 (default: false). Note: force_generate has no effect if invoice_pdf_url is already set on the invoice."
 // @Success 200 {file} application/pdf
 // @Failure 400 {object} ierr.ErrorResponse "Invalid request"
 // @Failure 404 {object} ierr.ErrorResponse "Resource not found"
@@ -532,7 +586,8 @@ func (h *InvoiceHandler) GetInvoicePDF(c *gin.Context) {
 	}
 
 	if c.Query("url") == "true" {
-		url, err := h.invoiceService.GetInvoicePDFUrl(c.Request.Context(), id)
+		forceGenerate := c.Query("force_generate") == "true"
+		url, err := h.invoiceService.GetInvoicePDFUrl(c.Request.Context(), id, forceGenerate)
 		if err != nil {
 			h.logger.Errorw("failed to get invoice pdf url", "error", err, "invoice_id", id)
 			c.Error(err)
