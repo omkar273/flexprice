@@ -93,11 +93,7 @@ var commands = []Command{
 		Description: "Migrate to addon",
 		Run:         internal.CopyPlanChargesToAddons,
 	},
-	{
-		Name:        "migrate-billing-cycle",
-		Description: "Migrate subscriptions from anniversary to calendar billing cycle",
-		Run:         internal.MigrateBillingCycle,
-	},
+
 	{
 		Name:        "process-csv-features",
 		Description: "Process CSV file to create features and prices for serverless plan",
@@ -132,11 +128,6 @@ var commands = []Command{
 		Name:        "setup-dummy-billing-customer",
 		Description: "Create CUSTOMER_COUNT demo customers (default 1), each with subscription, $100 wallet top-up, and 500 meter events (Postgres + Kafka)",
 		Run:         internal.SetupDummyBillingCustomer,
-	},
-	{
-		Name:        "migrate-calendar-billing-csv",
-		Description: "From CSV (subscription IDs): call API to schedule-cancel and create calendar-billing subscription per id",
-		Run:         internal.MigrateCalendarBillingCSV,
 	},
 }
 
