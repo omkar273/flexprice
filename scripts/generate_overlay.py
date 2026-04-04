@@ -41,8 +41,8 @@ TIMESTAMP_PATTERNS = re.compile(
 
 
 def quote(s: str) -> str:
-    """Wrap a schema name in single quotes for JSONPath bracket notation."""
-    return f"['{s}']"
+    """Wrap a schema name in double-quoted JSONPath bracket notation (RFC 9535)."""
+    return f'["{s}"]'
 
 
 def build_actions(spec: dict) -> list:
@@ -89,13 +89,24 @@ def build_actions(spec: dict) -> list:
         err_props = schemas["errors.ErrorResponse"].get("properties", {})
         if "error" in err_props:
             actions.append({
-                "target": "$.components.schemas['errors.ErrorResponse'].properties.error",
+                "target": (
+                    f"$.components.schemas{quote('errors.ErrorResponse')}"
+                    f".properties{quote('error')}"
+                ),
                 "update": {"x-speakeasy-name-override": "detail"},
             })
 
     # ── 4. Patch timestamp fields with format: date-time ────────────────────
+    def _get_properties(schema: dict) -> dict:
+        """Return all properties from a schema, including those nested in allOf/anyOf/oneOf."""
+        props = dict(schema.get("properties", {}))
+        for combiner in ("allOf", "anyOf", "oneOf"):
+            for sub in schema.get(combiner, []):
+                props.update(sub.get("properties", {}))
+        return props
+
     for schema_name, schema in schemas.items():
-        for prop_name, prop in schema.get("properties", {}).items():
+        for prop_name, prop in _get_properties(schema).items():
             if (
                 prop.get("type") == "string"
                 and prop.get("format") != "date-time"
@@ -127,11 +138,7 @@ def write_overlay(actions: list) -> None:
         lines.append(f"  - target: \"{target}\"")
         lines.append("    update:")
         for k, v in update.items():
-            # Quote string values; leave booleans/numbers unquoted
-            if isinstance(v, str):
-                lines.append(f"      {k}: {v}")
-            else:
-                lines.append(f"      {k}: {json.dumps(v)}")
+            lines.append(f"      {k}: {json.dumps(v)}")
     OVERLAY_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
