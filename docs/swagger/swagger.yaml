@@ -118,15 +118,6 @@ definitions:
       pagination:
         $ref: '#/definitions/types.PaginationResponse'
     type: object
-  ListSecretsResponse:
-    properties:
-      items:
-        items:
-          $ref: '#/definitions/SecretResponse'
-        type: array
-      pagination:
-        $ref: '#/definitions/types.PaginationResponse'
-    type: object
   ListSubscriptionsResponse:
     properties:
       items:
@@ -3808,6 +3799,15 @@ definitions:
       items:
         items:
           $ref: '#/definitions/PaymentResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/types.PaginationResponse'
+    type: object
+  ListSecretsResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/SecretResponse'
         type: array
       pagination:
         $ref: '#/definitions/types.PaginationResponse'
@@ -8588,6 +8588,7 @@ definitions:
     - WebhookEventCreditNoteUpdated
   types.WindowSize:
     enum:
+    - MONTH
     - MINUTE
     - 15MIN
     - 30MIN
@@ -8598,9 +8599,9 @@ definitions:
     - DAY
     - WEEK
     - MONTH
-    - MONTH
     type: string
     x-enum-varnames:
+    - DefaultWindowSize
     - WindowSizeMinute
     - WindowSize15Min
     - WindowSize30Min
@@ -8611,7 +8612,6 @@ definitions:
     - WindowSizeDay
     - WindowSizeWeek
     - WindowSizeMonth
-    - DefaultWindowSize
   types.WorkflowExecutionFilter:
     properties:
       end_time:

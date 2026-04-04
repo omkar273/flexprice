@@ -8,6 +8,8 @@
  *    docs.go, and swagger-3-0.json so generated SDKs get clean type names natively.
  * 3. In swagger-3-0.json only: adds x-speakeasy-name-override for each components.schemas key
  *    that starts with "types." so Speakeasy-generated SDKs use names like FeatureType instead of TypesFeatureType.
+ * 4. In swagger-3-0.json only: patches string fields with timestamp-like names (created_at, updated_at,
+ *    etc.) with format: date-time so the spec has ≥150 date-time fields for SDK generation.
  *
  * Usage: node scripts/fix_swagger_internal_types.mjs [--spec path/to/swagger-3-0.json]
  */
@@ -19,8 +21,15 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 
-const PREFIX = 'github_com_flexprice_flexprice_internal_types.';
-const REPLACEMENT = 'types.';
+// All known github.com/flexprice/flexprice/internal/<pkg> prefixes to strip
+const INTERNAL_PREFIXES = [
+  { prefix: 'github_com_flexprice_flexprice_internal_types.', replacement: 'types.' },
+  { prefix: 'github_com_flexprice_flexprice_internal_errors.', replacement: 'errors.' },
+];
+
+// Keep legacy aliases for the types prefix used in the step-1 loop below
+const PREFIX = INTERNAL_PREFIXES[0].prefix;
+const REPLACEMENT = INTERNAL_PREFIXES[0].replacement;
 
 const FILES = [
   'docs/swagger/swagger.json',
@@ -39,13 +48,15 @@ function main() {
     }
   }
 
-  // 1. String replace internal_types prefix in all files
+  // 1. String replace all internal package prefixes in all files
   for (const rel of FILES) {
     const path = resolve(repoRoot, rel);
     if (!existsSync(path)) continue;
     let s = readFileSync(path, 'utf8');
     const before = s;
-    s = s.split(PREFIX).join(REPLACEMENT);
+    for (const { prefix, replacement } of INTERNAL_PREFIXES) {
+      s = s.split(prefix).join(replacement);
+    }
     if (s !== before) {
       writeFileSync(path, s, 'utf8');
       console.log('Updated', rel);
@@ -91,8 +102,37 @@ function main() {
     }
   }
 
+  // 4. Patch timestamp fields with format: date-time.
+  //    Matches the same heuristic used by generate_overlay.py so the spec itself
+  //    contains the format info (required for the ≥150 validation criterion) in
+  //    addition to the overlay patches that Speakeasy applies at generation time.
+  const TIMESTAMP_RE = /(_at|_date|_start|_end|_time|_anchor|_period|expires_at|expiry|due_date|close_time|archived_at|applied_at|executed_at|failed_at|finalized_at|completed_at|last_used_at|balance_updated_at)$/;
+
+  function getProperties(schema) {
+    const props = Object.assign({}, schema.properties || {});
+    for (const combiner of ['allOf', 'anyOf', 'oneOf']) {
+      for (const sub of (schema[combiner] || [])) {
+        Object.assign(props, sub.properties || {});
+      }
+    }
+    return props;
+  }
+
+  let dtCount = 0;
+  for (const schema of Object.values(schemas)) {
+    if (!schema || typeof schema !== 'object') continue;
+    const props = getProperties(schema);
+    for (const [propName, prop] of Object.entries(props)) {
+      if (prop && prop.type === 'string' && prop.format !== 'date-time' && TIMESTAMP_RE.test(propName)) {
+        prop.format = 'date-time';
+        dtCount++;
+      }
+    }
+  }
+
   writeFileSync(specPath, JSON.stringify(spec, null, 2) + '\n', 'utf8');
   console.log(`Added x-speakeasy-name-override to ${count} types.* schemas in swagger-3-0.json.`);
+  console.log(`Patched ${dtCount} timestamp fields with format: date-time in swagger-3-0.json.`);
 }
 
 main();

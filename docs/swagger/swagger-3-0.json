@@ -13217,20 +13217,6 @@
           }
         }
       },
-      "ListSecretsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SecretResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
       "ListSubscriptionsResponse": {
         "type": "object",
         "properties": {
@@ -13356,7 +13342,8 @@
         "type": "object",
         "properties": {
           "applied_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "coupon_association_id": {
             "type": "string"
@@ -13369,7 +13356,8 @@
             "additionalProperties": true
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -13420,7 +13408,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -13434,14 +13423,16 @@
             "type": "string"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
           },
           "end_date": {
             "type": "string",
-            "description": "Optional"
+            "description": "Optional",
+            "format": "date-time"
           },
           "environment_id": {
             "type": "string"
@@ -13456,7 +13447,8 @@
             }
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -13477,7 +13469,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -13491,7 +13484,8 @@
             "type": "string"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -13524,7 +13518,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -13539,7 +13534,8 @@
         "properties": {
           "start_date": {
             "type": "string",
-            "description": "start_date is the new start date for the subscription when activating"
+            "description": "start_date is the new start date for the subscription when activating",
+            "format": "date-time"
           }
         }
       },
@@ -13565,7 +13561,8 @@
             "additionalProperties": true
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "subscription_id": {
             "type": "string"
@@ -13593,7 +13590,8 @@
             "additionalProperties": true
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -13613,16 +13611,19 @@
             "type": "string"
           },
           "cancelled_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string"
@@ -13641,7 +13642,8 @@
             "additionalProperties": true
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -13653,7 +13655,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -13664,7 +13667,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -13711,7 +13715,8 @@
             "$ref": "#/components/schemas/types.AddonType"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -13800,7 +13805,8 @@
             "$ref": "#/components/schemas/types.AlertType"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -13839,7 +13845,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -13854,7 +13861,8 @@
         "properties": {
           "billing_anchor": {
             "type": "string",
-            "description": "billing_anchor is the new billing anchor"
+            "description": "billing_anchor is the new billing anchor",
+            "format": "date-time"
           },
           "billing_cadence": {
             "$ref": "#/components/schemas/types.BillingCadence"
@@ -13868,11 +13876,13 @@
           },
           "period_end": {
             "type": "string",
-            "description": "period_end is the end of the new billing period"
+            "description": "period_end is the end of the new billing period",
+            "format": "date-time"
           },
           "period_start": {
             "type": "string",
-            "description": "period_start is the start of the new billing period"
+            "description": "period_start is the start of the new billing period",
+            "format": "date-time"
           }
         }
       },
@@ -13880,14 +13890,16 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "period": {
             "type": "string",
             "description": "e.g., \"monthly\", \"yearly\""
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -13945,7 +13957,8 @@
         "properties": {
           "cancel_at": {
             "type": "string",
-            "description": "CancelAt is the custom date to cancel the subscription.\nRequired when CancellationType is \"scheduled_date\". Must be in the future."
+            "description": "CancelAt is the custom date to cancel the subscription.\nRequired when CancellationType is \"scheduled_date\". Must be in the future.",
+            "format": "date-time"
           },
           "cancel_immediately_inovice_policy": {
             "$ref": "#/components/schemas/types.CancelImmediatelyInvoicePolicy"
@@ -13969,14 +13982,16 @@
             "$ref": "#/components/schemas/types.CancellationType"
           },
           "effective_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "message": {
             "type": "string",
             "description": "Response metadata"
           },
           "processed_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "proration_details": {
             "type": "array",
@@ -14106,7 +14121,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -14146,7 +14162,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -14157,7 +14174,8 @@
         "type": "object",
         "properties": {
           "applied_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "coupon_association_id": {
             "type": "string"
@@ -14170,7 +14188,8 @@
             "additionalProperties": true
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -14221,7 +14240,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -14235,14 +14255,16 @@
             "type": "string"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
           },
           "end_date": {
             "type": "string",
-            "description": "Optional"
+            "description": "Optional",
+            "format": "date-time"
           },
           "environment_id": {
             "type": "string"
@@ -14257,7 +14279,8 @@
             }
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -14278,7 +14301,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -14295,7 +14319,8 @@
             "$ref": "#/components/schemas/types.CouponCadence"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -14350,7 +14375,8 @@
             "$ref": "#/components/schemas/types.CouponType"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -14365,7 +14391,8 @@
         "type": "object",
         "properties": {
           "expires_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "name": {
             "type": "string"
@@ -14419,7 +14446,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -14466,7 +14494,8 @@
             "$ref": "#/components/schemas/types.AddonType"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -14632,7 +14661,8 @@
             "type": "string"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expiration_duration": {
             "type": "integer"
@@ -14665,7 +14695,8 @@
             "$ref": "#/components/schemas/types.CreditGrantScope"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "subscription_id": {
             "type": "string"
@@ -14827,7 +14858,8 @@
         "type": "object",
         "properties": {
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string"
@@ -14854,7 +14886,8 @@
             "type": "string"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "static_value": {
             "type": "string"
@@ -14979,11 +15012,13 @@
           },
           "period_end": {
             "type": "string",
-            "description": "period_end is the optional end date of the period this line item covers"
+            "description": "period_end is the optional end date of the period this line item covers",
+            "format": "date-time"
           },
           "period_start": {
             "type": "string",
-            "description": "period_start is the optional start date of the period this line item covers"
+            "description": "period_start is the optional start date of the period this line item covers",
+            "format": "date-time"
           },
           "plan_display_name": {
             "type": "string",
@@ -15039,7 +15074,8 @@
           },
           "billing_period": {
             "type": "string",
-            "description": "billing_period is the period this invoice covers (e.g., \"monthly\", \"yearly\")"
+            "description": "billing_period is the period this invoice covers (e.g., \"monthly\", \"yearly\")",
+            "format": "date-time"
           },
           "billing_reason": {
             "$ref": "#/components/schemas/types.InvoiceBillingReason"
@@ -15065,7 +15101,8 @@
           },
           "due_date": {
             "type": "string",
-            "description": "due_date is the date by which payment is expected"
+            "description": "due_date is the date by which payment is expected",
+            "format": "date-time"
           },
           "idempotency_key": {
             "type": "string",
@@ -15114,11 +15151,13 @@
           },
           "period_end": {
             "type": "string",
-            "description": "period_end is the end date of the billing period"
+            "description": "period_end is the end date of the billing period",
+            "format": "date-time"
           },
           "period_start": {
             "type": "string",
-            "description": "period_start is the start date of the billing period"
+            "description": "period_start is the start date of the billing period",
+            "format": "date-time"
           },
           "prepared_tax_rates": {
             "type": "array",
@@ -15305,7 +15344,8 @@
             "type": "string"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string"
@@ -15352,7 +15392,8 @@
             "$ref": "#/components/schemas/types.PriceUnitType"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "tier_mode": {
             "$ref": "#/components/schemas/types.BillingTier"
@@ -15439,7 +15480,8 @@
             "type": "string"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -15466,7 +15508,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -15528,7 +15571,8 @@
             "type": "string"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "metadata": {
             "type": "object",
@@ -15547,7 +15591,8 @@
             "type": "number"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "subscription_phase_id": {
             "type": "string"
@@ -15621,7 +15666,8 @@
             "description": "Enable Commitment True Up Fee"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "external_customer_id": {
             "type": "string",
@@ -15715,7 +15761,8 @@
             "$ref": "#/components/schemas/types.ProrationBehavior"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "subscription_status": {
             "$ref": "#/components/schemas/types.SubscriptionStatus"
@@ -15728,10 +15775,12 @@
             }
           },
           "trial_end": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "trial_start": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -15960,10 +16009,12 @@
             "$ref": "#/components/schemas/types.ApplicationStatus"
           },
           "applied_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -15990,10 +16041,12 @@
             "$ref": "#/components/schemas/types.Metadata"
           },
           "period_end": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "period_start": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "retry_count": {
             "type": "integer"
@@ -16014,7 +16067,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -16032,19 +16086,22 @@
             "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
           },
           "credit_grant_anchor": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "credits": {
             "type": "string"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "environment_id": {
             "type": "string"
@@ -16083,7 +16140,8 @@
             "$ref": "#/components/schemas/types.CreditGrantScope"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -16099,7 +16157,8 @@
             "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -16110,7 +16169,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -16139,7 +16199,8 @@
           },
           "finalized_at": {
             "type": "string",
-            "description": "finalized_at is the timestamp when the credit note was finalized"
+            "description": "finalized_at is the timestamp when the credit note was finalized",
+            "format": "date-time"
           },
           "id": {
             "type": "string",
@@ -16194,14 +16255,16 @@
             "description": "total_amount is the total including creditable invoice-level discounts or minimums, and tax"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
           },
           "voided_at": {
             "type": "string",
-            "description": "voided_at is the timestamp when the credit note was voided"
+            "description": "voided_at is the timestamp when the credit note was voided",
+            "format": "date-time"
           }
         }
       },
@@ -16343,7 +16406,8 @@
             "description": "AddressState is the state of the customer's address"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -16395,7 +16459,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -16459,7 +16524,8 @@
         "properties": {
           "effective_date": {
             "type": "string",
-            "description": "EffectiveDate is optional; when set (subscription scope) the grant end date is set to this time."
+            "description": "EffectiveDate is optional; when set (subscription scope) the grant end date is set to this time.",
+            "format": "date-time"
           }
         }
       },
@@ -16467,7 +16533,8 @@
         "type": "object",
         "properties": {
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -16486,7 +16553,8 @@
             "$ref": "#/components/schemas/AddonResponse"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -16495,7 +16563,8 @@
             "type": "integer"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string"
@@ -16535,7 +16604,8 @@
             "description": "TODO: Remove this once we have a proper entitlement entity type"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "static_value": {
             "type": "string"
@@ -16547,7 +16617,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -16612,7 +16683,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -16642,7 +16714,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -16697,7 +16770,8 @@
             "$ref": "#/components/schemas/types.AlertSettings"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -16751,7 +16825,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -16774,7 +16849,8 @@
             "type": "string"
           },
           "processed_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "qty_total": {
             "type": "string"
@@ -16806,7 +16882,8 @@
             "type": "boolean"
           },
           "next_usage_reset_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "sources": {
             "type": "array",
@@ -16826,7 +16903,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "array",
@@ -16855,7 +16933,8 @@
           },
           "start_time": {
             "type": "string",
-            "description": "Time range fields (optional - defaults to last 7 days if not provided)"
+            "description": "Time range fields (optional - defaults to last 7 days if not provided)",
+            "format": "date-time"
           }
         }
       },
@@ -16881,7 +16960,8 @@
             "type": "string"
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "margin": {
             "type": "string",
@@ -16900,7 +16980,8 @@
             "description": "ROI * 100"
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "total_cost": {
             "type": "string"
@@ -16937,7 +17018,8 @@
           "end_time": {
             "type": "string",
             "description": "End time of the events to be fetched in ISO 8601 format\nDefaults to now if not provided",
-            "example": "2024-12-09T00:00:00Z"
+            "example": "2024-12-09T00:00:00Z",
+            "format": "date-time"
           },
           "event_id": {
             "type": "string",
@@ -16994,7 +17076,8 @@
           "start_time": {
             "type": "string",
             "description": "Start time of the events to be fetched in ISO 8601 format\nDefaults to last 7 days from now if not provided",
-            "example": "2024-11-09T00:00:00Z"
+            "example": "2024-11-09T00:00:00Z",
+            "format": "date-time"
           }
         }
       },
@@ -17065,11 +17148,13 @@
           },
           "period_end": {
             "type": "string",
-            "description": "period_end is the optional end date of the period to preview"
+            "description": "period_end is the optional end date of the period to preview",
+            "format": "date-time"
           },
           "period_start": {
             "type": "string",
-            "description": "period_start is the optional start date of the period to preview"
+            "description": "period_start is the optional start date of the period to preview",
+            "format": "date-time"
           },
           "subscription_id": {
             "type": "string",
@@ -17084,7 +17169,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "array",
@@ -17126,7 +17212,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "window_size": {
             "$ref": "#/components/schemas/types.WindowSize"
@@ -17165,7 +17252,8 @@
           "billing_anchor": {
             "type": "string",
             "description": "BillingAnchor enables custom monthly billing periods for meter usage aggregation.\n\nUsage guidelines:\n- Only effective when WindowSize = \"MONTH\"\n- For other window sizes (DAY, HOUR, WEEK), this field is ignored\n- When nil, uses standard calendar months (1st to 1st)\n- When provided, creates custom monthly periods (e.g., 5th to 5th)\n\nCommon use cases:\n- Subscription billing periods that don't align with calendar months\n- Customer-specific billing cycles (e.g., signed up on 15th)\n- Multi-tenant systems with different billing anchor dates\n\nExample: If BillingAnchor = \"2024-03-05T14:30:45Z\" and WindowSize = \"MONTH\":\n  - March period: 2024-03-05 14:30:45 to 2024-04-05 14:30:45\n  - April period: 2024-04-05 14:30:45 to 2024-05-05 14:30:45",
-            "example": "2024-03-05T14:30:45Z"
+            "example": "2024-03-05T14:30:45Z",
+            "format": "date-time"
           },
           "bucket_size": {
             "$ref": "#/components/schemas/types.WindowSize"
@@ -17176,7 +17264,8 @@
           },
           "end_time": {
             "type": "string",
-            "example": "2024-12-09T00:00:00Z"
+            "example": "2024-12-09T00:00:00Z",
+            "format": "date-time"
           },
           "external_customer_id": {
             "type": "string",
@@ -17197,7 +17286,8 @@
           },
           "start_time": {
             "type": "string",
-            "example": "2024-11-09T00:00:00Z"
+            "example": "2024-11-09T00:00:00Z",
+            "format": "date-time"
           },
           "window_size": {
             "$ref": "#/components/schemas/types.WindowSize"
@@ -17212,7 +17302,8 @@
         "properties": {
           "end_time": {
             "type": "string",
-            "example": "2024-03-20T00:00:00Z"
+            "example": "2024-03-20T00:00:00Z",
+            "format": "date-time"
           },
           "lifetime_usage": {
             "type": "boolean",
@@ -17220,7 +17311,8 @@
           },
           "start_time": {
             "type": "string",
-            "example": "2024-03-13T00:00:00Z"
+            "example": "2024-03-13T00:00:00Z",
+            "format": "date-time"
           },
           "subscription_id": {
             "type": "string",
@@ -17254,7 +17346,8 @@
             "type": "string"
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "has_overage": {
             "type": "boolean",
@@ -17268,7 +17361,8 @@
             "type": "number"
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -17285,7 +17379,8 @@
           "billing_anchor": {
             "type": "string",
             "description": "BillingAnchor enables custom monthly billing periods for usage aggregation.\n\nWhen to use:\n- WindowSize = \"MONTH\" AND you need custom monthly periods (not calendar months)\n- Subscription billing that doesn't align with calendar months\n- Example: Customer signed up on 15th, so billing periods are 15th to 15th\n\nWhen NOT to use:\n- WindowSize != \"MONTH\" (ignored for DAY, HOUR, WEEK, etc.)\n- Standard calendar-based billing (1st to 1st of each month)\n\nExample values:\n- \"2024-03-05T14:30:45.123456789Z\" (5th of each month at 2:30:45 PM)\n- \"2024-01-15T00:00:00Z\" (15th of each month at midnight)\n- \"2024-02-29T12:00:00Z\" (29th of each month at noon - handles leap years)",
-            "example": "2024-03-05T14:30:45.123456789Z"
+            "example": "2024-03-05T14:30:45.123456789Z",
+            "format": "date-time"
           },
           "bucket_size": {
             "$ref": "#/components/schemas/types.WindowSize"
@@ -17296,7 +17391,8 @@
           },
           "end_time": {
             "type": "string",
-            "example": "2024-03-20T00:00:00Z"
+            "example": "2024-03-20T00:00:00Z",
+            "format": "date-time"
           },
           "event_name": {
             "type": "string",
@@ -17329,7 +17425,8 @@
           },
           "start_time": {
             "type": "string",
-            "example": "2024-03-13T00:00:00Z"
+            "example": "2024-03-13T00:00:00Z",
+            "format": "date-time"
           },
           "window_size": {
             "$ref": "#/components/schemas/types.WindowSize"
@@ -17360,7 +17457,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_ids": {
             "type": "array",
@@ -17390,7 +17488,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -17489,11 +17588,13 @@
           },
           "period_end": {
             "type": "string",
-            "description": "period_end for this line item (if applicable)"
+            "description": "period_end for this line item (if applicable)",
+            "format": "date-time"
           },
           "period_start": {
             "type": "string",
-            "description": "period_start for this line item (if applicable)"
+            "description": "period_start for this line item (if applicable)",
+            "format": "date-time"
           },
           "quantity": {
             "type": "string",
@@ -17515,7 +17616,8 @@
             "$ref": "#/components/schemas/types.CommitmentInfo"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -17562,10 +17664,12 @@
             "type": "string"
           },
           "period_end": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "period_start": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "plan_display_name": {
             "type": "string"
@@ -17602,7 +17706,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -17632,7 +17737,8 @@
           },
           "due_date": {
             "type": "string",
-            "description": "due_date is when the invoice would be due"
+            "description": "due_date is when the invoice would be due",
+            "format": "date-time"
           },
           "line_items": {
             "type": "array",
@@ -17676,7 +17782,8 @@
           },
           "billing_period": {
             "type": "string",
-            "description": "billing_period describes the billing period this invoice covers (e.g., \"January 2024\", \"Q1 2024\")"
+            "description": "billing_period describes the billing period this invoice covers (e.g., \"January 2024\", \"Q1 2024\")",
+            "format": "date-time"
           },
           "billing_reason": {
             "type": "string",
@@ -17694,7 +17801,8 @@
             }
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -17716,7 +17824,8 @@
           },
           "due_date": {
             "type": "string",
-            "description": "due_date is the date when payment for this invoice is due"
+            "description": "due_date is the date when payment for this invoice is due",
+            "format": "date-time"
           },
           "environment_id": {
             "type": "string",
@@ -17724,7 +17833,8 @@
           },
           "finalized_at": {
             "type": "string",
-            "description": "finalized_at is the timestamp when this invoice was finalized and made ready for payment"
+            "description": "finalized_at is the timestamp when this invoice was finalized and made ready for payment",
+            "format": "date-time"
           },
           "id": {
             "type": "string",
@@ -17750,7 +17860,8 @@
           },
           "last_computed_at": {
             "type": "string",
-            "description": "last_computed_at is the timestamp when this invoice was last computed by ComputeInvoice"
+            "description": "last_computed_at is the timestamp when this invoice was last computed by ComputeInvoice",
+            "format": "date-time"
           },
           "line_items": {
             "type": "array",
@@ -17768,22 +17879,25 @@
           },
           "paid_at": {
             "type": "string",
-            "description": "paid_at is the timestamp when this invoice was fully paid"
+            "description": "paid_at is the timestamp when this invoice was fully paid",
+            "format": "date-time"
           },
           "payment_status": {
             "$ref": "#/components/schemas/types.PaymentStatus"
           },
           "period_end": {
             "type": "string",
-            "description": "period_end is the end date of the billing period covered by this invoice"
+            "description": "period_end is the end date of the billing period covered by this invoice",
+            "format": "date-time"
           },
           "period_start": {
             "type": "string",
-            "description": "period_start is the start date of the billing period covered by this invoice"
+            "description": "period_start is the start date of the billing period covered by this invoice",
+            "format": "date-time"
           },
           "recalculated_invoice_id": {
             "type": "string",
-            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent\u2192child link from this (voided) invoice to the new replacement invoice."
+            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent→child link from this (voided) invoice to the new replacement invoice."
           },
           "refunded_amount": {
             "type": "string",
@@ -17830,7 +17944,8 @@
             "description": "total_tax is the sum of all taxes combined at the invoice level."
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -17841,7 +17956,8 @@
           },
           "voided_at": {
             "type": "string",
-            "description": "voided_at is the timestamp when this invoice was voided or cancelled"
+            "description": "voided_at is the timestamp when this invoice was voided or cancelled",
+            "format": "date-time"
           }
         }
       },
@@ -17956,6 +18072,20 @@
           }
         }
       },
+      "ListSecretsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecretResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
       "ListSubscriptionPausesResponse": {
         "type": "object",
         "properties": {
@@ -18022,7 +18152,8 @@
         "type": "object",
         "properties": {
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "is_active_for_event": {
             "type": "boolean"
@@ -18031,7 +18162,8 @@
             "type": "string"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "sub_line_item_id": {
             "type": "string"
@@ -18069,7 +18201,8 @@
           },
           "created_at": {
             "type": "string",
-            "example": "2024-03-20T15:04:05Z"
+            "example": "2024-03-20T15:04:05Z",
+            "format": "date-time"
           },
           "event_name": {
             "type": "string",
@@ -18102,7 +18235,8 @@
           },
           "updated_at": {
             "type": "string",
-            "example": "2024-03-20T15:04:05Z"
+            "example": "2024-03-20T15:04:05Z",
+            "format": "date-time"
           }
         }
       },
@@ -18200,14 +18334,16 @@
           },
           "pause_end": {
             "type": "string",
-            "description": "End date for the subscription pause\n@Description ISO 8601 timestamp when the pause should end. Cannot be used together with pause_days. Must be after pause_start\n@Example \"2024-02-15T00:00:00Z\""
+            "description": "End date for the subscription pause\n@Description ISO 8601 timestamp when the pause should end. Cannot be used together with pause_days. Must be after pause_start\n@Example \"2024-02-15T00:00:00Z\"",
+            "format": "date-time"
           },
           "pause_mode": {
             "$ref": "#/components/schemas/types.PauseMode"
           },
           "pause_start": {
             "type": "string",
-            "description": "Start date for the subscription pause\n@Description ISO 8601 timestamp when the pause should begin. Required when pause_mode is \"scheduled\"\n@Example \"2024-01-15T00:00:00Z\""
+            "description": "Start date for the subscription pause\n@Description ISO 8601 timestamp when the pause should begin. Required when pause_mode is \"scheduled\"\n@Example \"2024-01-15T00:00:00Z\"",
+            "format": "date-time"
           },
           "reason": {
             "maxLength": 255,
@@ -18224,7 +18360,8 @@
             "type": "integer"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -18245,7 +18382,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -18265,7 +18403,8 @@
             }
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -18283,7 +18422,8 @@
             "type": "string"
           },
           "failed_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "gateway_metadata": {
             "$ref": "#/components/schemas/types.Metadata"
@@ -18322,13 +18462,15 @@
             "type": "string"
           },
           "refunded_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "save_card_and_make_default": {
             "type": "boolean"
           },
           "succeeded_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "tenant_id": {
             "type": "string"
@@ -18337,7 +18479,8 @@
             "type": "boolean"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -18348,7 +18491,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -18400,7 +18544,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -18470,7 +18615,8 @@
             "description": "ConversionRate is the conversion rate of the price unit to the fiat currency"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -18497,7 +18643,8 @@
           },
           "end_date": {
             "type": "string",
-            "description": "EndDate is the end date of the price"
+            "description": "EndDate is the end date of the price",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string",
@@ -18577,7 +18724,8 @@
           },
           "start_date": {
             "type": "string",
-            "description": "StartDate is the start date of the price"
+            "description": "StartDate is the start date of the price",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -18605,7 +18753,8 @@
             "$ref": "#/components/schemas/types.PriceType"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -18645,7 +18794,8 @@
             "type": "string"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -18672,7 +18822,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -18733,11 +18884,13 @@
           },
           "current_period_end": {
             "type": "string",
-            "description": "current_period_end is the end of the current billing period"
+            "description": "current_period_end is the end of the current billing period",
+            "format": "date-time"
           },
           "current_period_start": {
             "type": "string",
-            "description": "current_period_start is the start of the current billing period"
+            "description": "current_period_start is the start of the current billing period",
+            "format": "date-time"
           },
           "days_remaining": {
             "type": "integer",
@@ -18753,7 +18906,8 @@
           },
           "proration_date": {
             "type": "string",
-            "description": "proration_date is the date used for proration calculations"
+            "description": "proration_date is the date used for proration calculations",
+            "format": "date-time"
           }
         }
       },
@@ -18801,7 +18955,8 @@
             "type": "string"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "enabled": {
             "type": "boolean"
@@ -18828,7 +18983,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -18836,19 +18992,22 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "display_id": {
             "type": "string"
           },
           "expires_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "id": {
             "type": "string"
           },
           "last_used_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "name": {
             "type": "string"
@@ -18870,7 +19029,8 @@
             "$ref": "#/components/schemas/types.SecretType"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "user_type": {
             "$ref": "#/components/schemas/types.UserType"
@@ -18917,7 +19077,8 @@
           },
           "effective_date": {
             "type": "string",
-            "description": "effective_date is when the change took effect"
+            "description": "effective_date is when the change took effect",
+            "format": "date-time"
           },
           "invoice": {
             "$ref": "#/components/schemas/InvoiceResponse"
@@ -18948,7 +19109,8 @@
           },
           "scheduled_at": {
             "type": "string",
-            "description": "scheduled_at is when the change will execute (only if is_scheduled=true)"
+            "description": "scheduled_at is when the change will execute (only if is_scheduled=true)",
+            "format": "date-time"
           }
         },
         "description": "Response after successfully executing a subscription plan change"
@@ -18964,7 +19126,8 @@
           },
           "effective_date": {
             "type": "string",
-            "description": "effective_date is when the change would take effect"
+            "description": "effective_date is when the change would take effect",
+            "format": "date-time"
           },
           "metadata": {
             "type": "object",
@@ -19106,7 +19269,8 @@
             "type": "boolean"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -19121,7 +19285,8 @@
             "type": "string"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string"
@@ -19172,7 +19337,8 @@
             "type": "string"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -19190,7 +19356,8 @@
             "type": "integer"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -19201,7 +19368,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -19219,22 +19387,26 @@
           },
           "original_period_end": {
             "type": "string",
-            "description": "OriginalPeriodEnd is the end of the billing period when the pause was created"
+            "description": "OriginalPeriodEnd is the end of the billing period when the pause was created",
+            "format": "date-time"
           },
           "original_period_start": {
             "type": "string",
-            "description": "OriginalPeriodStart is the start of the billing period when the pause was created"
+            "description": "OriginalPeriodStart is the start of the billing period when the pause was created",
+            "format": "date-time"
           },
           "pause_end": {
             "type": "string",
-            "description": "PauseEnd is when the pause will end (null for indefinite)"
+            "description": "PauseEnd is when the pause will end (null for indefinite)",
+            "format": "date-time"
           },
           "pause_mode": {
             "$ref": "#/components/schemas/types.PauseMode"
           },
           "pause_start": {
             "type": "string",
-            "description": "PauseStart is when the pause actually started"
+            "description": "PauseStart is when the pause actually started",
+            "format": "date-time"
           },
           "pause_status": {
             "$ref": "#/components/schemas/types.PauseStatus"
@@ -19248,7 +19420,8 @@
           },
           "resumed_at": {
             "type": "string",
-            "description": "ResumedAt is when the pause was actually ended (if manually resumed)"
+            "description": "ResumedAt is when the pause was actually ended (if manually resumed)",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -19261,7 +19434,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -19283,7 +19457,8 @@
             }
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "line_item_coupons": {
             "type": "object",
@@ -19309,7 +19484,8 @@
             }
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -19317,14 +19493,16 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
           },
           "end_date": {
             "type": "string",
-            "description": "EndDate is when the phase ends (nil if phase is still active or indefinite)"
+            "description": "EndDate is when the phase ends (nil if phase is still active or indefinite)",
+            "format": "date-time"
           },
           "environment_id": {
             "type": "string",
@@ -19339,7 +19517,8 @@
           },
           "start_date": {
             "type": "string",
-            "description": "StartDate is when the phase starts"
+            "description": "StartDate is when the phase starts",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -19352,7 +19531,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -19392,7 +19572,8 @@
             "type": "string"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "filter_values": {
             "type": "object",
@@ -19428,7 +19609,8 @@
             "$ref": "#/components/schemas/types.PriceUnitType"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "tier_mode": {
             "$ref": "#/components/schemas/types.BillingTier"
@@ -19459,7 +19641,8 @@
           },
           "billing_anchor": {
             "type": "string",
-            "description": "BillingAnchor is the reference point that aligns future billing cycle dates.\nIt sets the day of week for week intervals, the day of month for month and year intervals,\nand the month of year for year intervals. The timestamp is in UTC format."
+            "description": "BillingAnchor is the reference point that aligns future billing cycle dates.\nIt sets the day of week for week intervals, the day of month for month and year intervals,\nand the month of year for year intervals. The timestamp is in UTC format.",
+            "format": "date-time"
           },
           "billing_cadence": {
             "$ref": "#/components/schemas/types.BillingCadence"
@@ -19476,7 +19659,8 @@
           },
           "cancel_at": {
             "type": "string",
-            "description": "CancelAt is the date the subscription will be canceled"
+            "description": "CancelAt is the date the subscription will be canceled",
+            "format": "date-time"
           },
           "cancel_at_period_end": {
             "type": "boolean",
@@ -19484,7 +19668,8 @@
           },
           "cancelled_at": {
             "type": "string",
-            "description": "CanceledAt is the date the subscription was canceled"
+            "description": "CanceledAt is the date the subscription was canceled",
+            "format": "date-time"
           },
           "collection_method": {
             "type": "string",
@@ -19505,7 +19690,8 @@
             }
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -19523,11 +19709,13 @@
           },
           "current_period_end": {
             "type": "string",
-            "description": "CurrentPeriodEnd is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created."
+            "description": "CurrentPeriodEnd is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created.",
+            "format": "date-time"
           },
           "current_period_start": {
             "type": "string",
-            "description": "CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created."
+            "description": "CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created.",
+            "format": "date-time"
           },
           "customer": {
             "$ref": "#/components/schemas/CustomerResponse"
@@ -19544,7 +19732,8 @@
           },
           "end_date": {
             "type": "string",
-            "description": "EndDate is the end date of the subscription"
+            "description": "EndDate is the end date of the subscription",
+            "format": "date-time"
           },
           "environment_id": {
             "type": "string",
@@ -19621,7 +19810,8 @@
           },
           "start_date": {
             "type": "string",
-            "description": "StartDate is the start date of the subscription"
+            "description": "StartDate is the start date of the subscription",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -19634,14 +19824,17 @@
           },
           "trial_end": {
             "type": "string",
-            "description": "TrialEnd is the end date of the trial period"
+            "description": "TrialEnd is the end date of the trial period",
+            "format": "date-time"
           },
           "trial_start": {
             "type": "string",
-            "description": "TrialStart is the start date of the trial period"
+            "description": "TrialStart is the start date of the trial period",
+            "format": "date-time"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -19661,7 +19854,8 @@
           },
           "billing_anchor": {
             "type": "string",
-            "description": "BillingAnchor is the reference point that aligns future billing cycle dates.\nIt sets the day of week for week intervals, the day of month for month and year intervals,\nand the month of year for year intervals. The timestamp is in UTC format."
+            "description": "BillingAnchor is the reference point that aligns future billing cycle dates.\nIt sets the day of week for week intervals, the day of month for month and year intervals,\nand the month of year for year intervals. The timestamp is in UTC format.",
+            "format": "date-time"
           },
           "billing_cadence": {
             "$ref": "#/components/schemas/types.BillingCadence"
@@ -19678,7 +19872,8 @@
           },
           "cancel_at": {
             "type": "string",
-            "description": "CancelAt is the date the subscription will be canceled"
+            "description": "CancelAt is the date the subscription will be canceled",
+            "format": "date-time"
           },
           "cancel_at_period_end": {
             "type": "boolean",
@@ -19686,7 +19881,8 @@
           },
           "cancelled_at": {
             "type": "string",
-            "description": "CanceledAt is the date the subscription was canceled"
+            "description": "CanceledAt is the date the subscription was canceled",
+            "format": "date-time"
           },
           "collection_method": {
             "type": "string",
@@ -19707,7 +19903,8 @@
             }
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -19725,11 +19922,13 @@
           },
           "current_period_end": {
             "type": "string",
-            "description": "CurrentPeriodEnd is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created."
+            "description": "CurrentPeriodEnd is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created.",
+            "format": "date-time"
           },
           "current_period_start": {
             "type": "string",
-            "description": "CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created."
+            "description": "CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created.",
+            "format": "date-time"
           },
           "customer": {
             "$ref": "#/components/schemas/CustomerResponse"
@@ -19746,7 +19945,8 @@
           },
           "end_date": {
             "type": "string",
-            "description": "EndDate is the end date of the subscription"
+            "description": "EndDate is the end date of the subscription",
+            "format": "date-time"
           },
           "environment_id": {
             "type": "string",
@@ -19822,7 +20022,8 @@
           },
           "start_date": {
             "type": "string",
-            "description": "StartDate is the start date of the subscription"
+            "description": "StartDate is the start date of the subscription",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -19835,14 +20036,17 @@
           },
           "trial_end": {
             "type": "string",
-            "description": "TrialEnd is the end date of the trial period"
+            "description": "TrialEnd is the end date of the trial period",
+            "format": "date-time"
           },
           "trial_start": {
             "type": "string",
-            "description": "TrialStart is the start date of the trial period"
+            "description": "TrialStart is the start date of the trial period",
+            "format": "date-time"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -19862,7 +20066,8 @@
           },
           "cancelled_at": {
             "type": "string",
-            "description": "cancelled_at is when the schedule was cancelled"
+            "description": "cancelled_at is when the schedule was cancelled",
+            "format": "date-time"
           },
           "configuration": {
             "type": "object",
@@ -19870,7 +20075,8 @@
           },
           "created_at": {
             "type": "string",
-            "description": "created_at timestamp"
+            "description": "created_at timestamp",
+            "format": "date-time"
           },
           "days_until_execution": {
             "type": "integer",
@@ -19882,7 +20088,8 @@
           },
           "executed_at": {
             "type": "string",
-            "description": "executed_at is when the schedule was executed"
+            "description": "executed_at is when the schedule was executed",
+            "format": "date-time"
           },
           "execution_result": {
             "type": "object",
@@ -19904,7 +20111,8 @@
           },
           "scheduled_at": {
             "type": "string",
-            "description": "scheduled_at is when the schedule will execute"
+            "description": "scheduled_at is when the schedule will execute",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.ScheduleStatus"
@@ -19915,7 +20123,8 @@
           },
           "updated_at": {
             "type": "string",
-            "description": "updated_at timestamp"
+            "description": "updated_at timestamp",
+            "format": "date-time"
           }
         },
         "description": "Full details of a subscription schedule"
@@ -19925,23 +20134,28 @@
         "properties": {
           "archived_at": {
             "type": "string",
-            "description": "archived_at timestamp (for old subscriptions)"
+            "description": "archived_at timestamp (for old subscriptions)",
+            "format": "date-time"
           },
           "billing_anchor": {
             "type": "string",
-            "description": "billing_anchor of the subscription"
+            "description": "billing_anchor of the subscription",
+            "format": "date-time"
           },
           "created_at": {
             "type": "string",
-            "description": "created_at timestamp"
+            "description": "created_at timestamp",
+            "format": "date-time"
           },
           "current_period_end": {
             "type": "string",
-            "description": "current_period_end of the subscription"
+            "description": "current_period_end of the subscription",
+            "format": "date-time"
           },
           "current_period_start": {
             "type": "string",
-            "description": "current_period_start of the subscription"
+            "description": "current_period_start of the subscription",
+            "format": "date-time"
           },
           "id": {
             "type": "string",
@@ -20009,10 +20223,12 @@
         "type": "object",
         "properties": {
           "completed_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -20027,7 +20243,8 @@
             "type": "string"
           },
           "failed_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "failed_records": {
             "type": "integer"
@@ -20055,7 +20272,8 @@
             "type": "string"
           },
           "started_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -20076,7 +20294,8 @@
             "type": "integer"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -20090,10 +20309,12 @@
         "type": "object",
         "properties": {
           "applied_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -20144,7 +20365,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -20159,7 +20381,8 @@
             "description": "Whether this tax should be automatically applied"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -20208,7 +20431,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -20267,7 +20491,8 @@
             "type": "string"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -20312,7 +20537,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -20357,7 +20583,8 @@
             "$ref": "#/components/schemas/TenantBillingDetails"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "id": {
             "type": "string"
@@ -20372,7 +20599,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -20433,10 +20661,12 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -20444,7 +20674,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "message": {
             "type": "string"
@@ -20454,7 +20685,8 @@
             "description": "\"custom\" or \"automatic\""
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "workflow_id": {
             "type": "string"
@@ -20655,7 +20887,8 @@
         "type": "object",
         "properties": {
           "due_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "invoice_pdf_url": {
             "type": "string",
@@ -20673,7 +20906,8 @@
             "type": "string"
           },
           "failed_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "gateway_payment_id": {
             "type": "string"
@@ -20691,7 +20925,8 @@
             "type": "string"
           },
           "succeeded_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -20873,7 +21108,8 @@
         "type": "object",
         "properties": {
           "cancel_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "cancel_at_period_end": {
             "type": "boolean"
@@ -21172,7 +21408,8 @@
             "type": "string"
           },
           "balance_updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "config": {
             "$ref": "#/components/schemas/types.WalletConfig"
@@ -21182,7 +21419,8 @@
             "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -21237,7 +21475,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -21273,7 +21512,8 @@
             "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -21316,7 +21556,8 @@
             "description": "topup_conversion_rate is the conversion rate for the topup to the currency\nex if topup_conversion_rate is 1, then 1 USD = 1 credit\nex if topup_conversion_rate is 2, then 1 USD = 0.5 credits\nex if topup_conversion_rate is 0.5, then 1 USD = 2 credits"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -21340,7 +21581,8 @@
             "description": "conversion_rate is the conversion rate for the transaction to the currency"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -21376,7 +21618,8 @@
             "type": "string"
           },
           "expiry_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "id": {
             "type": "string"
@@ -21416,7 +21659,8 @@
             "$ref": "#/components/schemas/types.TransactionType"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -21433,7 +21677,8 @@
         "type": "object",
         "properties": {
           "close_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -21453,7 +21698,8 @@
             "type": "string"
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "type": "string"
@@ -21521,7 +21767,8 @@
             "$ref": "#/components/schemas/types.AddonType"
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -21562,7 +21809,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -21675,7 +21923,8 @@
             "type": "string"
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string"
@@ -21716,7 +21965,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -22211,7 +22461,8 @@
             "type": "string"
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -22260,7 +22511,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -22318,7 +22570,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_ids": {
             "type": "array",
@@ -22380,7 +22633,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -22469,7 +22723,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -22529,7 +22784,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -22623,7 +22879,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_type": {
             "type": "string"
@@ -22674,7 +22931,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -22768,7 +23026,8 @@
             "description": "customer_id filters invoices for a specific customer using FlexPrice's internal customer ID\nThis is the ID returned by FlexPrice when creating or retrieving customers"
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -22850,7 +23109,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -23049,7 +23309,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -23093,7 +23354,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -23127,7 +23389,8 @@
             "default": false
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_ids": {
             "type": "array",
@@ -23193,7 +23456,8 @@
             "type": "string"
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -23220,7 +23484,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -23261,7 +23526,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -23608,7 +23874,8 @@
         "properties": {
           "active_at": {
             "type": "string",
-            "description": "ActiveAt filters subscriptions that are active at the given time"
+            "description": "ActiveAt filters subscriptions that are active at the given time",
+            "format": "date-time"
           },
           "billing_cadence": {
             "type": "array",
@@ -23633,7 +23900,8 @@
             "description": "EffectiveDateForUpdate selects subscriptions that need a billing-period pass on or before this time:\ncurrent_period_end <= date OR (cancel_at IS NOT NULL AND cancel_at <= date).\nWhen nil, period/cancel cutoff logic is not applied by this field (see TimeRangeFilter for legacy period-end filtering)."
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -23689,7 +23957,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -23846,10 +24115,12 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           }
         },
         "x-speakeasy-name-override": "TimeRangeFilter"
@@ -23914,7 +24185,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -23955,7 +24227,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -24100,7 +24373,8 @@
             "type": "number"
           },
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "expand": {
             "type": "string"
@@ -24153,7 +24427,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -24293,6 +24568,7 @@
       "types.WindowSize": {
         "type": "string",
         "enum": [
+          "MONTH",
           "MINUTE",
           "15MIN",
           "30MIN",
@@ -24302,10 +24578,10 @@
           "12HOUR",
           "DAY",
           "WEEK",
-          "MONTH",
           "MONTH"
         ],
         "x-enum-varnames": [
+          "DefaultWindowSize",
           "WindowSizeMinute",
           "WindowSize15Min",
           "WindowSize30Min",
@@ -24315,8 +24591,7 @@
           "WindowSize12Hour",
           "WindowSizeDay",
           "WindowSizeWeek",
-          "WindowSizeMonth",
-          "DefaultWindowSize"
+          "WindowSizeMonth"
         ],
         "x-speakeasy-name-override": "WindowSize"
       },
@@ -24324,7 +24599,8 @@
         "type": "object",
         "properties": {
           "end_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity": {
             "type": "string",
@@ -24367,7 +24643,8 @@
             }
           },
           "start_time": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -24393,7 +24670,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -24426,7 +24704,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -24443,7 +24722,8 @@
             "$ref": "#/components/schemas/types.CommitmentInfo"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -24490,10 +24770,12 @@
             "type": "string"
           },
           "period_end": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "period_start": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "plan_display_name": {
             "type": "string"
@@ -24530,7 +24812,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -24587,7 +24870,8 @@
             "$ref": "#/components/schemas/meter.Aggregation"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -24625,7 +24909,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -24698,7 +24983,8 @@
             "description": "ConversionRate is the conversion rate of the price unit to the fiat currency"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -24725,7 +25011,8 @@
           },
           "end_date": {
             "type": "string",
-            "description": "EndDate is the end date of the price"
+            "description": "EndDate is the end date of the price",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string",
@@ -24793,7 +25080,8 @@
           },
           "start_date": {
             "type": "string",
-            "description": "StartDate is the start date of the price"
+            "description": "StartDate is the start date of the price",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -24821,7 +25109,8 @@
             "$ref": "#/components/schemas/types.PriceType"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -24890,7 +25179,8 @@
             "type": "boolean"
           },
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -24905,7 +25195,8 @@
             "type": "string"
           },
           "end_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "entity_id": {
             "type": "string"
@@ -24956,7 +25247,8 @@
             "type": "string"
           },
           "start_date": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -24974,7 +25266,8 @@
             "type": "integer"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -24985,7 +25278,8 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
@@ -25003,22 +25297,26 @@
           },
           "original_period_end": {
             "type": "string",
-            "description": "OriginalPeriodEnd is the end of the billing period when the pause was created"
+            "description": "OriginalPeriodEnd is the end of the billing period when the pause was created",
+            "format": "date-time"
           },
           "original_period_start": {
             "type": "string",
-            "description": "OriginalPeriodStart is the start of the billing period when the pause was created"
+            "description": "OriginalPeriodStart is the start of the billing period when the pause was created",
+            "format": "date-time"
           },
           "pause_end": {
             "type": "string",
-            "description": "PauseEnd is when the pause will end (null for indefinite)"
+            "description": "PauseEnd is when the pause will end (null for indefinite)",
+            "format": "date-time"
           },
           "pause_mode": {
             "$ref": "#/components/schemas/types.PauseMode"
           },
           "pause_start": {
             "type": "string",
-            "description": "PauseStart is when the pause actually started"
+            "description": "PauseStart is when the pause actually started",
+            "format": "date-time"
           },
           "pause_status": {
             "$ref": "#/components/schemas/types.PauseStatus"
@@ -25032,7 +25330,8 @@
           },
           "resumed_at": {
             "type": "string",
-            "description": "ResumedAt is when the pause was actually ended (if manually resumed)"
+            "description": "ResumedAt is when the pause was actually ended (if manually resumed)",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -25045,7 +25344,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
@@ -25056,14 +25356,16 @@
         "type": "object",
         "properties": {
           "created_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "created_by": {
             "type": "string"
           },
           "end_date": {
             "type": "string",
-            "description": "EndDate is when the phase ends (nil if phase is still active or indefinite)"
+            "description": "EndDate is when the phase ends (nil if phase is still active or indefinite)",
+            "format": "date-time"
           },
           "environment_id": {
             "type": "string",
@@ -25078,7 +25380,8 @@
           },
           "start_date": {
             "type": "string",
-            "description": "StartDate is when the phase starts"
+            "description": "StartDate is when the phase starts",
+            "format": "date-time"
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -25091,7 +25394,8 @@
             "type": "string"
           },
           "updated_at": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time"
           },
           "updated_by": {
             "type": "string"
