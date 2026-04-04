@@ -56,7 +56,7 @@ func main() {
 	customerID := fmt.Sprintf("sample-customer-%d", time.Now().Unix())
 
 	// Ingest an event
-	req := types.DtoIngestEventRequest{
+	req := types.IngestEventRequest{
 		EventName:          "Sample Event",
 		ExternalCustomerID: customerID,
 		Properties:         map[string]string{"source": "sample_app", "environment": "test"},
