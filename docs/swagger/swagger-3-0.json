@@ -58,7 +58,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -68,7 +68,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -117,7 +117,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -127,7 +127,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -175,7 +175,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -185,7 +185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -234,7 +234,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -244,7 +244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -301,7 +301,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -311,7 +311,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -358,7 +358,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -368,7 +368,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -416,7 +416,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -426,7 +426,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -436,7 +436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -484,7 +484,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -494,7 +494,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -543,7 +543,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -553,7 +553,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -563,7 +563,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -601,7 +601,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -611,7 +611,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -659,7 +659,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -669,7 +669,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -718,7 +718,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -728,7 +728,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -777,7 +777,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -787,7 +787,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -844,7 +844,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -854,7 +854,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -864,7 +864,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -921,7 +921,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -931,7 +931,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -941,7 +941,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -951,7 +951,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -998,7 +998,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1008,7 +1008,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1018,7 +1018,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1066,7 +1066,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1076,7 +1076,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1086,7 +1086,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1096,7 +1096,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1106,7 +1106,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1158,7 +1158,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1168,7 +1168,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1217,7 +1217,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1227,7 +1227,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1237,7 +1237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1294,7 +1294,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1304,7 +1304,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1314,7 +1314,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1324,7 +1324,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1334,7 +1334,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1387,7 +1387,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1397,7 +1397,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1407,7 +1407,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1417,7 +1417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1427,7 +1427,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1478,7 +1478,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1488,7 +1488,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1537,7 +1537,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1547,7 +1547,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1604,7 +1604,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1614,7 +1614,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1672,7 +1672,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1682,7 +1682,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1731,7 +1731,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1741,7 +1741,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1751,7 +1751,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1761,7 +1761,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1771,7 +1771,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1823,7 +1823,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1833,7 +1833,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1843,7 +1843,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1891,7 +1891,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1901,7 +1901,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1911,7 +1911,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1921,7 +1921,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1931,7 +1931,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1982,7 +1982,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -1992,7 +1992,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2002,7 +2002,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2012,7 +2012,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2022,7 +2022,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2091,7 +2091,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2101,7 +2101,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2148,7 +2148,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2158,7 +2158,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2208,7 +2208,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2218,7 +2218,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2228,7 +2228,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2276,7 +2276,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2286,7 +2286,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2377,7 +2377,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2387,7 +2387,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2474,7 +2474,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2484,7 +2484,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2494,7 +2494,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2542,7 +2542,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2552,7 +2552,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2593,7 +2593,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2603,7 +2603,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2651,7 +2651,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2661,7 +2661,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2709,7 +2709,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2719,7 +2719,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2729,7 +2729,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2777,7 +2777,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2787,7 +2787,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2838,7 +2838,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2848,7 +2848,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2896,7 +2896,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2906,7 +2906,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2955,7 +2955,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -2965,7 +2965,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3014,7 +3014,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3024,7 +3024,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3073,7 +3073,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3083,7 +3083,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3140,7 +3140,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3150,7 +3150,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3197,7 +3197,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3207,158 +3207,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ]
-      }
-    },
-    "/entity-integration-mappings": {
-      "post": {
-        "tags": [
-          "Entity Integration Mappings"
-        ],
-        "summary": "Create entity integration mapping",
-        "description": "Use when linking a FlexPrice entity to an external system (e.g. CRM or payment provider) so you can sync or reconcile by external ID.",
-        "operationId": "createEntityIntegrationMapping",
-        "requestBody": {
-          "description": "Entity integration mapping data",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/dto.CreateEntityIntegrationMappingRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/dto.EntityIntegrationMappingResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "x-codegen-request-body-name": "entity_integration_mapping"
-      }
-    },
-    "/entity-integration-mappings/{id}": {
-      "delete": {
-        "tags": [
-          "Entity Integration Mappings"
-        ],
-        "summary": "Delete entity integration mapping",
-        "description": "Use when unlinking a FlexPrice entity from an external system or cleaning up stale integration mappings.",
-        "operationId": "deleteEntityIntegrationMapping",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Entity integration mapping ID",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content",
-            "content": {}
-          },
-          "400": {
-            "description": "Invalid request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3409,7 +3258,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3419,7 +3268,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3468,7 +3317,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3478,7 +3327,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3530,7 +3379,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3540,7 +3389,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3578,7 +3427,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3626,7 +3475,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3636,7 +3485,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3685,7 +3534,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3695,7 +3544,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3744,7 +3593,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3754,7 +3603,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3764,7 +3613,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3813,7 +3662,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3823,7 +3672,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3871,7 +3720,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3881,7 +3730,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3930,7 +3779,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -3940,7 +3789,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4000,7 +3849,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4010,7 +3859,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4020,7 +3869,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4067,7 +3916,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4077,7 +3926,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4087,7 +3936,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4135,7 +3984,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4145,7 +3994,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4194,7 +4043,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4204,7 +4053,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4253,7 +4102,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4263,7 +4112,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4273,7 +4122,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4313,7 +4162,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4323,7 +4172,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4333,7 +4182,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4344,6 +4193,65 @@
             "ApiKeyAuth": []
           }
         ]
+      }
+    },
+    "/integrations/link": {
+      "post": {
+        "tags": [
+          "Integrations"
+        ],
+        "summary": "Link integration mapping",
+        "description": "Link a FlexPrice entity to provider entity with provider-specific side effects.",
+        "operationId": "linkIntegrationMapping",
+        "requestBody": {
+          "description": "Link mapping request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/dto.LinkIntegrationMappingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/dto.LinkIntegrationMappingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-codegen-request-body-name": "request"
       }
     },
     "/invoices": {
@@ -4381,7 +4289,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4391,7 +4299,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4440,7 +4348,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4450,7 +4358,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4499,7 +4407,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4509,7 +4417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4579,7 +4487,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4589,7 +4497,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4646,7 +4554,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4656,7 +4564,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4666,7 +4574,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4715,7 +4623,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4725,7 +4633,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4735,7 +4643,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4783,7 +4691,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4793,7 +4701,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4853,7 +4761,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4863,7 +4771,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4873,7 +4781,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4922,7 +4830,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4932,7 +4840,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4942,7 +4850,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -4961,7 +4869,7 @@
           "Invoices"
         ],
         "summary": "Get invoice PDF",
-        "description": "Use when delivering an invoice PDF to the customer (e.g. email attachment or download). Use url=true for a presigned URL instead of binary.",
+        "description": "Use when delivering an invoice PDF to the customer (e.g. email attachment or download). Use url=true for a presigned URL instead of binary. Use force_generate=true to regenerate and re-upload the PDF even if one already exists in S3.",
         "operationId": "getInvoicePdf",
         "parameters": [
           {
@@ -4977,6 +4885,14 @@
             "name": "url",
             "in": "query",
             "description": "Return presigned URL from s3 instead of PDF",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "force_generate",
+            "in": "query",
+            "description": "Force regeneration of the PDF even if one already exists in S3 (default: false). Note: force_generate has no effect if invoice_pdf_url is already set on the invoice.",
             "schema": {
               "type": "boolean"
             }
@@ -4999,7 +4915,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5009,7 +4925,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5019,7 +4935,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5067,7 +4983,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5077,7 +4993,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5087,7 +5003,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5143,7 +5059,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5153,7 +5069,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5163,7 +5079,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5211,7 +5127,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5221,7 +5137,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5407,7 +5323,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5417,7 +5333,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5463,7 +5379,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5473,7 +5389,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5522,7 +5438,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5532,7 +5448,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5542,7 +5458,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5599,7 +5515,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5609,7 +5525,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5656,7 +5572,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5666,7 +5582,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5676,7 +5592,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5724,7 +5640,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5734,7 +5650,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5744,7 +5660,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5792,7 +5708,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5802,7 +5718,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5851,7 +5767,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5861,7 +5777,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5910,7 +5826,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5920,7 +5836,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5930,7 +5846,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5987,7 +5903,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -5997,7 +5913,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6007,7 +5923,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6054,7 +5970,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6064,7 +5980,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6074,7 +5990,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6132,7 +6048,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6142,7 +6058,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6152,7 +6068,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6162,7 +6078,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6211,7 +6127,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6221,7 +6137,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6231,7 +6147,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6269,7 +6185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PlanResponse"
+                  "$ref": "#/components/schemas/dto.ListEntitlementsResponse"
                 }
               }
             }
@@ -6279,7 +6195,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6289,7 +6205,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6299,7 +6215,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6347,7 +6263,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6357,7 +6273,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6367,7 +6283,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6377,7 +6293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6425,7 +6341,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6435,7 +6351,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6484,7 +6400,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6494,7 +6410,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6543,7 +6459,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6553,7 +6469,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6601,7 +6517,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6611,7 +6527,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6700,7 +6616,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6710,7 +6626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6756,7 +6672,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6766,7 +6682,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6815,7 +6731,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6825,7 +6741,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6835,7 +6751,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6883,7 +6799,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6893,7 +6809,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6942,7 +6858,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -6952,7 +6868,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7009,7 +6925,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7019,7 +6935,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7066,7 +6982,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7076,7 +6992,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7124,7 +7040,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7134,7 +7050,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7191,7 +7107,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7201,7 +7117,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7259,7 +7175,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7269,7 +7185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7426,7 +7342,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7436,7 +7352,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7482,7 +7398,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7492,7 +7408,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7535,7 +7451,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7545,224 +7461,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ]
-      }
-    },
-    "/secrets/integrations/by-provider/{provider}": {
-      "get": {
-        "tags": [
-          "Integrations"
-        ],
-        "summary": "Get integration details",
-        "description": "Use when you need to check or display integration config (e.g. which provider is linked). Sensitive values may be redacted.",
-        "operationId": "getIntegration",
-        "parameters": [
-          {
-            "name": "provider",
-            "in": "path",
-            "description": "Integration provider",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/dto.SecretResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ]
-      }
-    },
-    "/secrets/integrations/create/{provider}": {
-      "post": {
-        "tags": [
-          "Integrations"
-        ],
-        "summary": "Create or update an integration",
-        "description": "Use when storing or updating credentials for an external integration (e.g. Stripe, HubSpot). Secrets are encrypted at rest.",
-        "operationId": "createOrUpdateIntegration",
-        "parameters": [
-          {
-            "name": "provider",
-            "in": "path",
-            "description": "Integration provider",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "description": "Integration creation request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/dto.CreateIntegrationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/dto.SecretResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "x-codegen-request-body-name": "request"
-      }
-    },
-    "/secrets/integrations/linked": {
-      "get": {
-        "tags": [
-          "Integrations"
-        ],
-        "summary": "List linked integrations",
-        "description": "Use when showing which integrations are connected (e.g. settings page). Returns providers that have valid linked credentials.",
-        "operationId": "listLinkedIntegrations",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/dto.LinkedIntegrationsResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ]
-      }
-    },
-    "/secrets/integrations/{id}": {
-      "delete": {
-        "tags": [
-          "Integrations"
-        ],
-        "summary": "Delete an integration",
-        "description": "Use when disconnecting an integration (e.g. switching provider or removing OAuth). Deletes stored credentials.",
-        "operationId": "deleteIntegration",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Integration ID",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content",
-            "content": {}
-          },
-          "404": {
-            "description": "Resource not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7810,7 +7509,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7820,7 +7519,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7869,7 +7568,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7879,7 +7578,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7926,7 +7625,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7936,7 +7635,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -7996,7 +7695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8006,7 +7705,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8064,7 +7763,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8074,7 +7773,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8123,7 +7822,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8133,7 +7832,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8182,7 +7881,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8192,7 +7891,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8241,7 +7940,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8251,7 +7950,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8308,7 +8007,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8318,7 +8017,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8378,7 +8077,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8388,7 +8087,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8440,7 +8139,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8450,7 +8149,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8460,7 +8159,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8519,7 +8218,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8529,7 +8228,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8589,7 +8288,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8599,7 +8298,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8609,7 +8308,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8669,7 +8368,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8679,7 +8378,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8689,7 +8388,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8751,7 +8450,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8761,7 +8460,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8771,7 +8470,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8819,7 +8518,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8829,7 +8528,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8839,7 +8538,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8898,7 +8597,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8908,7 +8607,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8918,7 +8617,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8978,7 +8677,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8988,7 +8687,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -8998,7 +8697,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9050,7 +8749,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9060,7 +8759,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9070,7 +8769,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9124,7 +8823,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9134,7 +8833,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9144,7 +8843,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9201,7 +8900,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9211,7 +8910,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9411,7 +9110,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9421,7 +9120,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9467,7 +9166,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9477,7 +9176,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9526,7 +9225,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9536,7 +9235,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9546,7 +9245,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9633,7 +9332,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9643,7 +9342,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9689,7 +9388,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9699,7 +9398,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9711,6 +9410,53 @@
           }
         ],
         "x-codegen-request-body-name": "scheduled_task"
+      }
+    },
+    "/tasks/scheduled/schedule-draft-finalization": {
+      "post": {
+        "tags": [
+          "Scheduled Tasks"
+        ],
+        "summary": "Schedule draft finalization",
+        "description": "Triggers the draft invoice finalization workflow that scans computed draft invoices whose finalization delay has elapsed and finalizes them (assign invoice number, sync to vendors, attempt payment).",
+        "operationId": "scheduleDraftFinalization",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ]
       }
     },
     "/tasks/scheduled/schedule-update-billing-period": {
@@ -9748,7 +9494,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9758,7 +9504,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9807,7 +9553,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9817,7 +9563,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9827,7 +9573,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9884,7 +9630,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9894,7 +9640,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9904,7 +9650,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9945,7 +9691,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9955,7 +9701,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -9965,7 +9711,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10024,7 +9770,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10034,7 +9780,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10044,7 +9790,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10093,7 +9839,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10103,7 +9849,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10113,7 +9859,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10164,7 +9910,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10174,7 +9920,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10184,7 +9930,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10243,7 +9989,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10253,7 +9999,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10263,7 +10009,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10335,7 +10081,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10345,7 +10091,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10391,7 +10137,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10401,7 +10147,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10450,7 +10196,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10460,7 +10206,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10517,7 +10263,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10527,7 +10273,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10574,7 +10320,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10584,7 +10330,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10743,7 +10489,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10753,7 +10499,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10799,7 +10545,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10809,7 +10555,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10858,7 +10604,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10868,7 +10614,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10925,7 +10671,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10935,7 +10681,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10976,7 +10722,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -10986,7 +10732,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11023,7 +10769,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11033,7 +10779,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11043,7 +10789,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11091,7 +10837,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11101,7 +10847,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11111,7 +10857,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11160,7 +10906,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11170,7 +10916,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11218,7 +10964,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11228,7 +10974,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11266,7 +11012,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11276,7 +11022,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11324,7 +11070,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11334,7 +11080,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11550,7 +11296,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11560,7 +11306,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11609,7 +11355,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11619,7 +11365,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11668,7 +11414,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11678,7 +11424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11727,7 +11473,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11737,7 +11483,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11747,7 +11493,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11804,7 +11550,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11814,7 +11560,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11824,7 +11570,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11881,7 +11627,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11891,7 +11637,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11901,7 +11647,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11949,7 +11695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11959,7 +11705,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -11969,7 +11715,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -12028,7 +11774,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -12038,7 +11784,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -12048,7 +11794,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -12311,7 +12057,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -12321,7 +12067,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -12331,7 +12077,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -12610,27 +12356,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/webhookDto.CommunicationWebhookPayload"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/webhook-events/invoice.create.drafted": {
-      "post": {
-        "tags": [
-          "Webhook Events"
-        ],
-        "summary": "invoice.create.drafted",
-        "description": "Fired when a new invoice is created in draft status. Doc-only for parsing.",
-        "responses": {
-          "200": {
-            "description": "Webhook payload",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/webhookDto.InvoiceWebhookPayload"
                 }
               }
             }
@@ -13282,7 +13007,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -13292,7 +13017,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                  "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 }
               }
             }
@@ -13954,6 +13679,10 @@
         ],
         "type": "object",
         "properties": {
+          "cancel_at": {
+            "type": "string",
+            "description": "CancelAt is the custom date to cancel the subscription.\nRequired when CancellationType is \"scheduled_date\". Must be in the future."
+          },
           "cancel_immediately_inovice_policy": {
             "$ref": "#/components/schemas/types.CancelImmediatelyInvoicePolicy"
           },
@@ -14796,13 +14525,6 @@
             "type": "string",
             "description": "external_id is the unique identifier from your system to reference this customer (required)"
           },
-          "integration_entity_mapping": {
-            "type": "array",
-            "description": "integration_entity_mapping contains provider integration mappings for this customer",
-            "items": {
-              "$ref": "#/components/schemas/dto.IntegrationEntityMapping"
-            }
-          },
           "metadata": {
             "type": "object",
             "additionalProperties": {
@@ -14884,36 +14606,6 @@
           }
         }
       },
-      "dto.CreateEntityIntegrationMappingRequest": {
-        "required": [
-          "entity_id",
-          "entity_type",
-          "provider_entity_id",
-          "provider_type"
-        ],
-        "type": "object",
-        "properties": {
-          "entity_id": {
-            "maxLength": 255,
-            "type": "string"
-          },
-          "entity_type": {
-            "$ref": "#/components/schemas/types.IntegrationEntityType"
-          },
-          "metadata": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "provider_entity_id": {
-            "maxLength": 255,
-            "type": "string"
-          },
-          "provider_type": {
-            "maxLength": 50,
-            "type": "string"
-          }
-        }
-      },
       "dto.CreateFeatureRequest": {
         "required": [
           "name",
@@ -14976,28 +14668,6 @@
           },
           "name": {
             "type": "string"
-          }
-        }
-      },
-      "dto.CreateIntegrationRequest": {
-        "required": [
-          "credentials",
-          "name",
-          "provider"
-        ],
-        "type": "object",
-        "properties": {
-          "credentials": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "name": {
-            "type": "string"
-          },
-          "provider": {
-            "$ref": "#/components/schemas/types.SecretProvider"
           }
         }
       },
@@ -16366,7 +16036,7 @@
             "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_domain_customer.Customer"
           },
           "error": {
-            "$ref": "#/components/schemas/errors.ErrorResponse"
+            "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
           },
           "status": {
             "$ref": "#/components/schemas/types.DebugTrackerStatus"
@@ -16441,6 +16111,12 @@
           "id": {
             "type": "string",
             "description": "ID is the unique identifier for the customer"
+          },
+          "integrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/dto.EntityIntegrationMappingResponse"
+            }
           },
           "metadata": {
             "type": "object",
@@ -17511,29 +17187,6 @@
           }
         }
       },
-      "dto.IntegrationEntityMapping": {
-        "required": [
-          "id",
-          "provider"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "id is the external entity ID from the provider"
-          },
-          "provider": {
-            "type": "string",
-            "description": "provider is the integration provider name (e.g., \"stripe\", \"razorpay\")",
-            "enum": [
-              "stripe",
-              "razorpay",
-              "paypal"
-            ]
-          }
-        },
-        "description": "Integration entity mapping for external provider systems"
-      },
       "dto.InvoiceCoupon": {
         "required": [
           "coupon_id"
@@ -17843,6 +17496,10 @@
           "invoice_type": {
             "$ref": "#/components/schemas/types.InvoiceType"
           },
+          "last_computed_at": {
+            "type": "string",
+            "description": "last_computed_at is the timestamp when this invoice was last computed by ComputeInvoice"
+          },
           "line_items": {
             "type": "array",
             "description": "line_items contains the individual items that make up this invoice (overrides embedded field)",
@@ -17967,14 +17624,41 @@
           }
         }
       },
-      "dto.LinkedIntegrationsResponse": {
+      "dto.LinkIntegrationMappingRequest": {
+        "required": [
+          "entity_id",
+          "entity_type",
+          "provider_entity_id",
+          "provider_type"
+        ],
         "type": "object",
         "properties": {
-          "providers": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "entity_id": {
+            "maxLength": 255,
+            "type": "string"
+          },
+          "entity_type": {
+            "$ref": "#/components/schemas/types.IntegrationEntityType"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "provider_entity_id": {
+            "maxLength": 255,
+            "type": "string"
+          },
+          "provider_type": {
+            "maxLength": 50,
+            "type": "string"
+          }
+        }
+      },
+      "dto.LinkIntegrationMappingResponse": {
+        "type": "object",
+        "properties": {
+          "mapping": {
+            "$ref": "#/components/schemas/dto.EntityIntegrationMappingResponse"
           }
         }
       },
@@ -18382,7 +18066,7 @@
         "type": "object",
         "properties": {
           "error": {
-            "$ref": "#/components/schemas/errors.ErrorResponse"
+            "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
           },
           "matched_meters": {
             "type": "array",
@@ -18766,7 +18450,7 @@
         "type": "object",
         "properties": {
           "error": {
-            "$ref": "#/components/schemas/errors.ErrorResponse"
+            "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
           },
           "matched_prices": {
             "type": "array",
@@ -19400,7 +19084,7 @@
         "type": "object",
         "properties": {
           "error": {
-            "$ref": "#/components/schemas/errors.ErrorResponse"
+            "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
           },
           "matched_line_items": {
             "type": "array",
@@ -20913,13 +20597,6 @@
             "type": "string",
             "description": "external_id is the updated external identifier for the customer"
           },
-          "integration_entity_mapping": {
-            "type": "array",
-            "description": "integration_entity_mapping contains provider integration mappings for this customer",
-            "items": {
-              "$ref": "#/components/schemas/dto.IntegrationEntityMapping"
-            }
-          },
           "metadata": {
             "type": "object",
             "additionalProperties": {
@@ -21842,17 +21519,6 @@
           }
         }
       },
-      "errors.ErrorResponse": {
-        "type": "object",
-        "properties": {
-          "error": {
-            "$ref": "#/components/schemas/errors.ErrorDetail"
-          },
-          "success": {
-            "type": "boolean"
-          }
-        }
-      },
       "github_com_flexprice_flexprice_internal_domain_addon.Addon": {
         "type": "object",
         "properties": {
@@ -22154,6 +21820,17 @@
           },
           "updated_by": {
             "type": "string"
+          }
+        }
+      },
+      "github_com_flexprice_flexprice_internal_errors.ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/errors.ErrorDetail"
+          },
+          "success": {
+            "type": "boolean"
           }
         }
       },
@@ -22579,11 +22256,13 @@
         "type": "string",
         "enum": [
           "immediate",
-          "end_of_period"
+          "end_of_period",
+          "scheduled_date"
         ],
         "x-enum-varnames": [
           "CancellationTypeImmediate",
-          "CancellationTypeEndOfPeriod"
+          "CancellationTypeEndOfPeriod",
+          "CancellationTypeScheduledDate"
         ],
         "x-speakeasy-name-override": "CancellationType"
       },
@@ -23115,7 +22794,7 @@
         "type": "object",
         "properties": {
           "error": {
-            "$ref": "#/components/schemas/errors.ErrorResponse"
+            "$ref": "#/components/schemas/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
           },
           "failure_point_type": {
             "$ref": "#/components/schemas/types.FailurePointType"
@@ -23541,12 +23220,14 @@
         "enum": [
           "DRAFT",
           "FINALIZED",
-          "VOIDED"
+          "VOIDED",
+          "SKIPPED"
         ],
         "x-enum-varnames": [
           "InvoiceStatusDraft",
           "InvoiceStatusFinalized",
-          "InvoiceStatusVoided"
+          "InvoiceStatusVoided",
+          "InvoiceStatusSkipped"
         ],
         "x-speakeasy-name-override": "InvoiceStatus"
       },
@@ -24168,6 +23849,7 @@
         "type": "string",
         "enum": [
           "15MIN",
+          "30MIN",
           "custom",
           "hourly",
           "daily"
@@ -24177,12 +23859,14 @@
         },
         "x-enum-descriptions": [
           "",
+          "",
           "10 minutes for testing",
           "",
           ""
         ],
         "x-enum-varnames": [
           "ScheduledTaskIntervalEvery15Minutes",
+          "ScheduledTaskIntervalEvery30Minutes",
           "ScheduledTaskIntervalCustom",
           "ScheduledTaskIntervalHourly",
           "ScheduledTaskIntervalDaily"
@@ -24307,6 +23991,10 @@
           "customer_id": {
             "type": "string",
             "description": "CustomerID filters by customer ID"
+          },
+          "effective_date_for_update": {
+            "type": "string",
+            "description": "EffectiveDateForUpdate selects subscriptions that need a billing-period pass on or before this time:\ncurrent_period_end <= date OR (cancel_at IS NOT NULL AND cancel_at <= date).\nWhen nil, period/cancel cutoff logic is not applied by this field (see TimeRangeFilter for legacy period-end filtering)."
           },
           "end_time": {
             "type": "string"
@@ -25704,6 +25392,98 @@
         },
         "x-speakeasy-name-override": "Metadata"
       },
+      "types.WebhookEventName": {
+        "type": "string",
+        "enum": [
+          "subscription.created",
+          "subscription.draft.created",
+          "subscription.activated",
+          "subscription.updated",
+          "subscription.paused",
+          "subscription.cancelled",
+          "subscription.resumed",
+          "subscription.phase.created",
+          "subscription.phase.updated",
+          "subscription.phase.deleted",
+          "feature.created",
+          "feature.updated",
+          "feature.deleted",
+          "feature.wallet_balance.alert",
+          "entitlement.created",
+          "entitlement.updated",
+          "entitlement.deleted",
+          "wallet.created",
+          "wallet.updated",
+          "wallet.terminated",
+          "wallet.transaction.created",
+          "payment.created",
+          "payment.updated",
+          "payment.failed",
+          "payment.success",
+          "payment.pending",
+          "customer.created",
+          "customer.updated",
+          "customer.deleted",
+          "invoice.update.finalized",
+          "invoice.update.payment",
+          "invoice.update.voided",
+          "invoice.update",
+          "invoice.payment.overdue",
+          "wallet.credit_balance.dropped",
+          "wallet.credit_balance.recovered",
+          "wallet.ongoing_balance.dropped",
+          "wallet.ongoing_balance.recovered",
+          "subscription.renewal.due",
+          "invoice.communication.triggered",
+          "credit_note.created",
+          "credit_note.updated"
+        ],
+        "x-enum-varnames": [
+          "WebhookEventSubscriptionCreated",
+          "WebhookEventSubscriptionDraftCreated",
+          "WebhookEventSubscriptionActivated",
+          "WebhookEventSubscriptionUpdated",
+          "WebhookEventSubscriptionPaused",
+          "WebhookEventSubscriptionCancelled",
+          "WebhookEventSubscriptionResumed",
+          "WebhookEventSubscriptionPhaseCreated",
+          "WebhookEventSubscriptionPhaseUpdated",
+          "WebhookEventSubscriptionPhaseDeleted",
+          "WebhookEventFeatureCreated",
+          "WebhookEventFeatureUpdated",
+          "WebhookEventFeatureDeleted",
+          "WebhookEventFeatureWalletBalanceAlert",
+          "WebhookEventEntitlementCreated",
+          "WebhookEventEntitlementUpdated",
+          "WebhookEventEntitlementDeleted",
+          "WebhookEventWalletCreated",
+          "WebhookEventWalletUpdated",
+          "WebhookEventWalletTerminated",
+          "WebhookEventWalletTransactionCreated",
+          "WebhookEventPaymentCreated",
+          "WebhookEventPaymentUpdated",
+          "WebhookEventPaymentFailed",
+          "WebhookEventPaymentSuccess",
+          "WebhookEventPaymentPending",
+          "WebhookEventCustomerCreated",
+          "WebhookEventCustomerUpdated",
+          "WebhookEventCustomerDeleted",
+          "WebhookEventInvoiceUpdateFinalized",
+          "WebhookEventInvoiceUpdatePayment",
+          "WebhookEventInvoiceUpdateVoided",
+          "WebhookEventInvoiceUpdate",
+          "WebhookEventInvoicePaymentOverdue",
+          "WebhookEventWalletCreditBalanceDropped",
+          "WebhookEventWalletCreditBalanceRecovered",
+          "WebhookEventWalletOngoingBalanceDropped",
+          "WebhookEventWalletOngoingBalanceRecovered",
+          "WebhookEventSubscriptionRenewalDue",
+          "WebhookEventInvoiceCommunicationTriggered",
+          "WebhookEventCreditNoteCreated",
+          "WebhookEventCreditNoteUpdated"
+        ],
+        "x-speakeasy-name-override": "WebhookEventName"
+      },
       "webhookDto.AlertWebhookPayload": {
         "type": "object",
         "properties": {
@@ -25717,7 +25497,7 @@
             "$ref": "#/components/schemas/dto.CustomerResponse"
           },
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "feature": {
             "$ref": "#/components/schemas/dto.FeatureResponse"
@@ -25731,7 +25511,7 @@
         "type": "object",
         "properties": {
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "invoice": {
             "$ref": "#/components/schemas/dto.InvoiceResponse"
@@ -25745,7 +25525,7 @@
             "$ref": "#/components/schemas/dto.CreditNoteResponse"
           },
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           }
         }
       },
@@ -25756,7 +25536,7 @@
             "$ref": "#/components/schemas/dto.CustomerResponse"
           },
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           }
         }
       },
@@ -25767,7 +25547,7 @@
             "$ref": "#/components/schemas/dto.EntitlementResponse"
           },
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           }
         }
       },
@@ -25775,7 +25555,7 @@
         "type": "object",
         "properties": {
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "feature": {
             "$ref": "#/components/schemas/dto.FeatureResponse"
@@ -25786,7 +25566,7 @@
         "type": "object",
         "properties": {
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "invoice": {
             "$ref": "#/components/schemas/dto.InvoiceResponse"
@@ -25797,7 +25577,7 @@
         "type": "object",
         "properties": {
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "payment": {
             "$ref": "#/components/schemas/dto.PaymentResponse"
@@ -25808,7 +25588,7 @@
         "type": "object",
         "properties": {
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "phase": {
             "$ref": "#/components/schemas/dto.SubscriptionPhaseResponse"
@@ -25819,7 +25599,7 @@
         "type": "object",
         "properties": {
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "subscription": {
             "$ref": "#/components/schemas/dto.SubscriptionResponse"
@@ -25830,7 +25610,7 @@
         "type": "object",
         "properties": {
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "transaction": {
             "$ref": "#/components/schemas/dto.WalletTransactionResponse"
@@ -25870,7 +25650,7 @@
             "$ref": "#/components/schemas/dto.CustomerResponse"
           },
           "event_type": {
-            "type": "string"
+            "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "wallet": {
             "$ref": "#/components/schemas/dto.WalletResponse"

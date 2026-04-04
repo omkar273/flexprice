@@ -457,6 +457,11 @@ definitions:
     type: object
   dto.CancelSubscriptionRequest:
     properties:
+      cancel_at:
+        description: |-
+          CancelAt is the custom date to cancel the subscription.
+          Required when CancellationType is "scheduled_date". Must be in the future.
+        type: string
       cancel_immediately_inovice_policy:
         allOf:
         - $ref: '#/definitions/types.CancelImmediatelyInvoicePolicy'
@@ -1087,12 +1092,6 @@ definitions:
         description: external_id is the unique identifier from your system to reference
           this customer (required)
         type: string
-      integration_entity_mapping:
-        description: integration_entity_mapping contains provider integration mappings
-          for this customer
-        items:
-          $ref: '#/definitions/dto.IntegrationEntityMapping'
-        type: array
       metadata:
         additionalProperties:
           type: string
@@ -1161,28 +1160,6 @@ definitions:
     - feature_id
     - feature_type
     type: object
-  dto.CreateEntityIntegrationMappingRequest:
-    properties:
-      entity_id:
-        maxLength: 255
-        type: string
-      entity_type:
-        $ref: '#/definitions/types.IntegrationEntityType'
-      metadata:
-        additionalProperties: true
-        type: object
-      provider_entity_id:
-        maxLength: 255
-        type: string
-      provider_type:
-        maxLength: 50
-        type: string
-    required:
-    - entity_id
-    - entity_type
-    - provider_entity_id
-    - provider_type
-    type: object
   dto.CreateFeatureRequest:
     properties:
       alert_settings:
@@ -1226,21 +1203,6 @@ definitions:
     - entity_type
     - lookup_key
     - name
-    type: object
-  dto.CreateIntegrationRequest:
-    properties:
-      credentials:
-        additionalProperties:
-          type: string
-        type: object
-      name:
-        type: string
-      provider:
-        $ref: '#/definitions/types.SecretProvider'
-    required:
-    - credentials
-    - name
-    - provider
     type: object
   dto.CreateInvoiceLineItemRequest:
     properties:
@@ -2419,7 +2381,7 @@ definitions:
       customer:
         $ref: '#/definitions/github_com_flexprice_flexprice_internal_domain_customer.Customer'
       error:
-        $ref: '#/definitions/errors.ErrorResponse'
+        $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       status:
         $ref: '#/definitions/types.DebugTrackerStatus'
     type: object
@@ -2475,6 +2437,10 @@ definitions:
       id:
         description: ID is the unique identifier for the customer
         type: string
+      integrations:
+        items:
+          $ref: '#/definitions/dto.EntityIntegrationMappingResponse'
+        type: array
       metadata:
         additionalProperties:
           type: string
@@ -3262,23 +3228,6 @@ definitions:
     - event_name
     - external_customer_id
     type: object
-  dto.IntegrationEntityMapping:
-    description: Integration entity mapping for external provider systems
-    properties:
-      id:
-        description: id is the external entity ID from the provider
-        type: string
-      provider:
-        description: provider is the integration provider name (e.g., "stripe", "razorpay")
-        enum:
-        - stripe
-        - razorpay
-        - paypal
-        type: string
-    required:
-    - id
-    - provider
-    type: object
   dto.InvoiceCoupon:
     properties:
       coupon_association_id:
@@ -3525,6 +3474,10 @@ definitions:
         - $ref: '#/definitions/types.InvoiceType'
         description: invoice_type indicates the type of invoice - whether this is
           a subscription invoice, one-time charge, or other billing type
+      last_computed_at:
+        description: last_computed_at is the timestamp when this invoice was last
+          computed by ComputeInvoice
+        type: string
       line_items:
         description: line_items contains the individual items that make up this invoice
           (overrides embedded field)
@@ -3646,12 +3599,32 @@ definitions:
         description: OverageFactor is a multiplier applied to usage beyond the commitment
         type: number
     type: object
-  dto.LinkedIntegrationsResponse:
+  dto.LinkIntegrationMappingRequest:
     properties:
-      providers:
-        items:
-          type: string
-        type: array
+      entity_id:
+        maxLength: 255
+        type: string
+      entity_type:
+        $ref: '#/definitions/types.IntegrationEntityType'
+      metadata:
+        additionalProperties: true
+        type: object
+      provider_entity_id:
+        maxLength: 255
+        type: string
+      provider_type:
+        maxLength: 50
+        type: string
+    required:
+    - entity_id
+    - entity_type
+    - provider_entity_id
+    - provider_type
+    type: object
+  dto.LinkIntegrationMappingResponse:
+    properties:
+      mapping:
+        $ref: '#/definitions/dto.EntityIntegrationMappingResponse'
     type: object
   dto.ListAddonsResponse:
     properties:
@@ -3919,7 +3892,7 @@ definitions:
   dto.MeterMatchingResult:
     properties:
       error:
-        $ref: '#/definitions/errors.ErrorResponse'
+        $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       matched_meters:
         items:
           $ref: '#/definitions/dto.MatchedMeter'
@@ -4216,7 +4189,7 @@ definitions:
   dto.PriceLookupResult:
     properties:
       error:
-        $ref: '#/definitions/errors.ErrorResponse'
+        $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       matched_prices:
         items:
           $ref: '#/definitions/dto.MatchedPrice'
@@ -4742,7 +4715,7 @@ definitions:
   dto.SubscriptionLineItemLookupResult:
     properties:
       error:
-        $ref: '#/definitions/errors.ErrorResponse'
+        $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       matched_line_items:
         items:
           $ref: '#/definitions/dto.MatchedSubscriptionLineItem'
@@ -5908,12 +5881,6 @@ definitions:
       external_id:
         description: external_id is the updated external identifier for the customer
         type: string
-      integration_entity_mapping:
-        description: integration_entity_mapping contains provider integration mappings
-          for this customer
-        items:
-          $ref: '#/definitions/dto.IntegrationEntityMapping'
-        type: array
       metadata:
         additionalProperties:
           type: string
@@ -6618,13 +6585,6 @@ definitions:
       message:
         type: string
     type: object
-  errors.ErrorResponse:
-    properties:
-      error:
-        $ref: '#/definitions/errors.ErrorDetail'
-      success:
-        type: boolean
-    type: object
   github_com_flexprice_flexprice_internal_domain_addon.Addon:
     properties:
       created_at:
@@ -6837,6 +6797,13 @@ definitions:
         type: string
       updated_by:
         type: string
+    type: object
+  github_com_flexprice_flexprice_internal_errors.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/errors.ErrorDetail'
+      success:
+        type: boolean
     type: object
   types.AddonAssociationEntityType:
     enum:
@@ -7133,10 +7100,12 @@ definitions:
     enum:
     - immediate
     - end_of_period
+    - scheduled_date
     type: string
     x-enum-varnames:
     - CancellationTypeImmediate
     - CancellationTypeEndOfPeriod
+    - CancellationTypeScheduledDate
   types.CollectionMethod:
     enum:
     - charge_automatically
@@ -7509,7 +7478,7 @@ definitions:
   types.FailurePoint:
     properties:
       error:
-        $ref: '#/definitions/errors.ErrorResponse'
+        $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       failure_point_type:
         $ref: '#/definitions/types.FailurePointType'
     type: object
@@ -7833,11 +7802,13 @@ definitions:
     - DRAFT
     - FINALIZED
     - VOIDED
+    - SKIPPED
     type: string
     x-enum-varnames:
     - InvoiceStatusDraft
     - InvoiceStatusFinalized
     - InvoiceStatusVoided
+    - InvoiceStatusSkipped
   types.InvoiceType:
     enum:
     - SUBSCRIPTION
@@ -8282,6 +8253,7 @@ definitions:
   types.ScheduledTaskInterval:
     enum:
     - 15MIN
+    - 30MIN
     - custom
     - hourly
     - daily
@@ -8290,11 +8262,13 @@ definitions:
       ScheduledTaskIntervalCustom: 10 minutes for testing
     x-enum-descriptions:
     - ""
+    - ""
     - 10 minutes for testing
     - ""
     - ""
     x-enum-varnames:
     - ScheduledTaskIntervalEvery15Minutes
+    - ScheduledTaskIntervalEvery30Minutes
     - ScheduledTaskIntervalCustom
     - ScheduledTaskIntervalHourly
     - ScheduledTaskIntervalDaily
@@ -8384,6 +8358,12 @@ definitions:
         type: array
       customer_id:
         description: CustomerID filters by customer ID
+        type: string
+      effective_date_for_update:
+        description: |-
+          EffectiveDateForUpdate selects subscriptions that need a billing-period pass on or before this time:
+          current_period_end <= date OR (cancel_at IS NOT NULL AND cancel_at <= date).
+          When nil, period/cancel cutoff logic is not applied by this field (see TimeRangeFilter for legacy period-end filtering).
         type: string
       end_time:
         type: string
@@ -9430,6 +9410,94 @@ definitions:
     additionalProperties:
       type: string
     type: object
+  types.WebhookEventName:
+    enum:
+    - subscription.created
+    - subscription.draft.created
+    - subscription.activated
+    - subscription.updated
+    - subscription.paused
+    - subscription.cancelled
+    - subscription.resumed
+    - subscription.phase.created
+    - subscription.phase.updated
+    - subscription.phase.deleted
+    - feature.created
+    - feature.updated
+    - feature.deleted
+    - feature.wallet_balance.alert
+    - entitlement.created
+    - entitlement.updated
+    - entitlement.deleted
+    - wallet.created
+    - wallet.updated
+    - wallet.terminated
+    - wallet.transaction.created
+    - payment.created
+    - payment.updated
+    - payment.failed
+    - payment.success
+    - payment.pending
+    - customer.created
+    - customer.updated
+    - customer.deleted
+    - invoice.update.finalized
+    - invoice.update.payment
+    - invoice.update.voided
+    - invoice.update
+    - invoice.payment.overdue
+    - wallet.credit_balance.dropped
+    - wallet.credit_balance.recovered
+    - wallet.ongoing_balance.dropped
+    - wallet.ongoing_balance.recovered
+    - subscription.renewal.due
+    - invoice.communication.triggered
+    - credit_note.created
+    - credit_note.updated
+    type: string
+    x-enum-varnames:
+    - WebhookEventSubscriptionCreated
+    - WebhookEventSubscriptionDraftCreated
+    - WebhookEventSubscriptionActivated
+    - WebhookEventSubscriptionUpdated
+    - WebhookEventSubscriptionPaused
+    - WebhookEventSubscriptionCancelled
+    - WebhookEventSubscriptionResumed
+    - WebhookEventSubscriptionPhaseCreated
+    - WebhookEventSubscriptionPhaseUpdated
+    - WebhookEventSubscriptionPhaseDeleted
+    - WebhookEventFeatureCreated
+    - WebhookEventFeatureUpdated
+    - WebhookEventFeatureDeleted
+    - WebhookEventFeatureWalletBalanceAlert
+    - WebhookEventEntitlementCreated
+    - WebhookEventEntitlementUpdated
+    - WebhookEventEntitlementDeleted
+    - WebhookEventWalletCreated
+    - WebhookEventWalletUpdated
+    - WebhookEventWalletTerminated
+    - WebhookEventWalletTransactionCreated
+    - WebhookEventPaymentCreated
+    - WebhookEventPaymentUpdated
+    - WebhookEventPaymentFailed
+    - WebhookEventPaymentSuccess
+    - WebhookEventPaymentPending
+    - WebhookEventCustomerCreated
+    - WebhookEventCustomerUpdated
+    - WebhookEventCustomerDeleted
+    - WebhookEventInvoiceUpdateFinalized
+    - WebhookEventInvoiceUpdatePayment
+    - WebhookEventInvoiceUpdateVoided
+    - WebhookEventInvoiceUpdate
+    - WebhookEventInvoicePaymentOverdue
+    - WebhookEventWalletCreditBalanceDropped
+    - WebhookEventWalletCreditBalanceRecovered
+    - WebhookEventWalletOngoingBalanceDropped
+    - WebhookEventWalletOngoingBalanceRecovered
+    - WebhookEventSubscriptionRenewalDue
+    - WebhookEventInvoiceCommunicationTriggered
+    - WebhookEventCreditNoteCreated
+    - WebhookEventCreditNoteUpdated
   webhookDto.AlertWebhookPayload:
     properties:
       alert_status:
@@ -9439,7 +9507,7 @@ definitions:
       customer:
         $ref: '#/definitions/dto.CustomerResponse'
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       feature:
         $ref: '#/definitions/dto.FeatureResponse'
       wallet:
@@ -9448,7 +9516,7 @@ definitions:
   webhookDto.CommunicationWebhookPayload:
     properties:
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       invoice:
         $ref: '#/definitions/dto.InvoiceResponse'
     type: object
@@ -9457,61 +9525,61 @@ definitions:
       credit_note:
         $ref: '#/definitions/dto.CreditNoteResponse'
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
     type: object
   webhookDto.CustomerWebhookPayload:
     properties:
       customer:
         $ref: '#/definitions/dto.CustomerResponse'
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
     type: object
   webhookDto.EntitlementWebhookPayload:
     properties:
       entitlement:
         $ref: '#/definitions/dto.EntitlementResponse'
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
     type: object
   webhookDto.FeatureWebhookPayload:
     properties:
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       feature:
         $ref: '#/definitions/dto.FeatureResponse'
     type: object
   webhookDto.InvoiceWebhookPayload:
     properties:
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       invoice:
         $ref: '#/definitions/dto.InvoiceResponse'
     type: object
   webhookDto.PaymentWebhookPayload:
     properties:
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       payment:
         $ref: '#/definitions/dto.PaymentResponse'
     type: object
   webhookDto.SubscriptionPhaseWebhookPayload:
     properties:
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       phase:
         $ref: '#/definitions/dto.SubscriptionPhaseResponse'
     type: object
   webhookDto.SubscriptionWebhookPayload:
     properties:
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       subscription:
         $ref: '#/definitions/dto.SubscriptionResponse'
     type: object
   webhookDto.TransactionWebhookPayload:
     properties:
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       transaction:
         $ref: '#/definitions/dto.WalletTransactionResponse'
       wallet:
@@ -9537,7 +9605,7 @@ definitions:
       customer:
         $ref: '#/definitions/dto.CustomerResponse'
       event_type:
-        type: string
+        $ref: '#/definitions/types.WebhookEventName'
       wallet:
         $ref: '#/definitions/dto.WalletResponse'
     type: object
@@ -9575,11 +9643,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create addon
@@ -9606,11 +9674,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete addon
@@ -9636,11 +9704,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get addon
@@ -9673,11 +9741,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update addon
@@ -9704,15 +9772,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get addon entitlements
@@ -9739,11 +9807,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get addon by lookup key
@@ -9773,11 +9841,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query addons
@@ -9808,11 +9876,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query alert logs
@@ -9842,15 +9910,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create costsheet
@@ -9879,15 +9947,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Costsheet not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete costsheet
@@ -9917,15 +9985,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Costsheet not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get costsheet
@@ -9958,19 +10026,19 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Costsheet not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update costsheet
@@ -9991,11 +10059,11 @@ paths:
         "404":
           description: No active costsheet
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get active costsheet
@@ -10026,11 +10094,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get combined revenue and cost analytics
@@ -10062,11 +10130,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get combined revenue and cost analytics (V2)
@@ -10096,11 +10164,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query costsheets
@@ -10130,23 +10198,23 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       - ApiKeyAuth: []
@@ -10178,23 +10246,23 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       - ApiKeyAuth: []
@@ -10221,15 +10289,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get coupon
@@ -10263,23 +10331,23 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       - ApiKeyAuth: []
@@ -10310,11 +10378,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query coupons
@@ -10345,11 +10413,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create credit grant
@@ -10384,11 +10452,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete credit grant
@@ -10414,11 +10482,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get credit grant
@@ -10452,11 +10520,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update credit grant
@@ -10486,23 +10554,23 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       - ApiKeyAuth: []
@@ -10530,15 +10598,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error" "Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get credit note
@@ -10567,23 +10635,23 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       - ApiKeyAuth: []
@@ -10613,23 +10681,23 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       - ApiKeyAuth: []
@@ -10660,11 +10728,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create customer
@@ -10702,11 +10770,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update customer
@@ -10733,11 +10801,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete customer
@@ -10763,11 +10831,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get customer
@@ -10795,11 +10863,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get customer entitlements
@@ -10826,15 +10894,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get upcoming credit grant applications
@@ -10863,11 +10931,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get customer invoice summary
@@ -10898,11 +10966,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get wallets by customer ID
@@ -10929,15 +10997,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get customer by external ID
@@ -10967,11 +11035,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query customers
@@ -11020,11 +11088,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get customer usage summary
@@ -11071,15 +11139,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Customer Wallets
@@ -11109,11 +11177,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create entitlement
@@ -11142,11 +11210,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete entitlement
@@ -11172,11 +11240,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get entitlement
@@ -11210,11 +11278,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update entitlement
@@ -11244,11 +11312,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create entitlements in bulk
@@ -11278,97 +11346,16 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query entitlements
       tags:
       - Entitlements
-  /entity-integration-mappings:
-    post:
-      consumes:
-      - application/json
-      description: Use when linking a FlexPrice entity to an external system (e.g.
-        CRM or payment provider) so you can sync or reconcile by external ID.
-      operationId: createEntityIntegrationMapping
-      parameters:
-      - description: Entity integration mapping data
-        in: body
-        name: entity_integration_mapping
-        required: true
-        schema:
-          $ref: '#/definitions/dto.CreateEntityIntegrationMappingRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dto.EntityIntegrationMappingResponse'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "500":
-          description: Server error
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Create entity integration mapping
-      tags:
-      - Entity Integration Mappings
-  /entity-integration-mappings/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Use when unlinking a FlexPrice entity from an external system or
-        cleaning up stale integration mappings.
-      operationId: deleteEntityIntegrationMapping
-      parameters:
-      - description: Entity integration mapping ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "404":
-          description: Resource not found
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "500":
-          description: Server error
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete entity integration mapping
-      tags:
-      - Entity Integration Mappings
   /events:
     post:
       consumes:
@@ -11396,11 +11383,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Ingest event
@@ -11427,11 +11414,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get event
@@ -11461,11 +11448,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get usage analytics
@@ -11497,11 +11484,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Bulk ingest events
@@ -11522,7 +11509,7 @@ paths:
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Hugging Face inference data
@@ -11552,11 +11539,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List raw events
@@ -11586,11 +11573,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get usage statistics
@@ -11621,15 +11608,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get usage by meter
@@ -11659,11 +11646,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create feature
@@ -11692,15 +11679,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete feature
@@ -11734,15 +11721,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update feature
@@ -11772,11 +11759,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query features
@@ -11806,11 +11793,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create group
@@ -11837,15 +11824,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete group
@@ -11873,15 +11860,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get group
@@ -11911,16 +11898,50 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query groups
       tags:
       - Groups
+  /integrations/link:
+    post:
+      consumes:
+      - application/json
+      description: Link a FlexPrice entity to provider entity with provider-specific
+        side effects.
+      operationId: linkIntegrationMapping
+      parameters:
+      - description: Link mapping request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LinkIntegrationMappingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LinkIntegrationMappingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Link integration mapping
+      tags:
+      - Integrations
   /invoices:
     post:
       consumes:
@@ -11945,11 +11966,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create one-off invoice
@@ -11990,11 +12011,11 @@ paths:
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get invoice
@@ -12028,15 +12049,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update invoice
@@ -12065,15 +12086,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Trigger invoice communication webhook
@@ -12102,11 +12123,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Finalize invoice
@@ -12142,15 +12163,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update invoice payment status
@@ -12179,15 +12200,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Attempt invoice payment
@@ -12197,6 +12218,8 @@ paths:
     get:
       description: Use when delivering an invoice PDF to the customer (e.g. email
         attachment or download). Use url=true for a presigned URL instead of binary.
+        Use force_generate=true to regenerate and re-upload the PDF even if one already
+        exists in S3.
       operationId: getInvoicePdf
       parameters:
       - description: Invoice ID
@@ -12208,6 +12231,12 @@ paths:
         in: query
         name: url
         type: boolean
+      - description: 'Force regeneration of the PDF even if one already exists in
+          S3 (default: false). Note: force_generate has no effect if invoice_pdf_url
+          is already set on the invoice.'
+        in: query
+        name: force_generate
+        type: boolean
       responses:
         "200":
           description: OK
@@ -12216,15 +12245,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get invoice PDF
@@ -12253,15 +12282,15 @@ paths:
         "400":
           description: Invalid request or invoice already recalculated
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Invoice not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Recalculate invoice (voided invoice)
@@ -12296,15 +12325,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Recalculate draft invoice (v2)
@@ -12333,11 +12362,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Void invoice
@@ -12367,11 +12396,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get invoice preview
@@ -12402,11 +12431,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query invoices
@@ -12500,11 +12529,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List payments
@@ -12533,11 +12562,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create payment
@@ -12566,15 +12595,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Payment not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete payment
@@ -12602,15 +12631,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Payment not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get payment
@@ -12644,11 +12673,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update payment
@@ -12677,15 +12706,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Payment not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Process payment
@@ -12715,11 +12744,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create plan
@@ -12748,15 +12777,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete plan
@@ -12782,15 +12811,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get plan
@@ -12824,15 +12853,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update plan
@@ -12866,19 +12895,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Clone a plan
@@ -12905,15 +12934,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get plan credit grants
@@ -12936,19 +12965,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.PlanResponse'
+            $ref: '#/definitions/dto.ListEntitlementsResponse'
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get plan entitlements
@@ -12977,19 +13006,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "422":
           description: Unprocessable Entity
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Synchronize plan prices
@@ -13019,11 +13048,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query plans
@@ -13053,11 +13082,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create price
@@ -13092,11 +13121,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete price
@@ -13124,11 +13153,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get price
@@ -13162,11 +13191,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update price
@@ -13196,11 +13225,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create prices in bulk
@@ -13229,11 +13258,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get price by lookup key
@@ -13263,11 +13292,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query prices
@@ -13319,11 +13348,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List price units
@@ -13352,11 +13381,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create price unit
@@ -13385,11 +13414,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete price unit
@@ -13417,11 +13446,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get price unit
@@ -13455,11 +13484,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update price unit
@@ -13488,15 +13517,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get price unit by code
@@ -13526,11 +13555,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query price units
@@ -13624,11 +13653,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List API keys
@@ -13657,11 +13686,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new API key
@@ -13688,142 +13717,16 @@ paths:
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete an API key
       tags:
       - Secrets
-  /secrets/integrations/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Use when disconnecting an integration (e.g. switching provider
-        or removing OAuth). Deletes stored credentials.
-      operationId: deleteIntegration
-      parameters:
-      - description: Integration ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "404":
-          description: Resource not found
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "500":
-          description: Server error
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete an integration
-      tags:
-      - Integrations
-  /secrets/integrations/by-provider/{provider}:
-    get:
-      consumes:
-      - application/json
-      description: Use when you need to check or display integration config (e.g.
-        which provider is linked). Sensitive values may be redacted.
-      operationId: getIntegration
-      parameters:
-      - description: Integration provider
-        in: path
-        name: provider
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SecretResponse'
-        "404":
-          description: Resource not found
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "500":
-          description: Server error
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get integration details
-      tags:
-      - Integrations
-  /secrets/integrations/create/{provider}:
-    post:
-      consumes:
-      - application/json
-      description: Use when storing or updating credentials for an external integration
-        (e.g. Stripe, HubSpot). Secrets are encrypted at rest.
-      operationId: createOrUpdateIntegration
-      parameters:
-      - description: Integration provider
-        in: path
-        name: provider
-        required: true
-        type: string
-      - description: Integration creation request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.CreateIntegrationRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dto.SecretResponse'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-        "500":
-          description: Server error
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Create or update an integration
-      tags:
-      - Integrations
-  /secrets/integrations/linked:
-    get:
-      consumes:
-      - application/json
-      description: Use when showing which integrations are connected (e.g. settings
-        page). Returns providers that have valid linked credentials.
-      operationId: listLinkedIntegrations
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.LinkedIntegrationsResponse'
-        "500":
-          description: Server error
-          schema:
-            $ref: '#/definitions/errors.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: List linked integrations
-      tags:
-      - Integrations
   /subscriptions:
     post:
       consumes:
@@ -13848,11 +13751,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create subscription
@@ -13879,11 +13782,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get subscription
@@ -13917,11 +13820,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update subscription
@@ -13956,11 +13859,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Activate draft subscription
@@ -13989,15 +13892,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get active addon associations
@@ -14033,11 +13936,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Cancel subscription
@@ -14072,15 +13975,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Execute subscription plan change
@@ -14115,15 +14018,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Preview subscription plan change
@@ -14159,15 +14062,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get subscription entitlements
@@ -14194,15 +14097,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get upcoming credit grant applications
@@ -14237,15 +14140,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create subscription line item
@@ -14280,15 +14183,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Pause a subscription
@@ -14317,15 +14220,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       summary: List all pauses for a subscription
       tags:
       - Subscriptions
@@ -14358,15 +14261,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Resume a paused subscription
@@ -14397,11 +14300,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get subscription (V2)
@@ -14431,11 +14334,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Remove addon from subscription
@@ -14464,11 +14367,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Add addon to subscription
@@ -14503,11 +14406,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete subscription line item
@@ -14541,11 +14444,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update subscription line item
@@ -14576,11 +14479,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query subscriptions
@@ -14610,11 +14513,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get usage by subscription
@@ -14717,11 +14620,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List tasks
@@ -14750,11 +14653,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new task
@@ -14783,15 +14686,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get a task
@@ -14823,15 +14726,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Download task export file
@@ -14866,15 +14769,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update task status
@@ -14903,15 +14806,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get task processing result
@@ -14959,11 +14862,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List scheduled tasks
@@ -14992,11 +14895,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create scheduled task
@@ -15023,15 +14926,15 @@ paths:
         "400":
           description: Task already archived
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Scheduled task not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Failed to archive task
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete a scheduled task
@@ -15059,15 +14962,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get scheduled task
@@ -15101,15 +15004,15 @@ paths:
         "400":
           description: Invalid request or task is archived
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Scheduled task not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Failed to update Temporal schedule
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update a scheduled task
@@ -15143,18 +15046,46 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Trigger force run
+      tags:
+      - Scheduled Tasks
+  /tasks/scheduled/schedule-draft-finalization:
+    post:
+      consumes:
+      - application/json
+      description: Triggers the draft invoice finalization workflow that scans computed
+        draft invoices whose finalization delay has elapsed and finalizes them (assign
+        invoice number, sync to vendors, attempt payment).
+      operationId: scheduleDraftFinalization
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Schedule draft finalization
       tags:
       - Scheduled Tasks
   /tasks/scheduled/schedule-update-billing-period:
@@ -15181,11 +15112,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Schedule update billing period
@@ -15225,11 +15156,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List tax associations
@@ -15258,11 +15189,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create Tax Association
@@ -15291,11 +15222,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete tax association
@@ -15323,11 +15254,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get Tax Association
@@ -15361,11 +15292,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update tax association
@@ -15449,11 +15380,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get tax rates
@@ -15482,11 +15413,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a tax rate
@@ -15513,11 +15444,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete a tax rate
@@ -15545,11 +15476,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get a tax rate
@@ -15583,11 +15514,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update a tax rate
@@ -15610,15 +15541,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Tenant not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get billing usage for the current tenant
@@ -15646,11 +15577,11 @@ paths:
         "404":
           description: Tenant not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get tenant by ID
@@ -15680,15 +15611,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Tenant not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update a tenant
@@ -15720,11 +15651,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create user or service account
@@ -15745,11 +15676,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get current user
@@ -15779,11 +15710,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query users
@@ -15920,11 +15851,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new wallet
@@ -15953,15 +15884,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get wallet
@@ -15995,15 +15926,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update a wallet
@@ -16037,15 +15968,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get wallet balance
@@ -16074,15 +16005,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Terminate a wallet
@@ -16117,15 +16048,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Top up wallet
@@ -16260,15 +16191,15 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "404":
           description: Resource not found
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get wallet transactions
@@ -16298,11 +16229,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query wallets
@@ -16333,11 +16264,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query wallet transactions
@@ -16538,22 +16469,6 @@ paths:
           schema:
             $ref: '#/definitions/webhookDto.CommunicationWebhookPayload'
       summary: invoice.communication.triggered
-      tags:
-      - Webhook Events
-  /webhook-events/invoice.create.drafted:
-    post:
-      consumes:
-      - application/json
-      description: Fired when a new invoice is created in draft status. Doc-only for
-        parsing.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Webhook payload
-          schema:
-            $ref: '#/definitions/webhookDto.InvoiceWebhookPayload'
-      summary: invoice.create.drafted
       tags:
       - Webhook Events
   /webhook-events/invoice.payment.overdue:
@@ -17028,11 +16943,11 @@ paths:
         "400":
           description: Invalid request
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
         "500":
           description: Server error
           schema:
-            $ref: '#/definitions/errors.ErrorResponse'
+            $ref: '#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Query workflows

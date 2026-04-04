@@ -120,18 +120,12 @@ actions:
   - target: '$.components.schemas["dto.CreateEntitlementRequest"]'
     update:
       x-speakeasy-name-override: "CreateEntitlementRequest"
-  - target: '$.components.schemas["dto.CreateEntityIntegrationMappingRequest"]'
-    update:
-      x-speakeasy-name-override: "CreateEntityIntegrationMappingRequest"
   - target: '$.components.schemas["dto.CreateFeatureRequest"]'
     update:
       x-speakeasy-name-override: "CreateFeatureRequest"
   - target: '$.components.schemas["dto.CreateGroupRequest"]'
     update:
       x-speakeasy-name-override: "CreateGroupRequest"
-  - target: '$.components.schemas["dto.CreateIntegrationRequest"]'
-    update:
-      x-speakeasy-name-override: "CreateIntegrationRequest"
   - target: '$.components.schemas["dto.CreateInvoiceLineItemRequest"]'
     update:
       x-speakeasy-name-override: "CreateInvoiceLineItemRequest"
@@ -312,9 +306,6 @@ actions:
   - target: '$.components.schemas["dto.IngestEventRequest"]'
     update:
       x-speakeasy-name-override: "IngestEventRequest"
-  - target: '$.components.schemas["dto.IntegrationEntityMapping"]'
-    update:
-      x-speakeasy-name-override: "IntegrationEntityMapping"
   - target: '$.components.schemas["dto.InvoiceCoupon"]'
     update:
       x-speakeasy-name-override: "InvoiceCoupon"
@@ -336,9 +327,12 @@ actions:
   - target: '$.components.schemas["dto.LineItemCommitmentConfig"]'
     update:
       x-speakeasy-name-override: "LineItemCommitmentConfig"
-  - target: '$.components.schemas["dto.LinkedIntegrationsResponse"]'
+  - target: '$.components.schemas["dto.LinkIntegrationMappingRequest"]'
     update:
-      x-speakeasy-name-override: "LinkedIntegrationsResponse"
+      x-speakeasy-name-override: "LinkIntegrationMappingRequest"
+  - target: '$.components.schemas["dto.LinkIntegrationMappingResponse"]'
+    update:
+      x-speakeasy-name-override: "LinkIntegrationMappingResponse"
   - target: '$.components.schemas["dto.ListAddonsResponse"]'
     update:
       x-speakeasy-name-override: "ListAddonsResponse"
@@ -660,12 +654,6 @@ actions:
   - target: '$.components.schemas["errors.ErrorDetail"]'
     update:
       x-speakeasy-name-override: "ErrorDetail"
-  - target: '$.components.schemas["errors.ErrorResponse"]'
-    update:
-      x-speakeasy-name-override: "ErrorResponse"
-  - target: '$.components.schemas["errors.ErrorResponse"].properties["error"]'
-    update:
-      x-speakeasy-name-override: "detail"
   - target: '$.components.schemas["coupon_application.CouponApplication"].properties["applied_at"]'
     update:
       format: "date-time"
@@ -742,6 +730,9 @@ actions:
     update:
       format: "date-time"
   - target: '$.components.schemas["dto.BillingPeriodInfo"].properties["start_time"]'
+    update:
+      format: "date-time"
+  - target: '$.components.schemas["dto.CancelSubscriptionRequest"].properties["cancel_at"]'
     update:
       format: "date-time"
   - target: '$.components.schemas["dto.CancelSubscriptionResponse"].properties["effective_date"]'
@@ -1033,6 +1024,9 @@ actions:
     update:
       format: "date-time"
   - target: '$.components.schemas["dto.InvoiceResponse"].properties["finalized_at"]'
+    update:
+      format: "date-time"
+  - target: '$.components.schemas["dto.InvoiceResponse"].properties["last_computed_at"]'
     update:
       format: "date-time"
   - target: '$.components.schemas["dto.InvoiceResponse"].properties["paid_at"]'

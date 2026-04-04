@@ -1,9 +1,9 @@
-speakeasyVersion: 1.761.1
+speakeasyVersion: 1.728.0
 sources:
     swagger-json:
         sourceNamespace: swagger-json
-        sourceRevisionDigest: sha256:960d2c83d6a054a3e96a0039140a14181f848fb48b5aabd9a9124959d46ee4e4
-        sourceBlobDigest: sha256:337a818537a60288171d32ee51e6aff12b875cb9d75c291c5ddc4a6f4d0d4f72
+        sourceRevisionDigest: sha256:0665d347d41190874e185cf34118df5436a1a4fe9d9084d89a8a0593a602d4ab
+        sourceBlobDigest: sha256:558844c6f00121386b711cd08a1786d608b6cea9d21e54dbfe40d3dfe8d70636
         tags:
             - latest
             - "1.0"
@@ -11,10 +11,10 @@ targets:
     flexprice-go:
         source: swagger-json
         sourceNamespace: swagger-json
-        sourceRevisionDigest: sha256:960d2c83d6a054a3e96a0039140a14181f848fb48b5aabd9a9124959d46ee4e4
-        sourceBlobDigest: sha256:337a818537a60288171d32ee51e6aff12b875cb9d75c291c5ddc4a6f4d0d4f72
+        sourceRevisionDigest: sha256:0665d347d41190874e185cf34118df5436a1a4fe9d9084d89a8a0593a602d4ab
+        sourceBlobDigest: sha256:558844c6f00121386b711cd08a1786d608b6cea9d21e54dbfe40d3dfe8d70636
         codeSamplesNamespace: swagger-json-go-code-samples
-        codeSamplesRevisionDigest: sha256:7dc36b629dbaa4a3b1a99d3d9cb74732a2ead5b02a3352a9b0c7699704457cb8
+        codeSamplesRevisionDigest: sha256:ee3abd5b7a363501e551673df90c47e0607f9622d0f2b8a111f91150741c4b54
     flexprice-mcp:
         source: swagger-json-mcp
     flexprice-python:
