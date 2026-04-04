@@ -2,8 +2,8 @@
 
 **Date:** 2026-04-04
 **Status:** Approved
-**Scope:** Flexprice Go SDK v3 — developer experience overhaul
-**Breaking changes:** Yes — targeting v3 major version bump
+**Scope:** Flexprice Go SDK v2.1.0 — developer experience overhaul
+**Breaking changes:** Yes — shipping as minor version bump 2.0.x → 2.1.0
 
 ---
 
@@ -119,14 +119,14 @@ The script reads Go DTO structs from `internal/api/dto/*.go`, extracts fields wi
 
 **File:** `api/go/errorutils/errors.go`
 
-A hand-written, non-generated file. Speakeasy will not overwrite files outside of its generation scope. The module path `v3` assumes the SDK module is bumped from `v2` to `v3` as part of this release — this must be done in `api/go/go.mod` alongside the generation step.
+A hand-written, non-generated file. Speakeasy will not overwrite files outside of its generation scope. Module path stays `github.com/flexprice/flexprice-go/v2` — SDK version bumps to `2.1.0` (minor bump, no module path change).
 
 ```go
 package errorutils
 
 import (
     "net/http"
-    sderr "github.com/flexprice/flexprice-go/v3/models/errors"
+    sderr "github.com/flexprice/flexprice-go/v2/models/errors"
 )
 
 func IsNotFound(err error) bool {
@@ -162,7 +162,7 @@ func IsServerError(err error) bool {
 
 Usage:
 ```go
-import "github.com/flexprice/flexprice-go/v3/errorutils"
+import "github.com/flexprice/flexprice-go/v2/errorutils"
 
 _, err := client.Customers.CreateCustomer(ctx, req)
 if errorutils.IsConflict(err) {
