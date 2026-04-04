@@ -3,6 +3,119 @@ info:
   title: Flexprice SDK and MCP customizations
   version: 2.1.0
 actions:
+  - target: '$'
+    update:
+      x-speakeasy-retries:
+        strategy: backoff
+        backoff:
+          initialInterval: 500
+          maxInterval: 60000
+          maxElapsedTime: 3600000
+          exponent: 1.5
+        statusCodes:
+          - '408'
+          - '429'
+          - '5XX'
+        retryConnectionErrors: true
+  - target: '$.paths["/payments"]["get"]'
+    update:
+      x-speakeasy-pagination:
+        type: offsetLimit
+        inputs:
+          - name: limit
+            in: parameters
+            type: limit
+          - name: offset
+            in: parameters
+            type: offset
+        outputs:
+          results: $.items
+          numResultsKey: $.pagination.total
+  - target: '$.paths["/prices/units"]["get"]'
+    update:
+      x-speakeasy-pagination:
+        type: offsetLimit
+        inputs:
+          - name: limit
+            in: parameters
+            type: limit
+          - name: offset
+            in: parameters
+            type: offset
+        outputs:
+          results: $.items
+          numResultsKey: $.pagination.total
+  - target: '$.paths["/secrets/api/keys"]["get"]'
+    update:
+      x-speakeasy-pagination:
+        type: offsetLimit
+        inputs:
+          - name: limit
+            in: parameters
+            type: limit
+          - name: offset
+            in: parameters
+            type: offset
+        outputs:
+          results: $.items
+          numResultsKey: $.pagination.total
+  - target: '$.paths["/tasks"]["get"]'
+    update:
+      x-speakeasy-pagination:
+        type: offsetLimit
+        inputs:
+          - name: limit
+            in: parameters
+            type: limit
+          - name: offset
+            in: parameters
+            type: offset
+        outputs:
+          results: $.items
+          numResultsKey: $.pagination.total
+  - target: '$.paths["/tasks/scheduled"]["get"]'
+    update:
+      x-speakeasy-pagination:
+        type: offsetLimit
+        inputs:
+          - name: limit
+            in: parameters
+            type: limit
+          - name: offset
+            in: parameters
+            type: offset
+        outputs:
+          results: $.items
+          numResultsKey: $.pagination.total
+  - target: '$.paths["/wallets/{id}/transactions"]["get"]'
+    update:
+      x-speakeasy-pagination:
+        type: offsetLimit
+        inputs:
+          - name: limit
+            in: parameters
+            type: limit
+          - name: offset
+            in: parameters
+            type: offset
+        outputs:
+          results: $.items
+          numResultsKey: $.pagination.total
+  - target: '$.paths["/events/query"]["post"]'
+    update:
+      x-speakeasy-pagination:
+        type: cursor
+        inputs:
+          - name: iter_first_key
+            in: requestBody
+            type: cursor
+          - name: page_size
+            in: requestBody
+            type: limit
+        outputs:
+          nextCursor: $.iter_first_key
+          hasMore: $.has_more
+          results: $.events
   - target: '$.components.schemas["CustomerResponse"]'
     update:
       x-speakeasy-name-override: "Customer"
