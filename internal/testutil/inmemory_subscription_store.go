@@ -298,6 +298,8 @@ func (s *InMemorySubscriptionStore) ListAll(ctx context.Context, filter *types.S
 		TimeRangeFilter:         filter.TimeRangeFilter,
 		CustomerID:              filter.CustomerID,
 		PlanID:                  filter.PlanID,
+		ParentSubscriptionIDs:   filter.ParentSubscriptionIDs,
+		SubscriptionTypes:       filter.SubscriptionTypes,
 		SubscriptionStatus:      filter.SubscriptionStatus,
 		BillingCadence:          filter.BillingCadence,
 		BillingPeriod:           filter.BillingPeriod,
