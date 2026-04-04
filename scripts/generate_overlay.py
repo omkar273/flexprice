@@ -135,7 +135,7 @@ def write_overlay(actions: list) -> None:
     for action in actions:
         target = action["target"]
         update = action["update"]
-        lines.append(f"  - target: \"{target}\"")
+        lines.append(f"  - target: '{target}'")
         lines.append("    update:")
         for k, v in update.items():
             lines.append(f"      {k}: {json.dumps(v)}")
