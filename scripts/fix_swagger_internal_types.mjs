@@ -64,14 +64,14 @@ function main() {
   }
 
   // 1b. Strip github_com_flexprice_flexprice_internal_domain_<pkg>. prefixes in all files.
-  //     Transforms e.g. "github_com_flexprice_flexprice_internal_domain_addon.Addon" → "DomainAddon".
+  //     Transforms e.g. "github_com_flexprice_flexprice_internal_domain_addon.Addon" → "Addon".
   const domainPrefixRe = /github_com_flexprice_flexprice_internal_domain_[a-z_]+\./g;
   for (const rel of FILES) {
     const path = resolve(repoRoot, rel);
     if (!existsSync(path)) continue;
     let s = readFileSync(path, 'utf8');
     const before = s;
-    s = s.replace(domainPrefixRe, 'Domain');
+    s = s.replace(domainPrefixRe, '');
     if (s !== before) {
       writeFileSync(path, s, 'utf8');
       console.log(`Stripped domain package prefixes in ${rel}`);
