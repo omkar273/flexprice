@@ -50,67 +50,19 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 	})
 
 	// ── Verify Plan Entitlements ────────────────────────────────────────
-	// SDK: client.Entitlements via raw HTTP (SDK GetPlanEntitlements may differ)
-	// Fallback to raw HTTP for plan entitlements query
+	// SDK: client.Entitlements.GetPlanEntitlements(ctx, planID)
+	// SDK v2.0.16: Swagger fixed to return dto.ListEntitlementsResponse (was PlanResponse).
 
 	r.run("Verify Plan Entitlements", "Entitlements.GetPlanEntitlements", false, func() error {
-		// SDK GetPlanEntitlements has a known bug: Swagger says PlanResponse but backend
-		// returns ListEntitlementsResponse, so the SDK deserialises into the wrong shape
-		// and always returns 0 entitlements.
-		//
-		// Strategy:
-		//   1. Try SDK GetPlanEntitlements (the "correct" method).
-		//   2. If it returns 0 entitlements, try SDK QueryEntitlement with entity filter
-		//      (uses the right response type).
-		//   3. If that also fails, fall back to raw HTTP.
-
-		// ── Attempt 1: SDK GetPlanEntitlements ───────────────────────────
+		// Primary: SDK GetPlanEntitlements — v2.0.16 returns DtoListEntitlementsResponse.
 		sdkErr := func() error {
 			resp, err := r.client.Entitlements.GetPlanEntitlements(ctx, r.planID)
 			if err != nil {
 				return fmt.Errorf("SDK GetPlanEntitlements call failed: %w", err)
 			}
-			plan := resp.DtoPlanResponse
-			if plan == nil {
-				return fmt.Errorf("SDK GetPlanEntitlements returned nil body")
-			}
-			if len(plan.Entitlements) == 0 {
-				return fmt.Errorf("SDK GetPlanEntitlements returned 0 entitlements (Swagger annotation mismatch: backend returns ListEntitlementsResponse but SDK expects PlanResponse)")
-			}
-			for _, ent := range plan.Entitlements {
-				if ent.FeatureID != nil && *ent.FeatureID == r.featureAID {
-					limit := int64(0)
-					if ent.UsageLimit != nil {
-						limit = *ent.UsageLimit
-					}
-					r.lastResult().Details = fmt.Sprintf("found Feature A entitlement via GetPlanEntitlements, limit=%d", limit)
-					return nil
-				}
-			}
-			return fmt.Errorf("Feature A not found in %d entitlements", len(plan.Entitlements))
-		}()
-		if sdkErr == nil {
-			return nil
-		}
-
-		// ── Attempt 2: SDK QueryEntitlement with entity filter ───────────
-		r.markSDKFallback("Entitlements.GetPlanEntitlements", sdkErr)
-
-		queryErr := func() error {
-			entityType := types.EntitlementEntityTypePlan
-			status := types.StatusPublished
-			filter := types.EntitlementFilter{
-				EntityIds:  []string{r.planID},
-				EntityType: &entityType,
-				Status:     &status,
-			}
-			resp, err := r.client.Entitlements.QueryEntitlement(ctx, filter)
-			if err != nil {
-				return fmt.Errorf("SDK QueryEntitlement failed: %w", err)
-			}
 			list := resp.DtoListEntitlementsResponse
 			if list == nil || len(list.Items) == 0 {
-				return fmt.Errorf("SDK QueryEntitlement returned 0 entitlements for plan %s", r.planID)
+				return fmt.Errorf("SDK GetPlanEntitlements returned 0 entitlements for plan %s", r.planID)
 			}
 			for _, ent := range list.Items {
 				if ent.FeatureID != nil && *ent.FeatureID == r.featureAID {
@@ -118,25 +70,27 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 					if ent.UsageLimit != nil {
 						limit = *ent.UsageLimit
 					}
-					r.lastResult().Details += fmt.Sprintf("\n        → found Feature A entitlement via QueryEntitlement (fallback), limit=%d", limit)
+					r.lastResult().Details = fmt.Sprintf("found Feature A entitlement via SDK, limit=%d", limit)
 					return nil
 				}
 			}
-			return fmt.Errorf("Feature A not found in %d entitlements via QueryEntitlement", len(list.Items))
+			return fmt.Errorf("Feature A not found in %d entitlements", len(list.Items))
 		}()
-		if queryErr == nil {
+		if sdkErr == nil {
 			return nil
 		}
 
-		// ── Attempt 3: raw HTTP ──────────────────────────────────────────
+		// Diagnostic fallback: raw HTTP to determine if it's an SDK bug or server bug.
+		r.markSDKFallback("Entitlements.GetPlanEntitlements", sdkErr)
+
 		rawResp, _, err := r.raw.Get(ctx, fmt.Sprintf("/plans/%s/entitlements", r.planID))
 		if err != nil {
-			return fmt.Errorf("all 3 attempts failed — SDK GetPlanEntitlements: %v | SDK QueryEntitlement: %v | raw HTTP: %w", sdkErr, queryErr, err)
+			return fmt.Errorf("SDK failed: %v | raw HTTP also failed: %w", sdkErr, err)
 		}
 
 		items := getSlice(rawResp, "items")
 		if len(items) == 0 {
-			return fmt.Errorf("all 3 attempts returned 0 entitlements for plan %s — SDK GetPlanEntitlements: %v | SDK QueryEntitlement: %v", r.planID, sdkErr, queryErr)
+			return fmt.Errorf("SDK failed: %v | raw HTTP returned 0 entitlements for plan %s", sdkErr, r.planID)
 		}
 
 		found := false
@@ -145,7 +99,7 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 				if getString(ent, "feature_id") == r.featureAID {
 					found = true
 					limit := getFloat(ent, "usage_limit")
-					r.lastResult().Details += fmt.Sprintf("\n        → found Feature A entitlement via raw HTTP (2nd fallback), limit=%.0f", limit)
+					r.lastResult().Details += fmt.Sprintf("\n        → found Feature A entitlement via raw HTTP (SDK BROKEN), limit=%.0f", limit)
 					break
 				}
 			}
