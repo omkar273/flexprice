@@ -6351,12 +6351,13 @@ func (s *subscriptionService) cancelPlanLineItemsForSubscription(
 // Returns internal customer IDs for inherited subscriptions to create after invoice/activation in the same tx.
 func (s *subscriptionService) prepareSubscriptionInheritanceForCreate(ctx context.Context, req *dto.CreateSubscriptionRequest, sub *subscription.Subscription) ([]string, error) {
 
-	childCustomerIDs := make([]string, 0, len(req.Inheritance.ExternalCustomerIDsToInheritSubscription))
+	var childCustomerIDs []string
 	if req.Inheritance != nil {
 		if err := req.Inheritance.Validate(); err != nil {
 			return nil, err
 		}
 		inh := req.Inheritance
+		childCustomerIDs = make([]string, 0, len(inh.ExternalCustomerIDsToInheritSubscription))
 
 		if inh.ParentSubscriptionID != "" {
 			parentSub, err := s.SubRepo.Get(ctx, inh.ParentSubscriptionID)
