@@ -185,6 +185,19 @@ err = asyncClient.EnqueueWithOptions(flexprice.EventOptions{
 
 **Benefits:** Automatic batching, background sending, configurable batch size and flush interval, optional debug logging. Call `Close()` before exit to flush remaining events.
 
+## Idempotent requests
+
+Use `WithIdempotencyKey` on any POST request to safely retry without risk of duplicates:
+
+```go
+resp, err := client.Customers.CreateCustomer(ctx, types.CreateCustomerRequest{
+    ExternalID: "acme-001",
+    Name:       flexprice.String("Acme Corp"),
+}, flexprice.WithIdempotencyKey("create-customer-acme-001"))
+```
+
+Stripe and Orb use the same `Idempotency-Key` header convention. The key should be unique per logical operation — a UUID or a deterministic hash of the operation's inputs works well.
+
 ## Authentication
 
 - Set the API key via the `x-api-key` header. The SDK uses `flexprice.WithSecurity(apiKey)` when initializing.
