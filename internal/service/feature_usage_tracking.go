@@ -1319,8 +1319,8 @@ type AnalyticsData struct {
 
 // GetDetailedUsageAnalytics provides detailed usage analytics with filtering, grouping, and time-series data
 func (s *featureUsageTrackingService) GetDetailedUsageAnalytics(ctx context.Context, req *dto.GetUsageAnalyticsRequest) (*dto.GetUsageAnalyticsResponse, error) {
-	// If include_children is requested, delegate to V2 which handles multi-customer aggregation
-	if req.IncludeChildren {
+	// Delegate to V2 for multi-customer aggregation (children and/or explicit external_customer_ids).
+	if req.IncludeChildren || len(req.ExternalCustomerIDs) > 0 {
 		return s.GetDetailedUsageAnalyticsV2(ctx, req)
 	}
 

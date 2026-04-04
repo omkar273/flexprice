@@ -2350,7 +2350,7 @@ func (r *FeatureUsageRepository) GetUsageForBucketedMeters(ctx context.Context, 
 func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *events.FeatureUsageParams) string {
 	bucketWindow := r.formatWindowSize(params.UsageParams.WindowSize, params.UsageParams.BillingAnchor)
 
-	externalCustomerFilter, _ := buildUsageEventCustomerFilters(params.UsageParams)
+	externalCustomerFilter, customerFilter := buildUsageEventCustomerFilters(params.UsageParams)
 
 	featureFilter := ""
 	if params.FeatureID != "" {
@@ -2417,6 +2417,7 @@ func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *e
 					%s
 					%s
 					%s
+					%s
 				GROUP BY bucket_start, group_key
 			)
 			SELECT
@@ -2434,6 +2435,7 @@ func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *e
 			types.GetTenantID(ctx),
 			types.GetEnvironmentID(ctx),
 			externalCustomerFilter,
+			customerFilter,
 			featureFilter,
 			priceFilter,
 			meterFilter,
@@ -2460,6 +2462,7 @@ func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *e
 				%s
 				%s
 				%s
+				%s
 			GROUP BY bucket_start
 			ORDER BY bucket_start
 		)
@@ -2477,6 +2480,7 @@ func (r *FeatureUsageRepository) getWindowedQuery(ctx context.Context, params *e
 		types.GetTenantID(ctx),
 		types.GetEnvironmentID(ctx),
 		externalCustomerFilter,
+		customerFilter,
 		featureFilter,
 		priceFilter,
 		meterFilter,
