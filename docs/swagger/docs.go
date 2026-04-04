@@ -48,7 +48,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateAddonRequest"
+                            "$ref": "#/definitions/CreateAddonRequest"
                         }
                     }
                 ],
@@ -56,7 +56,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateAddonResponse"
+                            "$ref": "#/definitions/CreateAddonResponse"
                         }
                     },
                     "400": {
@@ -103,7 +103,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.AddonResponse"
+                            "$ref": "#/definitions/AddonResponse"
                         }
                     },
                     "400": {
@@ -155,7 +155,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListAddonsResponse"
+                            "$ref": "#/definitions/ListAddonsResponse"
                         }
                     },
                     "400": {
@@ -202,7 +202,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.AddonResponse"
+                            "$ref": "#/definitions/AddonResponse"
                         }
                     },
                     "400": {
@@ -251,7 +251,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateAddonRequest"
+                            "$ref": "#/definitions/UpdateAddonRequest"
                         }
                     }
                 ],
@@ -259,7 +259,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.AddonResponse"
+                            "$ref": "#/definitions/AddonResponse"
                         }
                     },
                     "400": {
@@ -304,7 +304,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -351,7 +351,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListEntitlementsResponse"
+                            "$ref": "#/definitions/ListEntitlementsResponse"
                         }
                     },
                     "400": {
@@ -409,7 +409,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListAlertLogsResponse"
+                            "$ref": "#/definitions/ListAlertLogsResponse"
                         }
                     },
                     "400": {
@@ -453,7 +453,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateCostsheetRequest"
+                            "$ref": "#/definitions/CreateCostsheetRequest"
                         }
                     }
                 ],
@@ -461,7 +461,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created costsheet",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateCostsheetResponse"
+                            "$ref": "#/definitions/CreateCostsheetResponse"
                         }
                     },
                     "400": {
@@ -505,7 +505,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Active costsheet",
                         "schema": {
-                            "$ref": "#/definitions/dto.CostsheetResponse"
+                            "$ref": "#/definitions/CostsheetResponse"
                         }
                     },
                     "404": {
@@ -549,7 +549,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetCostAnalyticsRequest"
+                            "$ref": "#/definitions/GetCostAnalyticsRequest"
                         }
                     }
                 ],
@@ -557,7 +557,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetDetailedCostAnalyticsResponse"
+                            "$ref": "#/definitions/GetDetailedCostAnalyticsResponse"
                         }
                     },
                     "400": {
@@ -601,7 +601,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetCostAnalyticsRequest"
+                            "$ref": "#/definitions/GetCostAnalyticsRequest"
                         }
                     }
                 ],
@@ -609,7 +609,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetDetailedCostAnalyticsResponse"
+                            "$ref": "#/definitions/GetDetailedCostAnalyticsResponse"
                         }
                     },
                     "400": {
@@ -661,7 +661,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Paginated costsheets",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListCostsheetResponse"
+                            "$ref": "#/definitions/ListCostsheetResponse"
                         }
                     },
                     "400": {
@@ -714,7 +714,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Costsheet details",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetCostsheetResponse"
+                            "$ref": "#/definitions/GetCostsheetResponse"
                         }
                     },
                     "400": {
@@ -769,7 +769,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateCostsheetRequest"
+                            "$ref": "#/definitions/UpdateCostsheetRequest"
                         }
                     }
                 ],
@@ -777,7 +777,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated costsheet",
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateCostsheetResponse"
+                            "$ref": "#/definitions/UpdateCostsheetResponse"
                         }
                     },
                     "400": {
@@ -837,7 +837,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Costsheet deleted",
                         "schema": {
-                            "$ref": "#/definitions/dto.DeleteCostsheetResponse"
+                            "$ref": "#/definitions/DeleteCostsheetResponse"
                         }
                     },
                     "400": {
@@ -890,7 +890,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateCouponRequest"
+                            "$ref": "#/definitions/CreateCouponRequest"
                         }
                     }
                 ],
@@ -898,7 +898,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CouponResponse"
+                            "$ref": "#/definitions/CouponResponse"
                         }
                     },
                     "400": {
@@ -968,7 +968,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListCouponsResponse"
+                            "$ref": "#/definitions/ListCouponsResponse"
                         }
                     },
                     "400": {
@@ -1015,7 +1015,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CouponResponse"
+                            "$ref": "#/definitions/CouponResponse"
                         }
                     },
                     "400": {
@@ -1073,7 +1073,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateCouponRequest"
+                            "$ref": "#/definitions/UpdateCouponRequest"
                         }
                     }
                 ],
@@ -1081,7 +1081,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CouponResponse"
+                            "$ref": "#/definitions/CouponResponse"
                         }
                     },
                     "400": {
@@ -1215,7 +1215,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateCreditGrantRequest"
+                            "$ref": "#/definitions/CreateCreditGrantRequest"
                         }
                     }
                 ],
@@ -1223,7 +1223,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreditGrantResponse"
+                            "$ref": "#/definitions/CreditGrantResponse"
                         }
                     },
                     "400": {
@@ -1270,7 +1270,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreditGrantResponse"
+                            "$ref": "#/definitions/CreditGrantResponse"
                         }
                     },
                     "400": {
@@ -1319,7 +1319,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateCreditGrantRequest"
+                            "$ref": "#/definitions/UpdateCreditGrantRequest"
                         }
                     }
                 ],
@@ -1327,7 +1327,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreditGrantResponse"
+                            "$ref": "#/definitions/CreditGrantResponse"
                         }
                     },
                     "400": {
@@ -1375,7 +1375,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/dto.DeleteCreditGrantRequest"
+                            "$ref": "#/definitions/DeleteCreditGrantRequest"
                         }
                     }
                 ],
@@ -1383,7 +1383,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -1430,7 +1430,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateCreditNoteRequest"
+                            "$ref": "#/definitions/CreateCreditNoteRequest"
                         }
                     }
                 ],
@@ -1438,7 +1438,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreditNoteResponse"
+                            "$ref": "#/definitions/CreditNoteResponse"
                         }
                     },
                     "400": {
@@ -1503,7 +1503,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreditNoteResponse"
+                            "$ref": "#/definitions/CreditNoteResponse"
                         }
                     },
                     "400": {
@@ -1562,7 +1562,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreditNoteResponse"
+                            "$ref": "#/definitions/CreditNoteResponse"
                         }
                     },
                     "400": {
@@ -1633,7 +1633,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreditNoteResponse"
+                            "$ref": "#/definitions/CreditNoteResponse"
                         }
                     },
                     "400": {
@@ -1707,7 +1707,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateCustomerRequest"
+                            "$ref": "#/definitions/UpdateCustomerRequest"
                         }
                     }
                 ],
@@ -1715,7 +1715,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CustomerResponse"
+                            "$ref": "#/definitions/CustomerResponse"
                         }
                     },
                     "400": {
@@ -1757,7 +1757,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateCustomerRequest"
+                            "$ref": "#/definitions/CreateCustomerRequest"
                         }
                     }
                 ],
@@ -1765,7 +1765,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CustomerResponse"
+                            "$ref": "#/definitions/CustomerResponse"
                         }
                     },
                     "400": {
@@ -1813,7 +1813,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CustomerResponse"
+                            "$ref": "#/definitions/CustomerResponse"
                         }
                     },
                     "400": {
@@ -1871,7 +1871,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListCustomersResponse"
+                            "$ref": "#/definitions/ListCustomersResponse"
                         }
                     },
                     "400": {
@@ -1952,7 +1952,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CustomerUsageSummaryResponse"
+                            "$ref": "#/definitions/CustomerUsageSummaryResponse"
                         }
                     },
                     "400": {
@@ -2030,7 +2030,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.WalletResponse"
+                                "$ref": "#/definitions/WalletResponse"
                             }
                         }
                     },
@@ -2084,7 +2084,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CustomerResponse"
+                            "$ref": "#/definitions/CustomerResponse"
                         }
                     },
                     "400": {
@@ -2177,7 +2177,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CustomerEntitlementsResponse"
+                            "$ref": "#/definitions/CustomerEntitlementsResponse"
                         }
                     },
                     "400": {
@@ -2224,7 +2224,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListCreditGrantApplicationsResponse"
+                            "$ref": "#/definitions/ListCreditGrantApplicationsResponse"
                         }
                     },
                     "400": {
@@ -2280,7 +2280,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CustomerMultiCurrencyInvoiceSummary"
+                            "$ref": "#/definitions/CustomerMultiCurrencyInvoiceSummary"
                         }
                     },
                     "400": {
@@ -2332,7 +2332,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.WalletResponse"
+                                "$ref": "#/definitions/WalletResponse"
                             }
                         }
                     },
@@ -2377,7 +2377,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateEntitlementRequest"
+                            "$ref": "#/definitions/CreateEntitlementRequest"
                         }
                     }
                 ],
@@ -2385,7 +2385,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.EntitlementResponse"
+                            "$ref": "#/definitions/EntitlementResponse"
                         }
                     },
                     "400": {
@@ -2429,7 +2429,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateBulkEntitlementRequest"
+                            "$ref": "#/definitions/CreateBulkEntitlementRequest"
                         }
                     }
                 ],
@@ -2437,7 +2437,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateBulkEntitlementResponse"
+                            "$ref": "#/definitions/CreateBulkEntitlementResponse"
                         }
                     },
                     "400": {
@@ -2489,7 +2489,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListEntitlementsResponse"
+                            "$ref": "#/definitions/ListEntitlementsResponse"
                         }
                     },
                     "400": {
@@ -2536,7 +2536,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.EntitlementResponse"
+                            "$ref": "#/definitions/EntitlementResponse"
                         }
                     },
                     "400": {
@@ -2585,7 +2585,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateEntitlementRequest"
+                            "$ref": "#/definitions/UpdateEntitlementRequest"
                         }
                     }
                 ],
@@ -2593,7 +2593,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.EntitlementResponse"
+                            "$ref": "#/definitions/EntitlementResponse"
                         }
                     },
                     "400": {
@@ -2641,7 +2641,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -2685,7 +2685,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.IngestEventRequest"
+                            "$ref": "#/definitions/IngestEventRequest"
                         }
                     }
                 ],
@@ -2740,7 +2740,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetUsageAnalyticsRequest"
+                            "$ref": "#/definitions/GetUsageAnalyticsRequest"
                         }
                     }
                 ],
@@ -2748,7 +2748,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetUsageAnalyticsResponse"
+                            "$ref": "#/definitions/GetUsageAnalyticsResponse"
                         }
                     },
                     "400": {
@@ -2792,7 +2792,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.BulkIngestEventRequest"
+                            "$ref": "#/definitions/BulkIngestEventRequest"
                         }
                     }
                 ],
@@ -2841,7 +2841,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetHuggingFaceBillingDataResponse"
+                            "$ref": "#/definitions/GetHuggingFaceBillingDataResponse"
                         }
                     },
                     "500": {
@@ -2879,7 +2879,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetEventsRequest"
+                            "$ref": "#/definitions/GetEventsRequest"
                         }
                     }
                 ],
@@ -2887,7 +2887,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetEventsResponse"
+                            "$ref": "#/definitions/GetEventsResponse"
                         }
                     },
                     "400": {
@@ -2931,7 +2931,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetUsageRequest"
+                            "$ref": "#/definitions/GetUsageRequest"
                         }
                     }
                 ],
@@ -2939,7 +2939,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetUsageResponse"
+                            "$ref": "#/definitions/GetUsageResponse"
                         }
                     },
                     "400": {
@@ -2983,7 +2983,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetUsageByMeterRequest"
+                            "$ref": "#/definitions/GetUsageByMeterRequest"
                         }
                     }
                 ],
@@ -2991,7 +2991,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetUsageResponse"
+                            "$ref": "#/definitions/GetUsageResponse"
                         }
                     },
                     "400": {
@@ -3044,7 +3044,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetEventByIDResponse"
+                            "$ref": "#/definitions/GetEventByIDResponse"
                         }
                     },
                     "404": {
@@ -3088,7 +3088,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateFeatureRequest"
+                            "$ref": "#/definitions/CreateFeatureRequest"
                         }
                     }
                 ],
@@ -3096,7 +3096,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.FeatureResponse"
+                            "$ref": "#/definitions/FeatureResponse"
                         }
                     },
                     "400": {
@@ -3148,7 +3148,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListFeaturesResponse"
+                            "$ref": "#/definitions/ListFeaturesResponse"
                         }
                     },
                     "400": {
@@ -3199,7 +3199,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateFeatureRequest"
+                            "$ref": "#/definitions/UpdateFeatureRequest"
                         }
                     }
                 ],
@@ -3207,7 +3207,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.FeatureResponse"
+                            "$ref": "#/definitions/FeatureResponse"
                         }
                     },
                     "400": {
@@ -3261,7 +3261,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -3311,7 +3311,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateGroupRequest"
+                            "$ref": "#/definitions/CreateGroupRequest"
                         }
                     }
                 ],
@@ -3319,7 +3319,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.GroupResponse"
+                            "$ref": "#/definitions/GroupResponse"
                         }
                     },
                     "400": {
@@ -3371,7 +3371,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListGroupsResponse"
+                            "$ref": "#/definitions/ListGroupsResponse"
                         }
                     },
                     "400": {
@@ -3421,7 +3421,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GroupResponse"
+                            "$ref": "#/definitions/GroupResponse"
                         }
                     },
                     "400": {
@@ -3522,7 +3522,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.LinkIntegrationMappingRequest"
+                            "$ref": "#/definitions/LinkIntegrationMappingRequest"
                         }
                     }
                 ],
@@ -3530,7 +3530,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.LinkIntegrationMappingResponse"
+                            "$ref": "#/definitions/LinkIntegrationMappingResponse"
                         }
                     },
                     "400": {
@@ -3574,7 +3574,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateInvoiceRequest"
+                            "$ref": "#/definitions/CreateInvoiceRequest"
                         }
                     }
                 ],
@@ -3582,7 +3582,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     },
                     "400": {
@@ -3626,7 +3626,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetPreviewInvoiceRequest"
+                            "$ref": "#/definitions/GetPreviewInvoiceRequest"
                         }
                     }
                 ],
@@ -3634,7 +3634,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     },
                     "400": {
@@ -3686,7 +3686,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListInvoicesResponse"
+                            "$ref": "#/definitions/ListInvoicesResponse"
                         }
                     },
                     "400": {
@@ -3752,7 +3752,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     },
                     "404": {
@@ -3801,7 +3801,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateInvoiceRequest"
+                            "$ref": "#/definitions/UpdateInvoiceRequest"
                         }
                     }
                 ],
@@ -3809,7 +3809,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     },
                     "400": {
@@ -3865,7 +3865,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -3921,7 +3921,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -3973,7 +3973,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdatePaymentStatusRequest"
+                            "$ref": "#/definitions/UpdatePaymentStatusRequest"
                         }
                     }
                 ],
@@ -3981,7 +3981,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     },
                     "400": {
@@ -4037,7 +4037,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -4214,7 +4214,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     },
                     "400": {
@@ -4270,7 +4270,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -4420,7 +4420,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Paginated payments",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListPaymentsResponse"
+                            "$ref": "#/definitions/ListPaymentsResponse"
                         }
                     },
                     "400": {
@@ -4462,7 +4462,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreatePaymentRequest"
+                            "$ref": "#/definitions/CreatePaymentRequest"
                         }
                     }
                 ],
@@ -4470,7 +4470,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created payment",
                         "schema": {
-                            "$ref": "#/definitions/dto.PaymentResponse"
+                            "$ref": "#/definitions/PaymentResponse"
                         }
                     },
                     "400": {
@@ -4520,7 +4520,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Payment details",
                         "schema": {
-                            "$ref": "#/definitions/dto.PaymentResponse"
+                            "$ref": "#/definitions/PaymentResponse"
                         }
                     },
                     "400": {
@@ -4575,7 +4575,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdatePaymentRequest"
+                            "$ref": "#/definitions/UpdatePaymentRequest"
                         }
                     }
                 ],
@@ -4583,7 +4583,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated payment",
                         "schema": {
-                            "$ref": "#/definitions/dto.PaymentResponse"
+                            "$ref": "#/definitions/PaymentResponse"
                         }
                     },
                     "400": {
@@ -4631,7 +4631,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Payment deleted",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -4687,7 +4687,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Processed payment",
                         "schema": {
-                            "$ref": "#/definitions/dto.PaymentResponse"
+                            "$ref": "#/definitions/PaymentResponse"
                         }
                     },
                     "400": {
@@ -4737,7 +4737,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreatePlanRequest"
+                            "$ref": "#/definitions/CreatePlanRequest"
                         }
                     }
                 ],
@@ -4745,7 +4745,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.PlanResponse"
+                            "$ref": "#/definitions/PlanResponse"
                         }
                     },
                     "400": {
@@ -4797,7 +4797,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListPlansResponse"
+                            "$ref": "#/definitions/ListPlansResponse"
                         }
                     },
                     "400": {
@@ -4844,7 +4844,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PlanResponse"
+                            "$ref": "#/definitions/PlanResponse"
                         }
                     },
                     "400": {
@@ -4899,7 +4899,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdatePlanRequest"
+                            "$ref": "#/definitions/UpdatePlanRequest"
                         }
                     }
                 ],
@@ -4907,7 +4907,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PlanResponse"
+                            "$ref": "#/definitions/PlanResponse"
                         }
                     },
                     "400": {
@@ -4961,7 +4961,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -5017,7 +5017,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ClonePlanRequest"
+                            "$ref": "#/definitions/ClonePlanRequest"
                         }
                     }
                 ],
@@ -5025,7 +5025,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.PlanResponse"
+                            "$ref": "#/definitions/PlanResponse"
                         }
                     },
                     "400": {
@@ -5084,7 +5084,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListCreditGrantsResponse"
+                            "$ref": "#/definitions/ListCreditGrantsResponse"
                         }
                     },
                     "400": {
@@ -5137,7 +5137,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListEntitlementsResponse"
+                            "$ref": "#/definitions/ListEntitlementsResponse"
                         }
                     },
                     "400": {
@@ -5249,7 +5249,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreatePriceRequest"
+                            "$ref": "#/definitions/CreatePriceRequest"
                         }
                     }
                 ],
@@ -5257,7 +5257,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.PriceResponse"
+                            "$ref": "#/definitions/PriceResponse"
                         }
                     },
                     "400": {
@@ -5301,7 +5301,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateBulkPriceRequest"
+                            "$ref": "#/definitions/CreateBulkPriceRequest"
                         }
                     }
                 ],
@@ -5309,7 +5309,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateBulkPriceResponse"
+                            "$ref": "#/definitions/CreateBulkPriceResponse"
                         }
                     },
                     "400": {
@@ -5359,7 +5359,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PriceResponse"
+                            "$ref": "#/definitions/PriceResponse"
                         }
                     },
                     "400": {
@@ -5411,7 +5411,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListPricesResponse"
+                            "$ref": "#/definitions/ListPricesResponse"
                         }
                     },
                     "400": {
@@ -5493,7 +5493,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListPriceUnitsResponse"
+                            "$ref": "#/definitions/ListPriceUnitsResponse"
                         }
                     },
                     "400": {
@@ -5535,7 +5535,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreatePriceUnitRequest"
+                            "$ref": "#/definitions/CreatePriceUnitRequest"
                         }
                     }
                 ],
@@ -5543,7 +5543,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreatePriceUnitResponse"
+                            "$ref": "#/definitions/CreatePriceUnitResponse"
                         }
                     },
                     "400": {
@@ -5593,7 +5593,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PriceUnitResponse"
+                            "$ref": "#/definitions/PriceUnitResponse"
                         }
                     },
                     "400": {
@@ -5651,7 +5651,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListPriceUnitsResponse"
+                            "$ref": "#/definitions/ListPriceUnitsResponse"
                         }
                     },
                     "400": {
@@ -5701,7 +5701,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PriceUnitResponse"
+                            "$ref": "#/definitions/PriceUnitResponse"
                         }
                     },
                     "400": {
@@ -5750,7 +5750,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdatePriceUnitRequest"
+                            "$ref": "#/definitions/UpdatePriceUnitRequest"
                         }
                     }
                 ],
@@ -5758,7 +5758,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PriceUnitResponse"
+                            "$ref": "#/definitions/PriceUnitResponse"
                         }
                     },
                     "400": {
@@ -5806,7 +5806,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -5856,7 +5856,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PriceResponse"
+                            "$ref": "#/definitions/PriceResponse"
                         }
                     },
                     "400": {
@@ -5905,7 +5905,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdatePriceRequest"
+                            "$ref": "#/definitions/UpdatePriceRequest"
                         }
                     }
                 ],
@@ -5913,7 +5913,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.PriceResponse"
+                            "$ref": "#/definitions/PriceResponse"
                         }
                     },
                     "400": {
@@ -5962,7 +5962,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.DeletePriceRequest"
+                            "$ref": "#/definitions/DeletePriceRequest"
                         }
                     }
                 ],
@@ -5970,7 +5970,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -6118,7 +6118,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListSecretsResponse"
+                            "$ref": "#/definitions/ListSecretsResponse"
                         }
                     },
                     "400": {
@@ -6160,7 +6160,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateAPIKeyRequest"
+                            "$ref": "#/definitions/CreateAPIKeyRequest"
                         }
                     }
                 ],
@@ -6168,7 +6168,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateAPIKeyResponse"
+                            "$ref": "#/definitions/CreateAPIKeyResponse"
                         }
                     },
                     "400": {
@@ -6259,7 +6259,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateSubscriptionRequest"
+                            "$ref": "#/definitions/CreateSubscriptionRequest"
                         }
                     }
                 ],
@@ -6267,7 +6267,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionResponse"
+                            "$ref": "#/definitions/SubscriptionResponse"
                         }
                     },
                     "400": {
@@ -6311,7 +6311,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.AddAddonRequest"
+                            "$ref": "#/definitions/AddAddonRequest"
                         }
                     }
                 ],
@@ -6319,7 +6319,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.AddonAssociationResponse"
+                            "$ref": "#/definitions/AddonAssociationResponse"
                         }
                     },
                     "400": {
@@ -6361,7 +6361,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.RemoveAddonRequest"
+                            "$ref": "#/definitions/RemoveAddonRequest"
                         }
                     }
                 ],
@@ -6369,7 +6369,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -6420,7 +6420,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateSubscriptionLineItemRequest"
+                            "$ref": "#/definitions/UpdateSubscriptionLineItemRequest"
                         }
                     }
                 ],
@@ -6428,7 +6428,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
+                            "$ref": "#/definitions/SubscriptionLineItemResponse"
                         }
                     },
                     "400": {
@@ -6477,7 +6477,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.DeleteSubscriptionLineItemRequest"
+                            "$ref": "#/definitions/DeleteSubscriptionLineItemRequest"
                         }
                     }
                 ],
@@ -6485,7 +6485,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
+                            "$ref": "#/definitions/SubscriptionLineItemResponse"
                         }
                     },
                     "400": {
@@ -6537,7 +6537,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListSubscriptionsResponse"
+                            "$ref": "#/definitions/ListSubscriptionsResponse"
                         }
                     },
                     "400": {
@@ -6581,7 +6581,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetUsageBySubscriptionRequest"
+                            "$ref": "#/definitions/GetUsageBySubscriptionRequest"
                         }
                     }
                 ],
@@ -6589,7 +6589,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetUsageBySubscriptionResponse"
+                            "$ref": "#/definitions/GetUsageBySubscriptionResponse"
                         }
                     },
                     "400": {
@@ -6636,7 +6636,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionResponse"
+                            "$ref": "#/definitions/SubscriptionResponse"
                         }
                     },
                     "400": {
@@ -6685,7 +6685,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateSubscriptionRequest"
+                            "$ref": "#/definitions/UpdateSubscriptionRequest"
                         }
                     }
                 ],
@@ -6693,7 +6693,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionResponse"
+                            "$ref": "#/definitions/SubscriptionResponse"
                         }
                     },
                     "400": {
@@ -6744,7 +6744,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ActivateDraftSubscriptionRequest"
+                            "$ref": "#/definitions/ActivateDraftSubscriptionRequest"
                         }
                     }
                 ],
@@ -6752,7 +6752,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionResponse"
+                            "$ref": "#/definitions/SubscriptionResponse"
                         }
                     },
                     "400": {
@@ -6801,7 +6801,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.AddonAssociationResponse"
+                                "$ref": "#/definitions/AddonAssociationResponse"
                             }
                         }
                     },
@@ -6859,7 +6859,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CancelSubscriptionRequest"
+                            "$ref": "#/definitions/CancelSubscriptionRequest"
                         }
                     }
                 ],
@@ -6867,7 +6867,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CancelSubscriptionResponse"
+                            "$ref": "#/definitions/CancelSubscriptionResponse"
                         }
                     },
                     "400": {
@@ -6918,7 +6918,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionChangeRequest"
+                            "$ref": "#/definitions/SubscriptionChangeRequest"
                         }
                     }
                 ],
@@ -6926,7 +6926,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionChangeExecuteResponse"
+                            "$ref": "#/definitions/SubscriptionChangeExecuteResponse"
                         }
                     },
                     "400": {
@@ -6983,7 +6983,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionChangeRequest"
+                            "$ref": "#/definitions/SubscriptionChangeRequest"
                         }
                     }
                 ],
@@ -6991,7 +6991,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionChangePreviewResponse"
+                            "$ref": "#/definitions/SubscriptionChangePreviewResponse"
                         }
                     },
                     "400": {
@@ -7057,7 +7057,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionEntitlementsResponse"
+                            "$ref": "#/definitions/SubscriptionEntitlementsResponse"
                         }
                     },
                     "400": {
@@ -7110,7 +7110,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListCreditGrantApplicationsResponse"
+                            "$ref": "#/definitions/ListCreditGrantApplicationsResponse"
                         }
                     },
                     "400": {
@@ -7167,7 +7167,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateSubscriptionLineItemRequest"
+                            "$ref": "#/definitions/CreateSubscriptionLineItemRequest"
                         }
                     }
                 ],
@@ -7175,7 +7175,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
+                            "$ref": "#/definitions/SubscriptionLineItemResponse"
                         }
                     },
                     "400": {
@@ -7232,7 +7232,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.PauseSubscriptionRequest"
+                            "$ref": "#/definitions/PauseSubscriptionRequest"
                         }
                     }
                 ],
@@ -7240,7 +7240,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionPauseResponse"
+                            "$ref": "#/definitions/SubscriptionPauseResponse"
                         }
                     },
                     "400": {
@@ -7290,7 +7290,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.ListSubscriptionPausesResponse"
+                                "$ref": "#/definitions/ListSubscriptionPausesResponse"
                             }
                         }
                     },
@@ -7348,7 +7348,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ResumeSubscriptionRequest"
+                            "$ref": "#/definitions/ResumeSubscriptionRequest"
                         }
                     }
                 ],
@@ -7356,7 +7356,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionPauseResponse"
+                            "$ref": "#/definitions/SubscriptionPauseResponse"
                         }
                     },
                     "400": {
@@ -7415,7 +7415,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionResponseV2"
+                            "$ref": "#/definitions/SubscriptionResponseV2"
                         }
                     },
                     "400": {
@@ -7572,7 +7572,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListTasksResponse"
+                            "$ref": "#/definitions/ListTasksResponse"
                         }
                     },
                     "400": {
@@ -7614,7 +7614,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateTaskRequest"
+                            "$ref": "#/definitions/CreateTaskRequest"
                         }
                     }
                 ],
@@ -7622,7 +7622,7 @@ const docTemplate = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaskResponse"
+                            "$ref": "#/definitions/TaskResponse"
                         }
                     },
                     "400": {
@@ -7757,7 +7757,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListScheduledTasksResponse"
+                            "$ref": "#/definitions/ListScheduledTasksResponse"
                         }
                     },
                     "400": {
@@ -7799,7 +7799,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateScheduledTaskRequest"
+                            "$ref": "#/definitions/CreateScheduledTaskRequest"
                         }
                     }
                 ],
@@ -7807,7 +7807,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.ScheduledTaskResponse"
+                            "$ref": "#/definitions/ScheduledTaskResponse"
                         }
                     },
                     "400": {
@@ -7950,7 +7950,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ScheduledTaskResponse"
+                            "$ref": "#/definitions/ScheduledTaskResponse"
                         }
                     },
                     "400": {
@@ -8005,7 +8005,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateScheduledTaskRequest"
+                            "$ref": "#/definitions/UpdateScheduledTaskRequest"
                         }
                     }
                 ],
@@ -8013,7 +8013,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ScheduledTaskResponse"
+                            "$ref": "#/definitions/ScheduledTaskResponse"
                         }
                     },
                     "400": {
@@ -8120,7 +8120,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/dto.TriggerForceRunRequest"
+                            "$ref": "#/definitions/TriggerForceRunRequest"
                         }
                     }
                 ],
@@ -8128,7 +8128,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Returns workflow details and time range",
                         "schema": {
-                            "$ref": "#/definitions/dto.TriggerForceRunResponse"
+                            "$ref": "#/definitions/TriggerForceRunResponse"
                         }
                     },
                     "400": {
@@ -8184,7 +8184,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaskResponse"
+                            "$ref": "#/definitions/TaskResponse"
                         }
                     },
                     "400": {
@@ -8300,7 +8300,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateTaskStatusRequest"
+                            "$ref": "#/definitions/UpdateTaskStatusRequest"
                         }
                     }
                 ],
@@ -8308,7 +8308,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
@@ -8381,7 +8381,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListTaxAssociationsResponse"
+                            "$ref": "#/definitions/ListTaxAssociationsResponse"
                         }
                     },
                     "400": {
@@ -8423,7 +8423,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateTaxAssociationRequest"
+                            "$ref": "#/definitions/CreateTaxAssociationRequest"
                         }
                     }
                 ],
@@ -8431,7 +8431,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaxAssociationResponse"
+                            "$ref": "#/definitions/TaxAssociationResponse"
                         }
                     },
                     "400": {
@@ -8481,7 +8481,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaxAssociationResponse"
+                            "$ref": "#/definitions/TaxAssociationResponse"
                         }
                     },
                     "400": {
@@ -8530,7 +8530,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.TaxAssociationUpdateRequest"
+                            "$ref": "#/definitions/TaxAssociationUpdateRequest"
                         }
                     }
                 ],
@@ -8538,7 +8538,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaxAssociationResponse"
+                            "$ref": "#/definitions/TaxAssociationResponse"
                         }
                     },
                     "400": {
@@ -8586,7 +8586,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaxAssociationResponse"
+                            "$ref": "#/definitions/TaxAssociationResponse"
                         }
                     },
                     "400": {
@@ -8716,7 +8716,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/dto.TaxRateResponse"
+                                "$ref": "#/definitions/TaxRateResponse"
                             }
                         }
                     },
@@ -8759,7 +8759,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateTaxRateRequest"
+                            "$ref": "#/definitions/CreateTaxRateRequest"
                         }
                     }
                 ],
@@ -8767,7 +8767,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaxRateResponse"
+                            "$ref": "#/definitions/TaxRateResponse"
                         }
                     },
                     "400": {
@@ -8817,7 +8817,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaxRateResponse"
+                            "$ref": "#/definitions/TaxRateResponse"
                         }
                     },
                     "400": {
@@ -8866,7 +8866,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateTaxRateRequest"
+                            "$ref": "#/definitions/UpdateTaxRateRequest"
                         }
                     }
                 ],
@@ -8874,7 +8874,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TaxRateResponse"
+                            "$ref": "#/definitions/TaxRateResponse"
                         }
                     },
                     "400": {
@@ -8960,7 +8960,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Tenant billing usage",
                         "schema": {
-                            "$ref": "#/definitions/dto.TenantBillingUsage"
+                            "$ref": "#/definitions/TenantBillingUsage"
                         }
                     },
                     "400": {
@@ -9010,7 +9010,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateTenantRequest"
+                            "$ref": "#/definitions/UpdateTenantRequest"
                         }
                     }
                 ],
@@ -9018,7 +9018,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated tenant",
                         "schema": {
-                            "$ref": "#/definitions/dto.TenantResponse"
+                            "$ref": "#/definitions/TenantResponse"
                         }
                     },
                     "400": {
@@ -9074,7 +9074,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Tenant details",
                         "schema": {
-                            "$ref": "#/definitions/dto.TenantResponse"
+                            "$ref": "#/definitions/TenantResponse"
                         }
                     },
                     "404": {
@@ -9118,7 +9118,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateUserRequest"
+                            "$ref": "#/definitions/CreateUserRequest"
                         }
                     }
                 ],
@@ -9126,7 +9126,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateUserResponse"
+                            "$ref": "#/definitions/CreateUserResponse"
                         }
                     },
                     "400": {
@@ -9164,7 +9164,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/UserResponse"
                         }
                     },
                     "401": {
@@ -9216,7 +9216,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListUsersResponse"
+                            "$ref": "#/definitions/ListUsersResponse"
                         }
                     },
                     "400": {
@@ -9278,7 +9278,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetPendingSchedulesResponse"
+                            "$ref": "#/definitions/GetPendingSchedulesResponse"
                         }
                     }
                 }
@@ -9311,7 +9311,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SubscriptionScheduleResponse"
+                            "$ref": "#/definitions/SubscriptionScheduleResponse"
                         }
                     }
                 }
@@ -9343,7 +9343,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/dto.CancelScheduleRequest"
+                            "$ref": "#/definitions/CancelScheduleRequest"
                         }
                     }
                 ],
@@ -9351,7 +9351,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.CancelScheduleResponse"
+                            "$ref": "#/definitions/CancelScheduleResponse"
                         }
                     }
                 }
@@ -9384,7 +9384,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetPendingSchedulesResponse"
+                            "$ref": "#/definitions/GetPendingSchedulesResponse"
                         }
                     }
                 }
@@ -9416,7 +9416,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateWalletRequest"
+                            "$ref": "#/definitions/CreateWalletRequest"
                         }
                     }
                 ],
@@ -9424,7 +9424,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.WalletResponse"
+                            "$ref": "#/definitions/WalletResponse"
                         }
                     },
                     "400": {
@@ -9528,7 +9528,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListWalletTransactionsResponse"
+                            "$ref": "#/definitions/ListWalletTransactionsResponse"
                         }
                     },
                     "400": {
@@ -9578,7 +9578,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.WalletResponse"
+                            "$ref": "#/definitions/WalletResponse"
                         }
                     },
                     "400": {
@@ -9633,7 +9633,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateWalletRequest"
+                            "$ref": "#/definitions/UpdateWalletRequest"
                         }
                     }
                 ],
@@ -9641,7 +9641,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.WalletResponse"
+                            "$ref": "#/definitions/WalletResponse"
                         }
                     },
                     "400": {
@@ -9703,7 +9703,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.WalletBalanceResponse"
+                            "$ref": "#/definitions/WalletBalanceResponse"
                         }
                     },
                     "400": {
@@ -9759,7 +9759,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.WalletResponse"
+                            "$ref": "#/definitions/WalletResponse"
                         }
                     },
                     "400": {
@@ -9816,7 +9816,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.TopUpWalletRequest"
+                            "$ref": "#/definitions/TopUpWalletRequest"
                         }
                     }
                 ],
@@ -9824,7 +9824,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.TopUpWalletResponse"
+                            "$ref": "#/definitions/TopUpWalletResponse"
                         }
                     },
                     "400": {
@@ -10031,7 +10031,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListWalletTransactionsResponse"
+                            "$ref": "#/definitions/ListWalletTransactionsResponse"
                         }
                     },
                     "400": {
@@ -11055,7 +11055,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListWorkflowsResponse"
+                            "$ref": "#/definitions/ListWorkflowsResponse"
                         }
                     },
                     "400": {
@@ -11075,6 +11075,273 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "ListAddonsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AddonResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListCouponsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CouponResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListCreditGrantApplicationsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CreditGrantApplicationResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListCreditGrantsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CreditGrantResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListCustomersResponse": {
+            "description": "Response object for listing customers with pagination",
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CustomerResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListEntitlementsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/EntitlementResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListFeaturesResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FeatureResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListGroupsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GroupResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListInvoicesResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/InvoiceResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListPlansResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PlanResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListPriceUnitsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PriceUnitResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListPricesResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PriceResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListScheduledTasksResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ScheduledTaskResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListSecretsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListSubscriptionsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SubscriptionResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListTaxAssociationsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TaxAssociationResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListUsersResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/UserResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListWalletTransactionsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/WalletTransactionResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
+        "ListWorkflowsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/WorkflowExecutionDTO"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/types.PaginationResponse"
+                }
+            }
+        },
         "costsheet.Filter": {
             "type": "object",
             "properties": {
@@ -11320,7 +11587,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ActivateDraftSubscriptionRequest": {
+        "ActivateDraftSubscriptionRequest": {
             "type": "object",
             "required": [
                 "start_date"
@@ -11332,7 +11599,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AddAddonRequest": {
+        "AddAddonRequest": {
             "type": "object",
             "required": [
                 "addon_id",
@@ -11346,7 +11613,7 @@ const docTemplate = `{
                     "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
+                        "$ref": "#/definitions/LineItemCommitmentConfig"
                     }
                 },
                 "metadata": {
@@ -11361,7 +11628,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AddAddonToSubscriptionRequest": {
+        "AddAddonToSubscriptionRequest": {
             "type": "object",
             "required": [
                 "addon_id"
@@ -11374,7 +11641,7 @@ const docTemplate = `{
                     "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
+                        "$ref": "#/definitions/LineItemCommitmentConfig"
                     }
                 },
                 "metadata": {
@@ -11386,11 +11653,11 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AddonAssociationResponse": {
+        "AddonAssociationResponse": {
             "type": "object",
             "properties": {
                 "addon": {
-                    "$ref": "#/definitions/dto.AddonResponse"
+                    "$ref": "#/definitions/AddonResponse"
                 },
                 "addon_id": {
                     "type": "string"
@@ -11436,7 +11703,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Status"
                 },
                 "subscription": {
-                    "$ref": "#/definitions/dto.SubscriptionResponse"
+                    "$ref": "#/definitions/SubscriptionResponse"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -11449,7 +11716,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AddonResponse": {
+        "AddonResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -11464,7 +11731,7 @@ const docTemplate = `{
                 "entitlements": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.EntitlementResponse"
+                        "$ref": "#/definitions/EntitlementResponse"
                     }
                 },
                 "environment_id": {
@@ -11487,7 +11754,7 @@ const docTemplate = `{
                     "description": "Optional expanded fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.PriceResponse"
+                        "$ref": "#/definitions/PriceResponse"
                     }
                 },
                 "status": {
@@ -11507,7 +11774,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.Address": {
+        "Address": {
             "type": "object",
             "properties": {
                 "address_city": {
@@ -11535,7 +11802,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AggregatedEntitlement": {
+        "AggregatedEntitlement": {
             "type": "object",
             "properties": {
                 "is_enabled": {
@@ -11559,24 +11826,24 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.AggregatedFeature": {
+        "AggregatedFeature": {
             "type": "object",
             "properties": {
                 "entitlement": {
-                    "$ref": "#/definitions/dto.AggregatedEntitlement"
+                    "$ref": "#/definitions/AggregatedEntitlement"
                 },
                 "feature": {
-                    "$ref": "#/definitions/dto.FeatureResponse"
+                    "$ref": "#/definitions/FeatureResponse"
                 },
                 "sources": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.EntitlementSource"
+                        "$ref": "#/definitions/EntitlementSource"
                     }
                 }
             }
         },
-        "dto.AlertLogResponse": {
+        "AlertLogResponse": {
             "type": "object",
             "properties": {
                 "alert_info": {
@@ -11598,7 +11865,7 @@ const docTemplate = `{
                     "description": "Expanded fields",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.CustomerResponse"
+                            "$ref": "#/definitions/CustomerResponse"
                         }
                     ]
                 },
@@ -11615,7 +11882,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "feature": {
-                    "$ref": "#/definitions/dto.FeatureResponse"
+                    "$ref": "#/definitions/FeatureResponse"
                 },
                 "id": {
                     "type": "string"
@@ -11639,11 +11906,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/dto.WalletResponse"
+                    "$ref": "#/definitions/WalletResponse"
                 }
             }
         },
-        "dto.BillingCycleInfo": {
+        "BillingCycleInfo": {
             "type": "object",
             "properties": {
                 "billing_anchor": {
@@ -11681,7 +11948,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.BillingPeriodInfo": {
+        "BillingPeriodInfo": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -11696,7 +11963,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.BulkIngestEventRequest": {
+        "BulkIngestEventRequest": {
             "type": "object",
             "required": [
                 "events"
@@ -11707,12 +11974,12 @@ const docTemplate = `{
                     "maxItems": 1000,
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/dto.IngestEventRequest"
+                        "$ref": "#/definitions/IngestEventRequest"
                     }
                 }
             }
         },
-        "dto.CancelScheduleRequest": {
+        "CancelScheduleRequest": {
             "description": "Request to cancel a subscription schedule (supports two modes)",
             "type": "object",
             "properties": {
@@ -11734,7 +12001,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CancelScheduleResponse": {
+        "CancelScheduleResponse": {
             "description": "Confirmation of schedule cancellation",
             "type": "object",
             "properties": {
@@ -11752,7 +12019,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CancelSubscriptionRequest": {
+        "CancelSubscriptionRequest": {
             "type": "object",
             "required": [
                 "cancellation_type"
@@ -11792,7 +12059,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CancelSubscriptionResponse": {
+        "CancelSubscriptionResponse": {
             "type": "object",
             "properties": {
                 "cancellation_type": {
@@ -11811,14 +12078,14 @@ const docTemplate = `{
                 "proration_details": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.ProrationDetail"
+                        "$ref": "#/definitions/ProrationDetail"
                     }
                 },
                 "proration_invoice": {
                     "description": "Proration details",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     ]
                 },
@@ -11837,7 +12104,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ClonePlanRequest": {
+        "ClonePlanRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -11866,14 +12133,14 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CostAnalyticItem": {
+        "CostAnalyticItem": {
             "type": "object",
             "properties": {
                 "cost_by_period": {
                     "description": "Breakdown",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CostPoint"
+                        "$ref": "#/definitions/CostPoint"
                     }
                 },
                 "costsheet_id": {
@@ -11930,7 +12197,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CostPoint": {
+        "CostPoint": {
             "type": "object",
             "properties": {
                 "cost": {
@@ -11947,7 +12214,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CostsheetResponse": {
+        "CostsheetResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -11981,7 +12248,7 @@ const docTemplate = `{
                     "description": "Associated prices",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.PriceResponse"
+                        "$ref": "#/definitions/PriceResponse"
                     }
                 },
                 "status": {
@@ -11998,7 +12265,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CouponApplicationResponse": {
+        "CouponApplicationResponse": {
             "type": "object",
             "properties": {
                 "applied_at": {
@@ -12073,7 +12340,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CouponAssociationResponse": {
+        "CouponAssociationResponse": {
             "type": "object",
             "properties": {
                 "coupon_id": {
@@ -12130,7 +12397,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CouponResponse": {
+        "CouponResponse": {
             "type": "object",
             "properties": {
                 "amount_off": {
@@ -12202,7 +12469,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateAPIKeyRequest": {
+        "CreateAPIKeyRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -12223,18 +12490,18 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateAPIKeyResponse": {
+        "CreateAPIKeyResponse": {
             "type": "object",
             "properties": {
                 "api_key": {
                     "type": "string"
                 },
                 "secret": {
-                    "$ref": "#/definitions/dto.SecretResponse"
+                    "$ref": "#/definitions/SecretResponse"
                 }
             }
         },
-        "dto.CreateAddonRequest": {
+        "CreateAddonRequest": {
             "type": "object",
             "required": [
                 "lookup_key",
@@ -12260,7 +12527,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateAddonResponse": {
+        "CreateAddonResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -12275,7 +12542,7 @@ const docTemplate = `{
                 "entitlements": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.EntitlementResponse"
+                        "$ref": "#/definitions/EntitlementResponse"
                     }
                 },
                 "environment_id": {
@@ -12298,7 +12565,7 @@ const docTemplate = `{
                     "description": "Optional expanded fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.PriceResponse"
+                        "$ref": "#/definitions/PriceResponse"
                     }
                 },
                 "status": {
@@ -12318,7 +12585,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateBulkEntitlementRequest": {
+        "CreateBulkEntitlementRequest": {
             "type": "object",
             "required": [
                 "items"
@@ -12329,23 +12596,23 @@ const docTemplate = `{
                     "maxItems": 100,
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/dto.CreateEntitlementRequest"
+                        "$ref": "#/definitions/CreateEntitlementRequest"
                     }
                 }
             }
         },
-        "dto.CreateBulkEntitlementResponse": {
+        "CreateBulkEntitlementResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.EntitlementResponse"
+                        "$ref": "#/definitions/EntitlementResponse"
                     }
                 }
             }
         },
-        "dto.CreateBulkPriceRequest": {
+        "CreateBulkPriceRequest": {
             "type": "object",
             "required": [
                 "items"
@@ -12356,23 +12623,23 @@ const docTemplate = `{
                     "maxItems": 100,
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceRequest"
+                        "$ref": "#/definitions/CreatePriceRequest"
                     }
                 }
             }
         },
-        "dto.CreateBulkPriceResponse": {
+        "CreateBulkPriceResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.PriceResponse"
+                        "$ref": "#/definitions/PriceResponse"
                     }
                 }
             }
         },
-        "dto.CreateCostsheetRequest": {
+        "CreateCostsheetRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -12399,15 +12666,15 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateCostsheetResponse": {
+        "CreateCostsheetResponse": {
             "type": "object",
             "properties": {
                 "costsheet": {
-                    "$ref": "#/definitions/dto.CostsheetResponse"
+                    "$ref": "#/definitions/CostsheetResponse"
                 }
             }
         },
-        "dto.CreateCouponRequest": {
+        "CreateCouponRequest": {
             "type": "object",
             "required": [
                 "cadence",
@@ -12474,7 +12741,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateCreditGrantRequest": {
+        "CreateCreditGrantRequest": {
             "type": "object",
             "required": [
                 "cadence",
@@ -12538,7 +12805,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateCreditNoteLineItemRequest": {
+        "CreateCreditNoteLineItemRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -12567,7 +12834,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateCreditNoteRequest": {
+        "CreateCreditNoteRequest": {
             "type": "object",
             "required": [
                 "invoice_id",
@@ -12590,7 +12857,7 @@ const docTemplate = `{
                     "description": "line_items contains the individual line items that make up this credit note (minimum 1 required)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreateCreditNoteLineItemRequest"
+                        "$ref": "#/definitions/CreateCreditNoteLineItemRequest"
                     }
                 },
                 "memo": {
@@ -12620,7 +12887,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateCustomerRequest": {
+        "CreateCustomerRequest": {
             "description": "Request object for creating a new customer in the system",
             "type": "object",
             "required": [
@@ -12691,12 +12958,12 @@ const docTemplate = `{
                     "description": "tax_rate_overrides contains tax rate configurations to be linked to this customer",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TaxRateOverride"
+                        "$ref": "#/definitions/TaxRateOverride"
                     }
                 }
             }
         },
-        "dto.CreateEntitlementRequest": {
+        "CreateEntitlementRequest": {
             "type": "object",
             "required": [
                 "feature_id",
@@ -12744,7 +13011,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateFeatureRequest": {
+        "CreateFeatureRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -12768,7 +13035,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Metadata"
                 },
                 "meter": {
-                    "$ref": "#/definitions/dto.CreateMeterRequest"
+                    "$ref": "#/definitions/CreateMeterRequest"
                 },
                 "meter_id": {
                     "type": "string"
@@ -12790,7 +13057,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateGroupRequest": {
+        "CreateGroupRequest": {
             "type": "object",
             "required": [
                 "entity_type",
@@ -12809,7 +13076,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateInvoiceLineItemRequest": {
+        "CreateInvoiceLineItemRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -12906,7 +13173,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateInvoiceRequest": {
+        "CreateInvoiceRequest": {
             "type": "object",
             "required": [
                 "amount_due",
@@ -12967,7 +13234,7 @@ const docTemplate = `{
                     "description": "Invoice Coupons",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.InvoiceCoupon"
+                        "$ref": "#/definitions/InvoiceCoupon"
                     }
                 },
                 "invoice_number": {
@@ -12998,14 +13265,14 @@ const docTemplate = `{
                     "description": "Invoice Line Item Coupons",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.InvoiceLineItemCoupon"
+                        "$ref": "#/definitions/InvoiceLineItemCoupon"
                     }
                 },
                 "line_items": {
                     "description": "line_items contains the individual items that make up this invoice",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreateInvoiceLineItemRequest"
+                        "$ref": "#/definitions/CreateInvoiceLineItemRequest"
                     }
                 },
                 "metadata": {
@@ -13036,7 +13303,7 @@ const docTemplate = `{
                     "description": "prepared_tax_rates contains the tax rates pre-resolved by the caller (e.g., billing service)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TaxRateResponse"
+                        "$ref": "#/definitions/TaxRateResponse"
                     }
                 },
                 "subscription_id": {
@@ -13051,7 +13318,7 @@ const docTemplate = `{
                     "description": "tax_rate_overrides is the tax rate overrides to be applied to the invoice",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TaxRateOverride"
+                        "$ref": "#/definitions/TaxRateOverride"
                     }
                 },
                 "tax_rates": {
@@ -13071,7 +13338,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateMeterRequest": {
+        "CreateMeterRequest": {
             "type": "object",
             "required": [
                 "aggregation",
@@ -13102,7 +13369,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreatePaymentRequest": {
+        "CreatePaymentRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -13155,7 +13422,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreatePlanRequest": {
+        "CreatePlanRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -13178,7 +13445,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreatePriceRequest": {
+        "CreatePriceRequest": {
             "type": "object",
             "required": [
                 "billing_cadence",
@@ -13259,7 +13526,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "price_unit_config": {
-                    "$ref": "#/definitions/dto.PriceUnitConfig"
+                    "$ref": "#/definitions/PriceUnitConfig"
                 },
                 "price_unit_type": {
                     "$ref": "#/definitions/types.PriceUnitType"
@@ -13273,7 +13540,7 @@ const docTemplate = `{
                 "tiers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
+                        "$ref": "#/definitions/CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -13287,7 +13554,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreatePriceTier": {
+        "CreatePriceTier": {
             "type": "object",
             "required": [
                 "unit_amount"
@@ -13307,7 +13574,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreatePriceUnitRequest": {
+        "CreatePriceUnitRequest": {
             "type": "object",
             "required": [
                 "base_currency",
@@ -13339,7 +13606,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreatePriceUnitResponse": {
+        "CreatePriceUnitResponse": {
             "type": "object",
             "properties": {
                 "base_currency": {
@@ -13386,7 +13653,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateScheduledTaskRequest": {
+        "CreateScheduledTaskRequest": {
             "type": "object",
             "required": [
                 "connection_id",
@@ -13421,7 +13688,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateSubscriptionLineItemRequest": {
+        "CreateSubscriptionLineItemRequest": {
             "type": "object",
             "properties": {
                 "commitment_amount": {
@@ -13462,7 +13729,7 @@ const docTemplate = `{
                     "description": "Price defines a new price inline; server creates a subscription-scoped price and adds the line item. Exactly one of price_id or price must be set. Entity/currency are set from the subscription.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.SubscriptionPriceCreateRequest"
+                            "$ref": "#/definitions/SubscriptionPriceCreateRequest"
                         }
                     ]
                 },
@@ -13481,7 +13748,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateSubscriptionRequest": {
+        "CreateSubscriptionRequest": {
             "type": "object",
             "required": [
                 "billing_cadence",
@@ -13494,7 +13761,7 @@ const docTemplate = `{
                     "description": "Addons represents addons to be added to the subscription during creation",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AddAddonToSubscriptionRequest"
+                        "$ref": "#/definitions/AddAddonToSubscriptionRequest"
                     }
                 },
                 "billing_cadence": {
@@ -13545,7 +13812,7 @@ const docTemplate = `{
                     "description": "Credit grants to be applied when subscription is created",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreateCreditGrantRequest"
+                        "$ref": "#/definitions/CreateCreditGrantRequest"
                     }
                 },
                 "currency": {
@@ -13593,7 +13860,7 @@ const docTemplate = `{
                     "description": "LineItemCommitments allows setting commitment configuration per line item (keyed by price_id)",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
+                        "$ref": "#/definitions/LineItemCommitmentConfig"
                     }
                 },
                 "line_item_coupons": {
@@ -13609,7 +13876,7 @@ const docTemplate = `{
                     "description": "LineItems are extra line items to add at creation (each with price_id or price), in addition to plan prices",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreateSubscriptionLineItemRequest"
+                        "$ref": "#/definitions/CreateSubscriptionLineItemRequest"
                     }
                 },
                 "lookup_key": {
@@ -13629,14 +13896,14 @@ const docTemplate = `{
                     "description": "OverrideEntitlements allows customizing specific entitlements for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.OverrideEntitlementRequest"
+                        "$ref": "#/definitions/OverrideEntitlementRequest"
                     }
                 },
                 "override_line_items": {
                     "description": "OverrideLineItems allows customizing specific prices for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.OverrideLineItemRequest"
+                        "$ref": "#/definitions/OverrideLineItemRequest"
                     }
                 },
                 "parent_subscription_id": {
@@ -13663,7 +13930,7 @@ const docTemplate = `{
                     "description": "Phases represents subscription phases to be created with the subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionPhaseCreateRequest"
+                        "$ref": "#/definitions/SubscriptionPhaseCreateRequest"
                     }
                 },
                 "plan_id": {
@@ -13692,7 +13959,7 @@ const docTemplate = `{
                     "description": "tax_rate_overrides is the tax rate overrides\tto be applied to the subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TaxRateOverride"
+                        "$ref": "#/definitions/TaxRateOverride"
                     }
                 },
                 "trial_end": {
@@ -13703,7 +13970,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateTaskRequest": {
+        "CreateTaskRequest": {
             "type": "object",
             "required": [
                 "entity_type",
@@ -13733,7 +14000,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateTaxAssociationRequest": {
+        "CreateTaxAssociationRequest": {
             "type": "object",
             "required": [
                 "tax_rate_code"
@@ -13768,7 +14035,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateTaxRateRequest": {
+        "CreateTaxRateRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -13820,7 +14087,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateUserRequest": {
+        "CreateUserRequest": {
             "type": "object",
             "required": [
                 "type"
@@ -13847,7 +14114,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateUserResponse": {
+        "CreateUserResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13867,14 +14134,14 @@ const docTemplate = `{
                     }
                 },
                 "tenant": {
-                    "$ref": "#/definitions/dto.TenantResponse"
+                    "$ref": "#/definitions/TenantResponse"
                 },
                 "type": {
                     "$ref": "#/definitions/types.UserType"
                 }
             }
         },
-        "dto.CreateWalletRequest": {
+        "CreateWalletRequest": {
             "type": "object",
             "required": [
                 "currency"
@@ -13943,7 +14210,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreditGrantApplicationResponse": {
+        "CreditGrantApplicationResponse": {
             "type": "object",
             "properties": {
                 "application_reason": {
@@ -14014,7 +14281,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreditGrantResponse": {
+        "CreditGrantResponse": {
             "type": "object",
             "properties": {
                 "cadence": {
@@ -14099,7 +14366,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreditNoteResponse": {
+        "CreditNoteResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -14156,7 +14423,7 @@ const docTemplate = `{
                     "description": "invoice contains the associated invoice information if requested",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     ]
                 },
@@ -14206,7 +14473,7 @@ const docTemplate = `{
                     "description": "subscription contains the associated subscription information if applicable",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.SubscriptionResponse"
+                            "$ref": "#/definitions/SubscriptionResponse"
                         }
                     ]
                 },
@@ -14233,7 +14500,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CustomAnalyticItem": {
+        "CustomAnalyticItem": {
             "type": "object",
             "properties": {
                 "feature_name": {
@@ -14256,7 +14523,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CustomerEntitlementsResponse": {
+        "CustomerEntitlementsResponse": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -14265,12 +14532,12 @@ const docTemplate = `{
                 "features": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AggregatedFeature"
+                        "$ref": "#/definitions/AggregatedFeature"
                     }
                 }
             }
         },
-        "dto.CustomerInvoiceSummary": {
+        "CustomerInvoiceSummary": {
             "type": "object",
             "properties": {
                 "currency": {
@@ -14315,7 +14582,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CustomerLookupResult": {
+        "CustomerLookupResult": {
             "type": "object",
             "properties": {
                 "status": {
@@ -14323,7 +14590,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CustomerMultiCurrencyInvoiceSummary": {
+        "CustomerMultiCurrencyInvoiceSummary": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -14338,12 +14605,12 @@ const docTemplate = `{
                     "description": "summaries contains the invoice summaries for each currency",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CustomerInvoiceSummary"
+                        "$ref": "#/definitions/CustomerInvoiceSummary"
                     }
                 }
             }
         },
-        "dto.CustomerResponse": {
+        "CustomerResponse": {
             "description": "Customer response object containing all customer information",
             "type": "object",
             "properties": {
@@ -14396,7 +14663,7 @@ const docTemplate = `{
                 "integrations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.EntityIntegrationMappingResponse"
+                        "$ref": "#/definitions/EntityIntegrationMappingResponse"
                     }
                 },
                 "metadata": {
@@ -14411,7 +14678,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "parent_customer": {
-                    "$ref": "#/definitions/dto.CustomerResponse"
+                    "$ref": "#/definitions/CustomerResponse"
                 },
                 "parent_customer_id": {
                     "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer.",
@@ -14431,7 +14698,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CustomerUsageSummaryResponse": {
+        "CustomerUsageSummaryResponse": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -14440,38 +14707,38 @@ const docTemplate = `{
                 "features": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.FeatureUsageSummary"
+                        "$ref": "#/definitions/FeatureUsageSummary"
                     }
                 },
                 "pagination": {
                     "$ref": "#/definitions/types.PaginationResponse"
                 },
                 "period": {
-                    "$ref": "#/definitions/dto.BillingPeriodInfo"
+                    "$ref": "#/definitions/BillingPeriodInfo"
                 }
             }
         },
-        "dto.DebugTracker": {
+        "DebugTracker": {
             "type": "object",
             "properties": {
                 "customer_lookup": {
-                    "$ref": "#/definitions/dto.CustomerLookupResult"
+                    "$ref": "#/definitions/CustomerLookupResult"
                 },
                 "failure_point": {
                     "$ref": "#/definitions/types.FailurePoint"
                 },
                 "meter_matching": {
-                    "$ref": "#/definitions/dto.MeterMatchingResult"
+                    "$ref": "#/definitions/MeterMatchingResult"
                 },
                 "price_lookup": {
-                    "$ref": "#/definitions/dto.PriceLookupResult"
+                    "$ref": "#/definitions/PriceLookupResult"
                 },
                 "subscription_line_item_lookup": {
-                    "$ref": "#/definitions/dto.SubscriptionLineItemLookupResult"
+                    "$ref": "#/definitions/SubscriptionLineItemLookupResult"
                 }
             }
         },
-        "dto.DeleteCostsheetResponse": {
+        "DeleteCostsheetResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -14482,7 +14749,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.DeleteCreditGrantRequest": {
+        "DeleteCreditGrantRequest": {
             "type": "object",
             "properties": {
                 "effective_date": {
@@ -14491,7 +14758,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.DeletePriceRequest": {
+        "DeletePriceRequest": {
             "type": "object",
             "properties": {
                 "end_date": {
@@ -14499,7 +14766,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.DeleteSubscriptionLineItemRequest": {
+        "DeleteSubscriptionLineItemRequest": {
             "type": "object",
             "properties": {
                 "effective_from": {
@@ -14507,11 +14774,11 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.EntitlementResponse": {
+        "EntitlementResponse": {
             "type": "object",
             "properties": {
                 "addon": {
-                    "$ref": "#/definitions/dto.AddonResponse"
+                    "$ref": "#/definitions/AddonResponse"
                 },
                 "created_at": {
                     "type": "string"
@@ -14535,7 +14802,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "feature": {
-                    "$ref": "#/definitions/dto.FeatureResponse"
+                    "$ref": "#/definitions/FeatureResponse"
                 },
                 "feature_id": {
                     "type": "string"
@@ -14556,7 +14823,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "plan": {
-                    "$ref": "#/definitions/dto.PlanResponse"
+                    "$ref": "#/definitions/PlanResponse"
                 },
                 "plan_id": {
                     "description": "TODO: Remove this once we have a proper entitlement entity type",
@@ -14588,7 +14855,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.EntitlementSource": {
+        "EntitlementSource": {
             "type": "object",
             "properties": {
                 "entitlement_id": {
@@ -14601,7 +14868,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/dto.EntitlementSourceEntityType"
+                    "$ref": "#/definitions/EntitlementSourceEntityType"
                 },
                 "is_enabled": {
                     "type": "boolean"
@@ -14623,7 +14890,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.EntitlementSourceEntityType": {
+        "EntitlementSourceEntityType": {
             "type": "string",
             "enum": [
                 "plan",
@@ -14636,7 +14903,7 @@ const docTemplate = `{
                 "EntitlementSourceEntityTypeSubscription"
             ]
         },
-        "dto.EntityIntegrationMappingResponse": {
+        "EntityIntegrationMappingResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -14677,7 +14944,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.Event": {
+        "Event": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -14707,7 +14974,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.EventCostInfo": {
+        "EventCostInfo": {
             "type": "object",
             "properties": {
                 "costNanoUsd": {
@@ -14718,7 +14985,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.FeatureResponse": {
+        "FeatureResponse": {
             "type": "object",
             "properties": {
                 "alert_settings": {
@@ -14740,7 +15007,7 @@ const docTemplate = `{
                     "description": "Group is the full group object when the feature belongs to a group (populated in response)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.GroupResponse"
+                            "$ref": "#/definitions/GroupResponse"
                         }
                     ]
                 },
@@ -14757,7 +15024,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Metadata"
                 },
                 "meter": {
-                    "$ref": "#/definitions/dto.MeterResponse"
+                    "$ref": "#/definitions/MeterResponse"
                 },
                 "meter_id": {
                     "type": "string"
@@ -14791,7 +15058,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.FeatureUsageInfo": {
+        "FeatureUsageInfo": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -14820,14 +15087,14 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.FeatureUsageSummary": {
+        "FeatureUsageSummary": {
             "type": "object",
             "properties": {
                 "current_usage": {
                     "type": "string"
                 },
                 "feature": {
-                    "$ref": "#/definitions/dto.FeatureResponse"
+                    "$ref": "#/definitions/FeatureResponse"
                 },
                 "is_enabled": {
                     "type": "boolean"
@@ -14844,7 +15111,7 @@ const docTemplate = `{
                 "sources": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.EntitlementSource"
+                        "$ref": "#/definitions/EntitlementSource"
                     }
                 },
                 "total_limit": {
@@ -14855,7 +15122,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetCostAnalyticsRequest": {
+        "GetCostAnalyticsRequest": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -14892,22 +15159,22 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetCostsheetResponse": {
+        "GetCostsheetResponse": {
             "type": "object",
             "properties": {
                 "costsheet": {
-                    "$ref": "#/definitions/dto.CostsheetResponse"
+                    "$ref": "#/definitions/CostsheetResponse"
                 }
             }
         },
-        "dto.GetDetailedCostAnalyticsResponse": {
+        "GetDetailedCostAnalyticsResponse": {
             "type": "object",
             "properties": {
                 "cost_analytics": {
                     "description": "Cost analytics array (flattened from nested structure)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CostAnalyticItem"
+                        "$ref": "#/definitions/CostAnalyticItem"
                     }
                 },
                 "currency": {
@@ -14944,19 +15211,19 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetEventByIDResponse": {
+        "GetEventByIDResponse": {
             "type": "object",
             "properties": {
                 "debug_tracker": {
-                    "$ref": "#/definitions/dto.DebugTracker"
+                    "$ref": "#/definitions/DebugTracker"
                 },
                 "event": {
-                    "$ref": "#/definitions/dto.Event"
+                    "$ref": "#/definitions/Event"
                 },
                 "processed_events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.FeatureUsageInfo"
+                        "$ref": "#/definitions/FeatureUsageInfo"
                     }
                 },
                 "status": {
@@ -14964,7 +15231,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetEventsRequest": {
+        "GetEventsRequest": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -15031,13 +15298,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetEventsResponse": {
+        "GetEventsResponse": {
             "type": "object",
             "properties": {
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.Event"
+                        "$ref": "#/definitions/Event"
                     }
                 },
                 "has_more": {
@@ -15057,18 +15324,18 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetHuggingFaceBillingDataResponse": {
+        "GetHuggingFaceBillingDataResponse": {
             "type": "object",
             "properties": {
                 "requests": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.EventCostInfo"
+                        "$ref": "#/definitions/EventCostInfo"
                     }
                 }
             }
         },
-        "dto.GetPendingSchedulesResponse": {
+        "GetPendingSchedulesResponse": {
             "description": "List of pending schedules for a subscription",
             "type": "object",
             "properties": {
@@ -15080,12 +15347,12 @@ const docTemplate = `{
                     "description": "schedules is the list of pending schedules",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionScheduleResponse"
+                        "$ref": "#/definitions/SubscriptionScheduleResponse"
                     }
                 }
             }
         },
-        "dto.GetPreviewInvoiceRequest": {
+        "GetPreviewInvoiceRequest": {
             "type": "object",
             "required": [
                 "subscription_id"
@@ -15110,7 +15377,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetUsageAnalyticsRequest": {
+        "GetUsageAnalyticsRequest": {
             "type": "object",
             "required": [
                 "external_customer_id"
@@ -15166,7 +15433,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetUsageAnalyticsResponse": {
+        "GetUsageAnalyticsResponse": {
             "type": "object",
             "properties": {
                 "currency": {
@@ -15175,13 +15442,13 @@ const docTemplate = `{
                 "custom_analytics": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CustomAnalyticItem"
+                        "$ref": "#/definitions/CustomAnalyticItem"
                     }
                 },
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.UsageAnalyticItem"
+                        "$ref": "#/definitions/UsageAnalyticItem"
                     }
                 },
                 "total_cost": {
@@ -15189,7 +15456,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetUsageByMeterRequest": {
+        "GetUsageByMeterRequest": {
             "type": "object",
             "required": [
                 "meter_id"
@@ -15243,7 +15510,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetUsageBySubscriptionRequest": {
+        "GetUsageBySubscriptionRequest": {
             "type": "object",
             "required": [
                 "subscription_id"
@@ -15267,7 +15534,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetUsageBySubscriptionResponse": {
+        "GetUsageBySubscriptionResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -15276,7 +15543,7 @@ const docTemplate = `{
                 "charges": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionUsageByMetersResponse"
+                        "$ref": "#/definitions/SubscriptionUsageByMetersResponse"
                     }
                 },
                 "commitment_amount": {
@@ -15311,7 +15578,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetUsageRequest": {
+        "GetUsageRequest": {
             "type": "object",
             "required": [
                 "aggregation_type",
@@ -15381,7 +15648,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetUsageResponse": {
+        "GetUsageResponse": {
             "type": "object",
             "properties": {
                 "event_name": {
@@ -15390,7 +15657,7 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.UsageResult"
+                        "$ref": "#/definitions/UsageResult"
                     }
                 },
                 "type": {
@@ -15401,7 +15668,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GroupResponse": {
+        "GroupResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -15439,7 +15706,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.IngestEventRequest": {
+        "IngestEventRequest": {
             "type": "object",
             "required": [
                 "event_name",
@@ -15484,7 +15751,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.InvoiceCoupon": {
+        "InvoiceCoupon": {
             "type": "object",
             "required": [
                 "coupon_id"
@@ -15498,7 +15765,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.InvoiceLineItemCoupon": {
+        "InvoiceLineItemCoupon": {
             "type": "object",
             "required": [
                 "coupon_id",
@@ -15517,7 +15784,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.InvoiceLineItemPreview": {
+        "InvoiceLineItemPreview": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -15550,7 +15817,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.InvoiceLineItemResponse": {
+        "InvoiceLineItemResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -15656,19 +15923,19 @@ const docTemplate = `{
                     "description": "usage_analytics contains usage analytics for this line item (legacy - grouped by source)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SourceUsageItem"
+                        "$ref": "#/definitions/SourceUsageItem"
                     }
                 },
                 "usage_breakdown": {
                     "description": "usage_breakdown contains flexible usage breakdown for this line item (supports any grouping)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.UsageBreakdownItem"
+                        "$ref": "#/definitions/UsageBreakdownItem"
                     }
                 }
             }
         },
-        "dto.InvoicePreview": {
+        "InvoicePreview": {
             "type": "object",
             "properties": {
                 "currency": {
@@ -15683,7 +15950,7 @@ const docTemplate = `{
                     "description": "line_items contains preview of line items",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.InvoiceLineItemPreview"
+                        "$ref": "#/definitions/InvoiceLineItemPreview"
                     }
                 },
                 "subtotal": {
@@ -15700,7 +15967,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.InvoiceResponse": {
+        "InvoiceResponse": {
             "type": "object",
             "properties": {
                 "adjustment_amount": {
@@ -15735,7 +16002,7 @@ const docTemplate = `{
                     "description": "coupon_applications contains the coupon applications associated with this invoice (overrides embedded field)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CouponApplicationResponse"
+                        "$ref": "#/definitions/CouponApplicationResponse"
                     }
                 },
                 "created_at": {
@@ -15752,7 +16019,7 @@ const docTemplate = `{
                     "description": "customer contains the customer information associated with this invoice",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.CustomerResponse"
+                            "$ref": "#/definitions/CustomerResponse"
                         }
                     ]
                 },
@@ -15816,7 +16083,7 @@ const docTemplate = `{
                     "description": "line_items contains the individual items that make up this invoice (overrides embedded field)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.InvoiceLineItemResponse"
+                        "$ref": "#/definitions/InvoiceLineItemResponse"
                     }
                 },
                 "metadata": {
@@ -15866,7 +16133,7 @@ const docTemplate = `{
                     "description": "subscription contains the associated subscription information if requested",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.SubscriptionResponse"
+                            "$ref": "#/definitions/SubscriptionResponse"
                         }
                     ]
                 },
@@ -15882,7 +16149,7 @@ const docTemplate = `{
                     "description": "tax_applied_records contains the tax applied records associated with this invoice",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.TaxAppliedResponse"
+                        "$ref": "#/definitions/TaxAppliedResponse"
                     }
                 },
                 "tenant_id": {
@@ -15920,7 +16187,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.LineItemCommitmentConfig": {
+        "LineItemCommitmentConfig": {
             "type": "object",
             "properties": {
                 "commitment_amount": {
@@ -15961,7 +16228,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.LinkIntegrationMappingRequest": {
+        "LinkIntegrationMappingRequest": {
             "type": "object",
             "required": [
                 "entity_id",
@@ -15991,21 +16258,21 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.LinkIntegrationMappingResponse": {
+        "LinkIntegrationMappingResponse": {
             "type": "object",
             "properties": {
                 "mapping": {
-                    "$ref": "#/definitions/dto.EntityIntegrationMappingResponse"
+                    "$ref": "#/definitions/EntityIntegrationMappingResponse"
                 }
             }
         },
-        "dto.ListAddonsResponse": {
+        "ListAlertLogsResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AddonResponse"
+                        "$ref": "#/definitions/AlertLogResponse"
                     }
                 },
                 "pagination": {
@@ -16013,13 +16280,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListAlertLogsResponse": {
+        "ListCostsheetResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AlertLogResponse"
+                        "$ref": "#/definitions/CostsheetResponse"
                     }
                 },
                 "pagination": {
@@ -16027,13 +16294,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListCostsheetResponse": {
+        "ListPaymentsResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CostsheetResponse"
+                        "$ref": "#/definitions/PaymentResponse"
                     }
                 },
                 "pagination": {
@@ -16041,204 +16308,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListCouponsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CouponResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListCreditGrantApplicationsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CreditGrantApplicationResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListCreditGrantsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CreditGrantResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListCustomersResponse": {
-            "description": "Response object for listing customers with pagination",
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.CustomerResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListEntitlementsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.EntitlementResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListFeaturesResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.FeatureResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListGroupsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.GroupResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListInvoicesResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.InvoiceResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListPaymentsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.PaymentResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListPlansResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.PlanResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListPriceUnitsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.PriceUnitResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListPricesResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.PriceResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListScheduledTasksResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ScheduledTaskResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListSecretsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.SecretResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListSubscriptionPausesResponse": {
+        "ListSubscriptionPausesResponse": {
             "description": "Response object for listing subscription pauses with total count",
             "type": "object",
             "properties": {
@@ -16246,7 +16316,7 @@ const docTemplate = `{
                     "description": "List of subscription pause objects\n@Description Array of subscription pauses",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionPauseResponse"
+                        "$ref": "#/definitions/SubscriptionPauseResponse"
                     }
                 },
                 "total": {
@@ -16255,13 +16325,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListSubscriptionsResponse": {
+        "ListTasksResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionResponse"
+                        "$ref": "#/definitions/TaskResponse"
                     }
                 },
                 "pagination": {
@@ -16269,77 +16339,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ListTasksResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.TaskResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListTaxAssociationsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.TaxAssociationResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListUsersResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UserResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListWalletTransactionsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.WalletTransactionResponse"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.ListWorkflowsResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.WorkflowExecutionDTO"
-                    }
-                },
-                "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
-                }
-            }
-        },
-        "dto.MatchedMeter": {
+        "MatchedMeter": {
             "type": "object",
             "properties": {
                 "event_name": {
@@ -16353,7 +16353,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MatchedPrice": {
+        "MatchedPrice": {
             "type": "object",
             "properties": {
                 "meter_id": {
@@ -16370,7 +16370,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MatchedSubscriptionLineItem": {
+        "MatchedSubscriptionLineItem": {
             "type": "object",
             "properties": {
                 "end_date": {
@@ -16399,13 +16399,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MeterMatchingResult": {
+        "MeterMatchingResult": {
             "type": "object",
             "properties": {
                 "matched_meters": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.MatchedMeter"
+                        "$ref": "#/definitions/MatchedMeter"
                     }
                 },
                 "status": {
@@ -16413,7 +16413,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.MeterResponse": {
+        "MeterResponse": {
             "type": "object",
             "properties": {
                 "aggregation": {
@@ -16458,7 +16458,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.OverrideEntitlementRequest": {
+        "OverrideEntitlementRequest": {
             "type": "object",
             "required": [
                 "entitlement_id"
@@ -16482,7 +16482,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.OverrideLineItemRequest": {
+        "OverrideLineItemRequest": {
             "type": "object",
             "required": [
                 "price_id"
@@ -16507,7 +16507,7 @@ const docTemplate = `{
                     "description": "PriceUnitTiers are the tiers for the price unit (for CUSTOM type, TIERED billing model)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
+                        "$ref": "#/definitions/CreatePriceTier"
                     }
                 },
                 "quantity": {
@@ -16526,7 +16526,7 @@ const docTemplate = `{
                     "description": "Tiers determines the pricing tiers for this line item",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
+                        "$ref": "#/definitions/CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -16539,7 +16539,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PauseSubscriptionRequest": {
+        "PauseSubscriptionRequest": {
             "description": "Request object for pausing an active subscription with various pause modes and options",
             "type": "object",
             "required": [
@@ -16584,7 +16584,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PaymentAttemptResponse": {
+        "PaymentAttemptResponse": {
             "type": "object",
             "properties": {
                 "attempt_number": {
@@ -16619,7 +16619,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PaymentResponse": {
+        "PaymentResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -16628,7 +16628,7 @@ const docTemplate = `{
                 "attempts": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.PaymentAttemptResponse"
+                        "$ref": "#/definitions/PaymentAttemptResponse"
                     }
                 },
                 "created_at": {
@@ -16711,7 +16711,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PlanResponse": {
+        "PlanResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -16723,7 +16723,7 @@ const docTemplate = `{
                 "credit_grants": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreditGrantResponse"
+                        "$ref": "#/definitions/CreditGrantResponse"
                     }
                 },
                 "description": {
@@ -16735,7 +16735,7 @@ const docTemplate = `{
                 "entitlements": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.EntitlementResponse"
+                        "$ref": "#/definitions/EntitlementResponse"
                     }
                 },
                 "environment_id": {
@@ -16757,7 +16757,7 @@ const docTemplate = `{
                     "description": "TODO: Add inline addons",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.PriceResponse"
+                        "$ref": "#/definitions/PriceResponse"
                     }
                 },
                 "status": {
@@ -16774,7 +16774,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PlanSummary": {
+        "PlanSummary": {
             "type": "object",
             "properties": {
                 "description": {
@@ -16795,13 +16795,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PriceLookupResult": {
+        "PriceLookupResult": {
             "type": "object",
             "properties": {
                 "matched_prices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.MatchedPrice"
+                        "$ref": "#/definitions/MatchedPrice"
                     }
                 },
                 "status": {
@@ -16809,11 +16809,11 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PriceResponse": {
+        "PriceResponse": {
             "type": "object",
             "properties": {
                 "addon": {
-                    "$ref": "#/definitions/dto.AddonResponse"
+                    "$ref": "#/definitions/AddonResponse"
                 },
                 "amount": {
                     "description": "Amount stored in main currency units (e.g., dollars, not cents)\nFor USD: 12.50 means $12.50",
@@ -16884,7 +16884,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "group": {
-                    "$ref": "#/definitions/dto.GroupResponse"
+                    "$ref": "#/definitions/GroupResponse"
                 },
                 "group_id": {
                     "description": "GroupID references the group this price belongs to",
@@ -16905,7 +16905,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/price.JSONBMetadata"
                 },
                 "meter": {
-                    "$ref": "#/definitions/dto.MeterResponse"
+                    "$ref": "#/definitions/MeterResponse"
                 },
                 "meter_id": {
                     "description": "MeterID is the id of the meter for usage based pricing",
@@ -16921,7 +16921,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "plan": {
-                    "$ref": "#/definitions/dto.PlanResponse"
+                    "$ref": "#/definitions/PlanResponse"
                 },
                 "price_unit": {
                     "description": "PriceUnit is the code of the price unit (e.g., 'btc', 'eth')",
@@ -16951,7 +16951,7 @@ const docTemplate = `{
                     ]
                 },
                 "pricing_unit": {
-                    "$ref": "#/definitions/dto.PriceUnitResponse"
+                    "$ref": "#/definitions/PriceUnitResponse"
                 },
                 "start_date": {
                     "description": "StartDate is the start date of the price",
@@ -16990,7 +16990,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.PriceUnitConfig": {
+        "PriceUnitConfig": {
             "type": "object",
             "required": [
                 "price_unit"
@@ -17005,12 +17005,12 @@ const docTemplate = `{
                 "price_unit_tiers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
+                        "$ref": "#/definitions/CreatePriceTier"
                     }
                 }
             }
         },
-        "dto.PriceUnitResponse": {
+        "PriceUnitResponse": {
             "type": "object",
             "properties": {
                 "base_currency": {
@@ -17057,7 +17057,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ProrationDetail": {
+        "ProrationDetail": {
             "type": "object",
             "properties": {
                 "charge_amount": {
@@ -17086,7 +17086,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ProrationDetails": {
+        "ProrationDetails": {
             "type": "object",
             "properties": {
                 "charge_amount": {
@@ -17135,7 +17135,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.RemoveAddonRequest": {
+        "RemoveAddonRequest": {
             "type": "object",
             "required": [
                 "addon_association_id"
@@ -17149,7 +17149,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ResumeSubscriptionRequest": {
+        "ResumeSubscriptionRequest": {
             "description": "Request object for resuming a paused subscription",
             "type": "object",
             "required": [
@@ -17177,7 +17177,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.ScheduledTaskResponse": {
+        "ScheduledTaskResponse": {
             "type": "object",
             "properties": {
                 "connection_id": {
@@ -17224,7 +17224,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SecretResponse": {
+        "SecretResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -17274,7 +17274,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SourceUsageItem": {
+        "SourceUsageItem": {
             "type": "object",
             "properties": {
                 "cost": {
@@ -17299,7 +17299,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionChangeExecuteResponse": {
+        "SubscriptionChangeExecuteResponse": {
             "description": "Response after successfully executing a subscription plan change",
             "type": "object",
             "properties": {
@@ -17315,7 +17315,7 @@ const docTemplate = `{
                     "description": "credit_grants contains any credit grants created for proration credits",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreditGrantResponse"
+                        "$ref": "#/definitions/CreditGrantResponse"
                     }
                 },
                 "effective_date": {
@@ -17326,7 +17326,7 @@ const docTemplate = `{
                     "description": "invoice contains the immediate invoice generated for the change (if any)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     ]
                 },
@@ -17345,7 +17345,7 @@ const docTemplate = `{
                     "description": "new_subscription contains the new subscription details (only if is_scheduled=false)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.SubscriptionSummary"
+                            "$ref": "#/definitions/SubscriptionSummary"
                         }
                     ]
                 },
@@ -17353,7 +17353,7 @@ const docTemplate = `{
                     "description": "old_subscription contains the archived subscription details (only if is_scheduled=false)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.SubscriptionSummary"
+                            "$ref": "#/definitions/SubscriptionSummary"
                         }
                     ]
                 },
@@ -17361,7 +17361,7 @@ const docTemplate = `{
                     "description": "proration_applied contains details of the proration that was applied",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.ProrationDetails"
+                            "$ref": "#/definitions/ProrationDetails"
                         }
                     ]
                 },
@@ -17375,7 +17375,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionChangePreviewResponse": {
+        "SubscriptionChangePreviewResponse": {
             "description": "Response showing the financial impact of a subscription plan change",
             "type": "object",
             "properties": {
@@ -17391,7 +17391,7 @@ const docTemplate = `{
                     "description": "current_plan contains information about the current plan",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.PlanSummary"
+                            "$ref": "#/definitions/PlanSummary"
                         }
                     ]
                 },
@@ -17410,7 +17410,7 @@ const docTemplate = `{
                     "description": "new_billing_cycle shows the new billing cycle details",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.BillingCycleInfo"
+                            "$ref": "#/definitions/BillingCycleInfo"
                         }
                     ]
                 },
@@ -17418,7 +17418,7 @@ const docTemplate = `{
                     "description": "next_invoice_preview shows how the next regular invoice would be affected",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.InvoicePreview"
+                            "$ref": "#/definitions/InvoicePreview"
                         }
                     ]
                 },
@@ -17426,7 +17426,7 @@ const docTemplate = `{
                     "description": "proration_details contains the calculated proration amounts",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.ProrationDetails"
+                            "$ref": "#/definitions/ProrationDetails"
                         }
                     ]
                 },
@@ -17438,7 +17438,7 @@ const docTemplate = `{
                     "description": "target_plan contains information about the target plan",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.PlanSummary"
+                            "$ref": "#/definitions/PlanSummary"
                         }
                     ]
                 },
@@ -17451,7 +17451,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionChangeRequest": {
+        "SubscriptionChangeRequest": {
             "description": "Request object for changing a subscription plan (upgrade/downgrade)",
             "type": "object",
             "required": [
@@ -17520,13 +17520,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionEntitlementsResponse": {
+        "SubscriptionEntitlementsResponse": {
             "type": "object",
             "properties": {
                 "features": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.AggregatedFeature"
+                        "$ref": "#/definitions/AggregatedFeature"
                     }
                 },
                 "plan_id": {
@@ -17537,13 +17537,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionLineItemLookupResult": {
+        "SubscriptionLineItemLookupResult": {
             "type": "object",
             "properties": {
                 "matched_line_items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.MatchedSubscriptionLineItem"
+                        "$ref": "#/definitions/MatchedSubscriptionLineItem"
                     }
                 },
                 "status": {
@@ -17551,7 +17551,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionLineItemResponse": {
+        "SubscriptionLineItemResponse": {
             "type": "object",
             "properties": {
                 "billing_period": {
@@ -17632,7 +17632,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "price": {
-                    "$ref": "#/definitions/dto.PriceResponse"
+                    "$ref": "#/definitions/PriceResponse"
                 },
                 "price_id": {
                     "type": "string"
@@ -17675,7 +17675,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionPauseResponse": {
+        "SubscriptionPauseResponse": {
             "description": "Response object containing subscription pause information",
             "type": "object",
             "properties": {
@@ -17747,7 +17747,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionPhaseCreateRequest": {
+        "SubscriptionPhaseCreateRequest": {
             "type": "object",
             "required": [
                 "start_date"
@@ -17783,7 +17783,7 @@ const docTemplate = `{
                     "description": "OverrideLineItems allows customizing specific prices for this phase\nIf not provided, phase will use the same line items as the subscription (plan prices)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.OverrideLineItemRequest"
+                        "$ref": "#/definitions/OverrideLineItemRequest"
                     }
                 },
                 "start_date": {
@@ -17791,7 +17791,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionPhaseResponse": {
+        "SubscriptionPhaseResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -17842,7 +17842,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionPriceCreateRequest": {
+        "SubscriptionPriceCreateRequest": {
             "type": "object",
             "required": [
                 "billing_cadence",
@@ -17905,7 +17905,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "price_unit_config": {
-                    "$ref": "#/definitions/dto.PriceUnitConfig"
+                    "$ref": "#/definitions/PriceUnitConfig"
                 },
                 "price_unit_type": {
                     "$ref": "#/definitions/types.PriceUnitType"
@@ -17919,7 +17919,7 @@ const docTemplate = `{
                 "tiers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
+                        "$ref": "#/definitions/CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -17933,7 +17933,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionResponse": {
+        "SubscriptionResponse": {
             "type": "object",
             "properties": {
                 "active_pause_id": {
@@ -17995,7 +17995,7 @@ const docTemplate = `{
                     "description": "CouponAssociations are the coupon associations for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CouponAssociationResponse"
+                        "$ref": "#/definitions/CouponAssociationResponse"
                     }
                 },
                 "created_at": {
@@ -18008,7 +18008,7 @@ const docTemplate = `{
                     "description": "Credit grants are the credit grants for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreditGrantResponse"
+                        "$ref": "#/definitions/CreditGrantResponse"
                     }
                 },
                 "currency": {
@@ -18024,7 +18024,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "customer": {
-                    "$ref": "#/definitions/dto.CustomerResponse"
+                    "$ref": "#/definitions/CustomerResponse"
                 },
                 "customer_id": {
                     "description": "CustomerID is the identifier for the customer in our system",
@@ -18060,7 +18060,7 @@ const docTemplate = `{
                     "description": "Latest invoice information for incomplete subscriptions",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.InvoiceResponse"
+                            "$ref": "#/definitions/InvoiceResponse"
                         }
                     ]
                 },
@@ -18110,11 +18110,11 @@ const docTemplate = `{
                     "description": "Phases are the subscription phases for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionPhaseResponse"
+                        "$ref": "#/definitions/SubscriptionPhaseResponse"
                     }
                 },
                 "plan": {
-                    "$ref": "#/definitions/dto.PlanResponse"
+                    "$ref": "#/definitions/PlanResponse"
                 },
                 "plan_id": {
                     "description": "PlanID is the identifier for the plan in our system",
@@ -18156,7 +18156,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionResponseV2": {
+        "SubscriptionResponseV2": {
             "type": "object",
             "properties": {
                 "active_pause_id": {
@@ -18218,7 +18218,7 @@ const docTemplate = `{
                     "description": "CouponAssociations are included when \"coupon_associations\" is in expand parameter",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CouponAssociationResponse"
+                        "$ref": "#/definitions/CouponAssociationResponse"
                     }
                 },
                 "created_at": {
@@ -18231,7 +18231,7 @@ const docTemplate = `{
                     "description": "CreditGrants are included when \"credit_grants\" is in expand parameter",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreditGrantResponse"
+                        "$ref": "#/definitions/CreditGrantResponse"
                     }
                 },
                 "currency": {
@@ -18250,7 +18250,7 @@ const docTemplate = `{
                     "description": "Customer is expanded only if \"customer\" is in expand parameter",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.CustomerResponse"
+                            "$ref": "#/definitions/CustomerResponse"
                         }
                     ]
                 },
@@ -18288,7 +18288,7 @@ const docTemplate = `{
                     "description": "LineItems is expanded only if \"subscription_line_items\" is in expand parameter\nEach line item can optionally include expanded price data",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
+                        "$ref": "#/definitions/SubscriptionLineItemResponse"
                     }
                 },
                 "lookup_key": {
@@ -18332,14 +18332,14 @@ const docTemplate = `{
                     "description": "Phases are included when \"phases\" is in expand parameter",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionPhaseResponse"
+                        "$ref": "#/definitions/SubscriptionPhaseResponse"
                     }
                 },
                 "plan": {
                     "description": "Plan is expanded only if \"plan\" is in expand parameter",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.PlanResponse"
+                            "$ref": "#/definitions/PlanResponse"
                         }
                     ]
                 },
@@ -18383,7 +18383,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionScheduleResponse": {
+        "SubscriptionScheduleResponse": {
             "description": "Full details of a subscription schedule",
             "type": "object",
             "properties": {
@@ -18458,7 +18458,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionSummary": {
+        "SubscriptionSummary": {
             "type": "object",
             "properties": {
                 "archived_at": {
@@ -18499,7 +18499,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SubscriptionUsageByMetersResponse": {
+        "SubscriptionUsageByMetersResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -18540,7 +18540,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SuccessResponse": {
+        "SuccessResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -18548,7 +18548,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TaskResponse": {
+        "TaskResponse": {
             "type": "object",
             "properties": {
                 "completed_at": {
@@ -18629,7 +18629,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TaxAppliedResponse": {
+        "TaxAppliedResponse": {
             "type": "object",
             "properties": {
                 "applied_at": {
@@ -18675,7 +18675,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tax_rate": {
-                    "$ref": "#/definitions/dto.TaxRateResponse"
+                    "$ref": "#/definitions/TaxRateResponse"
                 },
                 "tax_rate_id": {
                     "type": "string"
@@ -18694,7 +18694,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TaxAssociationResponse": {
+        "TaxAssociationResponse": {
             "type": "object",
             "properties": {
                 "auto_apply": {
@@ -18746,7 +18746,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Status"
                 },
                 "tax_rate": {
-                    "$ref": "#/definitions/dto.TaxRateResponse"
+                    "$ref": "#/definitions/TaxRateResponse"
                 },
                 "tax_rate_id": {
                     "description": "Reference to the TaxRate entity",
@@ -18763,7 +18763,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TaxAssociationUpdateRequest": {
+        "TaxAssociationUpdateRequest": {
             "type": "object",
             "properties": {
                 "auto_apply": {
@@ -18780,7 +18780,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TaxRateOverride": {
+        "TaxRateOverride": {
             "type": "object",
             "required": [
                 "currency",
@@ -18808,7 +18808,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TaxRateResponse": {
+        "TaxRateResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -18867,11 +18867,11 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TenantBillingDetails": {
+        "TenantBillingDetails": {
             "type": "object",
             "properties": {
                 "address": {
-                    "$ref": "#/definitions/dto.Address"
+                    "$ref": "#/definitions/Address"
                 },
                 "email": {
                     "type": "string"
@@ -18884,25 +18884,25 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TenantBillingUsage": {
+        "TenantBillingUsage": {
             "type": "object",
             "properties": {
                 "subscriptions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.SubscriptionResponse"
+                        "$ref": "#/definitions/SubscriptionResponse"
                     }
                 },
                 "usage": {
-                    "$ref": "#/definitions/dto.CustomerUsageSummaryResponse"
+                    "$ref": "#/definitions/CustomerUsageSummaryResponse"
                 }
             }
         },
-        "dto.TenantResponse": {
+        "TenantResponse": {
             "type": "object",
             "properties": {
                 "billing_details": {
-                    "$ref": "#/definitions/dto.TenantBillingDetails"
+                    "$ref": "#/definitions/TenantBillingDetails"
                 },
                 "created_at": {
                     "type": "string"
@@ -18924,7 +18924,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TopUpWalletRequest": {
+        "TopUpWalletRequest": {
             "type": "object",
             "required": [
                 "transaction_reason"
@@ -18967,7 +18967,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TopUpWalletResponse": {
+        "TopUpWalletResponse": {
             "type": "object",
             "properties": {
                 "invoice_id": {
@@ -18978,7 +18978,7 @@ const docTemplate = `{
                     "description": "Wallet details after the operation",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.WalletResponse"
+                            "$ref": "#/definitions/WalletResponse"
                         }
                     ]
                 },
@@ -18986,13 +18986,13 @@ const docTemplate = `{
                     "description": "Wallet transaction created (could be PENDING or COMPLETED)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.WalletTransactionResponse"
+                            "$ref": "#/definitions/WalletTransactionResponse"
                         }
                     ]
                 }
             }
         },
-        "dto.TriggerForceRunRequest": {
+        "TriggerForceRunRequest": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -19003,7 +19003,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TriggerForceRunResponse": {
+        "TriggerForceRunResponse": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -19024,7 +19024,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateAddonRequest": {
+        "UpdateAddonRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -19039,7 +19039,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateCostsheetRequest": {
+        "UpdateCostsheetRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -19063,15 +19063,15 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateCostsheetResponse": {
+        "UpdateCostsheetResponse": {
             "type": "object",
             "properties": {
                 "costsheet": {
-                    "$ref": "#/definitions/dto.CostsheetResponse"
+                    "$ref": "#/definitions/CostsheetResponse"
                 }
             }
         },
-        "dto.UpdateCouponRequest": {
+        "UpdateCouponRequest": {
             "type": "object",
             "properties": {
                 "metadata": {
@@ -19085,7 +19085,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateCreditGrantRequest": {
+        "UpdateCreditGrantRequest": {
             "type": "object",
             "properties": {
                 "metadata": {
@@ -19096,7 +19096,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateCustomerRequest": {
+        "UpdateCustomerRequest": {
             "description": "Request object for updating an existing customer. All fields are optional - only provided fields will be updated",
             "type": "object",
             "properties": {
@@ -19158,7 +19158,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateEntitlementRequest": {
+        "UpdateEntitlementRequest": {
             "type": "object",
             "properties": {
                 "is_enabled": {
@@ -19178,7 +19178,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateFeatureRequest": {
+        "UpdateFeatureRequest": {
             "type": "object",
             "properties": {
                 "alert_settings": {
@@ -19214,7 +19214,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateInvoiceRequest": {
+        "UpdateInvoiceRequest": {
             "type": "object",
             "properties": {
                 "due_date": {
@@ -19234,7 +19234,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdatePaymentRequest": {
+        "UpdatePaymentRequest": {
             "type": "object",
             "properties": {
                 "error_message": {
@@ -19263,7 +19263,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdatePaymentStatusRequest": {
+        "UpdatePaymentStatusRequest": {
             "type": "object",
             "required": [
                 "payment_status"
@@ -19283,7 +19283,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdatePlanRequest": {
+        "UpdatePlanRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -19303,7 +19303,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdatePriceRequest": {
+        "UpdatePriceRequest": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -19344,7 +19344,7 @@ const docTemplate = `{
                     "description": "PriceUnitTiers are the price unit tiers (for CUSTOM price unit type, TIERED billing model)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
+                        "$ref": "#/definitions/CreatePriceTier"
                     }
                 },
                 "tier_mode": {
@@ -19359,7 +19359,7 @@ const docTemplate = `{
                     "description": "Tiers determines the pricing tiers for this line item",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
+                        "$ref": "#/definitions/CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -19372,7 +19372,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdatePriceUnitRequest": {
+        "UpdatePriceUnitRequest": {
             "type": "object",
             "properties": {
                 "metadata": {
@@ -19383,7 +19383,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateScheduledTaskRequest": {
+        "UpdateScheduledTaskRequest": {
             "type": "object",
             "required": [
                 "enabled"
@@ -19394,7 +19394,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateSubscriptionLineItemRequest": {
+        "UpdateSubscriptionLineItemRequest": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -19449,7 +19449,7 @@ const docTemplate = `{
                     "description": "Tiers determines the pricing tiers for this line item",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreatePriceTier"
+                        "$ref": "#/definitions/CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -19462,7 +19462,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateSubscriptionRequest": {
+        "UpdateSubscriptionRequest": {
             "type": "object",
             "properties": {
                 "cancel_at": {
@@ -19480,7 +19480,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateTaskStatusRequest": {
+        "UpdateTaskStatusRequest": {
             "type": "object",
             "required": [
                 "task_status"
@@ -19491,7 +19491,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateTaxRateRequest": {
+        "UpdateTaxRateRequest": {
             "type": "object",
             "properties": {
                 "code": {
@@ -19523,11 +19523,11 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateTenantRequest": {
+        "UpdateTenantRequest": {
             "type": "object",
             "properties": {
                 "billing_details": {
-                    "$ref": "#/definitions/dto.TenantBillingDetails"
+                    "$ref": "#/definitions/TenantBillingDetails"
                 },
                 "metadata": {
                     "$ref": "#/definitions/types.Metadata"
@@ -19537,7 +19537,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateWalletRequest": {
+        "UpdateWalletRequest": {
             "type": "object",
             "properties": {
                 "alert_settings": {
@@ -19560,7 +19560,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UsageAnalyticItem": {
+        "UsageAnalyticItem": {
             "type": "object",
             "properties": {
                 "add_on_id": {
@@ -19614,14 +19614,14 @@ const docTemplate = `{
                 "points": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.UsageAnalyticPoint"
+                        "$ref": "#/definitions/UsageAnalyticPoint"
                     }
                 },
                 "price": {
                     "description": "Full price object (only if expand includes \"price\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/dto.PriceResponse"
+                            "$ref": "#/definitions/PriceResponse"
                         }
                     ]
                 },
@@ -19688,7 +19688,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UsageAnalyticPoint": {
+        "UsageAnalyticPoint": {
             "type": "object",
             "properties": {
                 "computed_commitment_utilized_amount": {
@@ -19716,7 +19716,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UsageBreakdownItem": {
+        "UsageBreakdownItem": {
             "type": "object",
             "properties": {
                 "cost": {
@@ -19744,7 +19744,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UsageResult": {
+        "UsageResult": {
             "type": "object",
             "properties": {
                 "value": {
@@ -19755,7 +19755,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UserResponse": {
+        "UserResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -19772,14 +19772,14 @@ const docTemplate = `{
                     }
                 },
                 "tenant": {
-                    "$ref": "#/definitions/dto.TenantResponse"
+                    "$ref": "#/definitions/TenantResponse"
                 },
                 "type": {
                     "$ref": "#/definitions/types.UserType"
                 }
             }
         },
-        "dto.WalletBalanceResponse": {
+        "WalletBalanceResponse": {
             "type": "object",
             "properties": {
                 "alert_settings": {
@@ -19873,7 +19873,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.WalletResponse": {
+        "WalletResponse": {
             "type": "object",
             "properties": {
                 "alert_settings": {
@@ -19952,7 +19952,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.WalletTransactionResponse": {
+        "WalletTransactionResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -19969,7 +19969,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_by_user": {
-                    "$ref": "#/definitions/dto.UserResponse"
+                    "$ref": "#/definitions/UserResponse"
                 },
                 "credit_amount": {
                     "type": "string"
@@ -19987,7 +19987,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "customer": {
-                    "$ref": "#/definitions/dto.CustomerResponse"
+                    "$ref": "#/definitions/CustomerResponse"
                 },
                 "customer_id": {
                     "type": "string"
@@ -20045,14 +20045,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/dto.WalletResponse"
+                    "$ref": "#/definitions/WalletResponse"
                 },
                 "wallet_id": {
                     "type": "string"
                 }
             }
         },
-        "dto.WorkflowExecutionDTO": {
+        "WorkflowExecutionDTO": {
             "type": "object",
             "properties": {
                 "close_time": {
@@ -22818,7 +22818,6 @@ const docTemplate = `{
         "types.WindowSize": {
             "type": "string",
             "enum": [
-                "MONTH",
                 "MINUTE",
                 "15MIN",
                 "30MIN",
@@ -22828,10 +22827,10 @@ const docTemplate = `{
                 "12HOUR",
                 "DAY",
                 "WEEK",
+                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
-                "DefaultWindowSize",
                 "WindowSizeMinute",
                 "WindowSize15Min",
                 "WindowSize30Min",
@@ -22841,7 +22840,8 @@ const docTemplate = `{
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth"
+                "WindowSizeMonth",
+                "DefaultWindowSize"
             ]
         },
         "types.WorkflowExecutionFilter": {
@@ -23668,7 +23668,7 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.WalletResponse"
+                        "$ref": "#/definitions/WalletResponse"
                     }
                 },
                 "pagination": {
@@ -23692,16 +23692,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "customer": {
-                    "$ref": "#/definitions/dto.CustomerResponse"
+                    "$ref": "#/definitions/CustomerResponse"
                 },
                 "event_type": {
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "feature": {
-                    "$ref": "#/definitions/dto.FeatureResponse"
+                    "$ref": "#/definitions/FeatureResponse"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/dto.WalletResponse"
+                    "$ref": "#/definitions/WalletResponse"
                 }
             }
         },
@@ -23712,7 +23712,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "invoice": {
-                    "$ref": "#/definitions/dto.InvoiceResponse"
+                    "$ref": "#/definitions/InvoiceResponse"
                 }
             }
         },
@@ -23720,7 +23720,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "credit_note": {
-                    "$ref": "#/definitions/dto.CreditNoteResponse"
+                    "$ref": "#/definitions/CreditNoteResponse"
                 },
                 "event_type": {
                     "$ref": "#/definitions/types.WebhookEventName"
@@ -23731,7 +23731,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "customer": {
-                    "$ref": "#/definitions/dto.CustomerResponse"
+                    "$ref": "#/definitions/CustomerResponse"
                 },
                 "event_type": {
                     "$ref": "#/definitions/types.WebhookEventName"
@@ -23742,7 +23742,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "entitlement": {
-                    "$ref": "#/definitions/dto.EntitlementResponse"
+                    "$ref": "#/definitions/EntitlementResponse"
                 },
                 "event_type": {
                     "$ref": "#/definitions/types.WebhookEventName"
@@ -23756,7 +23756,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "feature": {
-                    "$ref": "#/definitions/dto.FeatureResponse"
+                    "$ref": "#/definitions/FeatureResponse"
                 }
             }
         },
@@ -23767,7 +23767,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "invoice": {
-                    "$ref": "#/definitions/dto.InvoiceResponse"
+                    "$ref": "#/definitions/InvoiceResponse"
                 }
             }
         },
@@ -23778,7 +23778,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "payment": {
-                    "$ref": "#/definitions/dto.PaymentResponse"
+                    "$ref": "#/definitions/PaymentResponse"
                 }
             }
         },
@@ -23789,7 +23789,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "phase": {
-                    "$ref": "#/definitions/dto.SubscriptionPhaseResponse"
+                    "$ref": "#/definitions/SubscriptionPhaseResponse"
                 }
             }
         },
@@ -23800,7 +23800,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "subscription": {
-                    "$ref": "#/definitions/dto.SubscriptionResponse"
+                    "$ref": "#/definitions/SubscriptionResponse"
                 }
             }
         },
@@ -23811,10 +23811,10 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "transaction": {
-                    "$ref": "#/definitions/dto.WalletTransactionResponse"
+                    "$ref": "#/definitions/WalletTransactionResponse"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/dto.WalletResponse"
+                    "$ref": "#/definitions/WalletResponse"
                 }
             }
         },
@@ -23845,13 +23845,13 @@ const docTemplate = `{
                     "$ref": "#/definitions/webhookDto.WalletAlertInfo"
                 },
                 "customer": {
-                    "$ref": "#/definitions/dto.CustomerResponse"
+                    "$ref": "#/definitions/CustomerResponse"
                 },
                 "event_type": {
                     "$ref": "#/definitions/types.WebhookEventName"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/dto.WalletResponse"
+                    "$ref": "#/definitions/WalletResponse"
                 }
             }
         }

@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 /**
+ * Post-processes swagger output files to produce clean schema names:
+ *
  * 1. Replaces github_com_flexprice_flexprice_internal_types. with types. in all swagger files
  *    (swagger.json, swagger.yaml, docs.go, swagger-3-0.json) so schema names are clean.
- * 2. In swagger-3-0.json only: adds x-speakeasy-name-override for each components.schemas key
+ * 2. Strips the "dto." prefix from all schema/definition names in swagger.json, swagger.yaml,
+ *    docs.go, and swagger-3-0.json so generated SDKs get clean type names natively.
+ * 3. In swagger-3-0.json only: adds x-speakeasy-name-override for each components.schemas key
  *    that starts with "types." so Speakeasy-generated SDKs use names like FeatureType instead of TypesFeatureType.
  *
  * Usage: node scripts/fix_swagger_internal_types.mjs [--spec path/to/swagger-3-0.json]
@@ -35,7 +39,7 @@ function main() {
     }
   }
 
-  // 1. String replace in all files
+  // 1. String replace internal_types prefix in all files
   for (const rel of FILES) {
     const path = resolve(repoRoot, rel);
     if (!existsSync(path)) continue;
@@ -48,7 +52,22 @@ function main() {
     }
   }
 
-  // 2. Add Speakeasy overrides in swagger-3-0.json only
+  // 2. Strip "dto." prefix from all schema/definition names in all files.
+  //    Uses a regex to avoid mangling "webhookDto." or similar compound prefixes.
+  const dtoPrefixRe = /(?<![A-Za-z0-9_])dto\./g;
+  for (const rel of FILES) {
+    const path = resolve(repoRoot, rel);
+    if (!existsSync(path)) continue;
+    let s = readFileSync(path, 'utf8');
+    const before = s;
+    s = s.replace(dtoPrefixRe, '');
+    if (s !== before) {
+      writeFileSync(path, s, 'utf8');
+      console.log(`Stripped dto. prefix in ${rel}`);
+    }
+  }
+
+  // 3. Add Speakeasy overrides in swagger-3-0.json only
   if (!existsSync(specPath)) {
     console.log('swagger-3-0.json not found; skipping x-speakeasy-name-override.');
     return;

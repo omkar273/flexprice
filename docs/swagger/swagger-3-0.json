@@ -36,7 +36,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateAddonRequest"
+                "$ref": "#/components/schemas/CreateAddonRequest"
               }
             }
           },
@@ -48,7 +48,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreateAddonResponse"
+                  "$ref": "#/components/schemas/CreateAddonResponse"
                 }
               }
             }
@@ -107,7 +107,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.AddonResponse"
+                  "$ref": "#/components/schemas/AddonResponse"
                 }
               }
             }
@@ -165,7 +165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListAddonsResponse"
+                  "$ref": "#/components/schemas/ListAddonsResponse"
                 }
               }
             }
@@ -224,7 +224,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.AddonResponse"
+                  "$ref": "#/components/schemas/AddonResponse"
                 }
               }
             }
@@ -279,7 +279,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateAddonRequest"
+                "$ref": "#/components/schemas/UpdateAddonRequest"
               }
             }
           },
@@ -291,7 +291,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.AddonResponse"
+                  "$ref": "#/components/schemas/AddonResponse"
                 }
               }
             }
@@ -348,7 +348,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -406,7 +406,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListEntitlementsResponse"
+                  "$ref": "#/components/schemas/ListEntitlementsResponse"
                 }
               }
             }
@@ -474,7 +474,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListAlertLogsResponse"
+                  "$ref": "#/components/schemas/ListAlertLogsResponse"
                 }
               }
             }
@@ -521,7 +521,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateCostsheetRequest"
+                "$ref": "#/components/schemas/CreateCostsheetRequest"
               }
             }
           },
@@ -533,7 +533,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreateCostsheetResponse"
+                  "$ref": "#/components/schemas/CreateCostsheetResponse"
                 }
               }
             }
@@ -591,7 +591,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CostsheetResponse"
+                  "$ref": "#/components/schemas/CostsheetResponse"
                 }
               }
             }
@@ -637,7 +637,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.GetCostAnalyticsRequest"
+                "$ref": "#/components/schemas/GetCostAnalyticsRequest"
               }
             }
           },
@@ -649,7 +649,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetDetailedCostAnalyticsResponse"
+                  "$ref": "#/components/schemas/GetDetailedCostAnalyticsResponse"
                 }
               }
             }
@@ -696,7 +696,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.GetCostAnalyticsRequest"
+                "$ref": "#/components/schemas/GetCostAnalyticsRequest"
               }
             }
           },
@@ -708,7 +708,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetDetailedCostAnalyticsResponse"
+                  "$ref": "#/components/schemas/GetDetailedCostAnalyticsResponse"
                 }
               }
             }
@@ -767,7 +767,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListCostsheetResponse"
+                  "$ref": "#/components/schemas/ListCostsheetResponse"
                 }
               }
             }
@@ -834,7 +834,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetCostsheetResponse"
+                  "$ref": "#/components/schemas/GetCostsheetResponse"
                 }
               }
             }
@@ -899,7 +899,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateCostsheetRequest"
+                "$ref": "#/components/schemas/UpdateCostsheetRequest"
               }
             }
           },
@@ -911,7 +911,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.UpdateCostsheetResponse"
+                  "$ref": "#/components/schemas/UpdateCostsheetResponse"
                 }
               }
             }
@@ -988,7 +988,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.DeleteCostsheetResponse"
+                  "$ref": "#/components/schemas/DeleteCostsheetResponse"
                 }
               }
             }
@@ -1044,7 +1044,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateCouponRequest"
+                "$ref": "#/components/schemas/CreateCouponRequest"
               }
             }
           },
@@ -1056,7 +1056,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CouponResponse"
+                  "$ref": "#/components/schemas/CouponResponse"
                 }
               }
             }
@@ -1148,7 +1148,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListCouponsResponse"
+                  "$ref": "#/components/schemas/ListCouponsResponse"
                 }
               }
             }
@@ -1207,7 +1207,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CouponResponse"
+                  "$ref": "#/components/schemas/CouponResponse"
                 }
               }
             }
@@ -1272,7 +1272,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateCouponRequest"
+                "$ref": "#/components/schemas/UpdateCouponRequest"
               }
             }
           },
@@ -1284,7 +1284,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CouponResponse"
+                  "$ref": "#/components/schemas/CouponResponse"
                 }
               }
             }
@@ -1456,7 +1456,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateCreditGrantRequest"
+                "$ref": "#/components/schemas/CreateCreditGrantRequest"
               }
             }
           },
@@ -1468,7 +1468,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreditGrantResponse"
+                  "$ref": "#/components/schemas/CreditGrantResponse"
                 }
               }
             }
@@ -1527,7 +1527,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreditGrantResponse"
+                  "$ref": "#/components/schemas/CreditGrantResponse"
                 }
               }
             }
@@ -1582,7 +1582,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateCreditGrantRequest"
+                "$ref": "#/components/schemas/UpdateCreditGrantRequest"
               }
             }
           },
@@ -1594,7 +1594,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreditGrantResponse"
+                  "$ref": "#/components/schemas/CreditGrantResponse"
                 }
               }
             }
@@ -1650,7 +1650,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.DeleteCreditGrantRequest"
+                "$ref": "#/components/schemas/DeleteCreditGrantRequest"
               }
             }
           },
@@ -1662,7 +1662,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -1709,7 +1709,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateCreditNoteRequest"
+                "$ref": "#/components/schemas/CreateCreditNoteRequest"
               }
             }
           },
@@ -1721,7 +1721,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreditNoteResponse"
+                  "$ref": "#/components/schemas/CreditNoteResponse"
                 }
               }
             }
@@ -1813,7 +1813,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreditNoteResponse"
+                  "$ref": "#/components/schemas/CreditNoteResponse"
                 }
               }
             }
@@ -1881,7 +1881,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreditNoteResponse"
+                  "$ref": "#/components/schemas/CreditNoteResponse"
                 }
               }
             }
@@ -1972,7 +1972,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreditNoteResponse"
+                  "$ref": "#/components/schemas/CreditNoteResponse"
                 }
               }
             }
@@ -2069,7 +2069,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateCustomerRequest"
+                "$ref": "#/components/schemas/UpdateCustomerRequest"
               }
             }
           },
@@ -2081,7 +2081,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CustomerResponse"
+                  "$ref": "#/components/schemas/CustomerResponse"
                 }
               }
             }
@@ -2126,7 +2126,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateCustomerRequest"
+                "$ref": "#/components/schemas/CreateCustomerRequest"
               }
             }
           },
@@ -2138,7 +2138,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CustomerResponse"
+                  "$ref": "#/components/schemas/CustomerResponse"
                 }
               }
             }
@@ -2198,7 +2198,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CustomerResponse"
+                  "$ref": "#/components/schemas/CustomerResponse"
                 }
               }
             }
@@ -2266,7 +2266,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListCustomersResponse"
+                  "$ref": "#/components/schemas/ListCustomersResponse"
                 }
               }
             }
@@ -2367,7 +2367,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CustomerUsageSummaryResponse"
+                  "$ref": "#/components/schemas/CustomerUsageSummaryResponse"
                 }
               }
             }
@@ -2463,7 +2463,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/dto.WalletResponse"
+                    "$ref": "#/components/schemas/WalletResponse"
                   }
                 }
               }
@@ -2532,7 +2532,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CustomerResponse"
+                  "$ref": "#/components/schemas/CustomerResponse"
                 }
               }
             }
@@ -2641,7 +2641,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CustomerEntitlementsResponse"
+                  "$ref": "#/components/schemas/CustomerEntitlementsResponse"
                 }
               }
             }
@@ -2699,7 +2699,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListCreditGrantApplicationsResponse"
+                  "$ref": "#/components/schemas/ListCreditGrantApplicationsResponse"
                 }
               }
             }
@@ -2767,7 +2767,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CustomerMultiCurrencyInvoiceSummary"
+                  "$ref": "#/components/schemas/CustomerMultiCurrencyInvoiceSummary"
                 }
               }
             }
@@ -2827,7 +2827,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/dto.WalletResponse"
+                    "$ref": "#/components/schemas/WalletResponse"
                   }
                 }
               }
@@ -2874,7 +2874,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateEntitlementRequest"
+                "$ref": "#/components/schemas/CreateEntitlementRequest"
               }
             }
           },
@@ -2886,7 +2886,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.EntitlementResponse"
+                  "$ref": "#/components/schemas/EntitlementResponse"
                 }
               }
             }
@@ -2933,7 +2933,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateBulkEntitlementRequest"
+                "$ref": "#/components/schemas/CreateBulkEntitlementRequest"
               }
             }
           },
@@ -2945,7 +2945,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreateBulkEntitlementResponse"
+                  "$ref": "#/components/schemas/CreateBulkEntitlementResponse"
                 }
               }
             }
@@ -3004,7 +3004,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListEntitlementsResponse"
+                  "$ref": "#/components/schemas/ListEntitlementsResponse"
                 }
               }
             }
@@ -3063,7 +3063,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.EntitlementResponse"
+                  "$ref": "#/components/schemas/EntitlementResponse"
                 }
               }
             }
@@ -3118,7 +3118,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateEntitlementRequest"
+                "$ref": "#/components/schemas/UpdateEntitlementRequest"
               }
             }
           },
@@ -3130,7 +3130,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.EntitlementResponse"
+                  "$ref": "#/components/schemas/EntitlementResponse"
                 }
               }
             }
@@ -3187,7 +3187,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -3233,7 +3233,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.IngestEventRequest"
+                "$ref": "#/components/schemas/IngestEventRequest"
               }
             }
           },
@@ -3295,7 +3295,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.GetUsageAnalyticsRequest"
+                "$ref": "#/components/schemas/GetUsageAnalyticsRequest"
               }
             }
           },
@@ -3307,7 +3307,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetUsageAnalyticsResponse"
+                  "$ref": "#/components/schemas/GetUsageAnalyticsResponse"
                 }
               }
             }
@@ -3354,7 +3354,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.BulkIngestEventRequest"
+                "$ref": "#/components/schemas/BulkIngestEventRequest"
               }
             }
           },
@@ -3417,7 +3417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetHuggingFaceBillingDataResponse"
+                  "$ref": "#/components/schemas/GetHuggingFaceBillingDataResponse"
                 }
               }
             }
@@ -3453,7 +3453,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.GetEventsRequest"
+                "$ref": "#/components/schemas/GetEventsRequest"
               }
             }
           },
@@ -3465,7 +3465,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetEventsResponse"
+                  "$ref": "#/components/schemas/GetEventsResponse"
                 }
               }
             }
@@ -3512,7 +3512,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.GetUsageRequest"
+                "$ref": "#/components/schemas/GetUsageRequest"
               }
             }
           },
@@ -3524,7 +3524,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetUsageResponse"
+                  "$ref": "#/components/schemas/GetUsageResponse"
                 }
               }
             }
@@ -3571,7 +3571,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.GetUsageByMeterRequest"
+                "$ref": "#/components/schemas/GetUsageByMeterRequest"
               }
             }
           },
@@ -3583,7 +3583,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetUsageResponse"
+                  "$ref": "#/components/schemas/GetUsageResponse"
                 }
               }
             }
@@ -3652,7 +3652,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetEventByIDResponse"
+                  "$ref": "#/components/schemas/GetEventByIDResponse"
                 }
               }
             }
@@ -3698,7 +3698,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateFeatureRequest"
+                "$ref": "#/components/schemas/CreateFeatureRequest"
               }
             }
           },
@@ -3710,7 +3710,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.FeatureResponse"
+                  "$ref": "#/components/schemas/FeatureResponse"
                 }
               }
             }
@@ -3769,7 +3769,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListFeaturesResponse"
+                  "$ref": "#/components/schemas/ListFeaturesResponse"
                 }
               }
             }
@@ -3827,7 +3827,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateFeatureRequest"
+                "$ref": "#/components/schemas/UpdateFeatureRequest"
               }
             }
           },
@@ -3839,7 +3839,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.FeatureResponse"
+                  "$ref": "#/components/schemas/FeatureResponse"
                 }
               }
             }
@@ -3906,7 +3906,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -3962,7 +3962,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateGroupRequest"
+                "$ref": "#/components/schemas/CreateGroupRequest"
               }
             }
           },
@@ -3974,7 +3974,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GroupResponse"
+                  "$ref": "#/components/schemas/GroupResponse"
                 }
               }
             }
@@ -4033,7 +4033,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListGroupsResponse"
+                  "$ref": "#/components/schemas/ListGroupsResponse"
                 }
               }
             }
@@ -4092,7 +4092,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GroupResponse"
+                  "$ref": "#/components/schemas/GroupResponse"
                 }
               }
             }
@@ -4208,7 +4208,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.LinkIntegrationMappingRequest"
+                "$ref": "#/components/schemas/LinkIntegrationMappingRequest"
               }
             }
           },
@@ -4220,7 +4220,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.LinkIntegrationMappingResponse"
+                  "$ref": "#/components/schemas/LinkIntegrationMappingResponse"
                 }
               }
             }
@@ -4267,7 +4267,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateInvoiceRequest"
+                "$ref": "#/components/schemas/CreateInvoiceRequest"
               }
             }
           },
@@ -4279,7 +4279,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.InvoiceResponse"
+                  "$ref": "#/components/schemas/InvoiceResponse"
                 }
               }
             }
@@ -4326,7 +4326,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.GetPreviewInvoiceRequest"
+                "$ref": "#/components/schemas/GetPreviewInvoiceRequest"
               }
             }
           },
@@ -4338,7 +4338,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.InvoiceResponse"
+                  "$ref": "#/components/schemas/InvoiceResponse"
                 }
               }
             }
@@ -4397,7 +4397,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListInvoicesResponse"
+                  "$ref": "#/components/schemas/ListInvoicesResponse"
                 }
               }
             }
@@ -4477,7 +4477,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.InvoiceResponse"
+                  "$ref": "#/components/schemas/InvoiceResponse"
                 }
               }
             }
@@ -4532,7 +4532,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateInvoiceRequest"
+                "$ref": "#/components/schemas/UpdateInvoiceRequest"
               }
             }
           },
@@ -4544,7 +4544,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.InvoiceResponse"
+                  "$ref": "#/components/schemas/InvoiceResponse"
                 }
               }
             }
@@ -4613,7 +4613,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -4681,7 +4681,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -4739,7 +4739,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdatePaymentStatusRequest"
+                "$ref": "#/components/schemas/UpdatePaymentStatusRequest"
               }
             }
           },
@@ -4751,7 +4751,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.InvoiceResponse"
+                  "$ref": "#/components/schemas/InvoiceResponse"
                 }
               }
             }
@@ -4820,7 +4820,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -5049,7 +5049,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.InvoiceResponse"
+                  "$ref": "#/components/schemas/InvoiceResponse"
                 }
               }
             }
@@ -5117,7 +5117,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -5313,7 +5313,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListPaymentsResponse"
+                  "$ref": "#/components/schemas/ListPaymentsResponse"
                 }
               }
             }
@@ -5357,7 +5357,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreatePaymentRequest"
+                "$ref": "#/components/schemas/CreatePaymentRequest"
               }
             }
           },
@@ -5369,7 +5369,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PaymentResponse"
+                  "$ref": "#/components/schemas/PaymentResponse"
                 }
               }
             }
@@ -5428,7 +5428,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PaymentResponse"
+                  "$ref": "#/components/schemas/PaymentResponse"
                 }
               }
             }
@@ -5493,7 +5493,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdatePaymentRequest"
+                "$ref": "#/components/schemas/UpdatePaymentRequest"
               }
             }
           },
@@ -5505,7 +5505,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PaymentResponse"
+                  "$ref": "#/components/schemas/PaymentResponse"
                 }
               }
             }
@@ -5562,7 +5562,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -5630,7 +5630,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PaymentResponse"
+                  "$ref": "#/components/schemas/PaymentResponse"
                 }
               }
             }
@@ -5686,7 +5686,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreatePlanRequest"
+                "$ref": "#/components/schemas/CreatePlanRequest"
               }
             }
           },
@@ -5698,7 +5698,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PlanResponse"
+                  "$ref": "#/components/schemas/PlanResponse"
                 }
               }
             }
@@ -5757,7 +5757,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListPlansResponse"
+                  "$ref": "#/components/schemas/ListPlansResponse"
                 }
               }
             }
@@ -5816,7 +5816,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PlanResponse"
+                  "$ref": "#/components/schemas/PlanResponse"
                 }
               }
             }
@@ -5881,7 +5881,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdatePlanRequest"
+                "$ref": "#/components/schemas/UpdatePlanRequest"
               }
             }
           },
@@ -5893,7 +5893,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PlanResponse"
+                  "$ref": "#/components/schemas/PlanResponse"
                 }
               }
             }
@@ -5960,7 +5960,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -6026,7 +6026,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.ClonePlanRequest"
+                "$ref": "#/components/schemas/ClonePlanRequest"
               }
             }
           },
@@ -6038,7 +6038,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PlanResponse"
+                  "$ref": "#/components/schemas/PlanResponse"
                 }
               }
             }
@@ -6117,7 +6117,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListCreditGrantsResponse"
+                  "$ref": "#/components/schemas/ListCreditGrantsResponse"
                 }
               }
             }
@@ -6185,7 +6185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListEntitlementsResponse"
+                  "$ref": "#/components/schemas/ListEntitlementsResponse"
                 }
               }
             }
@@ -6319,7 +6319,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreatePriceRequest"
+                "$ref": "#/components/schemas/CreatePriceRequest"
               }
             }
           },
@@ -6331,7 +6331,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PriceResponse"
+                  "$ref": "#/components/schemas/PriceResponse"
                 }
               }
             }
@@ -6378,7 +6378,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateBulkPriceRequest"
+                "$ref": "#/components/schemas/CreateBulkPriceRequest"
               }
             }
           },
@@ -6390,7 +6390,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreateBulkPriceResponse"
+                  "$ref": "#/components/schemas/CreateBulkPriceResponse"
                 }
               }
             }
@@ -6449,7 +6449,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PriceResponse"
+                  "$ref": "#/components/schemas/PriceResponse"
                 }
               }
             }
@@ -6507,7 +6507,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListPricesResponse"
+                  "$ref": "#/components/schemas/ListPricesResponse"
                 }
               }
             }
@@ -6606,7 +6606,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListPriceUnitsResponse"
+                  "$ref": "#/components/schemas/ListPriceUnitsResponse"
                 }
               }
             }
@@ -6650,7 +6650,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreatePriceUnitRequest"
+                "$ref": "#/components/schemas/CreatePriceUnitRequest"
               }
             }
           },
@@ -6662,7 +6662,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreatePriceUnitResponse"
+                  "$ref": "#/components/schemas/CreatePriceUnitResponse"
                 }
               }
             }
@@ -6721,7 +6721,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PriceUnitResponse"
+                  "$ref": "#/components/schemas/PriceUnitResponse"
                 }
               }
             }
@@ -6789,7 +6789,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListPriceUnitsResponse"
+                  "$ref": "#/components/schemas/ListPriceUnitsResponse"
                 }
               }
             }
@@ -6848,7 +6848,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PriceUnitResponse"
+                  "$ref": "#/components/schemas/PriceUnitResponse"
                 }
               }
             }
@@ -6903,7 +6903,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdatePriceUnitRequest"
+                "$ref": "#/components/schemas/UpdatePriceUnitRequest"
               }
             }
           },
@@ -6915,7 +6915,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PriceUnitResponse"
+                  "$ref": "#/components/schemas/PriceUnitResponse"
                 }
               }
             }
@@ -6972,7 +6972,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -7030,7 +7030,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PriceResponse"
+                  "$ref": "#/components/schemas/PriceResponse"
                 }
               }
             }
@@ -7085,7 +7085,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdatePriceRequest"
+                "$ref": "#/components/schemas/UpdatePriceRequest"
               }
             }
           },
@@ -7097,7 +7097,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.PriceResponse"
+                  "$ref": "#/components/schemas/PriceResponse"
                 }
               }
             }
@@ -7153,7 +7153,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.DeletePriceRequest"
+                "$ref": "#/components/schemas/DeletePriceRequest"
               }
             }
           },
@@ -7165,7 +7165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -7332,7 +7332,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListSecretsResponse"
+                  "$ref": "#/components/schemas/ListSecretsResponse"
                 }
               }
             }
@@ -7376,7 +7376,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateAPIKeyRequest"
+                "$ref": "#/components/schemas/CreateAPIKeyRequest"
               }
             }
           },
@@ -7388,7 +7388,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreateAPIKeyResponse"
+                  "$ref": "#/components/schemas/CreateAPIKeyResponse"
                 }
               }
             }
@@ -7487,7 +7487,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateSubscriptionRequest"
+                "$ref": "#/components/schemas/CreateSubscriptionRequest"
               }
             }
           },
@@ -7499,7 +7499,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionResponse"
+                  "$ref": "#/components/schemas/SubscriptionResponse"
                 }
               }
             }
@@ -7546,7 +7546,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.AddAddonRequest"
+                "$ref": "#/components/schemas/AddAddonRequest"
               }
             }
           },
@@ -7558,7 +7558,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.AddonAssociationResponse"
+                  "$ref": "#/components/schemas/AddonAssociationResponse"
                 }
               }
             }
@@ -7603,7 +7603,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.RemoveAddonRequest"
+                "$ref": "#/components/schemas/RemoveAddonRequest"
               }
             }
           },
@@ -7615,7 +7615,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -7673,7 +7673,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateSubscriptionLineItemRequest"
+                "$ref": "#/components/schemas/UpdateSubscriptionLineItemRequest"
               }
             }
           },
@@ -7685,7 +7685,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionLineItemResponse"
+                  "$ref": "#/components/schemas/SubscriptionLineItemResponse"
                 }
               }
             }
@@ -7741,7 +7741,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.DeleteSubscriptionLineItemRequest"
+                "$ref": "#/components/schemas/DeleteSubscriptionLineItemRequest"
               }
             }
           },
@@ -7753,7 +7753,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionLineItemResponse"
+                  "$ref": "#/components/schemas/SubscriptionLineItemResponse"
                 }
               }
             }
@@ -7812,7 +7812,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListSubscriptionsResponse"
+                  "$ref": "#/components/schemas/ListSubscriptionsResponse"
                 }
               }
             }
@@ -7859,7 +7859,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.GetUsageBySubscriptionRequest"
+                "$ref": "#/components/schemas/GetUsageBySubscriptionRequest"
               }
             }
           },
@@ -7871,7 +7871,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetUsageBySubscriptionResponse"
+                  "$ref": "#/components/schemas/GetUsageBySubscriptionResponse"
                 }
               }
             }
@@ -7930,7 +7930,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionResponse"
+                  "$ref": "#/components/schemas/SubscriptionResponse"
                 }
               }
             }
@@ -7985,7 +7985,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateSubscriptionRequest"
+                "$ref": "#/components/schemas/UpdateSubscriptionRequest"
               }
             }
           },
@@ -7997,7 +7997,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionResponse"
+                  "$ref": "#/components/schemas/SubscriptionResponse"
                 }
               }
             }
@@ -8055,7 +8055,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.ActivateDraftSubscriptionRequest"
+                "$ref": "#/components/schemas/ActivateDraftSubscriptionRequest"
               }
             }
           },
@@ -8067,7 +8067,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionResponse"
+                  "$ref": "#/components/schemas/SubscriptionResponse"
                 }
               }
             }
@@ -8128,7 +8128,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/dto.AddonAssociationResponse"
+                    "$ref": "#/components/schemas/AddonAssociationResponse"
                   }
                 }
               }
@@ -8196,7 +8196,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CancelSubscriptionRequest"
+                "$ref": "#/components/schemas/CancelSubscriptionRequest"
               }
             }
           },
@@ -8208,7 +8208,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CancelSubscriptionResponse"
+                  "$ref": "#/components/schemas/CancelSubscriptionResponse"
                 }
               }
             }
@@ -8266,7 +8266,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.SubscriptionChangeRequest"
+                "$ref": "#/components/schemas/SubscriptionChangeRequest"
               }
             }
           },
@@ -8278,7 +8278,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionChangeExecuteResponse"
+                  "$ref": "#/components/schemas/SubscriptionChangeExecuteResponse"
                 }
               }
             }
@@ -8346,7 +8346,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.SubscriptionChangeRequest"
+                "$ref": "#/components/schemas/SubscriptionChangeRequest"
               }
             }
           },
@@ -8358,7 +8358,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionChangePreviewResponse"
+                  "$ref": "#/components/schemas/SubscriptionChangePreviewResponse"
                 }
               }
             }
@@ -8440,7 +8440,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionEntitlementsResponse"
+                  "$ref": "#/components/schemas/SubscriptionEntitlementsResponse"
                 }
               }
             }
@@ -8508,7 +8508,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListCreditGrantApplicationsResponse"
+                  "$ref": "#/components/schemas/ListCreditGrantApplicationsResponse"
                 }
               }
             }
@@ -8575,7 +8575,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateSubscriptionLineItemRequest"
+                "$ref": "#/components/schemas/CreateSubscriptionLineItemRequest"
               }
             }
           },
@@ -8587,7 +8587,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionLineItemResponse"
+                  "$ref": "#/components/schemas/SubscriptionLineItemResponse"
                 }
               }
             }
@@ -8655,7 +8655,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.PauseSubscriptionRequest"
+                "$ref": "#/components/schemas/PauseSubscriptionRequest"
               }
             }
           },
@@ -8667,7 +8667,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionPauseResponse"
+                  "$ref": "#/components/schemas/SubscriptionPauseResponse"
                 }
               }
             }
@@ -8738,7 +8738,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/dto.ListSubscriptionPausesResponse"
+                    "$ref": "#/components/schemas/ListSubscriptionPausesResponse"
                   }
                 }
               }
@@ -8801,7 +8801,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.ResumeSubscriptionRequest"
+                "$ref": "#/components/schemas/ResumeSubscriptionRequest"
               }
             }
           },
@@ -8813,7 +8813,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionPauseResponse"
+                  "$ref": "#/components/schemas/SubscriptionPauseResponse"
                 }
               }
             }
@@ -8890,7 +8890,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionResponseV2"
+                  "$ref": "#/components/schemas/SubscriptionResponseV2"
                 }
               }
             }
@@ -9100,7 +9100,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListTasksResponse"
+                  "$ref": "#/components/schemas/ListTasksResponse"
                 }
               }
             }
@@ -9144,7 +9144,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateTaskRequest"
+                "$ref": "#/components/schemas/CreateTaskRequest"
               }
             }
           },
@@ -9156,7 +9156,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaskResponse"
+                  "$ref": "#/components/schemas/TaskResponse"
                 }
               }
             }
@@ -9322,7 +9322,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListScheduledTasksResponse"
+                  "$ref": "#/components/schemas/ListScheduledTasksResponse"
                 }
               }
             }
@@ -9366,7 +9366,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateScheduledTaskRequest"
+                "$ref": "#/components/schemas/CreateScheduledTaskRequest"
               }
             }
           },
@@ -9378,7 +9378,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ScheduledTaskResponse"
+                  "$ref": "#/components/schemas/ScheduledTaskResponse"
                 }
               }
             }
@@ -9543,7 +9543,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ScheduledTaskResponse"
+                  "$ref": "#/components/schemas/ScheduledTaskResponse"
                 }
               }
             }
@@ -9608,7 +9608,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateScheduledTaskRequest"
+                "$ref": "#/components/schemas/UpdateScheduledTaskRequest"
               }
             }
           },
@@ -9620,7 +9620,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ScheduledTaskResponse"
+                  "$ref": "#/components/schemas/ScheduledTaskResponse"
                 }
               }
             }
@@ -9748,7 +9748,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.TriggerForceRunRequest"
+                "$ref": "#/components/schemas/TriggerForceRunRequest"
               }
             }
           },
@@ -9760,7 +9760,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TriggerForceRunResponse"
+                  "$ref": "#/components/schemas/TriggerForceRunResponse"
                 }
               }
             }
@@ -9829,7 +9829,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaskResponse"
+                  "$ref": "#/components/schemas/TaskResponse"
                 }
               }
             }
@@ -9967,7 +9967,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateTaskStatusRequest"
+                "$ref": "#/components/schemas/UpdateTaskStatusRequest"
               }
             }
           },
@@ -9979,7 +9979,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SuccessResponse"
+                  "$ref": "#/components/schemas/SuccessResponse"
                 }
               }
             }
@@ -10071,7 +10071,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListTaxAssociationsResponse"
+                  "$ref": "#/components/schemas/ListTaxAssociationsResponse"
                 }
               }
             }
@@ -10115,7 +10115,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateTaxAssociationRequest"
+                "$ref": "#/components/schemas/CreateTaxAssociationRequest"
               }
             }
           },
@@ -10127,7 +10127,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaxAssociationResponse"
+                  "$ref": "#/components/schemas/TaxAssociationResponse"
                 }
               }
             }
@@ -10186,7 +10186,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaxAssociationResponse"
+                  "$ref": "#/components/schemas/TaxAssociationResponse"
                 }
               }
             }
@@ -10241,7 +10241,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.TaxAssociationUpdateRequest"
+                "$ref": "#/components/schemas/TaxAssociationUpdateRequest"
               }
             }
           },
@@ -10253,7 +10253,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaxAssociationResponse"
+                  "$ref": "#/components/schemas/TaxAssociationResponse"
                 }
               }
             }
@@ -10310,7 +10310,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaxAssociationResponse"
+                  "$ref": "#/components/schemas/TaxAssociationResponse"
                 }
               }
             }
@@ -10478,7 +10478,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/dto.TaxRateResponse"
+                    "$ref": "#/components/schemas/TaxRateResponse"
                   }
                 }
               }
@@ -10523,7 +10523,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateTaxRateRequest"
+                "$ref": "#/components/schemas/CreateTaxRateRequest"
               }
             }
           },
@@ -10535,7 +10535,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaxRateResponse"
+                  "$ref": "#/components/schemas/TaxRateResponse"
                 }
               }
             }
@@ -10594,7 +10594,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaxRateResponse"
+                  "$ref": "#/components/schemas/TaxRateResponse"
                 }
               }
             }
@@ -10649,7 +10649,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateTaxRateRequest"
+                "$ref": "#/components/schemas/UpdateTaxRateRequest"
               }
             }
           },
@@ -10661,7 +10661,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TaxRateResponse"
+                  "$ref": "#/components/schemas/TaxRateResponse"
                 }
               }
             }
@@ -10759,7 +10759,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TenantBillingUsage"
+                  "$ref": "#/components/schemas/TenantBillingUsage"
                 }
               }
             }
@@ -10815,7 +10815,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateTenantRequest"
+                "$ref": "#/components/schemas/UpdateTenantRequest"
               }
             }
           },
@@ -10827,7 +10827,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TenantResponse"
+                  "$ref": "#/components/schemas/TenantResponse"
                 }
               }
             }
@@ -10896,7 +10896,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TenantResponse"
+                  "$ref": "#/components/schemas/TenantResponse"
                 }
               }
             }
@@ -10942,7 +10942,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateUserRequest"
+                "$ref": "#/components/schemas/CreateUserRequest"
               }
             }
           },
@@ -10954,7 +10954,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CreateUserResponse"
+                  "$ref": "#/components/schemas/CreateUserResponse"
                 }
               }
             }
@@ -11002,7 +11002,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.UserResponse"
+                  "$ref": "#/components/schemas/UserResponse"
                 }
               }
             }
@@ -11060,7 +11060,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListUsersResponse"
+                  "$ref": "#/components/schemas/ListUsersResponse"
                 }
               }
             }
@@ -11142,7 +11142,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetPendingSchedulesResponse"
+                  "$ref": "#/components/schemas/GetPendingSchedulesResponse"
                 }
               }
             }
@@ -11175,7 +11175,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.SubscriptionScheduleResponse"
+                  "$ref": "#/components/schemas/SubscriptionScheduleResponse"
                 }
               }
             }
@@ -11207,7 +11207,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CancelScheduleRequest"
+                "$ref": "#/components/schemas/CancelScheduleRequest"
               }
             }
           },
@@ -11219,7 +11219,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.CancelScheduleResponse"
+                  "$ref": "#/components/schemas/CancelScheduleResponse"
                 }
               }
             }
@@ -11253,7 +11253,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.GetPendingSchedulesResponse"
+                  "$ref": "#/components/schemas/GetPendingSchedulesResponse"
                 }
               }
             }
@@ -11274,7 +11274,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.CreateWalletRequest"
+                "$ref": "#/components/schemas/CreateWalletRequest"
               }
             }
           },
@@ -11286,7 +11286,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.WalletResponse"
+                  "$ref": "#/components/schemas/WalletResponse"
                 }
               }
             }
@@ -11404,7 +11404,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListWalletTransactionsResponse"
+                  "$ref": "#/components/schemas/ListWalletTransactionsResponse"
                 }
               }
             }
@@ -11463,7 +11463,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.WalletResponse"
+                  "$ref": "#/components/schemas/WalletResponse"
                 }
               }
             }
@@ -11528,7 +11528,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.UpdateWalletRequest"
+                "$ref": "#/components/schemas/UpdateWalletRequest"
               }
             }
           },
@@ -11540,7 +11540,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.WalletResponse"
+                  "$ref": "#/components/schemas/WalletResponse"
                 }
               }
             }
@@ -11617,7 +11617,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.WalletBalanceResponse"
+                  "$ref": "#/components/schemas/WalletBalanceResponse"
                 }
               }
             }
@@ -11685,7 +11685,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.WalletResponse"
+                  "$ref": "#/components/schemas/WalletResponse"
                 }
               }
             }
@@ -11752,7 +11752,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/dto.TopUpWalletRequest"
+                "$ref": "#/components/schemas/TopUpWalletRequest"
               }
             }
           },
@@ -11764,7 +11764,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.TopUpWalletResponse"
+                  "$ref": "#/components/schemas/TopUpWalletResponse"
                 }
               }
             }
@@ -12047,7 +12047,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListWalletTransactionsResponse"
+                  "$ref": "#/components/schemas/ListWalletTransactionsResponse"
                 }
               }
             }
@@ -12997,7 +12997,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/dto.ListWorkflowsResponse"
+                  "$ref": "#/components/schemas/ListWorkflowsResponse"
                 }
               }
             }
@@ -13034,6 +13034,273 @@
   },
   "components": {
     "schemas": {
+      "ListAddonsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddonResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListCouponsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CouponResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListCreditGrantApplicationsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditGrantApplicationResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListCreditGrantsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreditGrantResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListCustomersResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        },
+        "description": "Response object for listing customers with pagination"
+      },
+      "ListEntitlementsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntitlementResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListFeaturesResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeatureResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListGroupsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroupResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListInvoicesResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListPlansResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListPriceUnitsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceUnitResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListPricesResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListScheduledTasksResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduledTaskResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListSecretsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SecretResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListSubscriptionsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListTaxAssociationsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxAssociationResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListUsersResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListWalletTransactionsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WalletTransactionResponse"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
+      "ListWorkflowsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkflowExecutionDTO"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/types.PaginationResponse"
+          }
+        }
+      },
       "costsheet.Filter": {
         "type": "object",
         "properties": {
@@ -13264,7 +13531,7 @@
           }
         }
       },
-      "dto.ActivateDraftSubscriptionRequest": {
+      "ActivateDraftSubscriptionRequest": {
         "required": [
           "start_date"
         ],
@@ -13276,7 +13543,7 @@
           }
         }
       },
-      "dto.AddAddonRequest": {
+      "AddAddonRequest": {
         "required": [
           "addon_id",
           "subscription_id"
@@ -13289,7 +13556,7 @@
           "line_item_commitments": {
             "type": "object",
             "additionalProperties": {
-              "$ref": "#/components/schemas/dto.LineItemCommitmentConfig"
+              "$ref": "#/components/schemas/LineItemCommitmentConfig"
             },
             "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)"
           },
@@ -13305,7 +13572,7 @@
           }
         }
       },
-      "dto.AddAddonToSubscriptionRequest": {
+      "AddAddonToSubscriptionRequest": {
         "required": [
           "addon_id"
         ],
@@ -13317,7 +13584,7 @@
           "line_item_commitments": {
             "type": "object",
             "additionalProperties": {
-              "$ref": "#/components/schemas/dto.LineItemCommitmentConfig"
+              "$ref": "#/components/schemas/LineItemCommitmentConfig"
             },
             "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)"
           },
@@ -13330,11 +13597,11 @@
           }
         }
       },
-      "dto.AddonAssociationResponse": {
+      "AddonAssociationResponse": {
         "type": "object",
         "properties": {
           "addon": {
-            "$ref": "#/components/schemas/dto.AddonResponse"
+            "$ref": "#/components/schemas/AddonResponse"
           },
           "addon_id": {
             "type": "string"
@@ -13380,7 +13647,7 @@
             "$ref": "#/components/schemas/types.Status"
           },
           "subscription": {
-            "$ref": "#/components/schemas/dto.SubscriptionResponse"
+            "$ref": "#/components/schemas/SubscriptionResponse"
           },
           "tenant_id": {
             "type": "string"
@@ -13393,7 +13660,7 @@
           }
         }
       },
-      "dto.AddonResponse": {
+      "AddonResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -13408,7 +13675,7 @@
           "entitlements": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.EntitlementResponse"
+              "$ref": "#/components/schemas/EntitlementResponse"
             }
           },
           "environment_id": {
@@ -13431,7 +13698,7 @@
             "type": "array",
             "description": "Optional expanded fields",
             "items": {
-              "$ref": "#/components/schemas/dto.PriceResponse"
+              "$ref": "#/components/schemas/PriceResponse"
             }
           },
           "status": {
@@ -13451,7 +13718,7 @@
           }
         }
       },
-      "dto.Address": {
+      "Address": {
         "type": "object",
         "properties": {
           "address_city": {
@@ -13479,7 +13746,7 @@
           }
         }
       },
-      "dto.AggregatedEntitlement": {
+      "AggregatedEntitlement": {
         "type": "object",
         "properties": {
           "is_enabled": {
@@ -13503,24 +13770,24 @@
           }
         }
       },
-      "dto.AggregatedFeature": {
+      "AggregatedFeature": {
         "type": "object",
         "properties": {
           "entitlement": {
-            "$ref": "#/components/schemas/dto.AggregatedEntitlement"
+            "$ref": "#/components/schemas/AggregatedEntitlement"
           },
           "feature": {
-            "$ref": "#/components/schemas/dto.FeatureResponse"
+            "$ref": "#/components/schemas/FeatureResponse"
           },
           "sources": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.EntitlementSource"
+              "$ref": "#/components/schemas/EntitlementSource"
             }
           }
         }
       },
-      "dto.AlertLogResponse": {
+      "AlertLogResponse": {
         "type": "object",
         "properties": {
           "alert_info": {
@@ -13539,7 +13806,7 @@
             "type": "string"
           },
           "customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "customer_id": {
             "type": "string"
@@ -13554,7 +13821,7 @@
             "type": "string"
           },
           "feature": {
-            "$ref": "#/components/schemas/dto.FeatureResponse"
+            "$ref": "#/components/schemas/FeatureResponse"
           },
           "id": {
             "type": "string"
@@ -13578,11 +13845,11 @@
             "type": "string"
           },
           "wallet": {
-            "$ref": "#/components/schemas/dto.WalletResponse"
+            "$ref": "#/components/schemas/WalletResponse"
           }
         }
       },
-      "dto.BillingCycleInfo": {
+      "BillingCycleInfo": {
         "type": "object",
         "properties": {
           "billing_anchor": {
@@ -13609,7 +13876,7 @@
           }
         }
       },
-      "dto.BillingPeriodInfo": {
+      "BillingPeriodInfo": {
         "type": "object",
         "properties": {
           "end_time": {
@@ -13624,7 +13891,7 @@
           }
         }
       },
-      "dto.BulkIngestEventRequest": {
+      "BulkIngestEventRequest": {
         "required": [
           "events"
         ],
@@ -13635,12 +13902,12 @@
             "minItems": 1,
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.IngestEventRequest"
+              "$ref": "#/components/schemas/IngestEventRequest"
             }
           }
         }
       },
-      "dto.CancelScheduleRequest": {
+      "CancelScheduleRequest": {
         "type": "object",
         "properties": {
           "schedule_id": {
@@ -13657,7 +13924,7 @@
         },
         "description": "Request to cancel a subscription schedule (supports two modes)"
       },
-      "dto.CancelScheduleResponse": {
+      "CancelScheduleResponse": {
         "type": "object",
         "properties": {
           "message": {
@@ -13670,7 +13937,7 @@
         },
         "description": "Confirmation of schedule cancellation"
       },
-      "dto.CancelSubscriptionRequest": {
+      "CancelSubscriptionRequest": {
         "required": [
           "cancellation_type"
         ],
@@ -13695,7 +13962,7 @@
           }
         }
       },
-      "dto.CancelSubscriptionResponse": {
+      "CancelSubscriptionResponse": {
         "type": "object",
         "properties": {
           "cancellation_type": {
@@ -13714,11 +13981,11 @@
           "proration_details": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.ProrationDetail"
+              "$ref": "#/components/schemas/ProrationDetail"
             }
           },
           "proration_invoice": {
-            "$ref": "#/components/schemas/dto.InvoiceResponse"
+            "$ref": "#/components/schemas/InvoiceResponse"
           },
           "reason": {
             "type": "string"
@@ -13735,7 +14002,7 @@
           }
         }
       },
-      "dto.ClonePlanRequest": {
+      "ClonePlanRequest": {
         "type": "object",
         "properties": {
           "description": {
@@ -13759,14 +14026,14 @@
           }
         }
       },
-      "dto.CostAnalyticItem": {
+      "CostAnalyticItem": {
         "type": "object",
         "properties": {
           "cost_by_period": {
             "type": "array",
             "description": "Breakdown",
             "items": {
-              "$ref": "#/components/schemas/dto.CostPoint"
+              "$ref": "#/components/schemas/CostPoint"
             }
           },
           "costsheet_id": {
@@ -13818,7 +14085,7 @@
           }
         }
       },
-      "dto.CostPoint": {
+      "CostPoint": {
         "type": "object",
         "properties": {
           "cost": {
@@ -13835,7 +14102,7 @@
           }
         }
       },
-      "dto.CostsheetResponse": {
+      "CostsheetResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -13869,7 +14136,7 @@
             "type": "array",
             "description": "Associated prices",
             "items": {
-              "$ref": "#/components/schemas/dto.PriceResponse"
+              "$ref": "#/components/schemas/PriceResponse"
             }
           },
           "status": {
@@ -13886,7 +14153,7 @@
           }
         }
       },
-      "dto.CouponApplicationResponse": {
+      "CouponApplicationResponse": {
         "type": "object",
         "properties": {
           "applied_at": {
@@ -13961,7 +14228,7 @@
           }
         }
       },
-      "dto.CouponAssociationResponse": {
+      "CouponAssociationResponse": {
         "type": "object",
         "properties": {
           "coupon_id": {
@@ -14018,7 +14285,7 @@
           }
         }
       },
-      "dto.CouponResponse": {
+      "CouponResponse": {
         "type": "object",
         "properties": {
           "amount_off": {
@@ -14090,7 +14357,7 @@
           }
         }
       },
-      "dto.CreateAPIKeyRequest": {
+      "CreateAPIKeyRequest": {
         "required": [
           "name",
           "type"
@@ -14111,18 +14378,18 @@
           }
         }
       },
-      "dto.CreateAPIKeyResponse": {
+      "CreateAPIKeyResponse": {
         "type": "object",
         "properties": {
           "api_key": {
             "type": "string"
           },
           "secret": {
-            "$ref": "#/components/schemas/dto.SecretResponse"
+            "$ref": "#/components/schemas/SecretResponse"
           }
         }
       },
-      "dto.CreateAddonRequest": {
+      "CreateAddonRequest": {
         "required": [
           "lookup_key",
           "name",
@@ -14148,7 +14415,7 @@
           }
         }
       },
-      "dto.CreateAddonResponse": {
+      "CreateAddonResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -14163,7 +14430,7 @@
           "entitlements": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.EntitlementResponse"
+              "$ref": "#/components/schemas/EntitlementResponse"
             }
           },
           "environment_id": {
@@ -14186,7 +14453,7 @@
             "type": "array",
             "description": "Optional expanded fields",
             "items": {
-              "$ref": "#/components/schemas/dto.PriceResponse"
+              "$ref": "#/components/schemas/PriceResponse"
             }
           },
           "status": {
@@ -14206,7 +14473,7 @@
           }
         }
       },
-      "dto.CreateBulkEntitlementRequest": {
+      "CreateBulkEntitlementRequest": {
         "required": [
           "items"
         ],
@@ -14217,23 +14484,23 @@
             "minItems": 1,
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.CreateEntitlementRequest"
+              "$ref": "#/components/schemas/CreateEntitlementRequest"
             }
           }
         }
       },
-      "dto.CreateBulkEntitlementResponse": {
+      "CreateBulkEntitlementResponse": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.EntitlementResponse"
+              "$ref": "#/components/schemas/EntitlementResponse"
             }
           }
         }
       },
-      "dto.CreateBulkPriceRequest": {
+      "CreateBulkPriceRequest": {
         "required": [
           "items"
         ],
@@ -14244,23 +14511,23 @@
             "minItems": 1,
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceRequest"
+              "$ref": "#/components/schemas/CreatePriceRequest"
             }
           }
         }
       },
-      "dto.CreateBulkPriceResponse": {
+      "CreateBulkPriceResponse": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.PriceResponse"
+              "$ref": "#/components/schemas/PriceResponse"
             }
           }
         }
       },
-      "dto.CreateCostsheetRequest": {
+      "CreateCostsheetRequest": {
         "required": [
           "name"
         ],
@@ -14287,15 +14554,15 @@
           }
         }
       },
-      "dto.CreateCostsheetResponse": {
+      "CreateCostsheetResponse": {
         "type": "object",
         "properties": {
           "costsheet": {
-            "$ref": "#/components/schemas/dto.CostsheetResponse"
+            "$ref": "#/components/schemas/CostsheetResponse"
           }
         }
       },
-      "dto.CreateCouponRequest": {
+      "CreateCouponRequest": {
         "required": [
           "cadence",
           "name",
@@ -14345,7 +14612,7 @@
           }
         }
       },
-      "dto.CreateCreditGrantRequest": {
+      "CreateCreditGrantRequest": {
         "required": [
           "cadence",
           "credits",
@@ -14409,7 +14676,7 @@
           }
         }
       },
-      "dto.CreateCreditNoteLineItemRequest": {
+      "CreateCreditNoteLineItemRequest": {
         "required": [
           "amount",
           "invoice_line_item_id"
@@ -14433,7 +14700,7 @@
           }
         }
       },
-      "dto.CreateCreditNoteRequest": {
+      "CreateCreditNoteRequest": {
         "required": [
           "invoice_id",
           "reason"
@@ -14456,7 +14723,7 @@
             "type": "array",
             "description": "line_items contains the individual line items that make up this credit note (minimum 1 required)",
             "items": {
-              "$ref": "#/components/schemas/dto.CreateCreditNoteLineItemRequest"
+              "$ref": "#/components/schemas/CreateCreditNoteLineItemRequest"
             }
           },
           "memo": {
@@ -14476,7 +14743,7 @@
           }
         }
       },
-      "dto.CreateCustomerRequest": {
+      "CreateCustomerRequest": {
         "required": [
           "external_id"
         ],
@@ -14546,13 +14813,13 @@
             "type": "array",
             "description": "tax_rate_overrides contains tax rate configurations to be linked to this customer",
             "items": {
-              "$ref": "#/components/schemas/dto.TaxRateOverride"
+              "$ref": "#/components/schemas/TaxRateOverride"
             }
           }
         },
         "description": "Request object for creating a new customer in the system"
       },
-      "dto.CreateEntitlementRequest": {
+      "CreateEntitlementRequest": {
         "required": [
           "feature_id",
           "feature_type"
@@ -14600,7 +14867,7 @@
           }
         }
       },
-      "dto.CreateFeatureRequest": {
+      "CreateFeatureRequest": {
         "required": [
           "name",
           "type"
@@ -14624,7 +14891,7 @@
             "$ref": "#/components/schemas/types.Metadata"
           },
           "meter": {
-            "$ref": "#/components/schemas/dto.CreateMeterRequest"
+            "$ref": "#/components/schemas/CreateMeterRequest"
           },
           "meter_id": {
             "type": "string"
@@ -14646,7 +14913,7 @@
           }
         }
       },
-      "dto.CreateGroupRequest": {
+      "CreateGroupRequest": {
         "required": [
           "entity_type",
           "lookup_key",
@@ -14665,7 +14932,7 @@
           }
         }
       },
-      "dto.CreateInvoiceLineItemRequest": {
+      "CreateInvoiceLineItemRequest": {
         "required": [
           "amount",
           "quantity"
@@ -14752,7 +15019,7 @@
           }
         }
       },
-      "dto.CreateInvoiceRequest": {
+      "CreateInvoiceRequest": {
         "required": [
           "amount_due",
           "currency",
@@ -14808,7 +15075,7 @@
             "type": "array",
             "description": "Invoice Coupons",
             "items": {
-              "$ref": "#/components/schemas/dto.InvoiceCoupon"
+              "$ref": "#/components/schemas/InvoiceCoupon"
             }
           },
           "invoice_number": {
@@ -14829,14 +15096,14 @@
             "type": "array",
             "description": "Invoice Line Item Coupons",
             "items": {
-              "$ref": "#/components/schemas/dto.InvoiceLineItemCoupon"
+              "$ref": "#/components/schemas/InvoiceLineItemCoupon"
             }
           },
           "line_items": {
             "type": "array",
             "description": "line_items contains the individual items that make up this invoice",
             "items": {
-              "$ref": "#/components/schemas/dto.CreateInvoiceLineItemRequest"
+              "$ref": "#/components/schemas/CreateInvoiceLineItemRequest"
             }
           },
           "metadata": {
@@ -14857,7 +15124,7 @@
             "type": "array",
             "description": "prepared_tax_rates contains the tax rates pre-resolved by the caller (e.g., billing service)",
             "items": {
-              "$ref": "#/components/schemas/dto.TaxRateResponse"
+              "$ref": "#/components/schemas/TaxRateResponse"
             }
           },
           "subscription_id": {
@@ -14872,7 +15139,7 @@
             "type": "array",
             "description": "tax_rate_overrides is the tax rate overrides to be applied to the invoice",
             "items": {
-              "$ref": "#/components/schemas/dto.TaxRateOverride"
+              "$ref": "#/components/schemas/TaxRateOverride"
             }
           },
           "tax_rates": {
@@ -14892,7 +15159,7 @@
           }
         }
       },
-      "dto.CreateMeterRequest": {
+      "CreateMeterRequest": {
         "required": [
           "aggregation",
           "event_name",
@@ -14923,7 +15190,7 @@
           }
         }
       },
-      "dto.CreatePaymentRequest": {
+      "CreatePaymentRequest": {
         "required": [
           "amount",
           "currency",
@@ -14976,7 +15243,7 @@
           }
         }
       },
-      "dto.CreatePlanRequest": {
+      "CreatePlanRequest": {
         "required": [
           "name"
         ],
@@ -14999,7 +15266,7 @@
           }
         }
       },
-      "dto.CreatePriceRequest": {
+      "CreatePriceRequest": {
         "required": [
           "billing_cadence",
           "billing_model",
@@ -15079,7 +15346,7 @@
             "description": "MinQuantity is the minimum quantity of the price"
           },
           "price_unit_config": {
-            "$ref": "#/components/schemas/dto.PriceUnitConfig"
+            "$ref": "#/components/schemas/PriceUnitConfig"
           },
           "price_unit_type": {
             "$ref": "#/components/schemas/types.PriceUnitType"
@@ -15093,7 +15360,7 @@
           "tiers": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceTier"
+              "$ref": "#/components/schemas/CreatePriceTier"
             }
           },
           "transform_quantity": {
@@ -15107,7 +15374,7 @@
           }
         }
       },
-      "dto.CreatePriceTier": {
+      "CreatePriceTier": {
         "required": [
           "unit_amount"
         ],
@@ -15127,7 +15394,7 @@
           }
         }
       },
-      "dto.CreatePriceUnitRequest": {
+      "CreatePriceUnitRequest": {
         "required": [
           "base_currency",
           "code",
@@ -15159,7 +15426,7 @@
           }
         }
       },
-      "dto.CreatePriceUnitResponse": {
+      "CreatePriceUnitResponse": {
         "type": "object",
         "properties": {
           "base_currency": {
@@ -15206,7 +15473,7 @@
           }
         }
       },
-      "dto.CreateScheduledTaskRequest": {
+      "CreateScheduledTaskRequest": {
         "required": [
           "connection_id",
           "entity_type",
@@ -15232,7 +15499,7 @@
           }
         }
       },
-      "dto.CreateSubscriptionLineItemRequest": {
+      "CreateSubscriptionLineItemRequest": {
         "type": "object",
         "properties": {
           "commitment_amount": {
@@ -15270,7 +15537,7 @@
             }
           },
           "price": {
-            "$ref": "#/components/schemas/dto.SubscriptionPriceCreateRequest"
+            "$ref": "#/components/schemas/SubscriptionPriceCreateRequest"
           },
           "price_id": {
             "type": "string",
@@ -15287,7 +15554,7 @@
           }
         }
       },
-      "dto.CreateSubscriptionRequest": {
+      "CreateSubscriptionRequest": {
         "required": [
           "billing_cadence",
           "billing_period",
@@ -15300,7 +15567,7 @@
             "type": "array",
             "description": "Addons represents addons to be added to the subscription during creation",
             "items": {
-              "$ref": "#/components/schemas/dto.AddAddonToSubscriptionRequest"
+              "$ref": "#/components/schemas/AddAddonToSubscriptionRequest"
             }
           },
           "billing_cadence": {
@@ -15335,7 +15602,7 @@
             "type": "array",
             "description": "Credit grants to be applied when subscription is created",
             "items": {
-              "$ref": "#/components/schemas/dto.CreateCreditGrantRequest"
+              "$ref": "#/components/schemas/CreateCreditGrantRequest"
             }
           },
           "currency": {
@@ -15377,7 +15644,7 @@
           "line_item_commitments": {
             "type": "object",
             "additionalProperties": {
-              "$ref": "#/components/schemas/dto.LineItemCommitmentConfig"
+              "$ref": "#/components/schemas/LineItemCommitmentConfig"
             },
             "description": "LineItemCommitments allows setting commitment configuration per line item (keyed by price_id)"
           },
@@ -15394,7 +15661,7 @@
             "type": "array",
             "description": "LineItems are extra line items to add at creation (each with price_id or price), in addition to plan prices",
             "items": {
-              "$ref": "#/components/schemas/dto.CreateSubscriptionLineItemRequest"
+              "$ref": "#/components/schemas/CreateSubscriptionLineItemRequest"
             }
           },
           "lookup_key": {
@@ -15414,14 +15681,14 @@
             "type": "array",
             "description": "OverrideEntitlements allows customizing specific entitlements for this subscription",
             "items": {
-              "$ref": "#/components/schemas/dto.OverrideEntitlementRequest"
+              "$ref": "#/components/schemas/OverrideEntitlementRequest"
             }
           },
           "override_line_items": {
             "type": "array",
             "description": "OverrideLineItems allows customizing specific prices for this subscription",
             "items": {
-              "$ref": "#/components/schemas/dto.OverrideLineItemRequest"
+              "$ref": "#/components/schemas/OverrideLineItemRequest"
             }
           },
           "parent_subscription_id": {
@@ -15438,7 +15705,7 @@
             "type": "array",
             "description": "Phases represents subscription phases to be created with the subscription",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionPhaseCreateRequest"
+              "$ref": "#/components/schemas/SubscriptionPhaseCreateRequest"
             }
           },
           "plan_id": {
@@ -15457,7 +15724,7 @@
             "type": "array",
             "description": "tax_rate_overrides is the tax rate overrides\tto be applied to the subscription",
             "items": {
-              "$ref": "#/components/schemas/dto.TaxRateOverride"
+              "$ref": "#/components/schemas/TaxRateOverride"
             }
           },
           "trial_end": {
@@ -15468,7 +15735,7 @@
           }
         }
       },
-      "dto.CreateTaskRequest": {
+      "CreateTaskRequest": {
         "required": [
           "entity_type",
           "file_type",
@@ -15498,7 +15765,7 @@
           }
         }
       },
-      "dto.CreateTaxAssociationRequest": {
+      "CreateTaxAssociationRequest": {
         "required": [
           "tax_rate_code"
         ],
@@ -15533,7 +15800,7 @@
           }
         }
       },
-      "dto.CreateTaxRateRequest": {
+      "CreateTaxRateRequest": {
         "required": [
           "code",
           "name"
@@ -15575,7 +15842,7 @@
           }
         }
       },
-      "dto.CreateUserRequest": {
+      "CreateUserRequest": {
         "required": [
           "type"
         ],
@@ -15597,7 +15864,7 @@
           }
         }
       },
-      "dto.CreateUserResponse": {
+      "CreateUserResponse": {
         "type": "object",
         "properties": {
           "email": {
@@ -15617,14 +15884,14 @@
             }
           },
           "tenant": {
-            "$ref": "#/components/schemas/dto.TenantResponse"
+            "$ref": "#/components/schemas/TenantResponse"
           },
           "type": {
             "$ref": "#/components/schemas/types.UserType"
           }
         }
       },
-      "dto.CreateWalletRequest": {
+      "CreateWalletRequest": {
         "required": [
           "currency"
         ],
@@ -15683,7 +15950,7 @@
           }
         }
       },
-      "dto.CreditGrantApplicationResponse": {
+      "CreditGrantApplicationResponse": {
         "type": "object",
         "properties": {
           "application_reason": {
@@ -15754,7 +16021,7 @@
           }
         }
       },
-      "dto.CreditGrantResponse": {
+      "CreditGrantResponse": {
         "type": "object",
         "properties": {
           "cadence": {
@@ -15839,7 +16106,7 @@
           }
         }
       },
-      "dto.CreditNoteResponse": {
+      "CreditNoteResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -15883,7 +16150,7 @@
             "description": "idempotency_key is an optional key used to prevent duplicate credit note creation"
           },
           "invoice": {
-            "$ref": "#/components/schemas/dto.InvoiceResponse"
+            "$ref": "#/components/schemas/InvoiceResponse"
           },
           "invoice_id": {
             "type": "string",
@@ -15913,7 +16180,7 @@
             "$ref": "#/components/schemas/types.Status"
           },
           "subscription": {
-            "$ref": "#/components/schemas/dto.SubscriptionResponse"
+            "$ref": "#/components/schemas/SubscriptionResponse"
           },
           "subscription_id": {
             "type": "string",
@@ -15938,7 +16205,7 @@
           }
         }
       },
-      "dto.CustomAnalyticItem": {
+      "CustomAnalyticItem": {
         "type": "object",
         "properties": {
           "feature_name": {
@@ -15961,7 +16228,7 @@
           }
         }
       },
-      "dto.CustomerEntitlementsResponse": {
+      "CustomerEntitlementsResponse": {
         "type": "object",
         "properties": {
           "customer_id": {
@@ -15970,12 +16237,12 @@
           "features": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.AggregatedFeature"
+              "$ref": "#/components/schemas/AggregatedFeature"
             }
           }
         }
       },
-      "dto.CustomerInvoiceSummary": {
+      "CustomerInvoiceSummary": {
         "type": "object",
         "properties": {
           "currency": {
@@ -16020,7 +16287,7 @@
           }
         }
       },
-      "dto.CustomerLookupResult": {
+      "CustomerLookupResult": {
         "type": "object",
         "properties": {
           "status": {
@@ -16028,7 +16295,7 @@
           }
         }
       },
-      "dto.CustomerMultiCurrencyInvoiceSummary": {
+      "CustomerMultiCurrencyInvoiceSummary": {
         "type": "object",
         "properties": {
           "customer_id": {
@@ -16043,12 +16310,12 @@
             "type": "array",
             "description": "summaries contains the invoice summaries for each currency",
             "items": {
-              "$ref": "#/components/schemas/dto.CustomerInvoiceSummary"
+              "$ref": "#/components/schemas/CustomerInvoiceSummary"
             }
           }
         }
       },
-      "dto.CustomerResponse": {
+      "CustomerResponse": {
         "type": "object",
         "properties": {
           "address_city": {
@@ -16100,7 +16367,7 @@
           "integrations": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.EntityIntegrationMappingResponse"
+              "$ref": "#/components/schemas/EntityIntegrationMappingResponse"
             }
           },
           "metadata": {
@@ -16115,7 +16382,7 @@
             "description": "Name is the name of the customer"
           },
           "parent_customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "parent_customer_id": {
             "type": "string",
@@ -16136,7 +16403,7 @@
         },
         "description": "Customer response object containing all customer information"
       },
-      "dto.CustomerUsageSummaryResponse": {
+      "CustomerUsageSummaryResponse": {
         "type": "object",
         "properties": {
           "customer_id": {
@@ -16145,38 +16412,38 @@
           "features": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.FeatureUsageSummary"
+              "$ref": "#/components/schemas/FeatureUsageSummary"
             }
           },
           "pagination": {
             "$ref": "#/components/schemas/types.PaginationResponse"
           },
           "period": {
-            "$ref": "#/components/schemas/dto.BillingPeriodInfo"
+            "$ref": "#/components/schemas/BillingPeriodInfo"
           }
         }
       },
-      "dto.DebugTracker": {
+      "DebugTracker": {
         "type": "object",
         "properties": {
           "customer_lookup": {
-            "$ref": "#/components/schemas/dto.CustomerLookupResult"
+            "$ref": "#/components/schemas/CustomerLookupResult"
           },
           "failure_point": {
             "$ref": "#/components/schemas/types.FailurePoint"
           },
           "meter_matching": {
-            "$ref": "#/components/schemas/dto.MeterMatchingResult"
+            "$ref": "#/components/schemas/MeterMatchingResult"
           },
           "price_lookup": {
-            "$ref": "#/components/schemas/dto.PriceLookupResult"
+            "$ref": "#/components/schemas/PriceLookupResult"
           },
           "subscription_line_item_lookup": {
-            "$ref": "#/components/schemas/dto.SubscriptionLineItemLookupResult"
+            "$ref": "#/components/schemas/SubscriptionLineItemLookupResult"
           }
         }
       },
-      "dto.DeleteCostsheetResponse": {
+      "DeleteCostsheetResponse": {
         "type": "object",
         "properties": {
           "id": {
@@ -16187,7 +16454,7 @@
           }
         }
       },
-      "dto.DeleteCreditGrantRequest": {
+      "DeleteCreditGrantRequest": {
         "type": "object",
         "properties": {
           "effective_date": {
@@ -16196,7 +16463,7 @@
           }
         }
       },
-      "dto.DeletePriceRequest": {
+      "DeletePriceRequest": {
         "type": "object",
         "properties": {
           "end_date": {
@@ -16204,7 +16471,7 @@
           }
         }
       },
-      "dto.DeleteSubscriptionLineItemRequest": {
+      "DeleteSubscriptionLineItemRequest": {
         "type": "object",
         "properties": {
           "effective_from": {
@@ -16212,11 +16479,11 @@
           }
         }
       },
-      "dto.EntitlementResponse": {
+      "EntitlementResponse": {
         "type": "object",
         "properties": {
           "addon": {
-            "$ref": "#/components/schemas/dto.AddonResponse"
+            "$ref": "#/components/schemas/AddonResponse"
           },
           "created_at": {
             "type": "string"
@@ -16240,7 +16507,7 @@
             "type": "string"
           },
           "feature": {
-            "$ref": "#/components/schemas/dto.FeatureResponse"
+            "$ref": "#/components/schemas/FeatureResponse"
           },
           "feature_id": {
             "type": "string"
@@ -16261,7 +16528,7 @@
             "type": "string"
           },
           "plan": {
-            "$ref": "#/components/schemas/dto.PlanResponse"
+            "$ref": "#/components/schemas/PlanResponse"
           },
           "plan_id": {
             "type": "string",
@@ -16293,7 +16560,7 @@
           }
         }
       },
-      "dto.EntitlementSource": {
+      "EntitlementSource": {
         "type": "object",
         "properties": {
           "entitlement_id": {
@@ -16306,7 +16573,7 @@
             "type": "string"
           },
           "entity_type": {
-            "$ref": "#/components/schemas/dto.EntitlementSourceEntityType"
+            "$ref": "#/components/schemas/EntitlementSourceEntityType"
           },
           "is_enabled": {
             "type": "boolean"
@@ -16328,7 +16595,7 @@
           }
         }
       },
-      "dto.EntitlementSourceEntityType": {
+      "EntitlementSourceEntityType": {
         "type": "string",
         "enum": [
           "plan",
@@ -16341,7 +16608,7 @@
           "EntitlementSourceEntityTypeSubscription"
         ]
       },
-      "dto.EntityIntegrationMappingResponse": {
+      "EntityIntegrationMappingResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -16382,7 +16649,7 @@
           }
         }
       },
-      "dto.Event": {
+      "Event": {
         "type": "object",
         "properties": {
           "customer_id": {
@@ -16412,7 +16679,7 @@
           }
         }
       },
-      "dto.EventCostInfo": {
+      "EventCostInfo": {
         "type": "object",
         "properties": {
           "costNanoUsd": {
@@ -16423,7 +16690,7 @@
           }
         }
       },
-      "dto.FeatureResponse": {
+      "FeatureResponse": {
         "type": "object",
         "properties": {
           "alert_settings": {
@@ -16442,7 +16709,7 @@
             "type": "string"
           },
           "group": {
-            "$ref": "#/components/schemas/dto.GroupResponse"
+            "$ref": "#/components/schemas/GroupResponse"
           },
           "group_id": {
             "type": "string"
@@ -16457,7 +16724,7 @@
             "$ref": "#/components/schemas/types.Metadata"
           },
           "meter": {
-            "$ref": "#/components/schemas/dto.MeterResponse"
+            "$ref": "#/components/schemas/MeterResponse"
           },
           "meter_id": {
             "type": "string"
@@ -16491,7 +16758,7 @@
           }
         }
       },
-      "dto.FeatureUsageInfo": {
+      "FeatureUsageInfo": {
         "type": "object",
         "properties": {
           "customer_id": {
@@ -16520,14 +16787,14 @@
           }
         }
       },
-      "dto.FeatureUsageSummary": {
+      "FeatureUsageSummary": {
         "type": "object",
         "properties": {
           "current_usage": {
             "type": "string"
           },
           "feature": {
-            "$ref": "#/components/schemas/dto.FeatureResponse"
+            "$ref": "#/components/schemas/FeatureResponse"
           },
           "is_enabled": {
             "type": "boolean"
@@ -16544,7 +16811,7 @@
           "sources": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.EntitlementSource"
+              "$ref": "#/components/schemas/EntitlementSource"
             }
           },
           "total_limit": {
@@ -16555,7 +16822,7 @@
           }
         }
       },
-      "dto.GetCostAnalyticsRequest": {
+      "GetCostAnalyticsRequest": {
         "type": "object",
         "properties": {
           "end_time": {
@@ -16592,22 +16859,22 @@
           }
         }
       },
-      "dto.GetCostsheetResponse": {
+      "GetCostsheetResponse": {
         "type": "object",
         "properties": {
           "costsheet": {
-            "$ref": "#/components/schemas/dto.CostsheetResponse"
+            "$ref": "#/components/schemas/CostsheetResponse"
           }
         }
       },
-      "dto.GetDetailedCostAnalyticsResponse": {
+      "GetDetailedCostAnalyticsResponse": {
         "type": "object",
         "properties": {
           "cost_analytics": {
             "type": "array",
             "description": "Cost analytics array (flattened from nested structure)",
             "items": {
-              "$ref": "#/components/schemas/dto.CostAnalyticItem"
+              "$ref": "#/components/schemas/CostAnalyticItem"
             }
           },
           "currency": {
@@ -16644,19 +16911,19 @@
           }
         }
       },
-      "dto.GetEventByIDResponse": {
+      "GetEventByIDResponse": {
         "type": "object",
         "properties": {
           "debug_tracker": {
-            "$ref": "#/components/schemas/dto.DebugTracker"
+            "$ref": "#/components/schemas/DebugTracker"
           },
           "event": {
-            "$ref": "#/components/schemas/dto.Event"
+            "$ref": "#/components/schemas/Event"
           },
           "processed_events": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.FeatureUsageInfo"
+              "$ref": "#/components/schemas/FeatureUsageInfo"
             }
           },
           "status": {
@@ -16664,7 +16931,7 @@
           }
         }
       },
-      "dto.GetEventsRequest": {
+      "GetEventsRequest": {
         "type": "object",
         "properties": {
           "end_time": {
@@ -16731,13 +16998,13 @@
           }
         }
       },
-      "dto.GetEventsResponse": {
+      "GetEventsResponse": {
         "type": "object",
         "properties": {
           "events": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.Event"
+              "$ref": "#/components/schemas/Event"
             }
           },
           "has_more": {
@@ -16757,18 +17024,18 @@
           }
         }
       },
-      "dto.GetHuggingFaceBillingDataResponse": {
+      "GetHuggingFaceBillingDataResponse": {
         "type": "object",
         "properties": {
           "requests": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.EventCostInfo"
+              "$ref": "#/components/schemas/EventCostInfo"
             }
           }
         }
       },
-      "dto.GetPendingSchedulesResponse": {
+      "GetPendingSchedulesResponse": {
         "type": "object",
         "properties": {
           "count": {
@@ -16779,13 +17046,13 @@
             "type": "array",
             "description": "schedules is the list of pending schedules",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionScheduleResponse"
+              "$ref": "#/components/schemas/SubscriptionScheduleResponse"
             }
           }
         },
         "description": "List of pending schedules for a subscription"
       },
-      "dto.GetPreviewInvoiceRequest": {
+      "GetPreviewInvoiceRequest": {
         "required": [
           "subscription_id"
         ],
@@ -16810,7 +17077,7 @@
           }
         }
       },
-      "dto.GetUsageAnalyticsRequest": {
+      "GetUsageAnalyticsRequest": {
         "required": [
           "external_customer_id"
         ],
@@ -16866,7 +17133,7 @@
           }
         }
       },
-      "dto.GetUsageAnalyticsResponse": {
+      "GetUsageAnalyticsResponse": {
         "type": "object",
         "properties": {
           "currency": {
@@ -16875,13 +17142,13 @@
           "custom_analytics": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.CustomAnalyticItem"
+              "$ref": "#/components/schemas/CustomAnalyticItem"
             }
           },
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.UsageAnalyticItem"
+              "$ref": "#/components/schemas/UsageAnalyticItem"
             }
           },
           "total_cost": {
@@ -16889,7 +17156,7 @@
           }
         }
       },
-      "dto.GetUsageByMeterRequest": {
+      "GetUsageByMeterRequest": {
         "required": [
           "meter_id"
         ],
@@ -16937,7 +17204,7 @@
           }
         }
       },
-      "dto.GetUsageBySubscriptionRequest": {
+      "GetUsageBySubscriptionRequest": {
         "required": [
           "subscription_id"
         ],
@@ -16961,7 +17228,7 @@
           }
         }
       },
-      "dto.GetUsageBySubscriptionResponse": {
+      "GetUsageBySubscriptionResponse": {
         "type": "object",
         "properties": {
           "amount": {
@@ -16970,7 +17237,7 @@
           "charges": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionUsageByMetersResponse"
+              "$ref": "#/components/schemas/SubscriptionUsageByMetersResponse"
             }
           },
           "commitment_amount": {
@@ -17005,7 +17272,7 @@
           }
         }
       },
-      "dto.GetUsageRequest": {
+      "GetUsageRequest": {
         "required": [
           "aggregation_type",
           "event_name"
@@ -17069,7 +17336,7 @@
           }
         }
       },
-      "dto.GetUsageResponse": {
+      "GetUsageResponse": {
         "type": "object",
         "properties": {
           "event_name": {
@@ -17078,7 +17345,7 @@
           "results": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.UsageResult"
+              "$ref": "#/components/schemas/UsageResult"
             }
           },
           "type": {
@@ -17089,7 +17356,7 @@
           }
         }
       },
-      "dto.GroupResponse": {
+      "GroupResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -17127,7 +17394,7 @@
           }
         }
       },
-      "dto.IngestEventRequest": {
+      "IngestEventRequest": {
         "required": [
           "event_name",
           "external_customer_id"
@@ -17172,7 +17439,7 @@
           }
         }
       },
-      "dto.InvoiceCoupon": {
+      "InvoiceCoupon": {
         "required": [
           "coupon_id"
         ],
@@ -17186,7 +17453,7 @@
           }
         }
       },
-      "dto.InvoiceLineItemCoupon": {
+      "InvoiceLineItemCoupon": {
         "required": [
           "coupon_id",
           "line_item_id"
@@ -17205,7 +17472,7 @@
           }
         }
       },
-      "dto.InvoiceLineItemPreview": {
+      "InvoiceLineItemPreview": {
         "type": "object",
         "properties": {
           "amount": {
@@ -17238,7 +17505,7 @@
           }
         }
       },
-      "dto.InvoiceLineItemResponse": {
+      "InvoiceLineItemResponse": {
         "type": "object",
         "properties": {
           "amount": {
@@ -17344,19 +17611,19 @@
             "type": "array",
             "description": "usage_analytics contains usage analytics for this line item (legacy - grouped by source)",
             "items": {
-              "$ref": "#/components/schemas/dto.SourceUsageItem"
+              "$ref": "#/components/schemas/SourceUsageItem"
             }
           },
           "usage_breakdown": {
             "type": "array",
             "description": "usage_breakdown contains flexible usage breakdown for this line item (supports any grouping)",
             "items": {
-              "$ref": "#/components/schemas/dto.UsageBreakdownItem"
+              "$ref": "#/components/schemas/UsageBreakdownItem"
             }
           }
         }
       },
-      "dto.InvoicePreview": {
+      "InvoicePreview": {
         "type": "object",
         "properties": {
           "currency": {
@@ -17371,7 +17638,7 @@
             "type": "array",
             "description": "line_items contains preview of line items",
             "items": {
-              "$ref": "#/components/schemas/dto.InvoiceLineItemPreview"
+              "$ref": "#/components/schemas/InvoiceLineItemPreview"
             }
           },
           "subtotal": {
@@ -17388,7 +17655,7 @@
           }
         }
       },
-      "dto.InvoiceResponse": {
+      "InvoiceResponse": {
         "type": "object",
         "properties": {
           "adjustment_amount": {
@@ -17423,7 +17690,7 @@
             "type": "array",
             "description": "coupon_applications contains the coupon applications associated with this invoice (overrides embedded field)",
             "items": {
-              "$ref": "#/components/schemas/dto.CouponApplicationResponse"
+              "$ref": "#/components/schemas/CouponApplicationResponse"
             }
           },
           "created_at": {
@@ -17437,7 +17704,7 @@
             "description": "currency is the three-letter ISO currency code (e.g., USD, EUR, GBP) that applies to all monetary amounts on this invoice"
           },
           "customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "customer_id": {
             "type": "string",
@@ -17489,7 +17756,7 @@
             "type": "array",
             "description": "line_items contains the individual items that make up this invoice (overrides embedded field)",
             "items": {
-              "$ref": "#/components/schemas/dto.InvoiceLineItemResponse"
+              "$ref": "#/components/schemas/InvoiceLineItemResponse"
             }
           },
           "metadata": {
@@ -17526,7 +17793,7 @@
             "$ref": "#/components/schemas/types.Status"
           },
           "subscription": {
-            "$ref": "#/components/schemas/dto.SubscriptionResponse"
+            "$ref": "#/components/schemas/SubscriptionResponse"
           },
           "subscription_id": {
             "type": "string",
@@ -17540,7 +17807,7 @@
             "type": "array",
             "description": "tax_applied_records contains the tax applied records associated with this invoice",
             "items": {
-              "$ref": "#/components/schemas/dto.TaxAppliedResponse"
+              "$ref": "#/components/schemas/TaxAppliedResponse"
             }
           },
           "tenant_id": {
@@ -17578,7 +17845,7 @@
           }
         }
       },
-      "dto.LineItemCommitmentConfig": {
+      "LineItemCommitmentConfig": {
         "type": "object",
         "properties": {
           "commitment_amount": {
@@ -17609,7 +17876,7 @@
           }
         }
       },
-      "dto.LinkIntegrationMappingRequest": {
+      "LinkIntegrationMappingRequest": {
         "required": [
           "entity_id",
           "entity_type",
@@ -17639,21 +17906,21 @@
           }
         }
       },
-      "dto.LinkIntegrationMappingResponse": {
+      "LinkIntegrationMappingResponse": {
         "type": "object",
         "properties": {
           "mapping": {
-            "$ref": "#/components/schemas/dto.EntityIntegrationMappingResponse"
+            "$ref": "#/components/schemas/EntityIntegrationMappingResponse"
           }
         }
       },
-      "dto.ListAddonsResponse": {
+      "ListAlertLogsResponse": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.AddonResponse"
+              "$ref": "#/components/schemas/AlertLogResponse"
             }
           },
           "pagination": {
@@ -17661,13 +17928,13 @@
           }
         }
       },
-      "dto.ListAlertLogsResponse": {
+      "ListCostsheetResponse": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.AlertLogResponse"
+              "$ref": "#/components/schemas/CostsheetResponse"
             }
           },
           "pagination": {
@@ -17675,13 +17942,13 @@
           }
         }
       },
-      "dto.ListCostsheetResponse": {
+      "ListPaymentsResponse": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.CostsheetResponse"
+              "$ref": "#/components/schemas/PaymentResponse"
             }
           },
           "pagination": {
@@ -17689,211 +17956,14 @@
           }
         }
       },
-      "dto.ListCouponsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.CouponResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListCreditGrantApplicationsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.CreditGrantApplicationResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListCreditGrantsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.CreditGrantResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListCustomersResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.CustomerResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        },
-        "description": "Response object for listing customers with pagination"
-      },
-      "dto.ListEntitlementsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.EntitlementResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListFeaturesResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.FeatureResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListGroupsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.GroupResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListInvoicesResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.InvoiceResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListPaymentsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.PaymentResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListPlansResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.PlanResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListPriceUnitsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.PriceUnitResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListPricesResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.PriceResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListScheduledTasksResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.ScheduledTaskResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListSecretsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.SecretResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListSubscriptionPausesResponse": {
+      "ListSubscriptionPausesResponse": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "description": "List of subscription pause objects\n@Description Array of subscription pauses",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionPauseResponse"
+              "$ref": "#/components/schemas/SubscriptionPauseResponse"
             }
           },
           "total": {
@@ -17903,13 +17973,13 @@
         },
         "description": "Response object for listing subscription pauses with total count"
       },
-      "dto.ListSubscriptionsResponse": {
+      "ListTasksResponse": {
         "type": "object",
         "properties": {
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionResponse"
+              "$ref": "#/components/schemas/TaskResponse"
             }
           },
           "pagination": {
@@ -17917,77 +17987,7 @@
           }
         }
       },
-      "dto.ListTasksResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.TaskResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListTaxAssociationsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.TaxAssociationResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListUsersResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.UserResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListWalletTransactionsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.WalletTransactionResponse"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.ListWorkflowsResponse": {
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/dto.WorkflowExecutionDTO"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/types.PaginationResponse"
-          }
-        }
-      },
-      "dto.MatchedMeter": {
+      "MatchedMeter": {
         "type": "object",
         "properties": {
           "event_name": {
@@ -18001,7 +18001,7 @@
           }
         }
       },
-      "dto.MatchedPrice": {
+      "MatchedPrice": {
         "type": "object",
         "properties": {
           "meter_id": {
@@ -18018,7 +18018,7 @@
           }
         }
       },
-      "dto.MatchedSubscriptionLineItem": {
+      "MatchedSubscriptionLineItem": {
         "type": "object",
         "properties": {
           "end_date": {
@@ -18047,13 +18047,13 @@
           }
         }
       },
-      "dto.MeterMatchingResult": {
+      "MeterMatchingResult": {
         "type": "object",
         "properties": {
           "matched_meters": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.MatchedMeter"
+              "$ref": "#/components/schemas/MatchedMeter"
             }
           },
           "status": {
@@ -18061,7 +18061,7 @@
           }
         }
       },
-      "dto.MeterResponse": {
+      "MeterResponse": {
         "type": "object",
         "properties": {
           "aggregation": {
@@ -18106,7 +18106,7 @@
           }
         }
       },
-      "dto.OverrideEntitlementRequest": {
+      "OverrideEntitlementRequest": {
         "required": [
           "entitlement_id"
         ],
@@ -18130,7 +18130,7 @@
           }
         }
       },
-      "dto.OverrideLineItemRequest": {
+      "OverrideLineItemRequest": {
         "required": [
           "price_id"
         ],
@@ -18155,7 +18155,7 @@
             "type": "array",
             "description": "PriceUnitTiers are the tiers for the price unit (for CUSTOM type, TIERED billing model)",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceTier"
+              "$ref": "#/components/schemas/CreatePriceTier"
             }
           },
           "quantity": {
@@ -18169,7 +18169,7 @@
             "type": "array",
             "description": "Tiers determines the pricing tiers for this line item",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceTier"
+              "$ref": "#/components/schemas/CreatePriceTier"
             }
           },
           "transform_quantity": {
@@ -18177,7 +18177,7 @@
           }
         }
       },
-      "dto.PauseSubscriptionRequest": {
+      "PauseSubscriptionRequest": {
         "required": [
           "pause_mode"
         ],
@@ -18217,7 +18217,7 @@
         },
         "description": "Request object for pausing an active subscription with various pause modes and options"
       },
-      "dto.PaymentAttemptResponse": {
+      "PaymentAttemptResponse": {
         "type": "object",
         "properties": {
           "attempt_number": {
@@ -18252,7 +18252,7 @@
           }
         }
       },
-      "dto.PaymentResponse": {
+      "PaymentResponse": {
         "type": "object",
         "properties": {
           "amount": {
@@ -18261,7 +18261,7 @@
           "attempts": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.PaymentAttemptResponse"
+              "$ref": "#/components/schemas/PaymentAttemptResponse"
             }
           },
           "created_at": {
@@ -18344,7 +18344,7 @@
           }
         }
       },
-      "dto.PlanResponse": {
+      "PlanResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -18356,7 +18356,7 @@
           "credit_grants": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.CreditGrantResponse"
+              "$ref": "#/components/schemas/CreditGrantResponse"
             }
           },
           "description": {
@@ -18368,7 +18368,7 @@
           "entitlements": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.EntitlementResponse"
+              "$ref": "#/components/schemas/EntitlementResponse"
             }
           },
           "environment_id": {
@@ -18390,7 +18390,7 @@
             "type": "array",
             "description": "TODO: Add inline addons",
             "items": {
-              "$ref": "#/components/schemas/dto.PriceResponse"
+              "$ref": "#/components/schemas/PriceResponse"
             }
           },
           "status": {
@@ -18407,7 +18407,7 @@
           }
         }
       },
-      "dto.PlanSummary": {
+      "PlanSummary": {
         "type": "object",
         "properties": {
           "description": {
@@ -18428,13 +18428,13 @@
           }
         }
       },
-      "dto.PriceLookupResult": {
+      "PriceLookupResult": {
         "type": "object",
         "properties": {
           "matched_prices": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.MatchedPrice"
+              "$ref": "#/components/schemas/MatchedPrice"
             }
           },
           "status": {
@@ -18442,11 +18442,11 @@
           }
         }
       },
-      "dto.PriceResponse": {
+      "PriceResponse": {
         "type": "object",
         "properties": {
           "addon": {
-            "$ref": "#/components/schemas/dto.AddonResponse"
+            "$ref": "#/components/schemas/AddonResponse"
           },
           "amount": {
             "type": "string",
@@ -18511,7 +18511,7 @@
             "description": "EnvironmentID is the environment identifier for the price"
           },
           "group": {
-            "$ref": "#/components/schemas/dto.GroupResponse"
+            "$ref": "#/components/schemas/GroupResponse"
           },
           "group_id": {
             "type": "string",
@@ -18532,7 +18532,7 @@
             "$ref": "#/components/schemas/price.JSONBMetadata"
           },
           "meter": {
-            "$ref": "#/components/schemas/dto.MeterResponse"
+            "$ref": "#/components/schemas/MeterResponse"
           },
           "meter_id": {
             "type": "string",
@@ -18548,7 +18548,7 @@
             "description": "ParentPriceID references the root price (always set for price lineage tracking)"
           },
           "plan": {
-            "$ref": "#/components/schemas/dto.PlanResponse"
+            "$ref": "#/components/schemas/PlanResponse"
           },
           "price_unit": {
             "type": "string",
@@ -18573,7 +18573,7 @@
             "$ref": "#/components/schemas/types.PriceUnitType"
           },
           "pricing_unit": {
-            "$ref": "#/components/schemas/dto.PriceUnitResponse"
+            "$ref": "#/components/schemas/PriceUnitResponse"
           },
           "start_date": {
             "type": "string",
@@ -18612,7 +18612,7 @@
           }
         }
       },
-      "dto.PriceUnitConfig": {
+      "PriceUnitConfig": {
         "required": [
           "price_unit"
         ],
@@ -18627,12 +18627,12 @@
           "price_unit_tiers": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceTier"
+              "$ref": "#/components/schemas/CreatePriceTier"
             }
           }
         }
       },
-      "dto.PriceUnitResponse": {
+      "PriceUnitResponse": {
         "type": "object",
         "properties": {
           "base_currency": {
@@ -18679,7 +18679,7 @@
           }
         }
       },
-      "dto.ProrationDetail": {
+      "ProrationDetail": {
         "type": "object",
         "properties": {
           "charge_amount": {
@@ -18708,7 +18708,7 @@
           }
         }
       },
-      "dto.ProrationDetails": {
+      "ProrationDetails": {
         "type": "object",
         "properties": {
           "charge_amount": {
@@ -18757,7 +18757,7 @@
           }
         }
       },
-      "dto.RemoveAddonRequest": {
+      "RemoveAddonRequest": {
         "required": [
           "addon_association_id"
         ],
@@ -18771,7 +18771,7 @@
           }
         }
       },
-      "dto.ResumeSubscriptionRequest": {
+      "ResumeSubscriptionRequest": {
         "required": [
           "resume_mode"
         ],
@@ -18794,7 +18794,7 @@
         },
         "description": "Request object for resuming a paused subscription"
       },
-      "dto.ScheduledTaskResponse": {
+      "ScheduledTaskResponse": {
         "type": "object",
         "properties": {
           "connection_id": {
@@ -18832,7 +18832,7 @@
           }
         }
       },
-      "dto.SecretResponse": {
+      "SecretResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -18877,7 +18877,7 @@
           }
         }
       },
-      "dto.SourceUsageItem": {
+      "SourceUsageItem": {
         "type": "object",
         "properties": {
           "cost": {
@@ -18902,7 +18902,7 @@
           }
         }
       },
-      "dto.SubscriptionChangeExecuteResponse": {
+      "SubscriptionChangeExecuteResponse": {
         "type": "object",
         "properties": {
           "change_type": {
@@ -18912,7 +18912,7 @@
             "type": "array",
             "description": "credit_grants contains any credit grants created for proration credits",
             "items": {
-              "$ref": "#/components/schemas/dto.CreditGrantResponse"
+              "$ref": "#/components/schemas/CreditGrantResponse"
             }
           },
           "effective_date": {
@@ -18920,7 +18920,7 @@
             "description": "effective_date is when the change took effect"
           },
           "invoice": {
-            "$ref": "#/components/schemas/dto.InvoiceResponse"
+            "$ref": "#/components/schemas/InvoiceResponse"
           },
           "is_scheduled": {
             "type": "boolean",
@@ -18934,13 +18934,13 @@
             "description": "metadata from the request"
           },
           "new_subscription": {
-            "$ref": "#/components/schemas/dto.SubscriptionSummary"
+            "$ref": "#/components/schemas/SubscriptionSummary"
           },
           "old_subscription": {
-            "$ref": "#/components/schemas/dto.SubscriptionSummary"
+            "$ref": "#/components/schemas/SubscriptionSummary"
           },
           "proration_applied": {
-            "$ref": "#/components/schemas/dto.ProrationDetails"
+            "$ref": "#/components/schemas/ProrationDetails"
           },
           "schedule_id": {
             "type": "string",
@@ -18953,14 +18953,14 @@
         },
         "description": "Response after successfully executing a subscription plan change"
       },
-      "dto.SubscriptionChangePreviewResponse": {
+      "SubscriptionChangePreviewResponse": {
         "type": "object",
         "properties": {
           "change_type": {
             "$ref": "#/components/schemas/types.SubscriptionChangeType"
           },
           "current_plan": {
-            "$ref": "#/components/schemas/dto.PlanSummary"
+            "$ref": "#/components/schemas/PlanSummary"
           },
           "effective_date": {
             "type": "string",
@@ -18974,20 +18974,20 @@
             "description": "metadata from the request"
           },
           "new_billing_cycle": {
-            "$ref": "#/components/schemas/dto.BillingCycleInfo"
+            "$ref": "#/components/schemas/BillingCycleInfo"
           },
           "next_invoice_preview": {
-            "$ref": "#/components/schemas/dto.InvoicePreview"
+            "$ref": "#/components/schemas/InvoicePreview"
           },
           "proration_details": {
-            "$ref": "#/components/schemas/dto.ProrationDetails"
+            "$ref": "#/components/schemas/ProrationDetails"
           },
           "subscription_id": {
             "type": "string",
             "description": "subscription_id is the ID of the subscription being changed"
           },
           "target_plan": {
-            "$ref": "#/components/schemas/dto.PlanSummary"
+            "$ref": "#/components/schemas/PlanSummary"
           },
           "warnings": {
             "type": "array",
@@ -18999,7 +18999,7 @@
         },
         "description": "Response showing the financial impact of a subscription plan change"
       },
-      "dto.SubscriptionChangeRequest": {
+      "SubscriptionChangeRequest": {
         "required": [
           "billing_cadence",
           "billing_cycle",
@@ -19042,13 +19042,13 @@
         },
         "description": "Request object for changing a subscription plan (upgrade/downgrade)"
       },
-      "dto.SubscriptionEntitlementsResponse": {
+      "SubscriptionEntitlementsResponse": {
         "type": "object",
         "properties": {
           "features": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.AggregatedFeature"
+              "$ref": "#/components/schemas/AggregatedFeature"
             }
           },
           "plan_id": {
@@ -19059,13 +19059,13 @@
           }
         }
       },
-      "dto.SubscriptionLineItemLookupResult": {
+      "SubscriptionLineItemLookupResult": {
         "type": "object",
         "properties": {
           "matched_line_items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.MatchedSubscriptionLineItem"
+              "$ref": "#/components/schemas/MatchedSubscriptionLineItem"
             }
           },
           "status": {
@@ -19073,7 +19073,7 @@
           }
         }
       },
-      "dto.SubscriptionLineItemResponse": {
+      "SubscriptionLineItemResponse": {
         "type": "object",
         "properties": {
           "billing_period": {
@@ -19154,7 +19154,7 @@
             "type": "string"
           },
           "price": {
-            "$ref": "#/components/schemas/dto.PriceResponse"
+            "$ref": "#/components/schemas/PriceResponse"
           },
           "price_id": {
             "type": "string"
@@ -19197,7 +19197,7 @@
           }
         }
       },
-      "dto.SubscriptionPauseResponse": {
+      "SubscriptionPauseResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -19269,7 +19269,7 @@
         },
         "description": "Response object containing subscription pause information"
       },
-      "dto.SubscriptionPhaseCreateRequest": {
+      "SubscriptionPhaseCreateRequest": {
         "required": [
           "start_date"
         ],
@@ -19305,7 +19305,7 @@
             "type": "array",
             "description": "OverrideLineItems allows customizing specific prices for this phase\nIf not provided, phase will use the same line items as the subscription (plan prices)",
             "items": {
-              "$ref": "#/components/schemas/dto.OverrideLineItemRequest"
+              "$ref": "#/components/schemas/OverrideLineItemRequest"
             }
           },
           "start_date": {
@@ -19313,7 +19313,7 @@
           }
         }
       },
-      "dto.SubscriptionPhaseResponse": {
+      "SubscriptionPhaseResponse": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -19359,7 +19359,7 @@
           }
         }
       },
-      "dto.SubscriptionPriceCreateRequest": {
+      "SubscriptionPriceCreateRequest": {
         "required": [
           "billing_cadence",
           "billing_model",
@@ -19422,7 +19422,7 @@
             "type": "integer"
           },
           "price_unit_config": {
-            "$ref": "#/components/schemas/dto.PriceUnitConfig"
+            "$ref": "#/components/schemas/PriceUnitConfig"
           },
           "price_unit_type": {
             "$ref": "#/components/schemas/types.PriceUnitType"
@@ -19436,7 +19436,7 @@
           "tiers": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceTier"
+              "$ref": "#/components/schemas/CreatePriceTier"
             }
           },
           "transform_quantity": {
@@ -19450,7 +19450,7 @@
           }
         }
       },
-      "dto.SubscriptionResponse": {
+      "SubscriptionResponse": {
         "type": "object",
         "properties": {
           "active_pause_id": {
@@ -19501,7 +19501,7 @@
             "type": "array",
             "description": "CouponAssociations are the coupon associations for this subscription",
             "items": {
-              "$ref": "#/components/schemas/dto.CouponAssociationResponse"
+              "$ref": "#/components/schemas/CouponAssociationResponse"
             }
           },
           "created_at": {
@@ -19514,7 +19514,7 @@
             "type": "array",
             "description": "Credit grants are the credit grants for this subscription",
             "items": {
-              "$ref": "#/components/schemas/dto.CreditGrantResponse"
+              "$ref": "#/components/schemas/CreditGrantResponse"
             }
           },
           "currency": {
@@ -19530,7 +19530,7 @@
             "description": "CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created."
           },
           "customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "customer_id": {
             "type": "string",
@@ -19563,7 +19563,7 @@
             "description": "InvoicingCustomerID is the customer ID to use for invoicing\nThis can differ from the subscription customer (e.g., parent company invoicing for child company)"
           },
           "latest_invoice": {
-            "$ref": "#/components/schemas/dto.InvoiceResponse"
+            "$ref": "#/components/schemas/InvoiceResponse"
           },
           "line_items": {
             "type": "array",
@@ -19606,11 +19606,11 @@
             "type": "array",
             "description": "Phases are the subscription phases for this subscription",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionPhaseResponse"
+              "$ref": "#/components/schemas/SubscriptionPhaseResponse"
             }
           },
           "plan": {
-            "$ref": "#/components/schemas/dto.PlanResponse"
+            "$ref": "#/components/schemas/PlanResponse"
           },
           "plan_id": {
             "type": "string",
@@ -19652,7 +19652,7 @@
           }
         }
       },
-      "dto.SubscriptionResponseV2": {
+      "SubscriptionResponseV2": {
         "type": "object",
         "properties": {
           "active_pause_id": {
@@ -19703,7 +19703,7 @@
             "type": "array",
             "description": "CouponAssociations are included when \"coupon_associations\" is in expand parameter",
             "items": {
-              "$ref": "#/components/schemas/dto.CouponAssociationResponse"
+              "$ref": "#/components/schemas/CouponAssociationResponse"
             }
           },
           "created_at": {
@@ -19716,7 +19716,7 @@
             "type": "array",
             "description": "CreditGrants are included when \"credit_grants\" is in expand parameter",
             "items": {
-              "$ref": "#/components/schemas/dto.CreditGrantResponse"
+              "$ref": "#/components/schemas/CreditGrantResponse"
             }
           },
           "currency": {
@@ -19732,7 +19732,7 @@
             "description": "CurrentPeriodStart is the end of the current period that the subscription has been invoiced for.\nAt the end of this period, a new invoice will be created."
           },
           "customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "customer_id": {
             "type": "string",
@@ -19768,7 +19768,7 @@
             "type": "array",
             "description": "LineItems is expanded only if \"subscription_line_items\" is in expand parameter\nEach line item can optionally include expanded price data",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionLineItemResponse"
+              "$ref": "#/components/schemas/SubscriptionLineItemResponse"
             }
           },
           "lookup_key": {
@@ -19807,11 +19807,11 @@
             "type": "array",
             "description": "Phases are included when \"phases\" is in expand parameter",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionPhaseResponse"
+              "$ref": "#/components/schemas/SubscriptionPhaseResponse"
             }
           },
           "plan": {
-            "$ref": "#/components/schemas/dto.PlanResponse"
+            "$ref": "#/components/schemas/PlanResponse"
           },
           "plan_id": {
             "type": "string",
@@ -19853,7 +19853,7 @@
           }
         }
       },
-      "dto.SubscriptionScheduleResponse": {
+      "SubscriptionScheduleResponse": {
         "type": "object",
         "properties": {
           "can_be_cancelled": {
@@ -19920,7 +19920,7 @@
         },
         "description": "Full details of a subscription schedule"
       },
-      "dto.SubscriptionSummary": {
+      "SubscriptionSummary": {
         "type": "object",
         "properties": {
           "archived_at": {
@@ -19956,7 +19956,7 @@
           }
         }
       },
-      "dto.SubscriptionUsageByMetersResponse": {
+      "SubscriptionUsageByMetersResponse": {
         "type": "object",
         "properties": {
           "amount": {
@@ -19997,7 +19997,7 @@
           }
         }
       },
-      "dto.SuccessResponse": {
+      "SuccessResponse": {
         "type": "object",
         "properties": {
           "message": {
@@ -20005,7 +20005,7 @@
           }
         }
       },
-      "dto.TaskResponse": {
+      "TaskResponse": {
         "type": "object",
         "properties": {
           "completed_at": {
@@ -20086,7 +20086,7 @@
           }
         }
       },
-      "dto.TaxAppliedResponse": {
+      "TaxAppliedResponse": {
         "type": "object",
         "properties": {
           "applied_at": {
@@ -20132,7 +20132,7 @@
             "type": "string"
           },
           "tax_rate": {
-            "$ref": "#/components/schemas/dto.TaxRateResponse"
+            "$ref": "#/components/schemas/TaxRateResponse"
           },
           "tax_rate_id": {
             "type": "string"
@@ -20151,7 +20151,7 @@
           }
         }
       },
-      "dto.TaxAssociationResponse": {
+      "TaxAssociationResponse": {
         "type": "object",
         "properties": {
           "auto_apply": {
@@ -20198,7 +20198,7 @@
             "$ref": "#/components/schemas/types.Status"
           },
           "tax_rate": {
-            "$ref": "#/components/schemas/dto.TaxRateResponse"
+            "$ref": "#/components/schemas/TaxRateResponse"
           },
           "tax_rate_id": {
             "type": "string",
@@ -20215,7 +20215,7 @@
           }
         }
       },
-      "dto.TaxAssociationUpdateRequest": {
+      "TaxAssociationUpdateRequest": {
         "type": "object",
         "properties": {
           "auto_apply": {
@@ -20232,7 +20232,7 @@
           }
         }
       },
-      "dto.TaxRateOverride": {
+      "TaxRateOverride": {
         "required": [
           "currency",
           "tax_rate_code"
@@ -20260,7 +20260,7 @@
           }
         }
       },
-      "dto.TaxRateResponse": {
+      "TaxRateResponse": {
         "type": "object",
         "properties": {
           "code": {
@@ -20319,11 +20319,11 @@
           }
         }
       },
-      "dto.TenantBillingDetails": {
+      "TenantBillingDetails": {
         "type": "object",
         "properties": {
           "address": {
-            "$ref": "#/components/schemas/dto.Address"
+            "$ref": "#/components/schemas/Address"
           },
           "email": {
             "type": "string"
@@ -20336,25 +20336,25 @@
           }
         }
       },
-      "dto.TenantBillingUsage": {
+      "TenantBillingUsage": {
         "type": "object",
         "properties": {
           "subscriptions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.SubscriptionResponse"
+              "$ref": "#/components/schemas/SubscriptionResponse"
             }
           },
           "usage": {
-            "$ref": "#/components/schemas/dto.CustomerUsageSummaryResponse"
+            "$ref": "#/components/schemas/CustomerUsageSummaryResponse"
           }
         }
       },
-      "dto.TenantResponse": {
+      "TenantResponse": {
         "type": "object",
         "properties": {
           "billing_details": {
-            "$ref": "#/components/schemas/dto.TenantBillingDetails"
+            "$ref": "#/components/schemas/TenantBillingDetails"
           },
           "created_at": {
             "type": "string"
@@ -20376,7 +20376,7 @@
           }
         }
       },
-      "dto.TopUpWalletRequest": {
+      "TopUpWalletRequest": {
         "required": [
           "transaction_reason"
         ],
@@ -20414,7 +20414,7 @@
           }
         }
       },
-      "dto.TopUpWalletResponse": {
+      "TopUpWalletResponse": {
         "type": "object",
         "properties": {
           "invoice_id": {
@@ -20422,14 +20422,14 @@
             "description": "Invoice ID if an invoice was created (only for PURCHASED_CREDIT_INVOICED)"
           },
           "wallet": {
-            "$ref": "#/components/schemas/dto.WalletResponse"
+            "$ref": "#/components/schemas/WalletResponse"
           },
           "wallet_transaction": {
-            "$ref": "#/components/schemas/dto.WalletTransactionResponse"
+            "$ref": "#/components/schemas/WalletTransactionResponse"
           }
         }
       },
-      "dto.TriggerForceRunRequest": {
+      "TriggerForceRunRequest": {
         "type": "object",
         "properties": {
           "end_time": {
@@ -20440,7 +20440,7 @@
           }
         }
       },
-      "dto.TriggerForceRunResponse": {
+      "TriggerForceRunResponse": {
         "type": "object",
         "properties": {
           "end_time": {
@@ -20461,7 +20461,7 @@
           }
         }
       },
-      "dto.UpdateAddonRequest": {
+      "UpdateAddonRequest": {
         "type": "object",
         "properties": {
           "description": {
@@ -20476,7 +20476,7 @@
           }
         }
       },
-      "dto.UpdateCostsheetRequest": {
+      "UpdateCostsheetRequest": {
         "type": "object",
         "properties": {
           "description": {
@@ -20500,15 +20500,15 @@
           }
         }
       },
-      "dto.UpdateCostsheetResponse": {
+      "UpdateCostsheetResponse": {
         "type": "object",
         "properties": {
           "costsheet": {
-            "$ref": "#/components/schemas/dto.CostsheetResponse"
+            "$ref": "#/components/schemas/CostsheetResponse"
           }
         }
       },
-      "dto.UpdateCouponRequest": {
+      "UpdateCouponRequest": {
         "type": "object",
         "properties": {
           "metadata": {
@@ -20522,7 +20522,7 @@
           }
         }
       },
-      "dto.UpdateCreditGrantRequest": {
+      "UpdateCreditGrantRequest": {
         "type": "object",
         "properties": {
           "metadata": {
@@ -20533,7 +20533,7 @@
           }
         }
       },
-      "dto.UpdateCustomerRequest": {
+      "UpdateCustomerRequest": {
         "type": "object",
         "properties": {
           "address_city": {
@@ -20595,7 +20595,7 @@
         },
         "description": "Request object for updating an existing customer. All fields are optional - only provided fields will be updated"
       },
-      "dto.UpdateEntitlementRequest": {
+      "UpdateEntitlementRequest": {
         "type": "object",
         "properties": {
           "is_enabled": {
@@ -20615,7 +20615,7 @@
           }
         }
       },
-      "dto.UpdateFeatureRequest": {
+      "UpdateFeatureRequest": {
         "type": "object",
         "properties": {
           "alert_settings": {
@@ -20651,7 +20651,7 @@
           }
         }
       },
-      "dto.UpdateInvoiceRequest": {
+      "UpdateInvoiceRequest": {
         "type": "object",
         "properties": {
           "due_date": {
@@ -20666,7 +20666,7 @@
           }
         }
       },
-      "dto.UpdatePaymentRequest": {
+      "UpdatePaymentRequest": {
         "type": "object",
         "properties": {
           "error_message": {
@@ -20695,7 +20695,7 @@
           }
         }
       },
-      "dto.UpdatePaymentStatusRequest": {
+      "UpdatePaymentStatusRequest": {
         "required": [
           "payment_status"
         ],
@@ -20710,7 +20710,7 @@
           }
         }
       },
-      "dto.UpdatePlanRequest": {
+      "UpdatePlanRequest": {
         "type": "object",
         "properties": {
           "description": {
@@ -20730,7 +20730,7 @@
           }
         }
       },
-      "dto.UpdatePriceRequest": {
+      "UpdatePriceRequest": {
         "type": "object",
         "properties": {
           "amount": {
@@ -20771,7 +20771,7 @@
             "type": "array",
             "description": "PriceUnitTiers are the price unit tiers (for CUSTOM price unit type, TIERED billing model)",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceTier"
+              "$ref": "#/components/schemas/CreatePriceTier"
             }
           },
           "tier_mode": {
@@ -20781,7 +20781,7 @@
             "type": "array",
             "description": "Tiers determines the pricing tiers for this line item",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceTier"
+              "$ref": "#/components/schemas/CreatePriceTier"
             }
           },
           "transform_quantity": {
@@ -20789,7 +20789,7 @@
           }
         }
       },
-      "dto.UpdatePriceUnitRequest": {
+      "UpdatePriceUnitRequest": {
         "type": "object",
         "properties": {
           "metadata": {
@@ -20800,7 +20800,7 @@
           }
         }
       },
-      "dto.UpdateScheduledTaskRequest": {
+      "UpdateScheduledTaskRequest": {
         "required": [
           "enabled"
         ],
@@ -20811,7 +20811,7 @@
           }
         }
       },
-      "dto.UpdateSubscriptionLineItemRequest": {
+      "UpdateSubscriptionLineItemRequest": {
         "type": "object",
         "properties": {
           "amount": {
@@ -20861,7 +20861,7 @@
             "type": "array",
             "description": "Tiers determines the pricing tiers for this line item",
             "items": {
-              "$ref": "#/components/schemas/dto.CreatePriceTier"
+              "$ref": "#/components/schemas/CreatePriceTier"
             }
           },
           "transform_quantity": {
@@ -20869,7 +20869,7 @@
           }
         }
       },
-      "dto.UpdateSubscriptionRequest": {
+      "UpdateSubscriptionRequest": {
         "type": "object",
         "properties": {
           "cancel_at": {
@@ -20887,7 +20887,7 @@
           }
         }
       },
-      "dto.UpdateTaskStatusRequest": {
+      "UpdateTaskStatusRequest": {
         "required": [
           "task_status"
         ],
@@ -20898,7 +20898,7 @@
           }
         }
       },
-      "dto.UpdateTaxRateRequest": {
+      "UpdateTaxRateRequest": {
         "type": "object",
         "properties": {
           "code": {
@@ -20925,11 +20925,11 @@
           }
         }
       },
-      "dto.UpdateTenantRequest": {
+      "UpdateTenantRequest": {
         "type": "object",
         "properties": {
           "billing_details": {
-            "$ref": "#/components/schemas/dto.TenantBillingDetails"
+            "$ref": "#/components/schemas/TenantBillingDetails"
           },
           "metadata": {
             "$ref": "#/components/schemas/types.Metadata"
@@ -20939,7 +20939,7 @@
           }
         }
       },
-      "dto.UpdateWalletRequest": {
+      "UpdateWalletRequest": {
         "type": "object",
         "properties": {
           "alert_settings": {
@@ -20962,7 +20962,7 @@
           }
         }
       },
-      "dto.UsageAnalyticItem": {
+      "UsageAnalyticItem": {
         "type": "object",
         "properties": {
           "add_on_id": {
@@ -21006,11 +21006,11 @@
           "points": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.UsageAnalyticPoint"
+              "$ref": "#/components/schemas/UsageAnalyticPoint"
             }
           },
           "price": {
-            "$ref": "#/components/schemas/dto.PriceResponse"
+            "$ref": "#/components/schemas/PriceResponse"
           },
           "price_id": {
             "type": "string",
@@ -21065,7 +21065,7 @@
           }
         }
       },
-      "dto.UsageAnalyticPoint": {
+      "UsageAnalyticPoint": {
         "type": "object",
         "properties": {
           "computed_commitment_utilized_amount": {
@@ -21093,7 +21093,7 @@
           }
         }
       },
-      "dto.UsageBreakdownItem": {
+      "UsageBreakdownItem": {
         "type": "object",
         "properties": {
           "cost": {
@@ -21121,7 +21121,7 @@
           }
         }
       },
-      "dto.UsageResult": {
+      "UsageResult": {
         "type": "object",
         "properties": {
           "value": {
@@ -21132,7 +21132,7 @@
           }
         }
       },
-      "dto.UserResponse": {
+      "UserResponse": {
         "type": "object",
         "properties": {
           "email": {
@@ -21149,14 +21149,14 @@
             }
           },
           "tenant": {
-            "$ref": "#/components/schemas/dto.TenantResponse"
+            "$ref": "#/components/schemas/TenantResponse"
           },
           "type": {
             "$ref": "#/components/schemas/types.UserType"
           }
         }
       },
-      "dto.WalletBalanceResponse": {
+      "WalletBalanceResponse": {
         "type": "object",
         "properties": {
           "alert_settings": {
@@ -21250,7 +21250,7 @@
           }
         }
       },
-      "dto.WalletResponse": {
+      "WalletResponse": {
         "type": "object",
         "properties": {
           "alert_settings": {
@@ -21329,7 +21329,7 @@
           }
         }
       },
-      "dto.WalletTransactionResponse": {
+      "WalletTransactionResponse": {
         "type": "object",
         "properties": {
           "amount": {
@@ -21346,7 +21346,7 @@
             "type": "string"
           },
           "created_by_user": {
-            "$ref": "#/components/schemas/dto.UserResponse"
+            "$ref": "#/components/schemas/UserResponse"
           },
           "credit_amount": {
             "type": "string"
@@ -21364,7 +21364,7 @@
             "type": "string"
           },
           "customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "customer_id": {
             "type": "string"
@@ -21422,14 +21422,14 @@
             "type": "string"
           },
           "wallet": {
-            "$ref": "#/components/schemas/dto.WalletResponse"
+            "$ref": "#/components/schemas/WalletResponse"
           },
           "wallet_id": {
             "type": "string"
           }
         }
       },
-      "dto.WorkflowExecutionDTO": {
+      "WorkflowExecutionDTO": {
         "type": "object",
         "properties": {
           "close_time": {
@@ -24293,7 +24293,6 @@
       "types.WindowSize": {
         "type": "string",
         "enum": [
-          "MONTH",
           "MINUTE",
           "15MIN",
           "30MIN",
@@ -24303,10 +24302,10 @@
           "12HOUR",
           "DAY",
           "WEEK",
+          "MONTH",
           "MONTH"
         ],
         "x-enum-varnames": [
-          "DefaultWindowSize",
           "WindowSizeMinute",
           "WindowSize15Min",
           "WindowSize30Min",
@@ -24316,7 +24315,8 @@
           "WindowSize12Hour",
           "WindowSizeDay",
           "WindowSizeWeek",
-          "WindowSizeMonth"
+          "WindowSizeMonth",
+          "DefaultWindowSize"
         ],
         "x-speakeasy-name-override": "WindowSize"
       },
@@ -25104,7 +25104,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/dto.WalletResponse"
+              "$ref": "#/components/schemas/WalletResponse"
             }
           },
           "pagination": {
@@ -25130,16 +25130,16 @@
             "type": "string"
           },
           "customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "event_type": {
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "feature": {
-            "$ref": "#/components/schemas/dto.FeatureResponse"
+            "$ref": "#/components/schemas/FeatureResponse"
           },
           "wallet": {
-            "$ref": "#/components/schemas/dto.WalletResponse"
+            "$ref": "#/components/schemas/WalletResponse"
           }
         }
       },
@@ -25150,7 +25150,7 @@
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "invoice": {
-            "$ref": "#/components/schemas/dto.InvoiceResponse"
+            "$ref": "#/components/schemas/InvoiceResponse"
           }
         }
       },
@@ -25158,7 +25158,7 @@
         "type": "object",
         "properties": {
           "credit_note": {
-            "$ref": "#/components/schemas/dto.CreditNoteResponse"
+            "$ref": "#/components/schemas/CreditNoteResponse"
           },
           "event_type": {
             "$ref": "#/components/schemas/types.WebhookEventName"
@@ -25169,7 +25169,7 @@
         "type": "object",
         "properties": {
           "customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "event_type": {
             "$ref": "#/components/schemas/types.WebhookEventName"
@@ -25180,7 +25180,7 @@
         "type": "object",
         "properties": {
           "entitlement": {
-            "$ref": "#/components/schemas/dto.EntitlementResponse"
+            "$ref": "#/components/schemas/EntitlementResponse"
           },
           "event_type": {
             "$ref": "#/components/schemas/types.WebhookEventName"
@@ -25194,7 +25194,7 @@
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "feature": {
-            "$ref": "#/components/schemas/dto.FeatureResponse"
+            "$ref": "#/components/schemas/FeatureResponse"
           }
         }
       },
@@ -25205,7 +25205,7 @@
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "invoice": {
-            "$ref": "#/components/schemas/dto.InvoiceResponse"
+            "$ref": "#/components/schemas/InvoiceResponse"
           }
         }
       },
@@ -25216,7 +25216,7 @@
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "payment": {
-            "$ref": "#/components/schemas/dto.PaymentResponse"
+            "$ref": "#/components/schemas/PaymentResponse"
           }
         }
       },
@@ -25227,7 +25227,7 @@
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "phase": {
-            "$ref": "#/components/schemas/dto.SubscriptionPhaseResponse"
+            "$ref": "#/components/schemas/SubscriptionPhaseResponse"
           }
         }
       },
@@ -25238,7 +25238,7 @@
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "subscription": {
-            "$ref": "#/components/schemas/dto.SubscriptionResponse"
+            "$ref": "#/components/schemas/SubscriptionResponse"
           }
         }
       },
@@ -25249,10 +25249,10 @@
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "transaction": {
-            "$ref": "#/components/schemas/dto.WalletTransactionResponse"
+            "$ref": "#/components/schemas/WalletTransactionResponse"
           },
           "wallet": {
-            "$ref": "#/components/schemas/dto.WalletResponse"
+            "$ref": "#/components/schemas/WalletResponse"
           }
         }
       },
@@ -25283,13 +25283,13 @@
             "$ref": "#/components/schemas/webhookDto.WalletAlertInfo"
           },
           "customer": {
-            "$ref": "#/components/schemas/dto.CustomerResponse"
+            "$ref": "#/components/schemas/CustomerResponse"
           },
           "event_type": {
             "$ref": "#/components/schemas/types.WebhookEventName"
           },
           "wallet": {
-            "$ref": "#/components/schemas/dto.WalletResponse"
+            "$ref": "#/components/schemas/WalletResponse"
           }
         }
       }

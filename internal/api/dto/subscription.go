@@ -530,7 +530,7 @@ type SubscriptionResponse struct {
 }
 
 // ListSubscriptionsResponse represents the response for listing subscriptions
-type ListSubscriptionsResponse = types.ListResponse[*SubscriptionResponse]
+type ListSubscriptionsResponse = types.ListResponse[*SubscriptionResponse] // @name ListSubscriptionsResponse
 
 // SubscriptionResponseV2 represents the V2 response for a subscription
 // with optional expanded fields based on the request expand parameter
