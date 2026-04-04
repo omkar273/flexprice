@@ -6322,7 +6322,7 @@ func (s *subscriptionService) cancelPlanLineItemsForSubscription(
 // prepareSubscriptionInheritanceForCreate validates inheritance, applies parent-link invoicing,
 // resolves invoicing/child customers by external ID, and sets subscription type for parent rows.
 // Call before SubRepo.CreateWithLineItems so InvoicingCustomerID and SubscriptionType persist.
-// Returns internal customer IDs for inherited subscriptions to create after the parent insert.
+// Returns internal customer IDs for inherited subscriptions to create after invoice/activation in the same tx.
 func (s *subscriptionService) prepareSubscriptionInheritanceForCreate(ctx context.Context, req *dto.CreateSubscriptionRequest, sub *subscription.Subscription) ([]string, error) {
 	if req.Inheritance == nil {
 		return nil, nil
