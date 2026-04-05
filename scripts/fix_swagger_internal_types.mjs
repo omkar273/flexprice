@@ -3,7 +3,8 @@
  * 1. Replaces github_com_flexprice_flexprice_internal_types. with types. in all swagger files
  *    (swagger.json, swagger.yaml, docs.go, swagger-3-0.json) so schema names are clean.
  * 2. In swagger-3-0.json only: adds x-speakeasy-name-override for each components.schemas key
- *    that starts with "types." so Speakeasy-generated SDKs use names like FeatureType instead of TypesFeatureType.
+ *    that starts with "types." or "errors." so Speakeasy-generated SDKs use clean names,
+ *    FeatureType instead of TypesFeatureType.
  *
  * Usage: node scripts/fix_swagger_internal_types.mjs [--spec path/to/swagger-3-0.json]
  */
@@ -61,19 +62,25 @@ function main() {
     return;
   }
 
+  // Prefixes to strip so Speakeasy generates clean SDK type names
+  const STRIP_PREFIXES = ['types.', 'errors.'];
+
   let count = 0;
   for (const key of Object.keys(schemas)) {
-    if (key.startsWith('types.')) {
-      const override = key.slice('types.'.length);
-      if (schemas[key] && typeof schemas[key] === 'object') {
-        schemas[key]['x-speakeasy-name-override'] = override;
-        count++;
+    for (const prefix of STRIP_PREFIXES) {
+      if (key.startsWith(prefix)) {
+        const override = key.slice(prefix.length);
+        if (schemas[key] && typeof schemas[key] === 'object') {
+          schemas[key]['x-speakeasy-name-override'] = override;
+          count++;
+        }
+        break;
       }
     }
   }
 
   writeFileSync(specPath, JSON.stringify(spec, null, 2) + '\n', 'utf8');
-  console.log(`Added x-speakeasy-name-override to ${count} types.* schemas in swagger-3-0.json.`);
+  console.log(`Added x-speakeasy-name-override to ${count} prefixed schemas in swagger-3-0.json.`);
 }
 
 main();

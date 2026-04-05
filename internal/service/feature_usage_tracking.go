@@ -4080,12 +4080,11 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 	customer, err := s.CustomerRepo.GetByLookupKey(ctx, event.ExternalCustomerID)
 	if err != nil {
 		tracker.CustomerLookup.Status = types.DebugTrackerStatusError
+		status, code := ierr.ResolveError(err)
 		errorResp := &ierr.ErrorResponse{
-			Success: false,
-			Error: ierr.ErrorDetail{
-				Display:       err.Error(),
-				InternalError: err.Error(),
-			},
+			Code:           code,
+			Message:        err.Error(),
+			HTTPStatusCode: status,
 		}
 		tracker.CustomerLookup.Error = errorResp
 		tracker.FailurePoint = &types.FailurePoint{
@@ -4097,12 +4096,11 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 
 	if customer == nil {
 		tracker.CustomerLookup.Status = types.DebugTrackerStatusNotFound
+		msg := fmt.Sprintf("Customer not found for external_customer_id: %s", event.ExternalCustomerID)
 		errorResp := &ierr.ErrorResponse{
-			Success: false,
-			Error: ierr.ErrorDetail{
-				Display:       fmt.Sprintf("Customer not found for external_customer_id: %s", event.ExternalCustomerID),
-				InternalError: fmt.Sprintf("Customer not found for external_customer_id: %s", event.ExternalCustomerID),
-			},
+			Code:           ierr.ErrCodeNotFound,
+			Message:        msg,
+			HTTPStatusCode: 404,
 		}
 		tracker.CustomerLookup.Error = errorResp
 		tracker.FailurePoint = &types.FailurePoint{
@@ -4121,12 +4119,11 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 	meters, err := s.MeterRepo.List(ctx, meterFilter)
 	if err != nil {
 		tracker.MeterMatching.Status = types.DebugTrackerStatusError
+		status, code := ierr.ResolveError(err)
 		errorResp := &ierr.ErrorResponse{
-			Success: false,
-			Error: ierr.ErrorDetail{
-				Display:       err.Error(),
-				InternalError: err.Error(),
-			},
+			Code:           code,
+			Message:        err.Error(),
+			HTTPStatusCode: status,
 		}
 		tracker.MeterMatching.Error = errorResp
 		tracker.FailurePoint = &types.FailurePoint{
@@ -4153,11 +4150,9 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 		tracker.FailurePoint = &types.FailurePoint{
 			FailurePointType: types.FailurePointTypeMeterLookup,
 			Error: &ierr.ErrorResponse{
-				Success: false,
-				Error: ierr.ErrorDetail{
-					Display:       errMessage,
-					InternalError: errMessage,
-				},
+				Code:           ierr.ErrCodeNotFound,
+				Message:        errMessage,
+				HTTPStatusCode: 404,
 			},
 		}
 		return tracker
@@ -4178,12 +4173,11 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 	prices, err := s.PriceRepo.List(ctx, priceFilter)
 	if err != nil {
 		tracker.PriceLookup.Status = types.DebugTrackerStatusError
+		status, code := ierr.ResolveError(err)
 		errorResp := &ierr.ErrorResponse{
-			Success: false,
-			Error: ierr.ErrorDetail{
-				Display:       err.Error(),
-				InternalError: err.Error(),
-			},
+			Code:           code,
+			Message:        err.Error(),
+			HTTPStatusCode: status,
 		}
 		tracker.PriceLookup.Error = errorResp
 		tracker.FailurePoint = &types.FailurePoint{
@@ -4211,11 +4205,9 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 		tracker.FailurePoint = &types.FailurePoint{
 			FailurePointType: types.FailurePointTypePriceLookup,
 			Error: &ierr.ErrorResponse{
-				Success: false,
-				Error: ierr.ErrorDetail{
-					Display:       errMessage,
-					InternalError: errMessage,
-				},
+				Code:           ierr.ErrCodeNotFound,
+				Message:        errMessage,
+				HTTPStatusCode: 404,
 			},
 		}
 		return tracker
@@ -4237,12 +4229,11 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 	subscriptionsList, err := subscriptionService.ListSubscriptions(ctx, subFilter)
 	if err != nil {
 		tracker.SubscriptionLineItemLookup.Status = types.DebugTrackerStatusError
+		status, code := ierr.ResolveError(err)
 		errorResp := &ierr.ErrorResponse{
-			Success: false,
-			Error: ierr.ErrorDetail{
-				Display:       err.Error(),
-				InternalError: err.Error(),
-			},
+			Code:           code,
+			Message:        err.Error(),
+			HTTPStatusCode: status,
 		}
 		tracker.SubscriptionLineItemLookup.Error = errorResp
 		tracker.FailurePoint = &types.FailurePoint{
@@ -4277,12 +4268,11 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
 	if err != nil {
 		tracker.SubscriptionLineItemLookup.Status = types.DebugTrackerStatusError
+		status, code := ierr.ResolveError(err)
 		errorResp := &ierr.ErrorResponse{
-			Success: false,
-			Error: ierr.ErrorDetail{
-				Display:       err.Error(),
-				InternalError: err.Error(),
-			},
+			Code:           code,
+			Message:        err.Error(),
+			HTTPStatusCode: status,
 		}
 		tracker.SubscriptionLineItemLookup.Error = errorResp
 		tracker.FailurePoint = &types.FailurePoint{
@@ -4318,11 +4308,9 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 	if len(matchedLineItems) == 0 {
 		tracker.SubscriptionLineItemLookup.Status = types.DebugTrackerStatusNotFound
 		errorResp := &ierr.ErrorResponse{
-			Success: false,
-			Error: ierr.ErrorDetail{
-				Display:       "No subscription line items found for matched prices",
-				InternalError: "No subscription line items found for matched prices",
-			},
+			Code:           ierr.ErrCodeNotFound,
+			Message:        "No subscription line items found for matched prices",
+			HTTPStatusCode: 404,
 		}
 		tracker.SubscriptionLineItemLookup.Error = errorResp
 		tracker.FailurePoint = &types.FailurePoint{
@@ -4347,15 +4335,10 @@ func (s *featureUsageTrackingService) runDebugTracker(ctx context.Context, event
 	if !hasActiveLineItem {
 		// No active line items found - status should be "not_found" even though we found items
 		tracker.SubscriptionLineItemLookup.Status = types.DebugTrackerStatusNotFound
-		errorMsg := fmt.Sprintf("Found %d subscription line item(s) but none are active for event timestamp %s. Event timestamp must be between line item start_date and end_date",
-			len(matchedLineItems),
-			event.Timestamp.Format(time.RFC3339))
 		errorResp := &ierr.ErrorResponse{
-			Success: false,
-			Error: ierr.ErrorDetail{
-				Display:       "No active subscription line items found for event timestamp",
-				InternalError: errorMsg,
-			},
+			Code:           ierr.ErrCodeNotFound,
+			Message:        fmt.Sprintf("Found %d subscription line item(s) but none are active for event timestamp %s", len(matchedLineItems), event.Timestamp.Format(time.RFC3339)),
+			HTTPStatusCode: 404,
 		}
 		tracker.SubscriptionLineItemLookup.Error = errorResp
 		tracker.FailurePoint = &types.FailurePoint{
