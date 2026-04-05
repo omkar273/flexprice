@@ -11,7 +11,7 @@ import (
 	flexprice "github.com/flexprice/go-sdk/v2"
 )
 
-const defaultAPIHost = "localhost:8080/v1"
+const defaultAPIHost = "api.cloud.flexprice.io/v1"
 
 // ts returns a unique-ish timestamp suffix for entity names.
 func ts() int64 {
@@ -35,6 +35,10 @@ func main() {
 	if apiHost == "" {
 		apiHost = defaultAPIHost
 	}
+
+	// Strip scheme if user accidentally included it (e.g. "https://api.cloud.flexprice.io/v1").
+	apiHost = strings.TrimPrefix(apiHost, "https://")
+	apiHost = strings.TrimPrefix(apiHost, "http://")
 
 	// Display masked credentials.
 	maskedKey := apiKey
