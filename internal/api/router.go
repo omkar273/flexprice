@@ -106,17 +106,19 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 	// Swagger documentation — served using swaggo/swag v2 + swaggo/files v2
 	swaggerUI, _ := fs.Sub(swaggerFiles.FS, ".")
 	swaggerUIHandler := http.FileServer(http.FS(swaggerUI))
-	router.GET("/swagger/doc.json", func(c *gin.Context) {
-		doc, err := swag.ReadDoc("swagger")
-		if err != nil {
-			c.AbortWithStatus(http.StatusInternalServerError)
+	router.GET("/swagger/*any", func(c *gin.Context) {
+		path := c.Param("any")
+		if path == "/doc.json" || path == "doc.json" {
+			doc, err := swag.ReadDoc("swagger")
+			if err != nil {
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			c.Header("Content-Type", "application/json; charset=utf-8")
+			c.String(http.StatusOK, doc)
 			return
 		}
-		c.Header("Content-Type", "application/json; charset=utf-8")
-		c.String(http.StatusOK, doc)
-	})
-	router.GET("/swagger/*any", func(c *gin.Context) {
-		c.Request.URL.Path = c.Param("any")
+		c.Request.URL.Path = path
 		swaggerUIHandler.ServeHTTP(c.Writer, c.Request)
 	})
 

@@ -302,9 +302,6 @@ actions:
   - target: '$.components.schemas["CreateInvoiceLineItemRequest"].properties["period_start"]'
     update:
       format: "date-time"
-  - target: '$.components.schemas["CreateInvoiceRequest"].properties["billing_period"]'
-    update:
-      format: "date-time"
   - target: '$.components.schemas["CreateInvoiceRequest"].properties["due_date"]'
     update:
       format: "date-time"
@@ -513,9 +510,6 @@ actions:
     update:
       format: "date-time"
   - target: '$.components.schemas["InvoicePreview"].properties["due_date"]'
-    update:
-      format: "date-time"
-  - target: '$.components.schemas["InvoiceResponse"].properties["billing_period"]'
     update:
       format: "date-time"
   - target: '$.components.schemas["InvoiceResponse"].properties["created_at"]'

@@ -14,7 +14,7 @@ targets:
         sourceRevisionDigest: sha256:c545604e71f47cce86c7faedfe4d4a366d47a01390a4d3c749867bdf4ec21ce7
         sourceBlobDigest: sha256:b93a3e8c2747bbfc499ec287f19ad3dd22d4c7f5f497b24371092db0f33a0dc9
         codeSamplesNamespace: swagger-json-go-code-samples
-        codeSamplesRevisionDigest: sha256:376484ebfde83995da34036b2d1ebb032831feb8b6fc6cb77d78f9ebd8889b41
+        codeSamplesRevisionDigest: sha256:ea4ec29084ae25e242827d7f3191be65e07af455b4a44d1029d07b359e930b69
     flexprice-mcp:
         source: swagger-json-mcp
     flexprice-python:
@@ -23,14 +23,14 @@ targets:
         sourceRevisionDigest: sha256:c545604e71f47cce86c7faedfe4d4a366d47a01390a4d3c749867bdf4ec21ce7
         sourceBlobDigest: sha256:b93a3e8c2747bbfc499ec287f19ad3dd22d4c7f5f497b24371092db0f33a0dc9
         codeSamplesNamespace: swagger-json-python-code-samples
-        codeSamplesRevisionDigest: sha256:922a3df3f7c765a930a8cb6b9d32d08f44be40900acb8082074963425db444b0
+        codeSamplesRevisionDigest: sha256:564d8504f33bf5ea8da60d68f5de0afc2b6cb7e9672074e0dcd712ca1dd7fc7a
     flexprice-typescript:
         source: swagger-json
         sourceNamespace: swagger-json
         sourceRevisionDigest: sha256:c545604e71f47cce86c7faedfe4d4a366d47a01390a4d3c749867bdf4ec21ce7
         sourceBlobDigest: sha256:b93a3e8c2747bbfc499ec287f19ad3dd22d4c7f5f497b24371092db0f33a0dc9
         codeSamplesNamespace: swagger-json-typescript-code-samples
-        codeSamplesRevisionDigest: sha256:4db82dcee9aa2d4d7c56a59d3b4699ecc9c819dee01554a86aeb4b23f886b701
+        codeSamplesRevisionDigest: sha256:40f442b00b0bc20f90d13d1a8d29ca5d538ddd62c0ddb4193a3224607ef9991c
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
