@@ -4,7 +4,7 @@ swagger-clean:
 
 .PHONY: install-swag
 install-swag:
-	@which swag > /dev/null || (go install github.com/swaggo/swag/cmd/swag@latest)
+	@which swag > /dev/null || (go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5)
 
 .PHONY: swagger
 swagger: swagger-2-0 swagger-3-0
@@ -456,7 +456,7 @@ sdk-all-local:
 # Generate Go SDK only with Speakeasy
 speakeasy-go-sdk:
 	@echo "🔨 Generating Go SDK with Speakeasy..."
-	@bash -c 'set -o pipefail; CI=true TERM=dumb speakeasy run --target flexprice-go -y < /dev/null | cat'
+	@bash -c 'set -o pipefail; CI=true TERM=dumb speakeasy run --target flexprice-go -y --skip-compile < /dev/null | cat'
 	@echo "✓ Go SDK generated successfully"
 
 # Clean only Go SDK

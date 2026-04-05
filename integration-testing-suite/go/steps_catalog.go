@@ -13,10 +13,10 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	r.printPhaseHeader(r.phase)
 
 	// ── Create Feature Group ────────────────────────────────────────────
-	// SDK: client.Groups.CreateGroup(ctx, types.DtoCreateGroupRequest{...})
+	// SDK: client.Groups.CreateGroup(ctx, types.CreateGroupRequest{...})
 
 	r.run("Create Feature Group", "Groups.CreateGroup", false, func() error {
-		req := types.DtoCreateGroupRequest{
+		req := types.CreateGroupRequest{
 			Name:       fmt.Sprintf("sanity-feature-group-%d", ts()),
 			EntityType: "feature",
 			LookupKey:  fmt.Sprintf("sanity_feat_grp_%d", ts()),
@@ -26,7 +26,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		group := resp.DtoGroupResponse
+		group := resp.GroupResponse
 		if group == nil || group.ID == nil {
 			return fmt.Errorf("create group returned no body")
 		}
@@ -37,10 +37,10 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	})
 
 	// ── Create Price Group ──────────────────────────────────────────────
-	// SDK: client.Groups.CreateGroup(ctx, types.DtoCreateGroupRequest{...})
+	// SDK: client.Groups.CreateGroup(ctx, types.CreateGroupRequest{...})
 
 	r.run("Create Price Group", "Groups.CreateGroup", false, func() error {
-		req := types.DtoCreateGroupRequest{
+		req := types.CreateGroupRequest{
 			Name:       fmt.Sprintf("sanity-price-group-%d", ts()),
 			EntityType: "price",
 			LookupKey:  fmt.Sprintf("sanity_price_grp_%d", ts()),
@@ -50,7 +50,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		group := resp.DtoGroupResponse
+		group := resp.GroupResponse
 		if group == nil || group.ID == nil {
 			return fmt.Errorf("create group returned no body")
 		}
@@ -61,17 +61,17 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	})
 
 	// ── Create Metered Feature A (grouped) ──────────────────────────────
-	// SDK: client.Features.CreateFeature(ctx, types.DtoCreateFeatureRequest{...})
+	// SDK: client.Features.CreateFeature(ctx, types.CreateFeatureRequest{...})
 
 	r.run("Create Metered Feature A (grouped)", "Features.CreateFeature", false, func() error {
 		r.eventNameA = fmt.Sprintf("api_call_%d", ts())
 
 		aggType := types.AggregationTypeSum
-		req := types.DtoCreateFeatureRequest{
+		req := types.CreateFeatureRequest{
 			Name:      fmt.Sprintf("API Calls %d", ts()),
 			Type:      types.FeatureTypeMetered,
 			LookupKey: strPtr(fmt.Sprintf("api_calls_%d", ts())),
-			Meter: &types.DtoCreateMeterRequest{
+			Meter: &types.CreateMeterRequest{
 				Name:      fmt.Sprintf("api_call_meter_%d", ts()),
 				EventName: r.eventNameA,
 				Aggregation: types.MeterAggregation{
@@ -88,7 +88,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		feature := resp.DtoFeatureResponse
+		feature := resp.Feature
 		if feature == nil || feature.ID == nil {
 			return fmt.Errorf("create feature returned no body")
 		}
@@ -107,17 +107,17 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	})
 
 	// ── Create Metered Feature B (ungrouped) ────────────────────────────
-	// SDK: client.Features.CreateFeature(ctx, types.DtoCreateFeatureRequest{...})
+	// SDK: client.Features.CreateFeature(ctx, types.CreateFeatureRequest{...})
 
 	r.run("Create Metered Feature B", "Features.CreateFeature", false, func() error {
 		r.eventNameB = fmt.Sprintf("storage_usage_%d", ts())
 
 		aggType := types.AggregationTypeSum
-		req := types.DtoCreateFeatureRequest{
+		req := types.CreateFeatureRequest{
 			Name:      fmt.Sprintf("Storage Usage %d", ts()),
 			Type:      types.FeatureTypeMetered,
 			LookupKey: strPtr(fmt.Sprintf("storage_usage_%d", ts())),
-			Meter: &types.DtoCreateMeterRequest{
+			Meter: &types.CreateMeterRequest{
 				Name:      fmt.Sprintf("storage_meter_%d", ts()),
 				EventName: r.eventNameB,
 				Aggregation: types.MeterAggregation{
@@ -133,7 +133,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		feature := resp.DtoFeatureResponse
+		feature := resp.Feature
 		if feature == nil || feature.ID == nil {
 			return fmt.Errorf("create feature returned no body")
 		}
@@ -151,10 +151,10 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	})
 
 	// ── Create Plan ─────────────────────────────────────────────────────
-	// SDK: client.Plans.CreatePlan(ctx, types.DtoCreatePlanRequest{...})
+	// SDK: client.Plans.CreatePlan(ctx, types.CreatePlanRequest{...})
 
 	r.run("Create Plan", "Plans.CreatePlan", false, func() error {
-		req := types.DtoCreatePlanRequest{
+		req := types.CreatePlanRequest{
 			Name:        fmt.Sprintf("Sanity Plan %d", ts()),
 			LookupKey:   strPtr(fmt.Sprintf("sanity_plan_%d", ts())),
 			Description: strPtr("Integration test plan with recurring + usage charges"),
@@ -164,7 +164,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		plan := resp.DtoPlanResponse
+		plan := resp.Plan
 		if plan == nil || plan.ID == nil {
 			return fmt.Errorf("create plan returned no body")
 		}
@@ -175,7 +175,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	})
 
 	// ── Add Recurring Price 1 (grouped) ─────────────────────────────────
-	// SDK: client.Prices.CreatePrice(ctx, types.DtoCreatePriceRequest{...})
+	// SDK: client.Prices.CreatePrice(ctx, types.CreatePriceRequest{...})
 
 	if !r.require(r.planID, "Create Plan", "Add Recurring Price 1 (grouped)") {
 		r.skip("Add Recurring Price 2", "depends on Create Plan which failed")
@@ -185,7 +185,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	}
 
 	r.run("Add Recurring Price 1 (grouped)", "Prices.CreatePrice", false, func() error {
-		req := types.DtoCreatePriceRequest{
+		req := types.CreatePriceRequest{
 			EntityID:           r.planID,
 			EntityType:         types.PriceEntityTypePlan,
 			Type:               types.PriceTypeFixed,
@@ -205,7 +205,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		price := resp.DtoPriceResponse
+		price := resp.Price
 		if price == nil || price.ID == nil {
 			return fmt.Errorf("create price returned no body")
 		}
@@ -218,7 +218,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	// ── Add Recurring Price 2 (ungrouped) ───────────────────────────────
 
 	r.run("Add Recurring Price 2", "Prices.CreatePrice", false, func() error {
-		req := types.DtoCreatePriceRequest{
+		req := types.CreatePriceRequest{
 			EntityID:           r.planID,
 			EntityType:         types.PriceEntityTypePlan,
 			Type:               types.PriceTypeFixed,
@@ -237,7 +237,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		price := resp.DtoPriceResponse
+		price := resp.Price
 		if price == nil || price.ID == nil {
 			return fmt.Errorf("create price returned no body")
 		}
@@ -255,7 +255,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	}
 
 	r.run("Add Usage Price (Feature A)", "Prices.CreatePrice", false, func() error {
-		req := types.DtoCreatePriceRequest{
+		req := types.CreatePriceRequest{
 			EntityID:           r.planID,
 			EntityType:         types.PriceEntityTypePlan,
 			Type:               types.PriceTypeUsage,
@@ -275,7 +275,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		price := resp.DtoPriceResponse
+		price := resp.Price
 		if price == nil || price.ID == nil {
 			return fmt.Errorf("create price returned no body")
 		}
@@ -292,7 +292,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 	}
 
 	r.run("Add Usage Price (Feature B)", "Prices.CreatePrice", false, func() error {
-		req := types.DtoCreatePriceRequest{
+		req := types.CreatePriceRequest{
 			EntityID:           r.planID,
 			EntityType:         types.PriceEntityTypePlan,
 			Type:               types.PriceTypeUsage,
@@ -312,7 +312,7 @@ func (r *SanityRunner) runCatalogSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		price := resp.DtoPriceResponse
+		price := resp.Price
 		if price == nil || price.ID == nil {
 			return fmt.Errorf("create price returned no body")
 		}

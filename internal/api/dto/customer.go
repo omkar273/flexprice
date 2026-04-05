@@ -112,7 +112,7 @@ type CustomerResponse struct {
 
 // ListCustomersResponse represents the response for listing customers
 // @Description Response object for listing customers with pagination
-type ListCustomersResponse = types.ListResponse[*CustomerResponse]
+type ListCustomersResponse = types.ListResponse[*CustomerResponse] // @name ListCustomersResponse
 
 func (r *CreateCustomerRequest) Validate() error {
 	if err := validator.ValidateRequest(r); err != nil {

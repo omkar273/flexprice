@@ -1,6 +1,9 @@
 package api
 
 import (
+	"io/fs"
+	"net/http"
+
 	"github.com/flexprice/flexprice/docs/swagger"
 	"github.com/flexprice/flexprice/internal/api/cron"
 	v1 "github.com/flexprice/flexprice/internal/api/v1"
@@ -10,8 +13,8 @@ import (
 	"github.com/flexprice/flexprice/internal/rest/middleware"
 	"github.com/flexprice/flexprice/internal/service"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files/v2"
+	swag "github.com/swaggo/swag/v2"
 )
 
 type Handlers struct {
@@ -100,8 +103,24 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 	// Health check
 	router.GET("/health", handlers.Health.Health)
 	router.POST("/health", handlers.Health.Health)
-	// Swagger documentation
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Swagger documentation — served using swaggo/swag v2 + swaggo/files v2
+	swaggerUI, _ := fs.Sub(swaggerFiles.FS, ".")
+	swaggerUIHandler := http.FileServer(http.FS(swaggerUI))
+	router.GET("/swagger/*any", func(c *gin.Context) {
+		path := c.Param("any")
+		if path == "/doc.json" || path == "doc.json" {
+			doc, err := swag.ReadDoc("swagger")
+			if err != nil {
+				c.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+			c.Header("Content-Type", "application/json; charset=utf-8")
+			c.String(http.StatusOK, doc)
+			return
+		}
+		c.Request.URL.Path = path
+		swaggerUIHandler.ServeHTTP(c.Writer, c.Request)
+	})
 
 	// Public routes
 	public := router.Group("/", middleware.GuestAuthenticateMiddleware)

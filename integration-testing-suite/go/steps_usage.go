@@ -23,13 +23,13 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 
 	// ── Bulk Ingest 50 Events ───────────────────────────────────────────
 	r.run("Bulk Ingest 50 Events", "Events.IngestEventsBulk", false, func() error {
-		events := make([]types.DtoIngestEventRequest, 0, 50)
+		events := make([]types.IngestEventRequest, 0, 50)
 
 		r.totalTokensIngested = 0
 		for i := 0; i < 30; i++ {
 			tokens := float64(rand.Intn(50) + 1)
 			r.totalTokensIngested += tokens
-			events = append(events, types.DtoIngestEventRequest{
+			events = append(events, types.IngestEventRequest{
 				EventName:          r.eventNameA,
 				ExternalCustomerID: r.externalCustID,
 				Properties:         map[string]string{"tokens": fmt.Sprintf("%.0f", tokens)},
@@ -42,7 +42,7 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 		for i := 0; i < 20; i++ {
 			gbHours := float64(rand.Intn(10) + 1)
 			r.totalGBHoursIngested += gbHours
-			events = append(events, types.DtoIngestEventRequest{
+			events = append(events, types.IngestEventRequest{
 				EventName:          r.eventNameB,
 				ExternalCustomerID: r.externalCustID,
 				Properties:         map[string]string{"gb_hours": fmt.Sprintf("%.0f", gbHours)},
@@ -51,7 +51,7 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 			})
 		}
 
-		_, err := r.client.Events.IngestEventsBulk(ctx, types.DtoBulkIngestEventRequest{Events: events})
+		_, err := r.client.Events.IngestEventsBulk(ctx, types.BulkIngestEventRequest{Events: events})
 		if err != nil {
 			return err
 		}
@@ -83,11 +83,11 @@ func (r *SanityRunner) runUsageSteps(ctx context.Context) {
 			default:
 			}
 
-			resp, err := r.client.Subscriptions.GetSubscriptionUsage(ctx, types.DtoGetUsageBySubscriptionRequest{
+			resp, err := r.client.Subscriptions.GetSubscriptionUsage(ctx, types.GetUsageBySubscriptionRequest{
 				SubscriptionID: r.subscriptionID,
 			})
-			if err == nil && resp.DtoGetUsageBySubscriptionResponse != nil {
-				for _, c := range resp.DtoGetUsageBySubscriptionResponse.Charges {
+			if err == nil && resp.GetUsageBySubscriptionResponse != nil {
+				for _, c := range resp.GetUsageBySubscriptionResponse.Charges {
 					if c.Quantity != nil && *c.Quantity > 0 {
 						elapsed := time.Since(deadline.Add(-30 * time.Second))
 						r.lastResult().Details = fmt.Sprintf("usage appeared after %s (%d poll(s))", elapsed.Round(time.Millisecond), attempts)
