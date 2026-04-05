@@ -39,6 +39,9 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
+		if resp == nil {
+			return fmt.Errorf("create entitlement returned nil response")
+		}
 		ent := resp.EntitlementResponse
 		if ent == nil || ent.ID == nil {
 			return fmt.Errorf("create entitlement returned no body")
@@ -59,6 +62,9 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 			resp, err := r.client.Entitlements.GetPlanEntitlements(ctx, r.planID)
 			if err != nil {
 				return fmt.Errorf("SDK GetPlanEntitlements call failed: %w", err)
+			}
+			if resp == nil {
+				return fmt.Errorf("SDK GetPlanEntitlements returned nil response")
 			}
 			list := resp.ListEntitlementsResponse
 			if list == nil || len(list.Items) == 0 {
@@ -132,6 +138,9 @@ skipTax:
 		if err != nil {
 			return err
 		}
+		if resp == nil {
+			return fmt.Errorf("create tax rate returned nil response")
+		}
 		taxRate := resp.TaxRateResponse
 		if taxRate == nil || taxRate.ID == nil {
 			return fmt.Errorf("create tax rate returned no body")
@@ -157,6 +166,9 @@ skipTax:
 		resp, err := r.client.Coupons.CreateCoupon(ctx, req)
 		if err != nil {
 			return err
+		}
+		if resp == nil {
+			return fmt.Errorf("create coupon returned nil response")
 		}
 		coupon := resp.Coupon
 		if coupon == nil || coupon.ID == nil {

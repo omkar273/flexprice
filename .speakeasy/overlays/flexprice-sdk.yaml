@@ -113,7 +113,7 @@ actions:
             in: requestBody
             type: limit
         outputs:
-          nextCursor: $.iter_first_key
+          nextCursor: $.iter_last_key
           hasMore: $.has_more
           results: $.events
   - target: '$.components.schemas["CustomerResponse"]'
