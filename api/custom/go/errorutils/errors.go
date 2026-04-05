@@ -46,7 +46,7 @@ func IsPermissionDenied(err error) bool {
 func IsServerError(err error) bool {
 	var e *sderr.APIError
 	if errors.As(err, &e) {
-		return e.StatusCode >= http.StatusInternalServerError
+		return e.StatusCode >= http.StatusInternalServerError && e.StatusCode < 600
 	}
 	return false
 }
