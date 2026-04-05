@@ -58,7 +58,8 @@ type SanityRunner struct {
 	couponID       string
 	customerID     string
 	externalCustID string
-	subscriptionID string
+	subscriptionID        string
+	subscriptionCancelled bool
 	invoiceID      string
 	walletID       string
 

@@ -22,7 +22,7 @@ func (r *SanityRunner) runInvoiceSteps(ctx context.Context) {
 	// ── Cancel Subscription ──────────────────────────────────────────────
 	r.run("Cancel Subscription (immediate)", "Subscriptions.CancelSubscription", false, func() error {
 		invoicePolicy := types.CancelImmediatelyInvoicePolicyGenerateInvoice
-		req := types.DtoCancelSubscriptionRequest{
+		req := types.CancelSubscriptionRequest{
 			CancellationType:               types.CancellationTypeImmediate,
 			CancelImmediatelyInovicePolicy: &invoicePolicy,
 			Reason:                         strPtr("Integration test cancellation"),
@@ -32,7 +32,7 @@ func (r *SanityRunner) runInvoiceSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		cancelResp := resp.DtoCancelSubscriptionResponse
+		cancelResp := resp.CancelSubscriptionResponse
 		if cancelResp == nil {
 			return fmt.Errorf("cancel subscription returned no body")
 		}
@@ -49,6 +49,7 @@ func (r *SanityRunner) runInvoiceSteps(ctx context.Context) {
 			details += fmt.Sprintf(", status=%s", string(*cancelResp.Status))
 		}
 		r.lastResult().Details = details
+		r.subscriptionCancelled = true
 		return nil
 	})
 
@@ -66,7 +67,7 @@ func (r *SanityRunner) runInvoiceSteps(ctx context.Context) {
 			if err != nil {
 				return err
 			}
-			list := resp.DtoListInvoicesResponse
+			list := resp.ListInvoicesResponse
 			if list == nil || len(list.Items) == 0 {
 				return fmt.Errorf("no invoices found for subscription %s", r.subscriptionID)
 			}
@@ -92,7 +93,7 @@ func (r *SanityRunner) runInvoiceSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		inv := resp.DtoInvoiceResponse
+		inv := resp.Invoice
 		if inv == nil {
 			return fmt.Errorf("get invoice returned no body")
 		}
@@ -130,7 +131,7 @@ func (r *SanityRunner) runInvoiceSteps(ctx context.Context) {
 		if err != nil {
 			return fmt.Errorf("get invoice pre-payment: %w", err)
 		}
-		inv := getResp.DtoInvoiceResponse
+		inv := getResp.Invoice
 
 		// Finalize if still draft.
 		if inv != nil && inv.InvoiceStatus != nil {
@@ -143,7 +144,7 @@ func (r *SanityRunner) runInvoiceSteps(ctx context.Context) {
 				if err != nil {
 					return fmt.Errorf("re-fetch after finalize: %w", err)
 				}
-				inv = getResp.DtoInvoiceResponse
+				inv = getResp.Invoice
 			}
 		}
 
@@ -156,7 +157,7 @@ func (r *SanityRunner) runInvoiceSteps(ctx context.Context) {
 			}
 		}
 
-		_, err = r.client.Invoices.UpdateInvoicePaymentStatus(ctx, r.invoiceID, types.DtoUpdatePaymentStatusRequest{
+		_, err = r.client.Invoices.UpdateInvoicePaymentStatus(ctx, r.invoiceID, types.UpdatePaymentStatusRequest{
 			PaymentStatus: types.PaymentStatusSucceeded,
 			Amount:        strPtr(amount),
 		})

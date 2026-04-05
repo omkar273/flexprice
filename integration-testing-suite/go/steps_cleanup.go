@@ -32,9 +32,9 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 	}
 
 	// ── 2. Cancel subscription ───────────────────────────────────────────
-	if r.subscriptionID != "" {
+	if r.subscriptionID != "" && !r.subscriptionCancelled {
 		r.run("Cleanup: Cancel Subscription", "Subscriptions.CancelSubscription", false, func() error {
-			req := types.DtoCancelSubscriptionRequest{
+			req := types.CancelSubscriptionRequest{
 				CancellationType: types.CancellationTypeImmediate,
 			}
 			_, err := r.client.Subscriptions.CancelSubscription(ctx, r.subscriptionID, req)
@@ -83,7 +83,7 @@ func (r *SanityRunner) runCleanupSteps(ctx context.Context) {
 		priceID := p.id
 		priceName := p.name
 		r.run(fmt.Sprintf("Cleanup: Delete Price (%s)", priceName), "Prices.DeletePrice", false, func() error {
-			deleteReq := types.DtoDeletePriceRequest{}
+			deleteReq := types.DeletePriceRequest{}
 			_, err := r.client.Prices.DeletePrice(ctx, priceID, deleteReq)
 			if err != nil {
 				return fmt.Errorf("delete price %s: %w", priceName, err)

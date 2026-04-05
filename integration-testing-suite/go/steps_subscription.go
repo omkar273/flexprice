@@ -14,12 +14,12 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 	r.printPhaseHeader(r.phase)
 
 	// ── Create Customer ─────────────────────────────────────────────────
-	// SDK: client.Customers.CreateCustomer(ctx, types.DtoCreateCustomerRequest{...})
+	// SDK: client.Customers.CreateCustomer(ctx, types.CreateCustomerRequest{...})
 
 	r.run("Create Customer", "Customers.CreateCustomer", false, func() error {
 		r.externalCustID = fmt.Sprintf("sanity-cust-%d", ts())
 
-		req := types.DtoCreateCustomerRequest{
+		req := types.CreateCustomerRequest{
 			ExternalID: r.externalCustID,
 			Name:       strPtr(fmt.Sprintf("Sanity Test Customer %d", ts())),
 			Email:      strPtr(fmt.Sprintf("sanity-%d@test.flexprice.io", ts())),
@@ -30,7 +30,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		customer := resp.DtoCustomerResponse
+		customer := resp.Customer
 		if customer == nil || customer.ID == nil {
 			return fmt.Errorf("create customer returned no body")
 		}
@@ -41,7 +41,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 	})
 
 	// ── Create Subscription ─────────────────────────────────────────────
-	// SDK: client.Subscriptions.CreateSubscription(ctx, types.DtoCreateSubscriptionRequest{...})
+	// SDK: client.Subscriptions.CreateSubscription(ctx, types.CreateSubscriptionRequest{...})
 
 	if !r.require(r.customerID, "Create Customer", "Create Subscription") ||
 		!r.require(r.planID, "Create Plan", "Create Subscription") {
@@ -52,10 +52,10 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 	}
 
 	r.run("Create Subscription", "Subscriptions.CreateSubscription", false, func() error {
-		startDate := time.Now().Format(time.RFC3339)
+		startDate := time.Now()
 		billingCycle := types.BillingCycleAnniversary
 
-		req := types.DtoCreateSubscriptionRequest{
+		req := types.CreateSubscriptionRequest{
 			CustomerID:         strPtr(r.customerID),
 			PlanID:             r.planID,
 			Currency:           "usd",
@@ -63,7 +63,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 			BillingPeriod:      types.BillingPeriodMonthly,
 			BillingPeriodCount: int64Ptr(1),
 			BillingCycle:       &billingCycle,
-			StartDate:          strPtr(startDate),
+			StartDate:          &startDate,
 			Metadata:           map[string]string{"source": "sanity_test"},
 		}
 
@@ -74,7 +74,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 
 		// Attach tax rate override if available (uses code + currency, both required).
 		if r.taxRateCode != "" {
-			req.TaxRateOverrides = []types.DtoTaxRateOverride{
+			req.TaxRateOverrides = []types.TaxRateOverride{
 				{
 					TaxRateCode: r.taxRateCode,
 					Currency:    "usd",
@@ -88,7 +88,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		sub := resp.DtoSubscriptionResponse
+		sub := resp.Subscription
 		if sub == nil || sub.ID == nil {
 			return fmt.Errorf("create subscription returned no body")
 		}
@@ -120,7 +120,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		sub := resp.DtoSubscriptionResponse
+		sub := resp.Subscription
 		if sub == nil {
 			return fmt.Errorf("get subscription returned no body")
 		}
@@ -132,8 +132,8 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 
 		// If DRAFT, activate it.
 		if status == "draft" || status == "DRAFT" {
-			activateReq := types.DtoActivateDraftSubscriptionRequest{
-				StartDate: time.Now().Format(time.RFC3339),
+			activateReq := types.ActivateDraftSubscriptionRequest{
+				StartDate: time.Now(),
 			}
 			_, err := r.client.Subscriptions.ActivateSubscription(ctx, r.subscriptionID, activateReq)
 			if err != nil {
@@ -144,7 +144,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 			if err != nil {
 				return fmt.Errorf("re-fetch after activate: %w", err)
 			}
-			sub = resp.DtoSubscriptionResponse
+			sub = resp.Subscription
 			if sub != nil && sub.SubscriptionStatus != nil {
 				status = string(*sub.SubscriptionStatus)
 			}
@@ -166,7 +166,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		entResp := resp.DtoSubscriptionEntitlementsResponse
+		entResp := resp.SubscriptionEntitlementsResponse
 		if entResp == nil {
 			return fmt.Errorf("get subscription entitlements returned no body")
 		}
@@ -203,7 +203,7 @@ func (r *SanityRunner) runSubscriptionSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		entResp := resp.DtoCustomerEntitlementsResponse
+		entResp := resp.CustomerEntitlementsResponse
 		if entResp == nil {
 			return fmt.Errorf("get customer entitlements returned no body")
 		}

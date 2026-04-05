@@ -19,10 +19,10 @@ func (r *SanityRunner) runWalletSteps(ctx context.Context) {
 	}
 
 	// ── Create Wallet ──────────────────────────────────────────────────
-	// SDK: client.Wallets.CreateWallet(ctx, types.DtoCreateWalletRequest{...})
+	// SDK: client.Wallets.CreateWallet(ctx, types.CreateWalletRequest{...})
 
 	r.run("Create Wallet", "Wallets.CreateWallet", false, func() error {
-		req := types.DtoCreateWalletRequest{
+		req := types.CreateWalletRequest{
 			CustomerID:  strPtr(r.customerID),
 			Currency:    "USD",
 			Description: strPtr("Integration test prepaid wallet"),
@@ -33,7 +33,7 @@ func (r *SanityRunner) runWalletSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		wallet := resp.DtoWalletResponse
+		wallet := resp.Wallet
 		if wallet == nil || wallet.ID == nil {
 			return fmt.Errorf("create wallet returned no body")
 		}
@@ -45,7 +45,7 @@ func (r *SanityRunner) runWalletSteps(ctx context.Context) {
 	})
 
 	// ── Top-Up Wallet ──────────────────────────────────────────────────
-	// SDK: client.Wallets.TopUpWallet(ctx, walletID, types.DtoTopUpWalletRequest{...})
+	// SDK: client.Wallets.TopUpWallet(ctx, walletID, types.TopUpWalletRequest{...})
 
 	if !r.require(r.walletID, "Create Wallet", "Top-Up Wallet") {
 		r.skip("Verify Wallet Balance", "depends on top-up")
@@ -53,7 +53,7 @@ func (r *SanityRunner) runWalletSteps(ctx context.Context) {
 	}
 
 	r.run("Top-Up Wallet (500 credits)", "Wallets.TopUpWallet", false, func() error {
-		req := types.DtoTopUpWalletRequest{
+		req := types.TopUpWalletRequest{
 			Amount:            strPtr("500.00"),
 			TransactionReason: types.TransactionReasonPurchasedCreditDirect,
 			Description:       strPtr("Integration test top-up"),
@@ -77,7 +77,7 @@ func (r *SanityRunner) runWalletSteps(ctx context.Context) {
 			return err
 		}
 
-		balance := resp.DtoWalletBalanceResponse
+		balance := resp.WalletBalanceResponse
 		details := "balance retrieved"
 		if balance != nil && balance.Balance != nil {
 			details = fmt.Sprintf("balance=%s", *balance.Balance)

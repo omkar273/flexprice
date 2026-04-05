@@ -13,7 +13,7 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 	r.printPhaseHeader(r.phase)
 
 	// ── Create Entitlement for Feature A on Plan ────────────────────────
-	// SDK: client.Entitlements.CreateEntitlement(ctx, types.DtoCreateEntitlementRequest{...})
+	// SDK: client.Entitlements.CreateEntitlement(ctx, types.CreateEntitlementRequest{...})
 
 	if !r.require(r.planID, "Create Plan", "Create Entitlement (Feature A)") ||
 		!r.require(r.featureAID, "Feature A", "Create Entitlement (Feature A)") {
@@ -23,7 +23,7 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 
 	r.run("Create Entitlement (Feature A)", "Entitlements.CreateEntitlement", false, func() error {
 		usageReset := types.EntitlementUsageResetPeriodMonthly
-		req := types.DtoCreateEntitlementRequest{
+		req := types.CreateEntitlementRequest{
 			FeatureID:   r.featureAID,
 			FeatureType: types.FeatureTypeMetered,
 			PlanID:      strPtr(r.planID),
@@ -39,7 +39,7 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		ent := resp.DtoEntitlementResponse
+		ent := resp.EntitlementResponse
 		if ent == nil || ent.ID == nil {
 			return fmt.Errorf("create entitlement returned no body")
 		}
@@ -60,7 +60,7 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 			if err != nil {
 				return fmt.Errorf("SDK GetPlanEntitlements call failed: %w", err)
 			}
-			list := resp.DtoListEntitlementsResponse
+			list := resp.ListEntitlementsResponse
 			if list == nil || len(list.Items) == 0 {
 				return fmt.Errorf("SDK GetPlanEntitlements returned 0 entitlements for plan %s", r.planID)
 			}
@@ -112,14 +112,14 @@ func (r *SanityRunner) runBillingSteps(ctx context.Context) {
 
 skipTax:
 	// ── Create Tax Rate ─────────────────────────────────────────────────
-	// SDK: client.TaxRates.CreateTaxRate(ctx, types.DtoCreateTaxRateRequest{...})
+	// SDK: client.TaxRates.CreateTaxRate(ctx, types.CreateTaxRateRequest{...})
 
 	r.run("Create Tax Rate (18% GST)", "TaxRates.CreateTaxRate", false, func() error {
 		taxCode := fmt.Sprintf("GST18_%d", ts())
 		taxRateType := types.TaxRateTypePercentage
 		scope := types.TaxRateScopeInternal
 
-		req := types.DtoCreateTaxRateRequest{
+		req := types.CreateTaxRateRequest{
 			Name:            fmt.Sprintf("GST 18%% %d", ts()),
 			Code:            taxCode,
 			PercentageValue: strPtr("18.00"),
@@ -132,7 +132,7 @@ skipTax:
 		if err != nil {
 			return err
 		}
-		taxRate := resp.DtoTaxRateResponse
+		taxRate := resp.TaxRateResponse
 		if taxRate == nil || taxRate.ID == nil {
 			return fmt.Errorf("create tax rate returned no body")
 		}
@@ -144,10 +144,10 @@ skipTax:
 	})
 
 	// ── Create Coupon ───────────────────────────────────────────────────
-	// SDK: client.Coupons.CreateCoupon(ctx, types.DtoCreateCouponRequest{...})
+	// SDK: client.Coupons.CreateCoupon(ctx, types.CreateCouponRequest{...})
 
 	r.run("Create Coupon (10% off)", "Coupons.CreateCoupon", false, func() error {
-		req := types.DtoCreateCouponRequest{
+		req := types.CreateCouponRequest{
 			Name:          fmt.Sprintf("Sanity 10pct Off %d", ts()),
 			Type:          types.CouponTypePercentage,
 			Cadence:       types.CouponCadenceOnce,
@@ -158,7 +158,7 @@ skipTax:
 		if err != nil {
 			return err
 		}
-		coupon := resp.DtoCouponResponse
+		coupon := resp.Coupon
 		if coupon == nil || coupon.ID == nil {
 			return fmt.Errorf("create coupon returned no body")
 		}
