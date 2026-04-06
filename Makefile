@@ -532,8 +532,8 @@ test-sdk test-sdks:
 	fi
 	@echo "Running SDK tests (Go, Python, TypeScript)..."
 	@echo "  FLEXPRICE_API_HOST=$$FLEXPRICE_API_HOST"
-	@echo "--- Go (install deps + test) ---"; (cd api/tests/go && go mod tidy && go mod download && go run -tags published test_sdk.go) || true
-	@echo "--- Python (install deps + test) ---"; (cd api/tests/python && ( [ -d .venv ] || python3 -m venv .venv ) && .venv/bin/pip install -q -r requirements.txt && .venv/bin/python test_sdk.py) || true
+	@echo "--- Go (install deps + test) ---"; (cd api/tests/go && GOPRIVATE=github.com/flexprice/* go mod tidy && GOPRIVATE=github.com/flexprice/* go mod download && GOPRIVATE=github.com/flexprice/* go run -tags published test_sdk.go) || true
+	@echo "--- Python (install deps + test) ---"; (cd api/tests/python && ( [ -x .venv/bin/python ] && .venv/bin/python -m pip --version >/dev/null 2>&1 || (rm -rf .venv && python3 -m venv .venv) ) && .venv/bin/python -m pip install -q --upgrade pip setuptools wheel && .venv/bin/python -m pip install -q -r requirements.txt && .venv/bin/python test_sdk.py) || true
 	@echo "--- TypeScript (install deps + test) ---"; (cd api/tests/ts && npm install && npm test) || true
 	@echo "✓ All SDK tests finished"
 
