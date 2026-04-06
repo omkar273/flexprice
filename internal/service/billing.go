@@ -2021,6 +2021,48 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 
 		description = fmt.Sprintf("Preview invoice for subscription %s", sub.ID)
 		metadata["is_preview"] = "true"
+
+	case types.ReferencePointInternalPreview:
+		// Same as ReferencePointPreview but uses CalculateCharges (regular usage path)
+		// instead of calculateFeatureUsageCharges (ClickHouse FINAL feature_usage path).
+
+		// For current period arrear charges
+		arrearResult, err := s.CalculateCharges(
+			ctx,
+			sub,
+			classification.CurrentPeriodArrear,
+			periodStart,
+			periodEnd,
+			classification.HasUsageCharges, // Include usage for arrear
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// For next period advance charges
+		advanceResult, err := s.CalculateCharges(
+			ctx,
+			sub,
+			classification.NextPeriodAdvance,
+			nextPeriodStart,
+			nextPeriodEnd,
+			false, // No usage for advance
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Combine results
+		calculationResult = &BillingCalculationResult{
+			FixedCharges: append(arrearResult.FixedCharges, advanceResult.FixedCharges...),
+			UsageCharges: arrearResult.UsageCharges, // Only arrear has usage
+			TotalAmount:  arrearResult.TotalAmount.Add(advanceResult.TotalAmount),
+			Currency:     sub.Currency,
+		}
+
+		description = fmt.Sprintf("Preview invoice for subscription %s", sub.ID)
+		metadata["is_preview"] = "true"
+
 	case types.ReferencePointCancel:
 		// for cancel, include arrear line items only (feature_usage path for cumulative commitment)
 		arrearLineItems, err := s.FilterLineItemsToBeInvoiced(ctx, sub, periodStart, periodEnd, classification.CurrentPeriodArrear, excludeInvoiceID)
