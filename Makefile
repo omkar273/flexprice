@@ -15,6 +15,8 @@ swagger: swagger-2-0 swagger-3-0
 
 .PHONY: swagger-2-0-generate
 swagger-2-0-generate:
+	@echo "go mod download (warm cache; swag v2 treats go list stderr as fatal)..."
+	go mod download
 	@echo "Running swag via go run $(SWAG_V2_PKG) ..."
 	go run $(SWAG_V2_PKG) init \
 		--generalInfo cmd/server/main.go \

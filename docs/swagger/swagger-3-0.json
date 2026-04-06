@@ -8631,6 +8631,87 @@
         "x-codegen-request-body-name": "request"
       }
     },
+    "/subscriptions/{id}/modify/execute": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Add customers to subscription inheritance",
+        "description": "Attach additional child customers (by external ID) to an active standalone or parent subscription; creates inherited skeleton subscriptions for each. The subscription must be active.",
+        "operationId": "executeSubscriptionModify",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Subscription ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "External customer IDs to inherit",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteSubscriptionInheritanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-scope": "write",
+        "x-codegen-request-body-name": "request"
+      }
+    },
     "/subscriptions/{id}/pause": {
       "post": {
         "tags": [
@@ -13420,7 +13501,7 @@
         "type": "object",
         "properties": {
           "coupon": {
-            "$ref": "#/components/schemas/DomainCoupon"
+            "$ref": "#/components/schemas/Coupon"
           },
           "coupon_id": {
             "type": "string"
@@ -13960,7 +14041,6 @@
         "properties": {
           "cancel_at": {
             "type": "string",
-            "description": "CancelAt is the custom date to cancel the subscription.\nRequired when CancellationType is \"scheduled_date\". Must be in the future.",
             "format": "date-time"
           },
           "cancel_immediately_inovice_policy": {
@@ -14255,7 +14335,7 @@
         "type": "object",
         "properties": {
           "coupon": {
-            "$ref": "#/components/schemas/DomainCoupon"
+            "$ref": "#/components/schemas/Coupon"
           },
           "coupon_id": {
             "type": "string"
@@ -14823,6 +14903,13 @@
             "type": "string",
             "description": "external_id is the unique identifier from your system to reference this customer (required)"
           },
+          "integration_entity_mapping": {
+            "type": "array",
+            "description": "integration_entity_mapping contains provider integration mappings for this customer",
+            "items": {
+              "$ref": "#/components/schemas/CreateEntityIntegrationMappingRequest"
+            }
+          },
           "metadata": {
             "type": "object",
             "additionalProperties": {
@@ -14833,14 +14920,6 @@
           "name": {
             "type": "string",
             "description": "name is the full name or company name of the customer"
-          },
-          "parent_customer_external_id": {
-            "type": "string",
-            "description": "Deprecated: See ParentCustomerID.\nparent_customer_external_id is the external ID of the parent customer from your system.\nExactly one of parent_customer_id or parent_customer_external_id may be provided."
-          },
-          "parent_customer_id": {
-            "type": "string",
-            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nThis field is accepted for backward compatibility but no hierarchy validations are enforced.\nparent_customer_id is the internal FlexPrice ID of the parent customer."
           },
           "skip_onboarding_workflow": {
             "type": "boolean",
@@ -14903,6 +14982,36 @@
           },
           "usage_reset_period": {
             "$ref": "#/components/schemas/types.EntitlementUsageResetPeriod"
+          }
+        }
+      },
+      "CreateEntityIntegrationMappingRequest": {
+        "required": [
+          "entity_id",
+          "entity_type",
+          "provider_entity_id",
+          "provider_type"
+        ],
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "maxLength": 255,
+            "type": "string"
+          },
+          "entity_type": {
+            "$ref": "#/components/schemas/types.IntegrationEntityType"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "provider_entity_id": {
+            "maxLength": 255,
+            "type": "string"
+          },
+          "provider_type": {
+            "maxLength": 50,
+            "type": "string"
           }
         }
       },
@@ -15681,16 +15790,8 @@
           "gateway_payment_method_id": {
             "type": "string"
           },
-          "invoice_billing": {
-            "$ref": "#/components/schemas/types.InvoiceBilling"
-          },
-          "invoicing_customer_external_id": {
-            "type": "string",
-            "description": "invoicing_customer_external_id is the external ID of the customer to use for invoicing.\nResolved internally to an internal customer ID via external ID lookup.\nMutually exclusive with invoicing_customer_id."
-          },
-          "invoicing_customer_id": {
-            "type": "string",
-            "description": "invoicing_customer_id is the FlexPrice customer ID to use for invoicing.\nThis can differ from the subscription customer (e.g., a billing entity invoicing on behalf of another customer).\nMutually exclusive with invoicing_customer_external_id."
+          "inheritance": {
+            "$ref": "#/components/schemas/SubscriptionInheritanceConfig"
           },
           "line_item_commitments": {
             "type": "object",
@@ -15741,10 +15842,6 @@
             "items": {
               "$ref": "#/components/schemas/OverrideLineItemRequest"
             }
-          },
-          "parent_subscription_id": {
-            "type": "string",
-            "description": "ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)"
           },
           "payment_behavior": {
             "$ref": "#/components/schemas/types.PaymentBehavior"
@@ -16195,7 +16292,7 @@
             "description": "currency is the three-letter ISO currency code (e.g., USD, EUR) for the credit note"
           },
           "customer": {
-            "$ref": "#/components/schemas/DomainCustomer"
+            "$ref": "#/components/schemas/Customer"
           },
           "customer_id": {
             "type": "string",
@@ -16362,7 +16459,7 @@
         "type": "object",
         "properties": {
           "customer": {
-            "$ref": "#/components/schemas/DomainCustomer"
+            "$ref": "#/components/schemas/Customer"
           },
           "error": {
             "$ref": "#/components/schemas/errors.ErrorResponse"
@@ -16458,13 +16555,6 @@
           "name": {
             "type": "string",
             "description": "Name is the name of the customer"
-          },
-          "parent_customer": {
-            "$ref": "#/components/schemas/CustomerResponse"
-          },
-          "parent_customer_id": {
-            "type": "string",
-            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer."
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -16774,6 +16864,17 @@
           },
           "requestId": {
             "type": "string"
+          }
+        }
+      },
+      "ExecuteSubscriptionInheritanceRequest": {
+        "type": "object",
+        "properties": {
+          "external_customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -17177,9 +17278,6 @@
         }
       },
       "GetUsageAnalyticsRequest": {
-        "required": [
-          "external_customer_id"
-        ],
         "type": "object",
         "properties": {
           "end_time": {
@@ -17194,7 +17292,8 @@
             }
           },
           "external_customer_id": {
-            "type": "string"
+            "type": "string",
+            "description": "ExternalCustomerID is the single external customer ID.\nOptional when ExternalCustomerIDs is provided; required otherwise."
           },
           "feature_ids": {
             "type": "array",
@@ -17208,6 +17307,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "include_children": {
+            "type": "boolean",
+            "description": "IncludeChildren when true folds child customers' usage into the single aggregated total.\nDefault: false."
           },
           "property_filters": {
             "type": "object",
@@ -17910,7 +18013,7 @@
           },
           "recalculated_invoice_id": {
             "type": "string",
-            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent→child link from this (voided) invoice to the new replacement invoice."
+            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent\u2192child link from this (voided) invoice to the new replacement invoice."
           },
           "refunded_amount": {
             "type": "string",
@@ -19241,6 +19344,23 @@
           }
         }
       },
+      "SubscriptionInheritanceConfig": {
+        "type": "object",
+        "properties": {
+          "external_customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "invoicing_customer_external_id": {
+            "type": "string"
+          },
+          "parent_subscription_id": {
+            "type": "string"
+          }
+        }
+      },
       "SubscriptionLineItemLookupResult": {
         "type": "object",
         "properties": {
@@ -19841,6 +19961,9 @@
           "subscription_status": {
             "$ref": "#/components/schemas/types.SubscriptionStatus"
           },
+          "subscription_type": {
+            "$ref": "#/components/schemas/types.SubscriptionType"
+          },
           "tenant_id": {
             "type": "string"
           },
@@ -20052,6 +20175,9 @@
           },
           "subscription_status": {
             "$ref": "#/components/schemas/types.SubscriptionStatus"
+          },
+          "subscription_type": {
+            "$ref": "#/components/schemas/types.SubscriptionType"
           },
           "tenant_id": {
             "type": "string"
@@ -20827,6 +20953,13 @@
             "type": "string",
             "description": "external_id is the updated external identifier for the customer"
           },
+          "integration_entity_mapping": {
+            "type": "array",
+            "description": "integration_entity_mapping contains provider integration mappings for this customer",
+            "items": {
+              "$ref": "#/components/schemas/CreateEntityIntegrationMappingRequest"
+            }
+          },
           "metadata": {
             "type": "object",
             "additionalProperties": {
@@ -20837,14 +20970,6 @@
           "name": {
             "type": "string",
             "description": "name is the updated name or company name for the customer"
-          },
-          "parent_customer_external_id": {
-            "type": "string",
-            "description": "Deprecated: See ParentCustomerID.\nparent_customer_external_id is the external ID of the parent customer from your system.\nExactly one of parent_customer_id or parent_customer_external_id may be provided.\nIf you provide the external ID, the parent customer value will be ignored."
-          },
-          "parent_customer_id": {
-            "type": "string",
-            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nThis field is accepted for backward compatibility but no hierarchy validations are enforced.\nparent_customer_id is the internal FlexPrice ID of the parent customer."
           }
         },
         "description": "Request object for updating an existing customer. All fields are optional - only provided fields will be updated"
@@ -21227,7 +21352,7 @@
             "type": "string"
           },
           "addon": {
-            "$ref": "#/components/schemas/DomainAddon"
+            "$ref": "#/components/schemas/Addon"
           },
           "aggregation_type": {
             "$ref": "#/components/schemas/types.AggregationType"
@@ -21246,7 +21371,7 @@
             "type": "string"
           },
           "feature": {
-            "$ref": "#/components/schemas/DomainFeature"
+            "$ref": "#/components/schemas/Feature"
           },
           "feature_id": {
             "type": "string"
@@ -21265,7 +21390,7 @@
             "type": "string"
           },
           "plan": {
-            "$ref": "#/components/schemas/DomainPlan"
+            "$ref": "#/components/schemas/Plan"
           },
           "plan_id": {
             "type": "string"
@@ -21752,19 +21877,7 @@
           }
         }
       },
-      "errors.ErrorDetail": {
-        "type": "object",
-        "properties": {
-          "internal_error": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "x-speakeasy-name-override": "ErrorDetail"
-      },
-      "DomainAddon": {
+      "Addon": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -21811,7 +21924,7 @@
           }
         }
       },
-      "DomainCoupon": {
+      "Coupon": {
         "type": "object",
         "properties": {
           "amount_off": {
@@ -21885,7 +21998,7 @@
           }
         }
       },
-      "DomainCustomer": {
+      "Customer": {
         "type": "object",
         "properties": {
           "address_city": {
@@ -21946,10 +22059,6 @@
             "type": "string",
             "description": "Name is the name of the customer"
           },
-          "parent_customer_id": {
-            "type": "string",
-            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer."
-          },
           "status": {
             "$ref": "#/components/schemas/types.Status"
           },
@@ -21965,7 +22074,7 @@
           }
         }
       },
-      "DomainFeature": {
+      "Feature": {
         "type": "object",
         "properties": {
           "alert_settings": {
@@ -22032,7 +22141,7 @@
           }
         }
       },
-      "DomainPlan": {
+      "Plan": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -22081,11 +22190,33 @@
       "errors.ErrorResponse": {
         "type": "object",
         "properties": {
-          "error": {
-            "$ref": "#/components/schemas/errors.ErrorDetail"
+          "code": {
+            "type": "string",
+            "enum": [
+              "not_found",
+              "already_exists",
+              "version_conflict",
+              "validation_error",
+              "invalid_operation",
+              "permission_denied",
+              "http_client_error",
+              "database_error",
+              "system_error",
+              "internal_error",
+              "service_unavailable"
+            ]
           },
-          "success": {
-            "type": "boolean"
+          "details": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "http_status_code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
           }
         },
         "x-speakeasy-name-override": "ErrorResponse"
@@ -22848,12 +22979,6 @@
               "desc"
             ]
           },
-          "parent_customer_ids": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "sort": {
             "type": "array",
             "items": {
@@ -23320,18 +23445,6 @@
           "IntegrationEntityTypePrice"
         ],
         "x-speakeasy-name-override": "IntegrationEntityType"
-      },
-      "types.InvoiceBilling": {
-        "type": "string",
-        "enum": [
-          "invoice_to_parent",
-          "invoice_to_self"
-        ],
-        "x-enum-varnames": [
-          "InvoiceBillingInvoiceToParent",
-          "InvoiceBillingInvoiceToSelf"
-        ],
-        "x-speakeasy-name-override": "InvoiceBilling"
       },
       "types.InvoiceBillingReason": {
         "type": "string",
@@ -24248,6 +24361,13 @@
             "type": "string",
             "description": "CustomerID filters by customer ID"
           },
+          "customer_ids": {
+            "type": "array",
+            "description": "CustomerIDs filters by customer IDs",
+            "items": {
+              "type": "string"
+            }
+          },
           "effective_date_for_update": {
             "type": "string",
             "description": "EffectiveDateForUpdate selects subscriptions that need a billing-period pass on or before this time:\ncurrent_period_end <= date OR (cancel_at IS NOT NULL AND cancel_at <= date).\nWhen nil, period/cancel cutoff logic is not applied by this field (see TimeRangeFilter for legacy period-end filtering)."
@@ -24327,6 +24447,13 @@
             "description": "SubscriptionStatus filters by subscription status",
             "items": {
               "$ref": "#/components/schemas/types.SubscriptionStatus"
+            }
+          },
+          "subscription_type": {
+            "type": "array",
+            "description": "SubscriptionType filters by subscription type",
+            "items": {
+              "$ref": "#/components/schemas/types.SubscriptionType"
             }
           },
           "with_line_items": {
@@ -25776,6 +25903,20 @@
           "type": "string"
         },
         "x-speakeasy-name-override": "Metadata"
+      },
+      "types.SubscriptionType": {
+        "type": "string",
+        "enum": [
+          "standalone",
+          "parent",
+          "inherited"
+        ],
+        "x-enum-varnames": [
+          "SubscriptionTypeStandalone",
+          "SubscriptionTypeParent",
+          "SubscriptionTypeInherited"
+        ],
+        "x-speakeasy-name-override": "SubscriptionType"
       },
       "webhookDto.AlertWebhookPayload": {
         "type": "object",
