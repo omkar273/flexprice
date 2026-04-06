@@ -22,23 +22,39 @@ poetry add flexprice
 
 Runnable samples are in the `examples/` directory.
 
+## Environment
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `FLEXPRICE_API_KEY` | Yes | API key |
+| `FLEXPRICE_API_HOST` | Optional | Full base URL including `https://` and `/v1` (default: `https://us.api.flexprice.io/v1`). No trailing slash. |
+
+**Integration tests** in [api/tests/python/test_sdk.py](../tests/python/test_sdk.py) use a different env shape; see [api/tests/README.md](../tests/README.md).
+
 ## Quick start
 
-Initialize the client with your server URL and API key, then ingest an event:
+Initialize the client, create a customer, ingest an event:
 
 ```python
+import os
 from flexprice import Flexprice
 
-# Always include /v1 in the base URL; no trailing space or slash.
-with Flexprice(
-    server_url="https://us.api.flexprice.io/v1",
-    api_key_auth="YOUR_API_KEY",
-) as flexprice:
-    # Ingest an event
-    result = flexprice.events.ingest_event(
+api_key = os.getenv("FLEXPRICE_API_KEY", "YOUR_API_KEY")
+server_url = os.getenv(
+    "FLEXPRICE_API_HOST", "https://us.api.flexprice.io/v1"
+)
+
+with Flexprice(server_url=server_url, api_key_auth=api_key) as client:
+    external_id = "customer-123"
+    client.customers.create_customer(
+        external_id=external_id,
+        email="user@example.com",
+        name="Example Customer",
+    )
+    result = client.events.ingest_event(
         request={
             "event_name": "Sample Event",
-            "external_customer_id": "customer-123",
+            "external_customer_id": external_id,
             "properties": {"source": "python_app", "environment": "test"},
             "source": "python_app",
         }
@@ -52,14 +68,18 @@ The same client supports async when used as an async context manager:
 
 ```python
 import asyncio
+import os
 from flexprice import Flexprice
 
 async def main():
+    server_url = os.getenv(
+        "FLEXPRICE_API_HOST", "https://us.api.flexprice.io/v1"
+    )
     async with Flexprice(
-        server_url="https://us.api.flexprice.io/v1",
-        api_key_auth="YOUR_API_KEY",
-    ) as flexprice:
-        result = await flexprice.events.ingest_event_async(
+        server_url=server_url,
+        api_key_auth=os.getenv("FLEXPRICE_API_KEY", "YOUR_API_KEY"),
+    ) as client:
+        result = await client.events.ingest_event_async(
             request={
                 "event_name": "Sample Event",
                 "external_customer_id": "customer-123",
@@ -75,7 +95,8 @@ asyncio.run(main())
 ## Authentication
 
 - Pass your API key as `api_key_auth` when creating the client. The SDK sends it in the `x-api-key` header.
-- Prefer environment variables (e.g. `FLEXPRICE_API_KEY`) and load them in code; get keys from your [FlexPrice dashboard](https://app.flexprice.io) or docs.
+- Set `FLEXPRICE_API_HOST` to a full URL (see [Environment](#environment)) or use the default `https://us.api.flexprice.io/v1`.
+- Prefer environment variables; get keys from your [FlexPrice dashboard](https://app.flexprice.io) or docs.
 
 ## Error handling
 
@@ -104,7 +125,7 @@ For a full list of operations, see the [API reference](https://docs.flexprice.io
 ## Troubleshooting
 
 - **Missing or invalid API key:** Ensure `api_key_auth` is set (or set `FLEXPRICE_API_KEY` and pass it in). Keys are for server-side use only.
-- **Wrong server URL:** Use `https://us.api.flexprice.io/v1`. Always include `/v1`; no trailing space or slash.
+- **Wrong server URL:** Use a full URL such as `https://us.api.flexprice.io/v1` (include `/v1`; no trailing slash).
 - **4xx/5xx on ingest:** Event ingest returns 202 Accepted; for errors, check request fields (`event_name`, `external_customer_id`, `properties`, `source`) against the [API docs](https://docs.flexprice.io).
 
 ## Handling Webhooks
@@ -173,3 +194,4 @@ def handle_webhook(raw_body: str) -> None:
 
 - [FlexPrice API documentation](https://docs.flexprice.io)
 - [Python SDK examples](examples/) in this repo
+- [SDK integration tests](../tests/README.md) — different `FLEXPRICE_API_HOST` shape for automated tests
