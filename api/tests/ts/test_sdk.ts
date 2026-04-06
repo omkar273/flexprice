@@ -2,7 +2,7 @@
 
 /**
  * Flexprice TypeScript SDK - API tests.
- * Default: published @flexprice/sdk@2.1.0 (see package.json).
+ * Default: published @flexprice/sdk@2.1.1 (see package.json).
  * Local monorepo SDK: `npm run test:local` (requires `npm run build` in api/typescript).
  * Run from api/tests/ts: npm install && npm test   (or: npx ts-node test_sdk.ts)
  * Requires: FLEXPRICE_API_KEY, FLEXPRICE_API_HOST (must include /v1, e.g. api.cloud.flexprice.io/v1; no trailing space or slash).
