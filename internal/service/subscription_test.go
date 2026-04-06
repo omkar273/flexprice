@@ -1126,6 +1126,162 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithInheritanceChildren
 	s.Equal(resp.ID, *inherited[0].ParentSubscriptionID)
 }
 
+func (s *SubscriptionServiceSuite) TestExecuteSubscriptionModify_StandaloneAddsInherited() {
+	ctx := s.GetContext()
+	parent, _, err := s.GetStores().SubscriptionRepo.GetWithLineItems(ctx, s.testData.subscription.ID)
+	s.NoError(err)
+	parent.SubscriptionType = types.SubscriptionTypeStandalone
+	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, parent))
+
+	childExternal := "ext_modify_child"
+	child := &customer.Customer{
+		ID:         types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+		ExternalID: childExternal,
+		Name:       "Modify Child",
+		Email:      "modify-child@example.com",
+		BaseModel:  types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CustomerRepo.Create(ctx, child))
+
+	resp, err := s.service.ExecuteSubscriptionModify(ctx, parent.ID, dto.ExecuteSubscriptionInheritanceRequest{
+		ExternalCustomerIDsToInheritSubscription: []string{childExternal},
+	})
+	s.NoError(err)
+	s.NotNil(resp)
+	s.Equal(types.SubscriptionTypeParent, resp.SubscriptionType)
+
+	filter := types.NewNoLimitSubscriptionFilter()
+	filter.ParentSubscriptionIDs = []string{parent.ID}
+	filter.SubscriptionTypes = []types.SubscriptionType{types.SubscriptionTypeInherited}
+	inherited, err := s.GetStores().SubscriptionRepo.List(ctx, filter)
+	s.NoError(err)
+	s.Len(inherited, 1)
+	s.Equal(child.ID, inherited[0].CustomerID)
+	s.Equal(types.SubscriptionTypeInherited, inherited[0].SubscriptionType)
+}
+
+func (s *SubscriptionServiceSuite) TestExecuteSubscriptionModify_RejectedDuplicateChild() {
+	ctx := s.GetContext()
+	parent, _, err := s.GetStores().SubscriptionRepo.GetWithLineItems(ctx, s.testData.subscription.ID)
+	s.NoError(err)
+	parent.SubscriptionType = types.SubscriptionTypeStandalone
+	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, parent))
+
+	childExternal := "ext_modify_dup_child"
+	child := &customer.Customer{
+		ID:         types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+		ExternalID: childExternal,
+		Name:       "Dup Child",
+		Email:      "dup-child@example.com",
+		BaseModel:  types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CustomerRepo.Create(ctx, child))
+
+	_, err = s.service.ExecuteSubscriptionModify(ctx, parent.ID, dto.ExecuteSubscriptionInheritanceRequest{
+		ExternalCustomerIDsToInheritSubscription: []string{childExternal},
+	})
+	s.NoError(err)
+
+	_, err = s.service.ExecuteSubscriptionModify(ctx, parent.ID, dto.ExecuteSubscriptionInheritanceRequest{
+		ExternalCustomerIDsToInheritSubscription: []string{childExternal},
+	})
+	s.Require().Error(err)
+	s.Contains(err.Error(), "already inherits")
+}
+
+func (s *SubscriptionServiceSuite) TestExecuteSubscriptionModify_RejectedForInheritedSubscriptionID() {
+	ctx := s.GetContext()
+	parent := *s.testData.subscription
+	parent.SubscriptionType = types.SubscriptionTypeParent
+	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, &parent))
+
+	child := &customer.Customer{
+		ID:         types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+		ExternalID: "ext_inherited_target",
+		Name:       "Child",
+		Email:      "inherited-target@example.com",
+		BaseModel:  types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CustomerRepo.Create(ctx, child))
+
+	inherited := &subscription.Subscription{
+		ID:                     types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
+		CustomerID:             child.ID,
+		PlanID:                 parent.PlanID,
+		Currency:               parent.Currency,
+		SubscriptionStatus:     types.SubscriptionStatusActive,
+		BillingAnchor:          parent.BillingAnchor,
+		BillingCycle:           parent.BillingCycle,
+		StartDate:              parent.StartDate,
+		EndDate:                parent.EndDate,
+		CurrentPeriodStart:     parent.CurrentPeriodStart,
+		CurrentPeriodEnd:       parent.CurrentPeriodEnd,
+		BillingCadence:         types.BILLING_CADENCE_RECURRING,
+		BillingPeriod:          parent.BillingPeriod,
+		BillingPeriodCount:     parent.BillingPeriodCount,
+		Version:                1,
+		EnvironmentID:          parent.EnvironmentID,
+		ParentSubscriptionID:   &parent.ID,
+		SubscriptionType:       types.SubscriptionTypeInherited,
+		BaseModel:              types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.Create(ctx, inherited))
+
+	_, err := s.service.ExecuteSubscriptionModify(ctx, inherited.ID, dto.ExecuteSubscriptionInheritanceRequest{
+		ExternalCustomerIDsToInheritSubscription: []string{"unused_ext_id"},
+	})
+	s.Require().Error(err)
+	s.Contains(err.Error(), "inherited subscription cannot add")
+}
+
+func (s *SubscriptionServiceSuite) TestCancelSubscription_RejectedForInheritedSubscription() {
+	ctx := s.GetContext()
+	parent, _, err := s.GetStores().SubscriptionRepo.GetWithLineItems(ctx, s.testData.subscription.ID)
+	s.NoError(err)
+	parent.SubscriptionType = types.SubscriptionTypeParent
+	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, parent))
+
+	child := &customer.Customer{
+		ID:         types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+		ExternalID: "ext_cancel_inherited_child",
+		Name:       "Cancel Inherited Child",
+		Email:      "cancel-inherited@example.com",
+		BaseModel:  types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CustomerRepo.Create(ctx, child))
+
+	inherited := &subscription.Subscription{
+		ID:                     types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
+		CustomerID:             child.ID,
+		PlanID:                 parent.PlanID,
+		Currency:               parent.Currency,
+		SubscriptionStatus:     types.SubscriptionStatusActive,
+		BillingAnchor:          parent.BillingAnchor,
+		BillingCycle:           parent.BillingCycle,
+		StartDate:              parent.StartDate,
+		EndDate:                parent.EndDate,
+		CurrentPeriodStart:     parent.CurrentPeriodStart,
+		CurrentPeriodEnd:       parent.CurrentPeriodEnd,
+		BillingCadence:         types.BILLING_CADENCE_RECURRING,
+		BillingPeriod:          parent.BillingPeriod,
+		BillingPeriodCount:     parent.BillingPeriodCount,
+		Version:                1,
+		EnvironmentID:          parent.EnvironmentID,
+		ParentSubscriptionID:   &parent.ID,
+		SubscriptionType:       types.SubscriptionTypeInherited,
+		BaseModel:              types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.Create(ctx, inherited))
+
+	_, err = s.service.CancelSubscription(ctx, inherited.ID, &dto.CancelSubscriptionRequest{
+		CancellationType:  types.CancellationTypeImmediate,
+		ProrationBehavior: types.ProrationBehaviorNone,
+		Reason:            "test",
+	})
+	s.Require().Error(err)
+	s.Contains(err.Error(), "inherited subscription cannot be cancelled directly")
+}
+
 func (s *SubscriptionServiceSuite) TestCreateSubscriptionSubscriberRejectedWhenChildHasInheritedSubscription() {
 	ctx := s.GetContext()
 
