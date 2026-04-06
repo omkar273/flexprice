@@ -3,9 +3,11 @@ info:
   title: Flexprice SDK and MCP customizations
   version: 2.1.0
 actions:
-  - target: '$'
+  # Retries: only safe, idempotent reads. Do not set at document root — that would
+  # retry POST/PUT/PATCH/DELETE (creates, cancels, ingestion) on 5xx/429/408.
+  - target: '$.paths.*.get'
     update:
-      x-speakeasy-retries:
+      x-speakeasy-retries: &flexprice_sdk_retries
         strategy: backoff
         backoff:
           initialInterval: 500
@@ -17,6 +19,67 @@ actions:
           - '429'
           - '5XX'
         retryConnectionErrors: true
+  # Read-only POST operations (complex queries / previews); same retry policy as GET.
+  - target: '$.paths["/addons/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/alerts/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/costs/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/coupons/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/customers/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/entitlements/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/events/query"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/features/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/groups/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/invoices/preview"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/invoices/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/plans/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/prices/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/prices/units/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/subscriptions/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/subscriptions/{id}/change/preview"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/users/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/wallets/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/wallets/transactions/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
+  - target: '$.paths["/workflows/search"]["post"]'
+    update:
+      x-speakeasy-retries: *flexprice_sdk_retries
   - target: '$.paths["/payments"]["get"]'
     update:
       x-speakeasy-pagination:
