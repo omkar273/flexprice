@@ -97,16 +97,41 @@ def build_actions(spec: dict) -> list:
             })
 
     # ── 4. Patch timestamp fields with format: date-time ────────────────────
-    def _get_properties(schema: dict) -> dict:
-        """Return all properties from a schema, including those nested in allOf/anyOf/oneOf."""
-        props = dict(schema.get("properties", {}))
-        for combiner in ("allOf", "anyOf", "oneOf"):
-            for sub in schema.get(combiner, []):
-                props.update(sub.get("properties", {}))
-        return props
+    def _get_properties(schema: dict) -> list[tuple[str, dict, str]]:
+        """List (prop_name, prop_schema, path_suffix) for each property location.
+
+        path_suffix is the JSONPath fragment after the schema object up to its
+        ``properties`` map, e.g. ``.properties`` or ``.allOf[0].properties``, so the
+        overlay target is ``...schemas["Name"]{path_suffix}["propName"]``.
+        """
+        out: list[tuple[str, dict, str]] = []
+
+        def walk(node: dict, path_prefix: str) -> None:
+            props = node.get("properties")
+            if isinstance(props, dict):
+                suffix = f"{path_prefix}.properties" if path_prefix else ".properties"
+                for prop_name, prop in props.items():
+                    if isinstance(prop, dict):
+                        out.append((prop_name, prop, suffix))
+            for combiner in ("allOf", "anyOf", "oneOf"):
+                subs = node.get(combiner)
+                if not isinstance(subs, list):
+                    continue
+                for i, sub in enumerate(subs):
+                    if isinstance(sub, dict):
+                        child = (
+                            f"{path_prefix}.{combiner}[{i}]"
+                            if path_prefix
+                            else f".{combiner}[{i}]"
+                        )
+                        walk(sub, child)
+
+        if isinstance(schema, dict):
+            walk(schema, "")
+        return out
 
     for schema_name, schema in schemas.items():
-        for prop_name, prop in _get_properties(schema).items():
+        for prop_name, prop, path_suffix in _get_properties(schema):
             if (
                 prop.get("type") == "string"
                 and prop.get("format") != "date-time"
@@ -115,7 +140,7 @@ def build_actions(spec: dict) -> list:
                 actions.append({
                     "target": (
                         f"$.components.schemas{quote(schema_name)}"
-                        f".properties{quote(prop_name)}"
+                        f"{path_suffix}{quote(prop_name)}"
                     ),
                     "update": {"format": "date-time"},
                 })
