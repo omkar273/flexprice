@@ -15,13 +15,13 @@ import (
 	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
-// FlexPrice Go SDK API tests (module github.com/flexprice/go-sdk/v2 v2.1.0 from GitHub).
+// FlexPrice Go SDK API tests (published module github.com/flexprice/go-sdk/v2 v2.1.1).
 // List payloads use *Response types (e.g. types.CustomerResponse) from the generated Go SDK.
 // If sum.golang.org has not indexed the tag yet, fetch with: GOPRIVATE=github.com/flexprice/* (see Makefile test-sdk).
 // Run from api/tests/go: go run -tags published test_sdk.go
 // Requires: FLEXPRICE_API_KEY, FLEXPRICE_API_HOST (must include /v1, e.g. api.cloud.flexprice.io/v1; no trailing space or slash).
 // defaultGoSDKRepo is the Go SDK module path and version used for test output.
-const defaultGoSDKRepo = "github.com/flexprice/go-sdk/v2 v2.1.0"
+const defaultGoSDKRepo = "github.com/flexprice/go-sdk/v2 v2.1.1"
 
 // strPtr returns a *string for optional SDK fields (SDK models use *string, not types.String).
 func strPtr(s string) *string { return &s }

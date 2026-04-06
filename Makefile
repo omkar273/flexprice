@@ -533,7 +533,22 @@ test-sdk test-sdks:
 	@echo "Running SDK tests (Go, Python, TypeScript)..."
 	@echo "  FLEXPRICE_API_HOST=$$FLEXPRICE_API_HOST"
 	@echo "--- Go (install deps + test) ---"; (cd api/tests/go && GOPRIVATE=github.com/flexprice/* go mod tidy && GOPRIVATE=github.com/flexprice/* go mod download && GOPRIVATE=github.com/flexprice/* go run -tags published test_sdk.go) || true
-	@echo "--- Python (install deps + test) ---"; (cd api/tests/python && ( [ -x .venv/bin/python ] && .venv/bin/python -m pip --version >/dev/null 2>&1 || (rm -rf .venv && python3 -m venv .venv) ) && .venv/bin/python -m pip install -q --upgrade pip setuptools wheel && .venv/bin/python -m pip install -q -r requirements.txt && .venv/bin/python test_sdk.py) || true
+	@echo "--- Python (install deps + test) ---"; (cd api/tests/python && \
+		PY=; \
+		for c in python3.13 python3.12 python3.11 python3.10 python3; do \
+			if command -v $$c >/dev/null 2>&1 && $$c -c 'import sys; sys.exit(0 if sys.version_info>=(3,10) else 1)' 2>/dev/null; then PY=$$c; break; fi; \
+		done; \
+		if [ -z "$$PY" ]; then \
+			echo "❌ Python 3.10+ required (PyPI flexprice). macOS: brew install python@3.12  (then re-run; we try python3.12 … python3.10 before python3)"; \
+			exit 1; \
+		fi; \
+		if [ ! -d .venv ] || ! [ -x .venv/bin/python ] || ! .venv/bin/python -c 'import sys; sys.exit(0 if sys.version_info>=(3,10) else 1)' 2>/dev/null || ! .venv/bin/python -m pip --version >/dev/null 2>&1; then \
+			rm -rf .venv && $$PY -m venv .venv; \
+		fi && \
+		echo "  using $$(.venv/bin/python --version)" && \
+		.venv/bin/python -m pip install -q --upgrade pip setuptools wheel && \
+		.venv/bin/python -m pip install -q -r requirements.txt && \
+		.venv/bin/python test_sdk.py) || true
 	@echo "--- TypeScript (install deps + test) ---"; (cd api/tests/ts && npm install && npm test) || true
 	@echo "✓ All SDK tests finished"
 
