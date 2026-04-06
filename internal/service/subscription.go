@@ -1866,10 +1866,8 @@ func (s *subscriptionService) CancelSubscription(
 			return err
 		}
 
-		if subscription.SubscriptionType == types.SubscriptionTypeParent {
-			if err := s.cascadeCancelToInherited(ctx, subscription, req); err != nil {
-				return err
-			}
+		if err := s.CascadeCancelToInheritedSubscriptions(ctx, subscription); err != nil {
+			return err
 		}
 
 		// Step 7a: Cancel all addons on the subscription (mark associations cancelled, terminate addon line items)
@@ -2977,8 +2975,8 @@ func (s *subscriptionService) processSubscriptionPeriod(ctx context.Context, sub
 			return err
 		}
 
-		if sub.SubscriptionType == types.SubscriptionTypeParent && sub.SubscriptionStatus == types.SubscriptionStatusCancelled {
-			if err := s.cascadeCancelToInherited(ctx, sub, nil); err != nil {
+		if sub.SubscriptionStatus == types.SubscriptionStatusCancelled {
+			if err := s.CascadeCancelToInheritedSubscriptions(ctx, sub); err != nil {
 				return err
 			}
 		}
@@ -3195,6 +3193,30 @@ func (s *subscriptionService) MarkCancellationScheduleAsExecuted(ctx context.Con
 		"subscription_id", subscriptionID,
 		"executed_at", now)
 
+	return nil
+}
+
+// CascadeCancelToInheritedSubscriptions copies cancellation-related fields from a parent subscription to all INHERITED children. It is a no-op when the subscription is not SubscriptionTypeParent.
+func (s *subscriptionService) CascadeCancelToInheritedSubscriptions(ctx context.Context, parentSub *subscription.Subscription) error {
+	if parentSub.SubscriptionType != types.SubscriptionTypeParent {
+		return nil
+	}
+	children, err := s.getInheritedSubscriptions(ctx, parentSub.ID)
+	if err != nil {
+		return err
+	}
+	for _, child := range children {
+		child.SubscriptionStatus = parentSub.SubscriptionStatus
+		child.CancelledAt = parentSub.CancelledAt
+		child.CancelAt = parentSub.CancelAt
+		child.CancelAtPeriodEnd = parentSub.CancelAtPeriodEnd
+		child.EndDate = parentSub.EndDate
+		if err := s.SubRepo.Update(ctx, child); err != nil {
+			return ierr.WithError(err).
+				WithHintf("Failed to cascade cancel to inherited subscription %s", child.ID).
+				Mark(ierr.ErrInternal)
+		}
+	}
 	return nil
 }
 
@@ -6646,27 +6668,6 @@ func (s *subscriptionService) getInheritedSubscriptions(ctx context.Context, par
 	}
 
 	return s.SubRepo.List(ctx, filter)
-}
-
-// cascadeCancelToInherited cancels all INHERITED child subscriptions when the parent is cancelled.
-func (s *subscriptionService) cascadeCancelToInherited(ctx context.Context, parentSub *subscription.Subscription, _ *dto.CancelSubscriptionRequest) error {
-	children, err := s.getInheritedSubscriptions(ctx, parentSub.ID)
-	if err != nil {
-		return err
-	}
-	for _, child := range children {
-		child.SubscriptionStatus = parentSub.SubscriptionStatus
-		child.CancelledAt = parentSub.CancelledAt
-		child.CancelAt = parentSub.CancelAt
-		child.CancelAtPeriodEnd = parentSub.CancelAtPeriodEnd
-		child.EndDate = parentSub.EndDate
-		if err := s.SubRepo.Update(ctx, child); err != nil {
-			return ierr.WithError(err).
-				WithHintf("Failed to cascade cancel to inherited subscription %s", child.ID).
-				Mark(ierr.ErrInternal)
-		}
-	}
-	return nil
 }
 
 // cascadePauseToInherited mirrors pause status on all INHERITED child subscriptions.

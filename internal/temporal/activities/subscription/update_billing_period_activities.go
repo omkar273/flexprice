@@ -311,13 +311,19 @@ func (s *BillingActivities) CheckCancellationActivity(
 				return err
 			}
 
-			// Update the cancellation schedule status to executed
 			subscriptionService := service.NewSubscriptionService(s.serviceParams)
+
+			// Update the cancellation schedule status to executed
 			if err := subscriptionService.MarkCancellationScheduleAsExecuted(ctx, sub.ID); err != nil {
 				s.logger.Errorw("failed to mark cancellation schedule as executed",
 					"subscription_id", sub.ID,
 					"error", err)
 				// Don't fail the transaction, just log the error
+			}
+
+			// Match CancelSubscription / cron processSubscriptionPeriod: cancel inherited child subs with the parent
+			if err := subscriptionService.CascadeCancelToInheritedSubscriptions(ctx, sub); err != nil {
+				return err
 			}
 
 			return nil
