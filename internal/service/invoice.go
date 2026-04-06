@@ -44,6 +44,7 @@ type InvoiceService interface {
 	CreateDraftInvoiceForSubscription(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time, referencePoint types.InvoiceReferencePoint) (*dto.InvoiceResponse, error)
 	ComputeInvoice(ctx context.Context, invoiceID string, req *dto.InvoiceComputeRequest) (skipped bool, err error)
 	GetPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error)
+	GetInternalPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error)
 	GetCustomerInvoiceSummary(ctx context.Context, customerID string, currency string) (*dto.CustomerInvoiceSummary, error)
 	GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.GetUnpaidInvoicesToBePaidRequest) (*dto.GetUnpaidInvoicesToBePaidResponse, error)
 	GetCustomerMultiCurrencyInvoiceSummary(ctx context.Context, customerID string) (*dto.CustomerMultiCurrencyInvoiceSummary, error)
@@ -1801,6 +1802,57 @@ func (s *invoiceService) GetPreviewInvoice(ctx context.Context, req dto.GetPrevi
 	}
 
 	s.Logger.InfowCtx(ctx, "prepared invoice request for preview",
+		"invoice_request", invReq)
+
+	if req.HideZeroChargesLineItems {
+		invReq.LineItems = lo.Filter(invReq.LineItems, func(item dto.CreateInvoiceLineItemRequest, _ int) bool {
+			return !item.Amount.IsZero()
+		})
+	}
+
+	// Create a draft invoice object for preview; ToInvoice applies preview discounts and taxes
+	inv, err := invReq.ToInvoice(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create preview response
+	response := dto.NewInvoiceResponse(inv)
+
+	// Get customer information
+	customer, err := s.CustomerRepo.Get(ctx, inv.CustomerID)
+	if err != nil {
+		return nil, err
+	}
+	response.WithCustomer(&dto.CustomerResponse{Customer: customer})
+
+	return response, nil
+}
+
+func (s *invoiceService) GetInternalPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error) {
+	billingService := NewBillingService(s.ServiceParams)
+
+	sub, _, err := s.SubRepo.GetWithLineItems(ctx, req.SubscriptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.PeriodStart == nil {
+		req.PeriodStart = &sub.CurrentPeriodStart
+	}
+
+	if req.PeriodEnd == nil {
+		req.PeriodEnd = &sub.CurrentPeriodEnd
+	}
+
+	// Prepare invoice request using billing service with the internal preview reference point
+	invReq, err := billingService.PrepareSubscriptionInvoiceRequest(
+		ctx, sub, *req.PeriodStart, *req.PeriodEnd, types.ReferencePointInternalPreview, "")
+	if err != nil {
+		return nil, err
+	}
+
+	s.Logger.InfowCtx(ctx, "prepared invoice request for internal preview",
 		"invoice_request", invReq)
 
 	if req.HideZeroChargesLineItems {
