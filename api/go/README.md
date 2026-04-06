@@ -187,17 +187,6 @@ err = asyncClient.EnqueueWithOptions(flexprice.EventOptions{
 
 ## Idempotent requests
 
-Use `WithIdempotencyKey` on any POST request to safely retry without risk of duplicates:
-
-```go
-resp, err := client.Customers.CreateCustomer(ctx, types.CreateCustomerRequest{
-    ExternalID: "acme-001",
-    Name:       flexprice.String("Acme Corp"),
-}, flexprice.WithIdempotencyKey("create-customer-acme-001"))
-```
-
-Stripe and Orb use the same `Idempotency-Key` header convention. The key should be unique per logical operation — a UUID or a deterministic hash of the operation's inputs works well.
-
 ## Authentication
 
 - Set the API key via the `x-api-key` header. The SDK uses `flexprice.WithSecurity(apiKey)` when initializing.
@@ -223,6 +212,7 @@ For a full list of operations, see the [API reference](https://docs.flexprice.io
 Flexprice sends webhook events to your server for async updates on payments, invoices, subscriptions, wallets, and more.
 
 **Flow:**
+
 1. Register your endpoint URL in the Flexprice dashboard
 2. Receive `POST` with raw JSON body
 3. Read `event_type` to route
@@ -307,18 +297,19 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 
 ### Event types
 
-| Category | Events |
-|---|---|
-| **Payment** | `payment.created` · `payment.updated` · `payment.success` · `payment.failed` · `payment.pending` |
-| **Invoice** | `invoice.create.drafted` · `invoice.update` · `invoice.update.finalized` · `invoice.update.payment` · `invoice.update.voided` · `invoice.payment.overdue` · `invoice.communication.triggered` |
-| **Subscription** | `subscription.created` · `subscription.draft.created` · `subscription.activated` · `subscription.updated` · `subscription.paused` · `subscription.resumed` · `subscription.cancelled` · `subscription.renewal.due` |
-| **Subscription Phase** | `subscription.phase.created` · `subscription.phase.updated` · `subscription.phase.deleted` |
-| **Customer** | `customer.created` · `customer.updated` · `customer.deleted` |
-| **Wallet** | `wallet.created` · `wallet.updated` · `wallet.terminated` · `wallet.transaction.created` · `wallet.credit_balance.dropped` · `wallet.credit_balance.recovered` · `wallet.ongoing_balance.dropped` · `wallet.ongoing_balance.recovered` |
-| **Feature / Entitlement** | `feature.created` · `feature.updated` · `feature.deleted` · `feature.wallet_balance.alert` · `entitlement.created` · `entitlement.updated` · `entitlement.deleted` |
-| **Credit Note** | `credit_note.created` · `credit_note.updated` |
+| Category                  | Events                                                                                                                                                                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Payment**               | `payment.created` · `payment.updated` · `payment.success` · `payment.failed` · `payment.pending`                                                                                                                                       |
+| **Invoice**               | `invoice.create.drafted` · `invoice.update` · `invoice.update.finalized` · `invoice.update.payment` · `invoice.update.voided` · `invoice.payment.overdue` · `invoice.communication.triggered`                                          |
+| **Subscription**          | `subscription.created` · `subscription.draft.created` · `subscription.activated` · `subscription.updated` · `subscription.paused` · `subscription.resumed` · `subscription.cancelled` · `subscription.renewal.due`                     |
+| **Subscription Phase**    | `subscription.phase.created` · `subscription.phase.updated` · `subscription.phase.deleted`                                                                                                                                             |
+| **Customer**              | `customer.created` · `customer.updated` · `customer.deleted`                                                                                                                                                                           |
+| **Wallet**                | `wallet.created` · `wallet.updated` · `wallet.terminated` · `wallet.transaction.created` · `wallet.credit_balance.dropped` · `wallet.credit_balance.recovered` · `wallet.ongoing_balance.dropped` · `wallet.ongoing_balance.recovered` |
+| **Feature / Entitlement** | `feature.created` · `feature.updated` · `feature.deleted` · `feature.wallet_balance.alert` · `entitlement.created` · `entitlement.updated` · `entitlement.deleted`                                                                     |
+| **Credit Note**           | `credit_note.created` · `credit_note.updated`                                                                                                                                                                                          |
 
 **Production rules:**
+
 - Keep handlers idempotent — Flexprice retries on non-`2xx`
 - Return `200` for unknown event types — prevents unnecessary retries
 - Do heavy processing async — respond fast, queue the work

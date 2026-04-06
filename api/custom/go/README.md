@@ -297,50 +297,6 @@ func main() {
 
 ## Idempotent requests
 
-Use `WithIdempotencyKey` on any POST request to safely retry without risk of duplicates:
-
-```go
-package main
-
-import (
-	"context"
-	"log"
-	"os"
-
-	"github.com/flexprice/go-sdk/v2"
-	"github.com/flexprice/go-sdk/v2/models/types"
-)
-
-func main() {
-	apiKey := os.Getenv("FLEXPRICE_API_KEY")
-	apiHost := os.Getenv("FLEXPRICE_API_HOST")
-	if apiHost == "" {
-		apiHost = "https://us.api.flexprice.io/v1"
-	}
-	if apiKey == "" {
-		log.Fatal("Set FLEXPRICE_API_KEY in your environment")
-	}
-
-	client := flexprice.New(
-		flexprice.WithServerURL(apiHost),
-		flexprice.WithSecurity(apiKey),
-	)
-	ctx := context.Background()
-
-	resp, err := client.Customers.CreateCustomer(ctx, types.CreateCustomerRequest{
-		ExternalID: "acme-001",
-		Name:       flexprice.String("Acme Corp"),
-	}, flexprice.WithIdempotencyKey("create-customer-acme-001"))
-	if err != nil {
-		log.Fatalf("CreateCustomer: %v", err)
-	}
-	if resp != nil {
-		log.Println("CreateCustomer succeeded")
-	}
-}
-```
-
-Stripe and Orb use the same `Idempotency-Key` header convention. The key should be unique per logical operation — a UUID or a deterministic hash of the operation's inputs works well.
 
 ## Authentication
 
