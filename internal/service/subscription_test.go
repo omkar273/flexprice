@@ -134,7 +134,7 @@ func (s *SubscriptionServiceSuite) TestAddAddonToSubscriptionLineItemCommitments
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
 			BillingCadence:     types.BILLING_CADENCE_RECURRING,
-			InvoiceCadence:     types.InvoiceCadenceAdvance,
+			InvoiceCadence:     types.InvoiceCadenceArrear,
 			MeterID:            meterID,
 			BaseModel:          types.GetDefaultBaseModel(ctx),
 		}
@@ -390,7 +390,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_TIERED,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		TierMode:           types.BILLING_TIER_SLAB,
 		MeterID:            s.testData.meters.apiCalls.ID,
 		Tiers: []price.PriceTier{
@@ -414,7 +414,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		MeterID:            s.testData.meters.storage.ID,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -431,7 +431,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		MeterID:            s.testData.meters.storageArchive.ID,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -450,7 +450,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_TIERED,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		TierMode:           types.BILLING_TIER_SLAB,
 		MeterID:            s.testData.meters.apiCalls.ID,
 		Tiers: []price.PriceTier{
@@ -473,7 +473,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		MeterID:            s.testData.meters.storage.ID,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -490,7 +490,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		MeterID:            s.testData.meters.storageArchive.ID,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -1566,7 +1566,7 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
 			BillingCadence:     types.BILLING_CADENCE_RECURRING,
-			InvoiceCadence:     types.InvoiceCadenceAdvance,
+			InvoiceCadence:     types.InvoiceCadenceArrear,
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(ctx),
 		}
