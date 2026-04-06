@@ -33,8 +33,9 @@ ENTITY_RENAMES = {
 }
 
 # Timestamp-like field name patterns — any string field matching these gets format: date-time
+# Note: do not use _period — e.g. billing_period is an enum (MONTHLY), not a timestamp.
 TIMESTAMP_PATTERNS = re.compile(
-    r"(_at|_date|_start|_end|_time|_anchor|_period|expires_at|expiry|"
+    r"(_at|_date|_start|_end|_time|_anchor|expires_at|expiry|"
     r"due_date|close_time|archived_at|applied_at|executed_at|failed_at|"
     r"finalized_at|completed_at|last_used_at|balance_updated_at)$"
 )

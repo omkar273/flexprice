@@ -128,7 +128,8 @@ function main() {
   //    Matches the same heuristic used by generate_overlay.py so the spec itself
   //    contains the format info (required for the ≥150 validation criterion) in
   //    addition to the overlay patches that Speakeasy applies at generation time.
-  const TIMESTAMP_RE = /(_at|_date|_start|_end|_time|_anchor|_period|expires_at|expiry|due_date|close_time|archived_at|applied_at|executed_at|failed_at|finalized_at|completed_at|last_used_at|balance_updated_at)$/;
+  // Note: do not use _period — e.g. billing_period is types.BillingPeriod (MONTHLY), not a timestamp.
+  const TIMESTAMP_RE = /(_at|_date|_start|_end|_time|_anchor|expires_at|expiry|due_date|close_time|archived_at|applied_at|executed_at|failed_at|finalized_at|completed_at|last_used_at|balance_updated_at)$/;
 
   function getProperties(schema) {
     const props = Object.assign({}, schema.properties || {});
@@ -152,9 +153,31 @@ function main() {
     }
   }
 
+  // 4b. Remove mistaken date-time (legacy: _period suffix used to match billing_period).
+  const NOT_DATE_TIME_STRING_FIELDS = new Set(['billing_period']);
+  let stripped = 0;
+  for (const schema of Object.values(schemas)) {
+    if (!schema || typeof schema !== 'object') continue;
+    const props = getProperties(schema);
+    for (const [propName, prop] of Object.entries(props)) {
+      if (
+        NOT_DATE_TIME_STRING_FIELDS.has(propName) &&
+        prop &&
+        prop.type === 'string' &&
+        prop.format === 'date-time'
+      ) {
+        delete prop.format;
+        stripped++;
+      }
+    }
+  }
+
   writeFileSync(specPath, JSON.stringify(spec, null, 2) + '\n', 'utf8');
   console.log(`Added x-speakeasy-name-override to ${count} prefixed schemas in swagger-3-0.json.`);
   console.log(`Patched ${dtCount} timestamp fields with format: date-time in swagger-3-0.json.`);
+  if (stripped > 0) {
+    console.log(`Stripped incorrect format: date-time from ${stripped} billing_period field(s).`);
+  }
 }
 
 main();

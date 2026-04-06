@@ -514,7 +514,7 @@ test-sdk test-sdks:
 		echo ""; \
 		echo "❌ SDK tests need API credentials. Set and export:"; \
 		echo "   export FLEXPRICE_API_KEY=\"your-api-key\""; \
-		echo "   export FLEXPRICE_API_HOST=\"us.api.flexprice.io\"   # or localhost:8080 for local"; \
+		echo "   export FLEXPRICE_API_HOST=\"us.api.flexprice.io/v1\"   # or localhost:8080/v1 for local"; \
 		echo ""; \
 		exit 1; \
 	fi
