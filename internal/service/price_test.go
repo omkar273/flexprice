@@ -91,7 +91,7 @@ func (s *PriceServiceSuite) TestCreatePrice() {
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_TIERED,
 		TierMode:           types.BILLING_TIER_SLAB,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		Description:        "Test Price",
 		Metadata:           map[string]string{"key": "value"},
@@ -1709,7 +1709,7 @@ func (s *PriceServiceSuite) TestUpdatePrice_CustomPriceUnitValidation() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingCadence:     types.BILLING_CADENCE_RECURRING,
-			InvoiceCadence:     types.InvoiceCadenceAdvance,
+			InvoiceCadence:     types.InvoiceCadenceArrear,
 		}
 		_ = s.priceRepo.Create(s.ctx, customPrice)
 
@@ -1768,7 +1768,7 @@ func (s *PriceServiceSuite) TestUpdatePrice_CustomPriceUnitValidation() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingCadence:     types.BILLING_CADENCE_RECURRING,
-			InvoiceCadence:     types.InvoiceCadenceAdvance,
+			InvoiceCadence:     types.InvoiceCadenceArrear,
 			PriceUnitTiers: []price.PriceTier{
 				{
 					UpTo:       &upTo10,
