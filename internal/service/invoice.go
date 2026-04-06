@@ -367,12 +367,14 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 	}
 
 	// check if the sub is of type inherited and if so, skip computation
-	sub, err := s.SubRepo.Get(ctx, lo.FromPtr(inv.SubscriptionID))
-	if err != nil {
-		return false, err
-	}
-	if sub.SubscriptionType == types.SubscriptionTypeInherited {
-		return false, nil
+	if inv.SubscriptionID != nil {
+		sub, err := s.SubRepo.Get(ctx, *inv.SubscriptionID)
+		if err != nil {
+			return false, err
+		}
+		if sub.SubscriptionType == types.SubscriptionTypeInherited {
+			return true, nil
+		}
 	}
 
 	// 2. Compute the request OUTSIDE the lock (expensive for subscription invoices).
