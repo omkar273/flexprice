@@ -7199,6 +7199,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/subscriptions/{id}/modify/execute": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Attach additional child customers (by external ID) to an active standalone or parent subscription; creates inherited skeleton subscriptions for each. The subscription must be active.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Add customers to subscription inheritance",
+                "operationId": "executeSubscriptionModify",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "External customer IDs to inherit",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteSubscriptionInheritanceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                },
+                "x-scope": "write"
+            }
+        },
         "/subscriptions/{id}/pause": {
             "post": {
                 "security": [
@@ -11473,7 +11539,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coupon": {
-                    "$ref": "#/definitions/DomainCoupon"
+                    "$ref": "#/definitions/Coupon"
                 },
                 "coupon_id": {
                     "type": "string"
@@ -12015,7 +12081,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "cancel_at": {
-                    "description": "CancelAt is the custom date to cancel the subscription.\nRequired when CancellationType is \"scheduled_date\". Must be in the future.",
                     "type": "string"
                 },
                 "cancel_immediately_inovice_policy": {
@@ -12333,7 +12398,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coupon": {
-                    "$ref": "#/definitions/DomainCoupon"
+                    "$ref": "#/definitions/Coupon"
                 },
                 "coupon_id": {
                     "type": "string"
@@ -12923,6 +12988,13 @@ const docTemplate = `{
                     "description": "external_id is the unique identifier from your system to reference this customer (required)",
                     "type": "string"
                 },
+                "integration_entity_mapping": {
+                    "description": "integration_entity_mapping contains provider integration mappings for this customer",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CreateEntityIntegrationMappingRequest"
+                    }
+                },
                 "metadata": {
                     "description": "metadata contains additional key-value pairs for storing extra information",
                     "type": "object",
@@ -12932,14 +13004,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "name is the full name or company name of the customer",
-                    "type": "string"
-                },
-                "parent_customer_external_id": {
-                    "description": "Deprecated: See ParentCustomerID.\nparent_customer_external_id is the external ID of the parent customer from your system.\nExactly one of parent_customer_id or parent_customer_external_id may be provided.",
-                    "type": "string"
-                },
-                "parent_customer_id": {
-                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nThis field is accepted for backward compatibility but no hierarchy validations are enforced.\nparent_customer_id is the internal FlexPrice ID of the parent customer.",
                     "type": "string"
                 },
                 "skip_onboarding_workflow": {
@@ -13000,6 +13064,36 @@ const docTemplate = `{
                 },
                 "usage_reset_period": {
                     "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                }
+            }
+        },
+        "CreateEntityIntegrationMappingRequest": {
+            "type": "object",
+            "required": [
+                "entity_id",
+                "entity_type",
+                "provider_entity_id",
+                "provider_type"
+            ],
+            "properties": {
+                "entity_id": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "entity_type": {
+                    "$ref": "#/definitions/types.IntegrationEntityType"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "provider_entity_id": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "provider_type": {
+                    "type": "string",
+                    "maxLength": 50
                 }
             }
         },
@@ -13832,21 +13926,13 @@ const docTemplate = `{
                 "gateway_payment_method_id": {
                     "type": "string"
                 },
-                "invoice_billing": {
-                    "description": "Deprecated: Use invoicing_customer_id or invoicing_customer_external_id instead.\ninvoice_billing determines which customer should receive invoices for a subscription.\nSupported values: \"invoice_to_parent\" (uses the subscription customer's parent) or \"invoice_to_self\" (default).\nWill be removed in a future version.",
+                "inheritance": {
+                    "description": "Inheritance groups all customer-hierarchy fields.\nWhen provided with at least one child ID, the subscription becomes a PARENT type.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceBilling"
+                            "$ref": "#/definitions/SubscriptionInheritanceConfig"
                         }
                     ]
-                },
-                "invoicing_customer_external_id": {
-                    "description": "invoicing_customer_external_id is the external ID of the customer to use for invoicing.\nResolved internally to an internal customer ID via external ID lookup.\nMutually exclusive with invoicing_customer_id.",
-                    "type": "string"
-                },
-                "invoicing_customer_id": {
-                    "description": "invoicing_customer_id is the FlexPrice customer ID to use for invoicing.\nThis can differ from the subscription customer (e.g., a billing entity invoicing on behalf of another customer).\nMutually exclusive with invoicing_customer_external_id.",
-                    "type": "string"
                 },
                 "line_item_commitments": {
                     "description": "LineItemCommitments allows setting commitment configuration per line item (keyed by price_id)",
@@ -13897,10 +13983,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/OverrideLineItemRequest"
                     }
-                },
-                "parent_subscription_id": {
-                    "description": "ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)",
-                    "type": "string"
                 },
                 "payment_behavior": {
                     "description": "Payment behavior configuration",
@@ -14395,7 +14477,7 @@ const docTemplate = `{
                     "description": "customer contains the customer information associated with this credit note",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/DomainCustomer"
+                            "$ref": "#/definitions/Customer"
                         }
                     ]
                 },
@@ -14586,7 +14668,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "customer": {
-                    "$ref": "#/definitions/DomainCustomer"
+                    "$ref": "#/definitions/Customer"
                 },
                 "error": {
                     "$ref": "#/definitions/errors.ErrorResponse"
@@ -14681,13 +14763,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "Name is the name of the customer",
-                    "type": "string"
-                },
-                "parent_customer": {
-                    "$ref": "#/definitions/CustomerResponse"
-                },
-                "parent_customer_id": {
-                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer.",
                     "type": "string"
                 },
                 "status": {
@@ -14988,6 +15063,17 @@ const docTemplate = `{
                 },
                 "requestId": {
                     "type": "string"
+                }
+            }
+        },
+        "ExecuteSubscriptionInheritanceRequest": {
+            "type": "object",
+            "properties": {
+                "external_customer_ids_to_inherit_subscription": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -15385,9 +15471,6 @@ const docTemplate = `{
         },
         "GetUsageAnalyticsRequest": {
             "type": "object",
-            "required": [
-                "external_customer_id"
-            ],
             "properties": {
                 "end_time": {
                     "type": "string"
@@ -15400,6 +15483,7 @@ const docTemplate = `{
                     }
                 },
                 "external_customer_id": {
+                    "description": "ExternalCustomerID is the single external customer ID.\nOptional when ExternalCustomerIDs is provided; required otherwise.",
                     "type": "string"
                 },
                 "feature_ids": {
@@ -15414,6 +15498,10 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "include_children": {
+                    "description": "IncludeChildren when true folds child customers' usage into the single aggregated total.\nDefault: false.",
+                    "type": "boolean"
                 },
                 "property_filters": {
                     "description": "Property filters to filter the events by the keys in ` + "`" + `properties` + "`" + ` field of the event",
@@ -17563,6 +17651,23 @@ const docTemplate = `{
                 }
             }
         },
+        "SubscriptionInheritanceConfig": {
+            "type": "object",
+            "properties": {
+                "external_customer_ids_to_inherit_subscription": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "invoicing_customer_external_id": {
+                    "type": "string"
+                },
+                "parent_subscription_id": {
+                    "type": "string"
+                }
+            }
+        },
         "SubscriptionLineItemLookupResult": {
             "type": "object",
             "properties": {
@@ -18162,6 +18267,14 @@ const docTemplate = `{
                 "subscription_status": {
                     "$ref": "#/definitions/types.SubscriptionStatus"
                 },
+                "subscription_type": {
+                    "description": "SubscriptionType categorises the subscription within a customer hierarchy (standalone, parent, inherited).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionType"
+                        }
+                    ]
+                },
                 "tenant_id": {
                     "type": "string"
                 },
@@ -18388,6 +18501,14 @@ const docTemplate = `{
                 },
                 "subscription_status": {
                     "$ref": "#/definitions/types.SubscriptionStatus"
+                },
+                "subscription_type": {
+                    "description": "SubscriptionType categorises the subscription within a customer hierarchy (standalone, parent, inherited).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionType"
+                        }
+                    ]
                 },
                 "tenant_id": {
                     "type": "string"
@@ -19166,6 +19287,13 @@ const docTemplate = `{
                     "description": "external_id is the updated external identifier for the customer",
                     "type": "string"
                 },
+                "integration_entity_mapping": {
+                    "description": "integration_entity_mapping contains provider integration mappings for this customer",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CreateEntityIntegrationMappingRequest"
+                    }
+                },
                 "metadata": {
                     "description": "metadata contains updated key-value pairs that will replace existing metadata",
                     "type": "object",
@@ -19175,14 +19303,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "name is the updated name or company name for the customer",
-                    "type": "string"
-                },
-                "parent_customer_external_id": {
-                    "description": "Deprecated: See ParentCustomerID.\nparent_customer_external_id is the external ID of the parent customer from your system.\nExactly one of parent_customer_id or parent_customer_external_id may be provided.\nIf you provide the external ID, the parent customer value will be ignored.",
-                    "type": "string"
-                },
-                "parent_customer_id": {
-                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nThis field is accepted for backward compatibility but no hierarchy validations are enforced.\nparent_customer_id is the internal FlexPrice ID of the parent customer.",
                     "type": "string"
                 }
             }
@@ -19599,7 +19719,7 @@ const docTemplate = `{
                     "description": "Full addon object (only if expand includes \"addon\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/DomainAddon"
+                            "$ref": "#/definitions/Addon"
                         }
                     ]
                 },
@@ -19623,7 +19743,7 @@ const docTemplate = `{
                     "description": "Full feature object (only if expand includes \"feature\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/DomainFeature"
+                            "$ref": "#/definitions/Feature"
                         }
                     ]
                 },
@@ -19657,7 +19777,7 @@ const docTemplate = `{
                     "description": "Full plan object (only if expand includes \"plan\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/DomainPlan"
+                            "$ref": "#/definitions/Plan"
                         }
                     ]
                 },
@@ -20156,18 +20276,7 @@ const docTemplate = `{
                 }
             }
         },
-        "errors.ErrorDetail": {
-            "type": "object",
-            "properties": {
-                "internal_error": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "DomainAddon": {
+        "Addon": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -20212,7 +20321,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DomainCoupon": {
+        "Coupon": {
             "type": "object",
             "properties": {
                 "amount_off": {
@@ -20284,7 +20393,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DomainCustomer": {
+        "Customer": {
             "type": "object",
             "properties": {
                 "address_city": {
@@ -20344,10 +20453,6 @@ const docTemplate = `{
                     "description": "Name is the name of the customer",
                     "type": "string"
                 },
-                "parent_customer_id": {
-                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer.",
-                    "type": "string"
-                },
                 "status": {
                     "$ref": "#/definitions/types.Status"
                 },
@@ -20362,7 +20467,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DomainFeature": {
+        "Feature": {
             "type": "object",
             "properties": {
                 "alert_settings": {
@@ -20432,7 +20537,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DomainPlan": {
+        "Plan": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -20479,11 +20584,31 @@ const docTemplate = `{
         "errors.ErrorResponse": {
             "type": "object",
             "properties": {
-                "error": {
-                    "$ref": "#/definitions/errors.ErrorDetail"
+                "code": {
+                    "type": "string",
+                    "enum": [
+                        "not_found",
+                        "already_exists",
+                        "version_conflict",
+                        "validation_error",
+                        "invalid_operation",
+                        "permission_denied",
+                        "http_client_error",
+                        "database_error",
+                        "system_error",
+                        "internal_error",
+                        "service_unavailable"
+                    ]
                 },
-                "success": {
-                    "type": "boolean"
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "http_status_code": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -21202,12 +21327,6 @@ const docTemplate = `{
                         "desc"
                     ]
                 },
-                "parent_customer_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "sort": {
                     "type": "array",
                     "items": {
@@ -21648,17 +21767,6 @@ const docTemplate = `{
                 "IntegrationEntityTypeItem",
                 "IntegrationEntityTypeItemPrice",
                 "IntegrationEntityTypePrice"
-            ]
-        },
-        "types.InvoiceBilling": {
-            "type": "string",
-            "enum": [
-                "invoice_to_parent",
-                "invoice_to_self"
-            ],
-            "x-enum-varnames": [
-                "InvoiceBillingInvoiceToParent",
-                "InvoiceBillingInvoiceToSelf"
             ]
         },
         "types.InvoiceBillingReason": {
@@ -22543,6 +22651,13 @@ const docTemplate = `{
                     "description": "CustomerID filters by customer ID",
                     "type": "string"
                 },
+                "customer_ids": {
+                    "description": "CustomerIDs filters by customer IDs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "effective_date_for_update": {
                     "description": "EffectiveDateForUpdate selects subscriptions that need a billing-period pass on or before this time:\ncurrent_period_end \u003c= date OR (cancel_at IS NOT NULL AND cancel_at \u003c= date).\nWhen nil, period/cancel cutoff logic is not applied by this field (see TimeRangeFilter for legacy period-end filtering).",
                     "type": "string"
@@ -22620,6 +22735,13 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/types.SubscriptionStatus"
+                    }
+                },
+                "subscription_type": {
+                    "description": "SubscriptionType filters by subscription type",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.SubscriptionType"
                     }
                 },
                 "with_line_items": {
@@ -24054,6 +24176,19 @@ const docTemplate = `{
             "additionalProperties": {
                 "type": "string"
             }
+        },
+        "types.SubscriptionType": {
+            "type": "string",
+            "enum": [
+                "standalone",
+                "parent",
+                "inherited"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionTypeStandalone",
+                "SubscriptionTypeParent",
+                "SubscriptionTypeInherited"
+            ]
         },
         "webhookDto.AlertWebhookPayload": {
             "type": "object",
