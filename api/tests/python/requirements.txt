@@ -1,5 +1,4 @@
-# Local SDK from the monorepo (pre-release testing). Installs api/python in editable mode.
--e ../../python
-
-# Published SDK (optional): pip install -r requirements-published.txt
-# flexprice>=2.0.1
+# Published SDK from PyPI (pinned for integration tests).
+flexprice==2.1.0
+pydantic>=2
+httpx>=0.28

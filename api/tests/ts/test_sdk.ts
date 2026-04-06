@@ -2,8 +2,8 @@
 
 /**
  * Flexprice TypeScript SDK - API tests.
- * Default: local SDK via package.json dependency `file:../../typescript` (repo api/typescript).
- * Against npm latest: npm run test:published
+ * Published SDK: @flexprice/sdk@2.1.0 (see package.json).
+ * Re-pin: npm install --no-save @flexprice/sdk@2.1.0 (or npm run test:published).
  * Run from api/tests/ts: npm install && npm test   (or: npx ts-node test_sdk.ts)
  * Requires: FLEXPRICE_API_KEY, FLEXPRICE_API_HOST (must include /v1, e.g. api.cloud.flexprice.io/v1; no trailing space or slash).
  * Debug: FLEXPRICE_DEBUG=1 logs request/response and full error details on failure.
