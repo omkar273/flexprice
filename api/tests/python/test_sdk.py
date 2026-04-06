@@ -155,7 +155,7 @@ test_event_customer_id: Optional[str] = None
 def get_server_url_and_api_key():
     """Return (server_url, api_key) from environment."""
     api_key = os.getenv("FLEXPRICE_API_KEY")
-    api_host = os.getenv("FLEXPRICE_API_HOST", "us.api.flexprice.io")
+    api_host = os.getenv("FLEXPRICE_API_HOST", "us.api.flexprice.io/v1")
     if not api_key:
         print("❌ Missing FLEXPRICE_API_KEY environment variable")
         sys.exit(1)

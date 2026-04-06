@@ -18,9 +18,18 @@ Then in your code:
 import "github.com/flexprice/go-sdk/v2"
 ```
 
+## Environment
+
+| Variable | Required | Description |
+| -------- | -------- | ----------- |
+| `FLEXPRICE_API_KEY` | Yes | API key |
+| `FLEXPRICE_API_HOST` | Optional | Full base URL including `https://` and `/v1` (default: `https://us.api.flexprice.io/v1`). No trailing slash. |
+
+**Integration tests** in [api/tests/go/test_sdk.go](../tests/go/test_sdk.go) use a different env shape (host without scheme); see [api/tests/README.md](../tests/README.md).
+
 ## Quick start
 
-Initialize the client with your base URL and API key, then create a customer, ingest an event, and list events:
+Initialize the client, create a customer, ingest an event:
 
 ```go
 package main
@@ -41,38 +50,47 @@ func main() {
 	godotenv.Load()
 
 	apiKey := os.Getenv("FLEXPRICE_API_KEY")
-	apiHost := os.Getenv("FLEXPRICE_API_HOST")
-	if apiHost == "" {
-		apiHost = "https://us.api.flexprice.io/v1"
+	serverURL := os.Getenv("FLEXPRICE_API_HOST")
+	if serverURL == "" {
+		serverURL = "https://us.api.flexprice.io/v1"
 	}
-	// Base URL must include /v1 (no trailing space or slash).
 	if apiKey == "" {
 		log.Fatal("Set FLEXPRICE_API_KEY in .env or environment")
 	}
 
 	client := flexprice.New(
-		flexprice.WithServerURL(apiHost),
+		flexprice.WithServerURL(serverURL),
 		flexprice.WithSecurity(apiKey),
 	)
 	ctx := context.Background()
 
-	customerID := fmt.Sprintf("sample-customer-%d", time.Now().Unix())
+	externalID := fmt.Sprintf("sample-customer-%d", time.Now().Unix())
+	_, err := client.Customers.CreateCustomer(ctx, types.CreateCustomerRequest{
+		ExternalID: externalID,
+		Name:       flexprice.String("Sample Customer"),
+		Email:      flexprice.String("sample@example.com"),
+	})
+	if err != nil {
+		log.Fatalf("CreateCustomer: %v", err)
+	}
 
-	// Ingest an event
 	req := types.IngestEventRequest{
 		EventName:          "Sample Event",
-		ExternalCustomerID: customerID,
+		ExternalCustomerID: externalID,
 		Properties:         map[string]string{"source": "sample_app", "environment": "test"},
 	}
 	resp, err := client.Events.IngestEvent(ctx, req)
 	if err != nil {
 		log.Fatalf("IngestEvent: %v", err)
 	}
-	if resp != nil && resp.RawResponse != nil && resp.RawResponse.StatusCode == 202 {
-		fmt.Println("Event created (202).")
+	if resp != nil {
+		meta := resp.GetHTTPMeta()
+		if hr := meta.GetResponse(); hr != nil && hr.StatusCode == 202 {
+			fmt.Println("Event created (202).")
+		}
 	}
 
-	// List events: use client.Events.ListRawEvents(ctx, ...) with optional filters
+	// List events: client.Events.ListRawEvents(ctx, ...)
 	// See the API reference and the examples/ directory for more operations.
 }
 ```
@@ -99,16 +117,16 @@ import (
 
 func main() {
 	apiKey := os.Getenv("FLEXPRICE_API_KEY")
-	apiHost := os.Getenv("FLEXPRICE_API_HOST")
-	if apiHost == "" {
-		apiHost = "https://us.api.flexprice.io/v1"
+	serverURL := os.Getenv("FLEXPRICE_API_HOST")
+	if serverURL == "" {
+		serverURL = "https://us.api.flexprice.io/v1"
 	}
 	if apiKey == "" {
 		log.Fatal("Set FLEXPRICE_API_KEY in your environment")
 	}
 
 	client := flexprice.New(
-		flexprice.WithServerURL(apiHost),
+		flexprice.WithServerURL(serverURL),
 		flexprice.WithSecurity(apiKey),
 	)
 	ctx := context.Background()
@@ -193,16 +211,16 @@ import (
 
 func main() {
 	apiKey := os.Getenv("FLEXPRICE_API_KEY")
-	apiHost := os.Getenv("FLEXPRICE_API_HOST")
-	if apiHost == "" {
-		apiHost = "https://us.api.flexprice.io/v1"
+	serverURL := os.Getenv("FLEXPRICE_API_HOST")
+	if serverURL == "" {
+		serverURL = "https://us.api.flexprice.io/v1"
 	}
 	if apiKey == "" {
 		log.Fatal("Set FLEXPRICE_API_KEY in your environment")
 	}
 
 	client := flexprice.New(
-		flexprice.WithServerURL(apiHost),
+		flexprice.WithServerURL(serverURL),
 		flexprice.WithSecurity(apiKey),
 	)
 	ctx := context.Background()
@@ -255,16 +273,16 @@ import (
 
 func main() {
 	apiKey := os.Getenv("FLEXPRICE_API_KEY")
-	apiHost := os.Getenv("FLEXPRICE_API_HOST")
-	if apiHost == "" {
-		apiHost = "https://us.api.flexprice.io/v1"
+	serverURL := os.Getenv("FLEXPRICE_API_HOST")
+	if serverURL == "" {
+		serverURL = "https://us.api.flexprice.io/v1"
 	}
 	if apiKey == "" {
 		log.Fatal("Set FLEXPRICE_API_KEY in your environment")
 	}
 
 	client := flexprice.New(
-		flexprice.WithServerURL(apiHost),
+		flexprice.WithServerURL(serverURL),
 		flexprice.WithSecurity(apiKey),
 	)
 
@@ -300,8 +318,8 @@ func main() {
 
 ## Authentication
 
-- Set the API key via the `x-api-key` header. Initialize with `flexprice.New(flexprice.WithServerURL(baseURL), flexprice.WithSecurity(apiKey))` (or `WithServerIndex` / default server list if you omit `WithServerURL`).
-- Prefer environment variables (e.g. `FLEXPRICE_API_KEY`); get keys from your [FlexPrice dashboard](https://app.flexprice.io) or docs.
+- Set the API key via the `x-api-key` header. Initialize with `flexprice.New(flexprice.WithServerURL(serverURL), flexprice.WithSecurity(apiKey))`, where `serverURL` is a full URL (default `https://us.api.flexprice.io/v1`) or use `WithServerIndex` / default server list if you omit `WithServerURL`.
+- Prefer environment variables; get keys from your [FlexPrice dashboard](https://app.flexprice.io) or docs.
 
 ## Features
 
@@ -315,7 +333,7 @@ For a full list of operations, see the [API reference](https://docs.flexprice.io
 ## Troubleshooting
 
 - **Missing or invalid API key:** Ensure `FLEXPRICE_API_KEY` is set and the key is active. Keys are usually server-side only; do not expose them in client-side code.
-- **Wrong base URL:** Use `https://us.api.flexprice.io/v1` (or your tenant host with `/v1`). Always include `/v1`; no trailing space or slash.
+- **Wrong base URL:** Use a full URL such as `https://us.api.flexprice.io/v1` (include `/v1`; no trailing slash). For local dev use `http://localhost:8080/v1` if applicable.
 - **Non-202 on ingest:** Event ingest returns 202 Accepted; if you get 4xx/5xx, check request shape (e.g. `EventName`, `ExternalCustomerID`, `Properties`) and [API docs](https://docs.flexprice.io).
 
 ## Handling Webhooks
@@ -427,3 +445,4 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 
 - [FlexPrice API documentation](https://docs.flexprice.io)
 - [Go SDK examples](examples/) in this repo
+- [SDK integration tests](../tests/README.md) — full API coverage (different `FLEXPRICE_API_HOST` shape; see that README)
