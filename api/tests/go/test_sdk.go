@@ -15,11 +15,11 @@ import (
 	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
-// FlexPrice Go SDK API tests (module github.com/flexprice/go-sdk/v2 via replace => ../../go).
+// FlexPrice Go SDK API tests (published module github.com/flexprice/go-sdk/v2 v2.1.0).
 // Run from api/tests/go: go run -tags published test_sdk.go
 // Requires: FLEXPRICE_API_KEY, FLEXPRICE_API_HOST (must include /v1, e.g. api.cloud.flexprice.io/v1; no trailing space or slash).
-// defaultGoSDKRepo is the Go SDK module path (local api/go when using replace in go.mod).
-const defaultGoSDKRepo = "github.com/flexprice/go-sdk/v2 (local api/go)"
+// defaultGoSDKRepo is the Go SDK module path and version used for test output.
+const defaultGoSDKRepo = "github.com/flexprice/go-sdk/v2 v2.1.0"
 
 // strPtr returns a *string for optional SDK fields (SDK models use *string, not types.String).
 func strPtr(s string) *string { return &s }
