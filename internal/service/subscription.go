@@ -6427,7 +6427,8 @@ func (s *subscriptionService) cancelPlanLineItemsForSubscription(
 }
 
 // resolveExternalCustomersForInheritance resolves published customers by external ID and validates
-// they may receive an inherited subscription (same rules as subscription create).
+// they may receive an inherited subscription. Used by prepareSubscriptionInheritanceForCreate (subscription
+// create) and ExecuteSubscriptionModify so create and modify share one code path.
 func (s *subscriptionService) resolveExternalCustomersForInheritance(ctx context.Context, subscriberCustomerID string, externalIDs []string) ([]string, error) {
 	childFilter := types.NewNoLimitCustomerFilter()
 	childFilter.ExternalIDs = externalIDs
@@ -6437,10 +6438,9 @@ func (s *subscriptionService) resolveExternalCustomersForInheritance(ctx context
 		return nil, err
 	}
 
-	byExternalID := make(map[string]*customer.Customer, len(customers))
-	for _, cust := range customers {
-		byExternalID[cust.ExternalID] = cust
-	}
+	byExternalID := lo.SliceToMap(customers, func(c *customer.Customer) (string, *customer.Customer) {
+		return c.ExternalID, c
+	})
 
 	childCustomerIDs := make([]string, 0, len(externalIDs))
 	for _, extID := range externalIDs {
@@ -6488,7 +6488,8 @@ func (s *subscriptionService) resolveExternalCustomersForInheritance(ctx context
 }
 
 // prepareSubscriptionInheritanceForCreate validates inheritance, applies parent-link invoicing,
-// resolves invoicing/child customers by external ID, and sets subscription type for parent rows.
+// resolves invoicing customer by external ID, and sets subscription type for parent rows.
+// Child external IDs are resolved with resolveExternalCustomersForInheritance (same helper as ExecuteSubscriptionModify).
 // Call before SubRepo.CreateWithLineItems so InvoicingCustomerID and SubscriptionType persist.
 // Returns internal customer IDs for inherited subscriptions to create after invoice/activation in the same tx.
 func (s *subscriptionService) prepareSubscriptionInheritanceForCreate(ctx context.Context, req *dto.CreateSubscriptionRequest, sub *subscription.Subscription) ([]string, error) {
@@ -6499,7 +6500,6 @@ func (s *subscriptionService) prepareSubscriptionInheritanceForCreate(ctx contex
 			return nil, err
 		}
 		inh := req.Inheritance
-		childCustomerIDs = make([]string, 0, len(inh.ExternalCustomerIDsToInheritSubscription))
 
 		if inh.ParentSubscriptionID != "" {
 			parentSub, err := s.SubRepo.Get(ctx, inh.ParentSubscriptionID)
@@ -6530,11 +6530,11 @@ func (s *subscriptionService) prepareSubscriptionInheritanceForCreate(ctx contex
 		}
 
 		if len(inh.ExternalCustomerIDsToInheritSubscription) > 0 {
-			resolved, err := s.resolveExternalCustomersForInheritance(ctx, sub.CustomerID, inh.ExternalCustomerIDsToInheritSubscription)
+			var err error
+			childCustomerIDs, err = s.resolveExternalCustomersForInheritance(ctx, sub.CustomerID, inh.ExternalCustomerIDsToInheritSubscription)
 			if err != nil {
 				return nil, err
 			}
-			childCustomerIDs = resolved
 		}
 		// set the subscription type based on the number of child customer IDs
 		if len(childCustomerIDs) > 0 {
