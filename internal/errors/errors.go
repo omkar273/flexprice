@@ -46,16 +46,16 @@ var (
 )
 
 const (
-	ErrCodeHTTPClient       = "http_client_error"
-	ErrCodeSystemError      = "system_error"
-	ErrCodeInternalError    = "internal_error"
-	ErrCodeNotFound         = "not_found"
-	ErrCodeAlreadyExists    = "already_exists"
-	ErrCodeVersionConflict  = "version_conflict"
-	ErrCodeValidation       = "validation_error"
-	ErrCodeInvalidOperation = "invalid_operation"
-	ErrCodePermissionDenied = "permission_denied"
-	ErrCodeDatabase         = "database_error"
+	ErrCodeHTTPClient         = "http_client_error"
+	ErrCodeSystemError        = "system_error"
+	ErrCodeInternalError      = "internal_error"
+	ErrCodeNotFound           = "not_found"
+	ErrCodeAlreadyExists      = "already_exists"
+	ErrCodeVersionConflict    = "version_conflict"
+	ErrCodeValidation         = "validation_error"
+	ErrCodeInvalidOperation   = "invalid_operation"
+	ErrCodePermissionDenied   = "permission_denied"
+	ErrCodeDatabase           = "database_error"
 	ErrCodeServiceUnavailable = "service_unavailable"
 )
 
@@ -170,4 +170,3 @@ func ResolveError(err error) (httpStatus int, code string) {
 	}
 	return http.StatusInternalServerError, ErrCodeInternalError
 }
-

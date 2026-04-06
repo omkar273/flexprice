@@ -18,23 +18,17 @@ import (
 // IsNotFound reports whether err is an API error with HTTP 404.
 func IsNotFound(err error) bool { return hasStatusCode(err, http.StatusNotFound) }
 
-// IsValidation reports whether err is an API error with HTTP 400.
-func IsValidation(err error) bool { return hasStatusCode(err, http.StatusBadRequest) }
+// IsBadRequest reports whether err is an API error with HTTP 400.
+func IsBadRequest(err error) bool { return hasStatusCode(err, http.StatusBadRequest) }
 
-// IsAlreadyExists reports whether err is an API error with HTTP 409.
-func IsAlreadyExists(err error) bool { return hasStatusCode(err, http.StatusConflict) }
+// IsConflict reports whether err is an API error with HTTP 409.
+func IsConflict(err error) bool { return hasStatusCode(err, http.StatusConflict) }
 
 // IsPermissionDenied reports whether err is an API error with HTTP 403.
 func IsPermissionDenied(err error) bool { return hasStatusCode(err, http.StatusForbidden) }
 
 // IsRateLimit reports whether err is an API error with HTTP 429.
 func IsRateLimit(err error) bool { return hasStatusCode(err, http.StatusTooManyRequests) }
-
-// IsInvalidOperation reports whether err is an API error with HTTP 400.
-func IsInvalidOperation(err error) bool { return hasStatusCode(err, http.StatusBadRequest) }
-
-// IsVersionConflict reports whether err is an API error with HTTP 409.
-func IsVersionConflict(err error) bool { return hasStatusCode(err, http.StatusConflict) }
 
 // IsServerError reports whether err is an API error with HTTP 5xx.
 func IsServerError(err error) bool {
