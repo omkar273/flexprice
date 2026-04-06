@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 FlexPrice Python SDK integration tests.
-Published SDK: flexprice==2.1.0 (see requirements.txt and requirements-published.txt).
+Default: local editable SDK (requirements.txt: -e ../../python).
+Published pin: see requirements-published.txt (flexprice==2.1.0 on PyPI).
 Run: cd api/tests/python && pip install -r requirements.txt && python test_sdk.py
 Requires: FLEXPRICE_API_KEY, FLEXPRICE_API_HOST (must include /v1; no trailing space or slash).
 Uses sync APIs in a context manager; async HTTP methods are exercised via asyncio (ingest_event_async, ingest_events_bulk_async).

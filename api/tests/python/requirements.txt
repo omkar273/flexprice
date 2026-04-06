@@ -1,4 +1,6 @@
-# Published SDK from PyPI (pinned for integration tests).
-flexprice==2.1.0
+# Local SDK from the monorepo (matches make test-sdk / CI against generated api/python).
+# Published on PyPI: flexprice==2.1.0 — use requirements-published.txt or: pip install flexprice==2.1.0
+-e ../../python
+
 pydantic>=2
 httpx>=0.28
