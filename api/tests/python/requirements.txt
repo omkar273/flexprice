@@ -1,4 +1,5 @@
-# Published SDK tests: pin flexprice to avoid circular-import / UnrecognizedStr issues in newer releases
-flexprice>=2.0.1
-pydantic>=2
-httpx>=0.28
+# Local SDK from the monorepo (pre-release testing). Installs api/python in editable mode.
+-e ../../python
+
+# Published SDK (optional): pip install -r requirements-published.txt
+# flexprice>=2.0.1

@@ -4,7 +4,7 @@
   "description": "SDK integration tests for @flexprice/sdk (published or local api/typescript)",
   "scripts": {
     "test": "npx ts-node test_sdk.ts",
-    "test:local": "npm install --no-save file:../../typescript && npx ts-node test_sdk.ts"
+    "test:published": "npm install --no-save @flexprice/sdk@latest && npx ts-node test_sdk.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -12,6 +12,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@flexprice/sdk": "latest"
+    "@flexprice/sdk": "file:../../typescript"
   }
 }

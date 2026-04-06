@@ -60,6 +60,12 @@ func (s *BillingActivities) CheckDraftSubscriptionActivity(
 		}, nil
 	}
 
+	if sub.SubscriptionType == types.SubscriptionTypeInherited {
+		return &subscriptionModels.CheckDraftSubscriptionActivityOutput{
+			IsInherited: true,
+		}, nil
+	}
+
 	return &subscriptionModels.CheckDraftSubscriptionActivityOutput{
 		IsDraft: false,
 	}, nil
@@ -167,6 +173,32 @@ func (s *BillingActivities) UpdateCurrentPeriodActivity(
 		"subscription_id", sub.ID,
 		"new_period_start", input.PeriodStart,
 		"new_period_end", input.PeriodEnd)
+
+	// TODO: Think on this later, if we need to cascade the period update to inherited child subscriptions
+	// Cascade period update to INHERITED child subscriptions
+	// if sub.SubscriptionType == types.SubscriptionTypeParent {
+	// 	inheritedFilter := types.NewNoLimitSubscriptionFilter()
+	// 	inheritedFilter.ParentSubscriptionIDs = []string{sub.ID}
+	// 	inheritedFilter.SubscriptionTypes = []types.SubscriptionType{types.SubscriptionTypeInherited}
+	// 	inheritedFilter.SubscriptionStatus = []types.SubscriptionStatus{
+	// 		types.SubscriptionStatusActive,
+	// 		types.SubscriptionStatusTrialing,
+	// 	}
+
+	// 	inheritedSubs, err := s.serviceParams.SubRepo.List(ctx, inheritedFilter)
+	// 	if err != nil {
+	// 		s.logger.Errorw("failed to list inherited subs for period cascade", "error", err, "parent_sub", sub.ID)
+	// 	} else {
+	// 		for _, child := range inheritedSubs {
+	// 			child.CurrentPeriodStart = input.PeriodStart
+	// 			child.CurrentPeriodEnd = input.PeriodEnd
+	// 			if err := s.serviceParams.SubRepo.Update(ctx, child); err != nil {
+	// 				s.logger.Errorw("failed to update inherited sub period",
+	// 					"child_sub_id", child.ID, "parent_sub_id", sub.ID, "error", err)
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	return &subscriptionModels.UpdateSubscriptionPeriodActivityOutput{
 		Success: true,
@@ -279,13 +311,19 @@ func (s *BillingActivities) CheckCancellationActivity(
 				return err
 			}
 
-			// Update the cancellation schedule status to executed
 			subscriptionService := service.NewSubscriptionService(s.serviceParams)
+
+			// Update the cancellation schedule status to executed
 			if err := subscriptionService.MarkCancellationScheduleAsExecuted(ctx, sub.ID); err != nil {
 				s.logger.Errorw("failed to mark cancellation schedule as executed",
 					"subscription_id", sub.ID,
 					"error", err)
 				// Don't fail the transaction, just log the error
+			}
+
+			// Match CancelSubscription / cron processSubscriptionPeriod: cancel inherited child subs with the parent
+			if err := subscriptionService.CascadeCancelToInheritedSubscriptions(ctx, sub); err != nil {
+				return err
 			}
 
 			return nil

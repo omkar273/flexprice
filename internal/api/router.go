@@ -10,8 +10,6 @@ import (
 	"github.com/flexprice/flexprice/internal/rest/middleware"
 	"github.com/flexprice/flexprice/internal/service"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Handlers struct {
@@ -100,8 +98,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 	// Health check
 	router.GET("/health", handlers.Health.Health)
 	router.POST("/health", handlers.Health.Health)
-	// Swagger documentation
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Public routes
 	public := router.Group("/", middleware.GuestAuthenticateMiddleware)
@@ -151,9 +147,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			events.POST("/analytics-v2", handlers.Events.GetUsageAnalyticsV2)
 			events.POST("/huggingface-billing", handlers.Events.GetHuggingFaceBillingData)
 			events.GET("/monitoring", handlers.Events.GetMonitoringData)
-			// Benchmark endpoints for comparing V1 vs V2 event processing performance
-			events.POST("/benchmark/v1", handlers.Events.BenchmarkV1)
-			events.POST("/benchmark/v2", handlers.Events.BenchmarkV2)
 			// Reprocess events endpoint
 			events.POST("/reprocess", handlers.Events.ReprocessEvents)
 			// Raw event ingestion (Bento-format, publishes directly to raw_events topic)
@@ -296,6 +289,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			// Subscription plan changes (upgrade/downgrade)
 			subscription.POST("/:id/change/preview", handlers.SubscriptionChange.PreviewSubscriptionChange)
 			subscription.POST("/:id/change/execute", handlers.SubscriptionChange.ExecuteSubscriptionChange)
+			subscription.POST("/:id/modify/execute", handlers.Subscription.ExecuteSubscriptionModify)
 
 			// Subscription line item management
 			subscription.POST("/:id/lineitems", handlers.Subscription.AddSubscriptionLineItem)

@@ -1,9 +1,44 @@
-# OpenAPI Overlay for Flexprice SDK and MCP
-# Use actions here to add x-speakeasy-mcp (scopes, descriptions, hints), improve
-# operation summary/description, or x-speakeasy-name-override without editing the main spec.
-# See https://spec.openapis.org/overlay/latest.html
 overlay: 1.0.0
 info:
   title: Flexprice SDK and MCP customizations
-  version: 2.0.0
-actions: []
+  version: 2.1.0
+actions:
+  - target: '$.components.schemas["CustomerResponse"]'
+    update:
+      x-speakeasy-name-override: "Customer"
+  - target: '$.components.schemas["SubscriptionResponse"]'
+    update:
+      x-speakeasy-name-override: "Subscription"
+  - target: '$.components.schemas["InvoiceResponse"]'
+    update:
+      x-speakeasy-name-override: "Invoice"
+  - target: '$.components.schemas["PlanResponse"]'
+    update:
+      x-speakeasy-name-override: "Plan"
+  - target: '$.components.schemas["PriceResponse"]'
+    update:
+      x-speakeasy-name-override: "Price"
+  - target: '$.components.schemas["AddonResponse"]'
+    update:
+      x-speakeasy-name-override: "Addon"
+  - target: '$.components.schemas["WalletResponse"]'
+    update:
+      x-speakeasy-name-override: "Wallet"
+  - target: '$.components.schemas["PaymentResponse"]'
+    update:
+      x-speakeasy-name-override: "Payment"
+  - target: '$.components.schemas["CouponResponse"]'
+    update:
+      x-speakeasy-name-override: "Coupon"
+  - target: '$.components.schemas["FeatureResponse"]'
+    update:
+      x-speakeasy-name-override: "Feature"
+  - target: '$.components.schemas["errors.ErrorDetail"]'
+    update:
+      x-speakeasy-name-override: "ErrorDetail"
+  - target: '$.components.schemas["errors.ErrorResponse"]'
+    update:
+      x-speakeasy-name-override: "ErrorResponse"
+  - target: '$.components.schemas["errors.ErrorResponse"].properties["error"]'
+    update:
+      x-speakeasy-name-override: "detail"
