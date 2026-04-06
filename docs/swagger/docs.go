@@ -48,7 +48,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateAddonRequest"
+                            "$ref": "#/definitions/dto.CreateAddonRequest"
                         }
                     }
                 ],
@@ -56,19 +56,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreateAddonResponse"
+                            "$ref": "#/definitions/dto.CreateAddonResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -103,19 +103,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AddonResponse"
+                            "$ref": "#/definitions/dto.AddonResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -147,7 +147,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.AddonFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonFilter"
                         }
                     }
                 ],
@@ -161,13 +161,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -202,19 +202,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AddonResponse"
+                            "$ref": "#/definitions/dto.AddonResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -251,7 +251,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateAddonRequest"
+                            "$ref": "#/definitions/dto.UpdateAddonRequest"
                         }
                     }
                 ],
@@ -259,19 +259,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AddonResponse"
+                            "$ref": "#/definitions/dto.AddonResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -304,19 +304,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -357,19 +357,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -401,7 +401,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.AlertLogFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertLogFilter"
                         }
                     }
                 ],
@@ -409,19 +409,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ListAlertLogsResponse"
+                            "$ref": "#/definitions/dto.ListAlertLogsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -453,7 +453,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateCostsheetRequest"
+                            "$ref": "#/definitions/dto.CreateCostsheetRequest"
                         }
                     }
                 ],
@@ -461,25 +461,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created costsheet",
                         "schema": {
-                            "$ref": "#/definitions/CreateCostsheetResponse"
+                            "$ref": "#/definitions/dto.CreateCostsheetResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -505,19 +505,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Active costsheet",
                         "schema": {
-                            "$ref": "#/definitions/CostsheetResponse"
+                            "$ref": "#/definitions/dto.CostsheetResponse"
                         }
                     },
                     "404": {
                         "description": "No active costsheet",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -549,7 +549,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GetCostAnalyticsRequest"
+                            "$ref": "#/definitions/dto.GetCostAnalyticsRequest"
                         }
                     }
                 ],
@@ -557,19 +557,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetDetailedCostAnalyticsResponse"
+                            "$ref": "#/definitions/dto.GetDetailedCostAnalyticsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -601,7 +601,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GetCostAnalyticsRequest"
+                            "$ref": "#/definitions/dto.GetCostAnalyticsRequest"
                         }
                     }
                 ],
@@ -609,19 +609,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetDetailedCostAnalyticsResponse"
+                            "$ref": "#/definitions/dto.GetDetailedCostAnalyticsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -661,19 +661,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Paginated costsheets",
                         "schema": {
-                            "$ref": "#/definitions/ListCostsheetResponse"
+                            "$ref": "#/definitions/dto.ListCostsheetResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -714,25 +714,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Costsheet details",
                         "schema": {
-                            "$ref": "#/definitions/GetCostsheetResponse"
+                            "$ref": "#/definitions/dto.GetCostsheetResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Costsheet not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -769,7 +769,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateCostsheetRequest"
+                            "$ref": "#/definitions/dto.UpdateCostsheetRequest"
                         }
                     }
                 ],
@@ -777,31 +777,31 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated costsheet",
                         "schema": {
-                            "$ref": "#/definitions/UpdateCostsheetResponse"
+                            "$ref": "#/definitions/dto.UpdateCostsheetResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Costsheet not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -837,25 +837,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Costsheet deleted",
                         "schema": {
-                            "$ref": "#/definitions/DeleteCostsheetResponse"
+                            "$ref": "#/definitions/dto.DeleteCostsheetResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Costsheet not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -890,7 +890,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateCouponRequest"
+                            "$ref": "#/definitions/dto.CreateCouponRequest"
                         }
                     }
                 ],
@@ -898,37 +898,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CouponResponse"
+                            "$ref": "#/definitions/dto.CouponResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -960,7 +960,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.CouponFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponFilter"
                         }
                     }
                 ],
@@ -974,13 +974,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1015,25 +1015,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CouponResponse"
+                            "$ref": "#/definitions/dto.CouponResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1073,7 +1073,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateCouponRequest"
+                            "$ref": "#/definitions/dto.UpdateCouponRequest"
                         }
                     }
                 ],
@@ -1081,37 +1081,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CouponResponse"
+                            "$ref": "#/definitions/dto.CouponResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1159,31 +1159,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1215,7 +1215,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateCreditGrantRequest"
+                            "$ref": "#/definitions/dto.CreateCreditGrantRequest"
                         }
                     }
                 ],
@@ -1223,19 +1223,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreditGrantResponse"
+                            "$ref": "#/definitions/dto.CreditGrantResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1270,19 +1270,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CreditGrantResponse"
+                            "$ref": "#/definitions/dto.CreditGrantResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1319,7 +1319,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateCreditGrantRequest"
+                            "$ref": "#/definitions/dto.UpdateCreditGrantRequest"
                         }
                     }
                 ],
@@ -1327,19 +1327,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CreditGrantResponse"
+                            "$ref": "#/definitions/dto.CreditGrantResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1375,7 +1375,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/DeleteCreditGrantRequest"
+                            "$ref": "#/definitions/dto.DeleteCreditGrantRequest"
                         }
                     }
                 ],
@@ -1383,19 +1383,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1430,7 +1430,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateCreditNoteRequest"
+                            "$ref": "#/definitions/dto.CreateCreditNoteRequest"
                         }
                     }
                 ],
@@ -1438,37 +1438,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreditNoteResponse"
+                            "$ref": "#/definitions/dto.CreditNoteResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1503,25 +1503,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CreditNoteResponse"
+                            "$ref": "#/definitions/dto.CreditNoteResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error\" \"Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1562,37 +1562,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CreditNoteResponse"
+                            "$ref": "#/definitions/dto.CreditNoteResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1633,37 +1633,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CreditNoteResponse"
+                            "$ref": "#/definitions/dto.CreditNoteResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1707,7 +1707,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateCustomerRequest"
+                            "$ref": "#/definitions/dto.UpdateCustomerRequest"
                         }
                     }
                 ],
@@ -1715,19 +1715,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CustomerResponse"
+                            "$ref": "#/definitions/dto.CustomerResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1757,7 +1757,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateCustomerRequest"
+                            "$ref": "#/definitions/dto.CreateCustomerRequest"
                         }
                     }
                 ],
@@ -1765,19 +1765,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CustomerResponse"
+                            "$ref": "#/definitions/dto.CustomerResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 },
@@ -1813,25 +1813,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CustomerResponse"
+                            "$ref": "#/definitions/dto.CustomerResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -1863,7 +1863,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.CustomerFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CustomerFilter"
                         }
                     }
                 ],
@@ -1877,13 +1877,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 },
@@ -1952,19 +1952,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CustomerUsageSummaryResponse"
+                            "$ref": "#/definitions/dto.CustomerUsageSummaryResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2030,26 +2030,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/WalletResponse"
+                                "$ref": "#/definitions/dto.WalletResponse"
                             }
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2084,19 +2084,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CustomerResponse"
+                            "$ref": "#/definitions/dto.CustomerResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 },
@@ -2136,13 +2136,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2177,19 +2177,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CustomerEntitlementsResponse"
+                            "$ref": "#/definitions/dto.CustomerEntitlementsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2230,19 +2230,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2280,19 +2280,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CustomerMultiCurrencyInvoiceSummary"
+                            "$ref": "#/definitions/dto.CustomerMultiCurrencyInvoiceSummary"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2332,20 +2332,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/WalletResponse"
+                                "$ref": "#/definitions/dto.WalletResponse"
                             }
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2377,7 +2377,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateEntitlementRequest"
+                            "$ref": "#/definitions/dto.CreateEntitlementRequest"
                         }
                     }
                 ],
@@ -2385,19 +2385,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/EntitlementResponse"
+                            "$ref": "#/definitions/dto.EntitlementResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2429,7 +2429,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateBulkEntitlementRequest"
+                            "$ref": "#/definitions/dto.CreateBulkEntitlementRequest"
                         }
                     }
                 ],
@@ -2437,19 +2437,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreateBulkEntitlementResponse"
+                            "$ref": "#/definitions/dto.CreateBulkEntitlementResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2481,7 +2481,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.EntitlementFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementFilter"
                         }
                     }
                 ],
@@ -2495,13 +2495,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2536,19 +2536,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EntitlementResponse"
+                            "$ref": "#/definitions/dto.EntitlementResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2585,7 +2585,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateEntitlementRequest"
+                            "$ref": "#/definitions/dto.UpdateEntitlementRequest"
                         }
                     }
                 ],
@@ -2593,19 +2593,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EntitlementResponse"
+                            "$ref": "#/definitions/dto.EntitlementResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2641,19 +2641,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2685,7 +2685,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/IngestEventRequest"
+                            "$ref": "#/definitions/dto.IngestEventRequest"
                         }
                     }
                 ],
@@ -2702,13 +2702,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2740,7 +2740,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GetUsageAnalyticsRequest"
+                            "$ref": "#/definitions/dto.GetUsageAnalyticsRequest"
                         }
                     }
                 ],
@@ -2748,19 +2748,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetUsageAnalyticsResponse"
+                            "$ref": "#/definitions/dto.GetUsageAnalyticsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2792,7 +2792,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/BulkIngestEventRequest"
+                            "$ref": "#/definitions/dto.BulkIngestEventRequest"
                         }
                     }
                 ],
@@ -2809,13 +2809,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2841,13 +2841,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetHuggingFaceBillingDataResponse"
+                            "$ref": "#/definitions/dto.GetHuggingFaceBillingDataResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2879,7 +2879,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GetEventsRequest"
+                            "$ref": "#/definitions/dto.GetEventsRequest"
                         }
                     }
                 ],
@@ -2887,19 +2887,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetEventsResponse"
+                            "$ref": "#/definitions/dto.GetEventsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2931,7 +2931,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GetUsageRequest"
+                            "$ref": "#/definitions/dto.GetUsageRequest"
                         }
                     }
                 ],
@@ -2939,19 +2939,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetUsageResponse"
+                            "$ref": "#/definitions/dto.GetUsageResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -2983,7 +2983,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GetUsageByMeterRequest"
+                            "$ref": "#/definitions/dto.GetUsageByMeterRequest"
                         }
                     }
                 ],
@@ -2991,25 +2991,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetUsageResponse"
+                            "$ref": "#/definitions/dto.GetUsageResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3044,19 +3044,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetEventByIDResponse"
+                            "$ref": "#/definitions/dto.GetEventByIDResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3088,7 +3088,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateFeatureRequest"
+                            "$ref": "#/definitions/dto.CreateFeatureRequest"
                         }
                     }
                 ],
@@ -3096,19 +3096,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/FeatureResponse"
+                            "$ref": "#/definitions/dto.FeatureResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3140,7 +3140,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.FeatureFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureFilter"
                         }
                     }
                 ],
@@ -3154,13 +3154,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3199,7 +3199,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateFeatureRequest"
+                            "$ref": "#/definitions/dto.UpdateFeatureRequest"
                         }
                     }
                 ],
@@ -3207,25 +3207,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/FeatureResponse"
+                            "$ref": "#/definitions/dto.FeatureResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3261,25 +3261,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3311,7 +3311,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateGroupRequest"
+                            "$ref": "#/definitions/dto.CreateGroupRequest"
                         }
                     }
                 ],
@@ -3319,19 +3319,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/GroupResponse"
+                            "$ref": "#/definitions/dto.GroupResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3363,7 +3363,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.GroupFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.GroupFilter"
                         }
                     }
                 ],
@@ -3377,13 +3377,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3421,25 +3421,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupResponse"
+                            "$ref": "#/definitions/dto.GroupResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3478,19 +3478,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3522,7 +3522,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/LinkIntegrationMappingRequest"
+                            "$ref": "#/definitions/dto.LinkIntegrationMappingRequest"
                         }
                     }
                 ],
@@ -3530,19 +3530,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/LinkIntegrationMappingResponse"
+                            "$ref": "#/definitions/dto.LinkIntegrationMappingResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3574,7 +3574,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateInvoiceRequest"
+                            "$ref": "#/definitions/dto.CreateInvoiceRequest"
                         }
                     }
                 ],
@@ -3582,19 +3582,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3626,7 +3626,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GetPreviewInvoiceRequest"
+                            "$ref": "#/definitions/dto.GetPreviewInvoiceRequest"
                         }
                     }
                 ],
@@ -3634,19 +3634,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3678,7 +3678,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.InvoiceFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceFilter"
                         }
                     }
                 ],
@@ -3692,13 +3692,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3752,19 +3752,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3801,7 +3801,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateInvoiceRequest"
+                            "$ref": "#/definitions/dto.UpdateInvoiceRequest"
                         }
                     }
                 ],
@@ -3809,25 +3809,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3865,25 +3865,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -3921,19 +3921,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 },
@@ -3973,7 +3973,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdatePaymentStatusRequest"
+                            "$ref": "#/definitions/dto.UpdatePaymentStatusRequest"
                         }
                     }
                 ],
@@ -3981,25 +3981,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4037,25 +4037,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4105,19 +4105,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4158,19 +4158,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request or invoice already recalculated",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Invoice not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4214,25 +4214,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4270,19 +4270,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4420,19 +4420,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Paginated payments",
                         "schema": {
-                            "$ref": "#/definitions/ListPaymentsResponse"
+                            "$ref": "#/definitions/dto.ListPaymentsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4462,7 +4462,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreatePaymentRequest"
+                            "$ref": "#/definitions/dto.CreatePaymentRequest"
                         }
                     }
                 ],
@@ -4470,19 +4470,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created payment",
                         "schema": {
-                            "$ref": "#/definitions/PaymentResponse"
+                            "$ref": "#/definitions/dto.PaymentResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4520,25 +4520,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Payment details",
                         "schema": {
-                            "$ref": "#/definitions/PaymentResponse"
+                            "$ref": "#/definitions/dto.PaymentResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Payment not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4575,7 +4575,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdatePaymentRequest"
+                            "$ref": "#/definitions/dto.UpdatePaymentRequest"
                         }
                     }
                 ],
@@ -4583,19 +4583,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated payment",
                         "schema": {
-                            "$ref": "#/definitions/PaymentResponse"
+                            "$ref": "#/definitions/dto.PaymentResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4631,25 +4631,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Payment deleted",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Payment not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4687,25 +4687,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Processed payment",
                         "schema": {
-                            "$ref": "#/definitions/PaymentResponse"
+                            "$ref": "#/definitions/dto.PaymentResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Payment not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4737,7 +4737,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreatePlanRequest"
+                            "$ref": "#/definitions/dto.CreatePlanRequest"
                         }
                     }
                 ],
@@ -4745,19 +4745,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/PlanResponse"
+                            "$ref": "#/definitions/dto.PlanResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4789,7 +4789,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.PlanFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PlanFilter"
                         }
                     }
                 ],
@@ -4803,13 +4803,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4844,25 +4844,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PlanResponse"
+                            "$ref": "#/definitions/dto.PlanResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4899,7 +4899,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdatePlanRequest"
+                            "$ref": "#/definitions/dto.UpdatePlanRequest"
                         }
                     }
                 ],
@@ -4907,25 +4907,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PlanResponse"
+                            "$ref": "#/definitions/dto.PlanResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -4961,25 +4961,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5017,7 +5017,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ClonePlanRequest"
+                            "$ref": "#/definitions/dto.ClonePlanRequest"
                         }
                     }
                 ],
@@ -5025,31 +5025,31 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/PlanResponse"
+                            "$ref": "#/definitions/dto.PlanResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5090,19 +5090,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5143,19 +5143,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5199,25 +5199,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "422": {
                         "description": "Unprocessable Entity",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5249,7 +5249,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreatePriceRequest"
+                            "$ref": "#/definitions/dto.CreatePriceRequest"
                         }
                     }
                 ],
@@ -5257,19 +5257,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/PriceResponse"
+                            "$ref": "#/definitions/dto.PriceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5301,7 +5301,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateBulkPriceRequest"
+                            "$ref": "#/definitions/dto.CreateBulkPriceRequest"
                         }
                     }
                 ],
@@ -5309,19 +5309,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreateBulkPriceResponse"
+                            "$ref": "#/definitions/dto.CreateBulkPriceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5359,19 +5359,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PriceResponse"
+                            "$ref": "#/definitions/dto.PriceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5403,7 +5403,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.PriceFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceFilter"
                         }
                     }
                 ],
@@ -5417,13 +5417,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5499,13 +5499,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5535,7 +5535,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreatePriceUnitRequest"
+                            "$ref": "#/definitions/dto.CreatePriceUnitRequest"
                         }
                     }
                 ],
@@ -5543,19 +5543,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreatePriceUnitResponse"
+                            "$ref": "#/definitions/dto.CreatePriceUnitResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5593,25 +5593,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PriceUnitResponse"
+                            "$ref": "#/definitions/dto.PriceUnitResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5643,7 +5643,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.PriceUnitFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitFilter"
                         }
                     }
                 ],
@@ -5657,13 +5657,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5701,19 +5701,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PriceUnitResponse"
+                            "$ref": "#/definitions/dto.PriceUnitResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5750,7 +5750,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdatePriceUnitRequest"
+                            "$ref": "#/definitions/dto.UpdatePriceUnitRequest"
                         }
                     }
                 ],
@@ -5758,19 +5758,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PriceUnitResponse"
+                            "$ref": "#/definitions/dto.PriceUnitResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5806,19 +5806,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5856,19 +5856,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PriceResponse"
+                            "$ref": "#/definitions/dto.PriceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5905,7 +5905,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdatePriceRequest"
+                            "$ref": "#/definitions/dto.UpdatePriceRequest"
                         }
                     }
                 ],
@@ -5913,19 +5913,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PriceResponse"
+                            "$ref": "#/definitions/dto.PriceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -5962,7 +5962,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DeletePriceRequest"
+                            "$ref": "#/definitions/dto.DeletePriceRequest"
                         }
                     }
                 ],
@@ -5970,19 +5970,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6118,19 +6118,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ListSecretsResponse"
+                            "$ref": "#/definitions/dto.ListSecretsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6160,7 +6160,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateAPIKeyRequest"
+                            "$ref": "#/definitions/dto.CreateAPIKeyRequest"
                         }
                     }
                 ],
@@ -6168,19 +6168,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreateAPIKeyResponse"
+                            "$ref": "#/definitions/dto.CreateAPIKeyResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6221,13 +6221,13 @@ const docTemplate = `{
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6259,7 +6259,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateSubscriptionRequest"
+                            "$ref": "#/definitions/dto.CreateSubscriptionRequest"
                         }
                     }
                 ],
@@ -6267,19 +6267,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionResponse"
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6311,7 +6311,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/AddAddonRequest"
+                            "$ref": "#/definitions/dto.AddAddonRequest"
                         }
                     }
                 ],
@@ -6319,19 +6319,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AddonAssociationResponse"
+                            "$ref": "#/definitions/dto.AddonAssociationResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6361,7 +6361,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/RemoveAddonRequest"
+                            "$ref": "#/definitions/dto.RemoveAddonRequest"
                         }
                     }
                 ],
@@ -6369,19 +6369,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6420,7 +6420,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateSubscriptionLineItemRequest"
+                            "$ref": "#/definitions/dto.UpdateSubscriptionLineItemRequest"
                         }
                     }
                 ],
@@ -6428,19 +6428,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionLineItemResponse"
+                            "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6477,7 +6477,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DeleteSubscriptionLineItemRequest"
+                            "$ref": "#/definitions/dto.DeleteSubscriptionLineItemRequest"
                         }
                     }
                 ],
@@ -6485,19 +6485,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionLineItemResponse"
+                            "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6529,7 +6529,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.SubscriptionFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionFilter"
                         }
                     }
                 ],
@@ -6543,13 +6543,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6581,7 +6581,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GetUsageBySubscriptionRequest"
+                            "$ref": "#/definitions/dto.GetUsageBySubscriptionRequest"
                         }
                     }
                 ],
@@ -6589,19 +6589,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetUsageBySubscriptionResponse"
+                            "$ref": "#/definitions/dto.GetUsageBySubscriptionResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6636,19 +6636,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionResponse"
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6685,7 +6685,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateSubscriptionRequest"
+                            "$ref": "#/definitions/dto.UpdateSubscriptionRequest"
                         }
                     }
                 ],
@@ -6693,19 +6693,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionResponse"
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6744,7 +6744,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ActivateDraftSubscriptionRequest"
+                            "$ref": "#/definitions/dto.ActivateDraftSubscriptionRequest"
                         }
                     }
                 ],
@@ -6752,19 +6752,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionResponse"
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6801,26 +6801,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/AddonAssociationResponse"
+                                "$ref": "#/definitions/dto.AddonAssociationResponse"
                             }
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6859,7 +6859,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CancelSubscriptionRequest"
+                            "$ref": "#/definitions/dto.CancelSubscriptionRequest"
                         }
                     }
                 ],
@@ -6867,19 +6867,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CancelSubscriptionResponse"
+                            "$ref": "#/definitions/dto.CancelSubscriptionResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6918,7 +6918,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionChangeRequest"
+                            "$ref": "#/definitions/dto.SubscriptionChangeRequest"
                         }
                     }
                 ],
@@ -6926,25 +6926,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionChangeExecuteResponse"
+                            "$ref": "#/definitions/dto.SubscriptionChangeExecuteResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -6983,7 +6983,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionChangeRequest"
+                            "$ref": "#/definitions/dto.SubscriptionChangeRequest"
                         }
                     }
                 ],
@@ -6991,25 +6991,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionChangePreviewResponse"
+                            "$ref": "#/definitions/dto.SubscriptionChangePreviewResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7057,25 +7057,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionEntitlementsResponse"
+                            "$ref": "#/definitions/dto.SubscriptionEntitlementsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7116,19 +7116,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7167,7 +7167,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateSubscriptionLineItemRequest"
+                            "$ref": "#/definitions/dto.CreateSubscriptionLineItemRequest"
                         }
                     }
                 ],
@@ -7175,25 +7175,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionLineItemResponse"
+                            "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7232,7 +7232,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ExecuteSubscriptionInheritanceRequest"
+                            "$ref": "#/definitions/dto.ExecuteSubscriptionInheritanceRequest"
                         }
                     }
                 ],
@@ -7240,25 +7240,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionResponse"
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 },
@@ -7298,7 +7298,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/PauseSubscriptionRequest"
+                            "$ref": "#/definitions/dto.PauseSubscriptionRequest"
                         }
                     }
                 ],
@@ -7306,25 +7306,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionPauseResponse"
+                            "$ref": "#/definitions/dto.SubscriptionPauseResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7356,26 +7356,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/ListSubscriptionPausesResponse"
+                                "$ref": "#/definitions/dto.ListSubscriptionPausesResponse"
                             }
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7414,7 +7414,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ResumeSubscriptionRequest"
+                            "$ref": "#/definitions/dto.ResumeSubscriptionRequest"
                         }
                     }
                 ],
@@ -7422,25 +7422,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionPauseResponse"
+                            "$ref": "#/definitions/dto.SubscriptionPauseResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7481,19 +7481,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionResponseV2"
+                            "$ref": "#/definitions/dto.SubscriptionResponseV2"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7638,19 +7638,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ListTasksResponse"
+                            "$ref": "#/definitions/dto.ListTasksResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7680,7 +7680,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateTaskRequest"
+                            "$ref": "#/definitions/dto.CreateTaskRequest"
                         }
                     }
                 ],
@@ -7688,19 +7688,19 @@ const docTemplate = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/TaskResponse"
+                            "$ref": "#/definitions/dto.TaskResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7744,19 +7744,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7829,13 +7829,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7865,7 +7865,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateScheduledTaskRequest"
+                            "$ref": "#/definitions/dto.CreateScheduledTaskRequest"
                         }
                     }
                 ],
@@ -7873,19 +7873,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/ScheduledTaskResponse"
+                            "$ref": "#/definitions/dto.ScheduledTaskResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7920,13 +7920,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -7972,13 +7972,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8016,25 +8016,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ScheduledTaskResponse"
+                            "$ref": "#/definitions/dto.ScheduledTaskResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8071,7 +8071,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateScheduledTaskRequest"
+                            "$ref": "#/definitions/dto.UpdateScheduledTaskRequest"
                         }
                     }
                 ],
@@ -8079,25 +8079,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ScheduledTaskResponse"
+                            "$ref": "#/definitions/dto.ScheduledTaskResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request or task is archived",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Scheduled task not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to update Temporal schedule",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8136,19 +8136,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Task already archived",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Scheduled task not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to archive task",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8186,7 +8186,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/TriggerForceRunRequest"
+                            "$ref": "#/definitions/dto.TriggerForceRunRequest"
                         }
                     }
                 ],
@@ -8194,25 +8194,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Returns workflow details and time range",
                         "schema": {
-                            "$ref": "#/definitions/TriggerForceRunResponse"
+                            "$ref": "#/definitions/dto.TriggerForceRunResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8250,25 +8250,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TaskResponse"
+                            "$ref": "#/definitions/dto.TaskResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8315,19 +8315,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8366,7 +8366,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateTaskStatusRequest"
+                            "$ref": "#/definitions/dto.UpdateTaskStatusRequest"
                         }
                     }
                 ],
@@ -8374,25 +8374,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8453,13 +8453,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8489,7 +8489,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateTaxAssociationRequest"
+                            "$ref": "#/definitions/dto.CreateTaxAssociationRequest"
                         }
                     }
                 ],
@@ -8497,19 +8497,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TaxAssociationResponse"
+                            "$ref": "#/definitions/dto.TaxAssociationResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8547,19 +8547,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TaxAssociationResponse"
+                            "$ref": "#/definitions/dto.TaxAssociationResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8596,7 +8596,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TaxAssociationUpdateRequest"
+                            "$ref": "#/definitions/dto.TaxAssociationUpdateRequest"
                         }
                     }
                 ],
@@ -8604,19 +8604,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TaxAssociationResponse"
+                            "$ref": "#/definitions/dto.TaxAssociationResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8652,19 +8652,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TaxAssociationResponse"
+                            "$ref": "#/definitions/dto.TaxAssociationResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8782,20 +8782,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/TaxRateResponse"
+                                "$ref": "#/definitions/dto.TaxRateResponse"
                             }
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8825,7 +8825,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateTaxRateRequest"
+                            "$ref": "#/definitions/dto.CreateTaxRateRequest"
                         }
                     }
                 ],
@@ -8833,19 +8833,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/TaxRateResponse"
+                            "$ref": "#/definitions/dto.TaxRateResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8883,19 +8883,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TaxRateResponse"
+                            "$ref": "#/definitions/dto.TaxRateResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8932,7 +8932,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateTaxRateRequest"
+                            "$ref": "#/definitions/dto.UpdateTaxRateRequest"
                         }
                     }
                 ],
@@ -8940,19 +8940,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TaxRateResponse"
+                            "$ref": "#/definitions/dto.TaxRateResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -8991,13 +8991,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9026,25 +9026,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Tenant billing usage",
                         "schema": {
-                            "$ref": "#/definitions/TenantBillingUsage"
+                            "$ref": "#/definitions/dto.TenantBillingUsage"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Tenant not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9076,7 +9076,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateTenantRequest"
+                            "$ref": "#/definitions/dto.UpdateTenantRequest"
                         }
                     }
                 ],
@@ -9084,25 +9084,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Updated tenant",
                         "schema": {
-                            "$ref": "#/definitions/TenantResponse"
+                            "$ref": "#/definitions/dto.TenantResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Tenant not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9140,19 +9140,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Tenant details",
                         "schema": {
-                            "$ref": "#/definitions/TenantResponse"
+                            "$ref": "#/definitions/dto.TenantResponse"
                         }
                     },
                     "404": {
                         "description": "Tenant not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9184,7 +9184,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateUserRequest"
+                            "$ref": "#/definitions/dto.CreateUserRequest"
                         }
                     }
                 ],
@@ -9192,19 +9192,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/CreateUserResponse"
+                            "$ref": "#/definitions/dto.CreateUserResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9230,19 +9230,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9274,7 +9274,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.UserFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserFilter"
                         }
                     }
                 ],
@@ -9288,13 +9288,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9344,7 +9344,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetPendingSchedulesResponse"
+                            "$ref": "#/definitions/dto.GetPendingSchedulesResponse"
                         }
                     }
                 }
@@ -9377,7 +9377,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SubscriptionScheduleResponse"
+                            "$ref": "#/definitions/dto.SubscriptionScheduleResponse"
                         }
                     }
                 }
@@ -9409,7 +9409,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/CancelScheduleRequest"
+                            "$ref": "#/definitions/dto.CancelScheduleRequest"
                         }
                     }
                 ],
@@ -9417,7 +9417,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CancelScheduleResponse"
+                            "$ref": "#/definitions/dto.CancelScheduleResponse"
                         }
                     }
                 }
@@ -9450,7 +9450,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetPendingSchedulesResponse"
+                            "$ref": "#/definitions/dto.GetPendingSchedulesResponse"
                         }
                     }
                 }
@@ -9482,7 +9482,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateWalletRequest"
+                            "$ref": "#/definitions/dto.CreateWalletRequest"
                         }
                     }
                 ],
@@ -9490,19 +9490,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WalletResponse"
+                            "$ref": "#/definitions/dto.WalletResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9534,7 +9534,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.WalletFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletFilter"
                         }
                     }
                 ],
@@ -9548,13 +9548,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9586,7 +9586,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.WalletTransactionFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletTransactionFilter"
                         }
                     }
                 ],
@@ -9600,13 +9600,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9644,25 +9644,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WalletResponse"
+                            "$ref": "#/definitions/dto.WalletResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9699,7 +9699,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/UpdateWalletRequest"
+                            "$ref": "#/definitions/dto.UpdateWalletRequest"
                         }
                     }
                 ],
@@ -9707,25 +9707,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WalletResponse"
+                            "$ref": "#/definitions/dto.WalletResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9769,25 +9769,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WalletBalanceResponse"
+                            "$ref": "#/definitions/dto.WalletBalanceResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9825,25 +9825,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WalletResponse"
+                            "$ref": "#/definitions/dto.WalletResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -9882,7 +9882,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/TopUpWalletRequest"
+                            "$ref": "#/definitions/dto.TopUpWalletRequest"
                         }
                     }
                 ],
@@ -9890,25 +9890,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/TopUpWalletResponse"
+                            "$ref": "#/definitions/dto.TopUpWalletResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -10103,19 +10103,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Resource not found",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -11113,7 +11113,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/types.WorkflowExecutionFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WorkflowExecutionFilter"
                         }
                     }
                 ],
@@ -11127,13 +11127,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Server error",
                         "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                         }
                     }
                 }
@@ -11147,11 +11147,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/AddonResponse"
+                        "$ref": "#/definitions/dto.AddonResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11161,11 +11161,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CouponResponse"
+                        "$ref": "#/definitions/dto.CouponResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11175,11 +11175,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreditGrantApplicationResponse"
+                        "$ref": "#/definitions/dto.CreditGrantApplicationResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11189,11 +11189,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreditGrantResponse"
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11204,11 +11204,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CustomerResponse"
+                        "$ref": "#/definitions/dto.CustomerResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11218,11 +11218,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EntitlementResponse"
+                        "$ref": "#/definitions/dto.EntitlementResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11232,11 +11232,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/FeatureResponse"
+                        "$ref": "#/definitions/dto.FeatureResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11246,11 +11246,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/GroupResponse"
+                        "$ref": "#/definitions/dto.GroupResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11260,11 +11260,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InvoiceResponse"
+                        "$ref": "#/definitions/dto.InvoiceResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11274,11 +11274,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PlanResponse"
+                        "$ref": "#/definitions/dto.PlanResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11288,11 +11288,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PriceUnitResponse"
+                        "$ref": "#/definitions/dto.PriceUnitResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11302,11 +11302,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PriceResponse"
+                        "$ref": "#/definitions/dto.PriceResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11316,11 +11316,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ScheduledTaskResponse"
+                        "$ref": "#/definitions/dto.ScheduledTaskResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11330,11 +11330,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionResponse"
+                        "$ref": "#/definitions/dto.SubscriptionResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11344,11 +11344,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TaxAssociationResponse"
+                        "$ref": "#/definitions/dto.TaxAssociationResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11358,11 +11358,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/UserResponse"
+                        "$ref": "#/definitions/dto.UserResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11372,11 +11372,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/WalletTransactionResponse"
+                        "$ref": "#/definitions/dto.WalletTransactionResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11386,11 +11386,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/WorkflowExecutionDTO"
+                        "$ref": "#/definitions/dto.WorkflowExecutionDTO"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -11412,7 +11412,7 @@ const docTemplate = `{
                     "description": "Filters contains custom filtering conditions",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "lookupKey": {
@@ -11427,7 +11427,7 @@ const docTemplate = `{
                     "description": "QueryFilter contains pagination and basic query parameters",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.QueryFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.QueryFilter"
                         }
                     ]
                 },
@@ -11435,14 +11435,14 @@ const docTemplate = `{
                     "description": "Sort specifies result ordering preferences",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "status": {
                     "description": "Status filters by costsheet status",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.Status"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                         }
                     ]
                 },
@@ -11454,7 +11454,7 @@ const docTemplate = `{
                     "description": "TimeRangeFilter allows filtering by time periods",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TimeRangeFilter"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TimeRangeFilter"
                         }
                     ]
                 }
@@ -11489,7 +11489,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "discount_type": {
-                    "$ref": "#/definitions/types.CouponType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                 },
                 "discounted_amount": {
                     "type": "string"
@@ -11519,7 +11519,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -11539,7 +11539,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coupon": {
-                    "$ref": "#/definitions/Coupon"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_coupon.Coupon"
                 },
                 "coupon_id": {
                     "type": "string"
@@ -11570,7 +11570,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "Mandatory",
@@ -11629,7 +11629,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Metadata"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -11642,7 +11642,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ActivateDraftSubscriptionRequest": {
+        "dto.ActivateDraftSubscriptionRequest": {
             "type": "object",
             "required": [
                 "start_date"
@@ -11654,7 +11654,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AddAddonRequest": {
+        "dto.AddAddonRequest": {
             "type": "object",
             "required": [
                 "addon_id",
@@ -11668,7 +11668,7 @@ const docTemplate = `{
                     "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/LineItemCommitmentConfig"
+                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
                     }
                 },
                 "metadata": {
@@ -11683,7 +11683,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AddAddonToSubscriptionRequest": {
+        "dto.AddAddonToSubscriptionRequest": {
             "type": "object",
             "required": [
                 "addon_id"
@@ -11696,7 +11696,7 @@ const docTemplate = `{
                     "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/LineItemCommitmentConfig"
+                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
                     }
                 },
                 "metadata": {
@@ -11708,17 +11708,17 @@ const docTemplate = `{
                 }
             }
         },
-        "AddonAssociationResponse": {
+        "dto.AddonAssociationResponse": {
             "type": "object",
             "properties": {
                 "addon": {
-                    "$ref": "#/definitions/AddonResponse"
+                    "$ref": "#/definitions/dto.AddonResponse"
                 },
                 "addon_id": {
                     "type": "string"
                 },
                 "addon_status": {
-                    "$ref": "#/definitions/types.AddonStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonStatus"
                 },
                 "cancellation_reason": {
                     "type": "string"
@@ -11739,7 +11739,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.AddonAssociationEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonAssociationEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -11755,10 +11755,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription": {
-                    "$ref": "#/definitions/SubscriptionResponse"
+                    "$ref": "#/definitions/dto.SubscriptionResponse"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -11771,7 +11771,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AddonResponse": {
+        "dto.AddonResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -11786,7 +11786,7 @@ const docTemplate = `{
                 "entitlements": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EntitlementResponse"
+                        "$ref": "#/definitions/dto.EntitlementResponse"
                     }
                 },
                 "environment_id": {
@@ -11809,17 +11809,17 @@ const docTemplate = `{
                     "description": "Optional expanded fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PriceResponse"
+                        "$ref": "#/definitions/dto.PriceResponse"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -11829,7 +11829,7 @@ const docTemplate = `{
                 }
             }
         },
-        "Address": {
+        "dto.Address": {
             "type": "object",
             "properties": {
                 "address_city": {
@@ -11857,7 +11857,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AggregatedEntitlement": {
+        "dto.AggregatedEntitlement": {
             "type": "object",
             "properties": {
                 "is_enabled": {
@@ -11877,38 +11877,38 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod"
                 }
             }
         },
-        "AggregatedFeature": {
+        "dto.AggregatedFeature": {
             "type": "object",
             "properties": {
                 "entitlement": {
-                    "$ref": "#/definitions/AggregatedEntitlement"
+                    "$ref": "#/definitions/dto.AggregatedEntitlement"
                 },
                 "feature": {
-                    "$ref": "#/definitions/FeatureResponse"
+                    "$ref": "#/definitions/dto.FeatureResponse"
                 },
                 "sources": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EntitlementSource"
+                        "$ref": "#/definitions/dto.EntitlementSource"
                     }
                 }
             }
         },
-        "AlertLogResponse": {
+        "dto.AlertLogResponse": {
             "type": "object",
             "properties": {
                 "alert_info": {
-                    "$ref": "#/definitions/types.AlertInfo"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertInfo"
                 },
                 "alert_status": {
-                    "$ref": "#/definitions/types.AlertState"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertState"
                 },
                 "alert_type": {
-                    "$ref": "#/definitions/types.AlertType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertType"
                 },
                 "created_at": {
                     "type": "string"
@@ -11920,7 +11920,7 @@ const docTemplate = `{
                     "description": "Expanded fields",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/CustomerResponse"
+                            "$ref": "#/definitions/dto.CustomerResponse"
                         }
                     ]
                 },
@@ -11931,13 +11931,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.AlertEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertEntityType"
                 },
                 "environment_id": {
                     "type": "string"
                 },
                 "feature": {
-                    "$ref": "#/definitions/FeatureResponse"
+                    "$ref": "#/definitions/dto.FeatureResponse"
                 },
                 "id": {
                     "type": "string"
@@ -11961,11 +11961,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/WalletResponse"
+                    "$ref": "#/definitions/dto.WalletResponse"
                 }
             }
         },
-        "BillingCycleInfo": {
+        "dto.BillingCycleInfo": {
             "type": "object",
             "properties": {
                 "billing_anchor": {
@@ -11976,7 +11976,7 @@ const docTemplate = `{
                     "description": "billing_cadence is the billing cadence",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCadence"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                         }
                     ]
                 },
@@ -11984,7 +11984,7 @@ const docTemplate = `{
                     "description": "billing_period is the billing period",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -12003,7 +12003,7 @@ const docTemplate = `{
                 }
             }
         },
-        "BillingPeriodInfo": {
+        "dto.BillingPeriodInfo": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -12018,7 +12018,7 @@ const docTemplate = `{
                 }
             }
         },
-        "BulkIngestEventRequest": {
+        "dto.BulkIngestEventRequest": {
             "type": "object",
             "required": [
                 "events"
@@ -12029,12 +12029,12 @@ const docTemplate = `{
                     "maxItems": 1000,
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/IngestEventRequest"
+                        "$ref": "#/definitions/dto.IngestEventRequest"
                     }
                 }
             }
         },
-        "CancelScheduleRequest": {
+        "dto.CancelScheduleRequest": {
             "description": "Request to cancel a subscription schedule (supports two modes)",
             "type": "object",
             "properties": {
@@ -12046,7 +12046,7 @@ const docTemplate = `{
                     "description": "schedule_type is the type of schedule to cancel (required if schedule_id is not provided)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionScheduleChangeType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType"
                         }
                     ]
                 },
@@ -12056,7 +12056,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CancelScheduleResponse": {
+        "dto.CancelScheduleResponse": {
             "description": "Confirmation of schedule cancellation",
             "type": "object",
             "properties": {
@@ -12068,13 +12068,13 @@ const docTemplate = `{
                     "description": "status is the new status (should be \"cancelled\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduleStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleStatus"
                         }
                     ]
                 }
             }
         },
-        "CancelSubscriptionRequest": {
+        "dto.CancelSubscriptionRequest": {
             "type": "object",
             "required": [
                 "cancellation_type"
@@ -12087,7 +12087,7 @@ const docTemplate = `{
                     "description": "CancelImmediatelyInvoicePolicy controls whether to generate a final invoice on immediate cancellation. Defaults to skip.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CancelImmediatelyInvoicePolicy"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CancelImmediatelyInvoicePolicy"
                         }
                     ]
                 },
@@ -12095,7 +12095,7 @@ const docTemplate = `{
                     "description": "CancellationType determines when the cancellation takes effect",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CancellationType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CancellationType"
                         }
                     ]
                 },
@@ -12103,7 +12103,7 @@ const docTemplate = `{
                     "description": "ProrationBehavior controls how proration is handled.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ProrationBehavior"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                         }
                     ]
                 },
@@ -12113,11 +12113,11 @@ const docTemplate = `{
                 }
             }
         },
-        "CancelSubscriptionResponse": {
+        "dto.CancelSubscriptionResponse": {
             "type": "object",
             "properties": {
                 "cancellation_type": {
-                    "$ref": "#/definitions/types.CancellationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CancellationType"
                 },
                 "effective_date": {
                     "type": "string"
@@ -12132,14 +12132,14 @@ const docTemplate = `{
                 "proration_details": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ProrationDetail"
+                        "$ref": "#/definitions/dto.ProrationDetail"
                     }
                 },
                 "proration_invoice": {
                     "description": "Proration details",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     ]
                 },
@@ -12147,7 +12147,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 },
                 "subscription_id": {
                     "description": "Basic cancellation info",
@@ -12158,7 +12158,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ClonePlanRequest": {
+        "dto.ClonePlanRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -12187,14 +12187,14 @@ const docTemplate = `{
                 }
             }
         },
-        "CostAnalyticItem": {
+        "dto.CostAnalyticItem": {
             "type": "object",
             "properties": {
                 "cost_by_period": {
                     "description": "Breakdown",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CostPoint"
+                        "$ref": "#/definitions/dto.CostPoint"
                     }
                 },
                 "costsheet_id": {
@@ -12251,7 +12251,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CostPoint": {
+        "dto.CostPoint": {
             "type": "object",
             "properties": {
                 "cost": {
@@ -12268,7 +12268,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CostsheetResponse": {
+        "dto.CostsheetResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -12302,11 +12302,11 @@ const docTemplate = `{
                     "description": "Associated prices",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PriceResponse"
+                        "$ref": "#/definitions/dto.PriceResponse"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -12319,7 +12319,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CouponApplicationResponse": {
+        "dto.CouponApplicationResponse": {
             "type": "object",
             "properties": {
                 "applied_at": {
@@ -12348,7 +12348,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "discount_type": {
-                    "$ref": "#/definitions/types.CouponType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                 },
                 "discounted_amount": {
                     "type": "string"
@@ -12378,7 +12378,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -12394,11 +12394,11 @@ const docTemplate = `{
                 }
             }
         },
-        "CouponAssociationResponse": {
+        "dto.CouponAssociationResponse": {
             "type": "object",
             "properties": {
                 "coupon": {
-                    "$ref": "#/definitions/Coupon"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_coupon.Coupon"
                 },
                 "coupon_id": {
                     "type": "string"
@@ -12429,7 +12429,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "Mandatory",
@@ -12454,14 +12454,14 @@ const docTemplate = `{
                 }
             }
         },
-        "CouponResponse": {
+        "dto.CouponResponse": {
             "type": "object",
             "properties": {
                 "amount_off": {
                     "type": "string"
                 },
                 "cadence": {
-                    "$ref": "#/definitions/types.CouponCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence"
                 },
                 "created_at": {
                     "type": "string"
@@ -12507,7 +12507,7 @@ const docTemplate = `{
                     "additionalProperties": true
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -12516,7 +12516,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.CouponType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -12526,7 +12526,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateAPIKeyRequest": {
+        "dto.CreateAPIKeyRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -12543,22 +12543,22 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.SecretType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SecretType"
                 }
             }
         },
-        "CreateAPIKeyResponse": {
+        "dto.CreateAPIKeyResponse": {
             "type": "object",
             "properties": {
                 "api_key": {
                     "type": "string"
                 },
                 "secret": {
-                    "$ref": "#/definitions/SecretResponse"
+                    "$ref": "#/definitions/dto.SecretResponse"
                 }
             }
         },
-        "CreateAddonRequest": {
+        "dto.CreateAddonRequest": {
             "type": "object",
             "required": [
                 "lookup_key",
@@ -12580,11 +12580,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 }
             }
         },
-        "CreateAddonResponse": {
+        "dto.CreateAddonResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -12599,7 +12599,7 @@ const docTemplate = `{
                 "entitlements": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EntitlementResponse"
+                        "$ref": "#/definitions/dto.EntitlementResponse"
                     }
                 },
                 "environment_id": {
@@ -12622,17 +12622,17 @@ const docTemplate = `{
                     "description": "Optional expanded fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PriceResponse"
+                        "$ref": "#/definitions/dto.PriceResponse"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -12642,7 +12642,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateBulkEntitlementRequest": {
+        "dto.CreateBulkEntitlementRequest": {
             "type": "object",
             "required": [
                 "items"
@@ -12653,23 +12653,23 @@ const docTemplate = `{
                     "maxItems": 100,
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/CreateEntitlementRequest"
+                        "$ref": "#/definitions/dto.CreateEntitlementRequest"
                     }
                 }
             }
         },
-        "CreateBulkEntitlementResponse": {
+        "dto.CreateBulkEntitlementResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EntitlementResponse"
+                        "$ref": "#/definitions/dto.EntitlementResponse"
                     }
                 }
             }
         },
-        "CreateBulkPriceRequest": {
+        "dto.CreateBulkPriceRequest": {
             "type": "object",
             "required": [
                 "items"
@@ -12680,23 +12680,23 @@ const docTemplate = `{
                     "maxItems": 100,
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/CreatePriceRequest"
+                        "$ref": "#/definitions/dto.CreatePriceRequest"
                     }
                 }
             }
         },
-        "CreateBulkPriceResponse": {
+        "dto.CreateBulkPriceResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PriceResponse"
+                        "$ref": "#/definitions/dto.PriceResponse"
                     }
                 }
             }
         },
-        "CreateCostsheetRequest": {
+        "dto.CreateCostsheetRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -12723,15 +12723,15 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateCostsheetResponse": {
+        "dto.CreateCostsheetResponse": {
             "type": "object",
             "properties": {
                 "costsheet": {
-                    "$ref": "#/definitions/CostsheetResponse"
+                    "$ref": "#/definitions/dto.CostsheetResponse"
                 }
             }
         },
-        "CreateCouponRequest": {
+        "dto.CreateCouponRequest": {
             "type": "object",
             "required": [
                 "cadence",
@@ -12750,7 +12750,7 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CouponCadence"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence"
                         }
                     ]
                 },
@@ -12792,13 +12792,13 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CouponType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                         }
                     ]
                 }
             }
         },
-        "CreateCreditGrantRequest": {
+        "dto.CreateCreditGrantRequest": {
             "type": "object",
             "required": [
                 "cadence",
@@ -12808,7 +12808,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "cadence": {
-                    "$ref": "#/definitions/types.CreditGrantCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantCadence"
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
@@ -12824,10 +12824,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expiration_duration_unit": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryDurationUnit"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit"
                 },
                 "expiration_type": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType"
                 },
                 "metadata": {
                     "$ref": "#/definitions/types.Metadata"
@@ -12836,7 +12836,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "period": {
-                    "$ref": "#/definitions/types.CreditGrantPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantPeriod"
                 },
                 "period_count": {
                     "type": "integer"
@@ -12848,7 +12848,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "scope": {
-                    "$ref": "#/definitions/types.CreditGrantScope"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantScope"
                 },
                 "start_date": {
                     "type": "string"
@@ -12862,7 +12862,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateCreditNoteLineItemRequest": {
+        "dto.CreateCreditNoteLineItemRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -12891,7 +12891,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateCreditNoteRequest": {
+        "dto.CreateCreditNoteRequest": {
             "type": "object",
             "required": [
                 "invoice_id",
@@ -12914,7 +12914,7 @@ const docTemplate = `{
                     "description": "line_items contains the individual line items that make up this credit note (minimum 1 required)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreateCreditNoteLineItemRequest"
+                        "$ref": "#/definitions/dto.CreateCreditNoteLineItemRequest"
                     }
                 },
                 "memo": {
@@ -12938,13 +12938,13 @@ const docTemplate = `{
                     "description": "reason specifies the reason for creating this credit note (duplicate, fraudulent, order_change, product_unsatisfactory)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CreditNoteReason"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteReason"
                         }
                     ]
                 }
             }
         },
-        "CreateCustomerRequest": {
+        "dto.CreateCustomerRequest": {
             "description": "Request object for creating a new customer in the system",
             "type": "object",
             "required": [
@@ -12992,7 +12992,7 @@ const docTemplate = `{
                     "description": "integration_entity_mapping contains provider integration mappings for this customer",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreateEntityIntegrationMappingRequest"
+                        "$ref": "#/definitions/dto.CreateEntityIntegrationMappingRequest"
                     }
                 },
                 "metadata": {
@@ -13014,12 +13014,12 @@ const docTemplate = `{
                     "description": "tax_rate_overrides contains tax rate configurations to be linked to this customer",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TaxRateOverride"
+                        "$ref": "#/definitions/dto.TaxRateOverride"
                     }
                 }
             }
         },
-        "CreateEntitlementRequest": {
+        "dto.CreateEntitlementRequest": {
             "type": "object",
             "required": [
                 "feature_id",
@@ -13033,13 +13033,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntitlementEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType"
                 },
                 "feature_id": {
                     "type": "string"
                 },
                 "feature_type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "is_enabled": {
                     "type": "boolean"
@@ -13063,11 +13063,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod"
                 }
             }
         },
-        "CreateEntityIntegrationMappingRequest": {
+        "dto.CreateEntityIntegrationMappingRequest": {
             "type": "object",
             "required": [
                 "entity_id",
@@ -13081,7 +13081,7 @@ const docTemplate = `{
                     "maxLength": 255
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.IntegrationEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.IntegrationEntityType"
                 },
                 "metadata": {
                     "type": "object",
@@ -13097,7 +13097,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateFeatureRequest": {
+        "dto.CreateFeatureRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -13105,7 +13105,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "description": {
                     "type": "string"
@@ -13121,7 +13121,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Metadata"
                 },
                 "meter": {
-                    "$ref": "#/definitions/CreateMeterRequest"
+                    "$ref": "#/definitions/dto.CreateMeterRequest"
                 },
                 "meter_id": {
                     "type": "string"
@@ -13130,10 +13130,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "reporting_unit": {
-                    "$ref": "#/definitions/types.ReportingUnit"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ReportingUnit"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "unit_plural": {
                     "type": "string"
@@ -13143,7 +13143,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateGroupRequest": {
+        "dto.CreateGroupRequest": {
             "type": "object",
             "required": [
                 "entity_type",
@@ -13162,7 +13162,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateInvoiceLineItemRequest": {
+        "dto.CreateInvoiceLineItemRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -13177,7 +13177,7 @@ const docTemplate = `{
                     "description": "commitment_info contains details about any commitment applied to this line item",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CommitmentInfo"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo"
                         }
                     ]
                 },
@@ -13259,7 +13259,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateInvoiceRequest": {
+        "dto.CreateInvoiceRequest": {
             "type": "object",
             "required": [
                 "amount_due",
@@ -13285,7 +13285,7 @@ const docTemplate = `{
                     "description": "billing_reason indicates why this invoice was created (subscription_cycle, manual, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceBillingReason"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceBillingReason"
                         }
                     ]
                 },
@@ -13320,7 +13320,7 @@ const docTemplate = `{
                     "description": "Invoice Coupons",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InvoiceCoupon"
+                        "$ref": "#/definitions/dto.InvoiceCoupon"
                     }
                 },
                 "invoice_number": {
@@ -13335,7 +13335,7 @@ const docTemplate = `{
                     "description": "invoice_status represents the current status of the invoice (draft, finalized, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus"
                         }
                     ]
                 },
@@ -13343,7 +13343,7 @@ const docTemplate = `{
                     "description": "invoice_type indicates the type of invoice (subscription, one_time, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType"
                         }
                     ]
                 },
@@ -13351,14 +13351,14 @@ const docTemplate = `{
                     "description": "Invoice Line Item Coupons",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InvoiceLineItemCoupon"
+                        "$ref": "#/definitions/dto.InvoiceLineItemCoupon"
                     }
                 },
                 "line_items": {
                     "description": "line_items contains the individual items that make up this invoice",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreateInvoiceLineItemRequest"
+                        "$ref": "#/definitions/dto.CreateInvoiceLineItemRequest"
                     }
                 },
                 "metadata": {
@@ -13373,7 +13373,7 @@ const docTemplate = `{
                     "description": "payment_status represents the payment status of the invoice (unpaid, paid, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                         }
                     ]
                 },
@@ -13389,7 +13389,7 @@ const docTemplate = `{
                     "description": "prepared_tax_rates contains the tax rates pre-resolved by the caller (e.g., billing service)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TaxRateResponse"
+                        "$ref": "#/definitions/dto.TaxRateResponse"
                     }
                 },
                 "subscription_id": {
@@ -13404,7 +13404,7 @@ const docTemplate = `{
                     "description": "tax_rate_overrides is the tax rate overrides to be applied to the invoice",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TaxRateOverride"
+                        "$ref": "#/definitions/dto.TaxRateOverride"
                     }
                 },
                 "tax_rates": {
@@ -13424,7 +13424,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateMeterRequest": {
+        "dto.CreateMeterRequest": {
             "type": "object",
             "required": [
                 "aggregation",
@@ -13451,11 +13451,11 @@ const docTemplate = `{
                     "example": "API Usage Meter"
                 },
                 "reset_usage": {
-                    "$ref": "#/definitions/types.ResetUsage"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage"
                 }
             }
         },
-        "CreatePaymentRequest": {
+        "dto.CreatePaymentRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -13478,7 +13478,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "destination_type": {
-                    "$ref": "#/definitions/types.PaymentDestinationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentDestinationType"
                 },
                 "idempotency_key": {
                     "type": "string"
@@ -13487,13 +13487,13 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Metadata"
                 },
                 "payment_gateway": {
-                    "$ref": "#/definitions/types.PaymentGatewayType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentGatewayType"
                 },
                 "payment_method_id": {
                     "type": "string"
                 },
                 "payment_method_type": {
-                    "$ref": "#/definitions/types.PaymentMethodType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentMethodType"
                 },
                 "process_payment": {
                     "type": "boolean",
@@ -13508,7 +13508,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreatePlanRequest": {
+        "dto.CreatePlanRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -13531,7 +13531,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreatePriceRequest": {
+        "dto.CreatePriceRequest": {
             "type": "object",
             "required": [
                 "billing_cadence",
@@ -13549,13 +13549,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "type": "integer",
@@ -13577,7 +13577,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.PriceEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType"
                 },
                 "filter_values": {
                     "type": "object",
@@ -13593,7 +13593,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "lookup_key": {
                     "type": "string"
@@ -13612,21 +13612,21 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "price_unit_config": {
-                    "$ref": "#/definitions/PriceUnitConfig"
+                    "$ref": "#/definitions/dto.PriceUnitConfig"
                 },
                 "price_unit_type": {
-                    "$ref": "#/definitions/types.PriceUnitType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType"
                 },
                 "start_date": {
                     "type": "string"
                 },
                 "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                 },
                 "tiers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreatePriceTier"
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -13636,11 +13636,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 }
             }
         },
-        "CreatePriceTier": {
+        "dto.CreatePriceTier": {
             "type": "object",
             "required": [
                 "unit_amount"
@@ -13660,7 +13660,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreatePriceUnitRequest": {
+        "dto.CreatePriceUnitRequest": {
             "type": "object",
             "required": [
                 "base_currency",
@@ -13692,7 +13692,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreatePriceUnitResponse": {
+        "dto.CreatePriceUnitResponse": {
             "type": "object",
             "properties": {
                 "base_currency": {
@@ -13723,7 +13723,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "symbol": {
                     "type": "string"
@@ -13739,7 +13739,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateScheduledTaskRequest": {
+        "dto.CreateScheduledTaskRequest": {
             "type": "object",
             "required": [
                 "connection_id",
@@ -13755,7 +13755,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.ScheduledTaskEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType"
                 },
                 "interval": {
                     "description": "Note: \"custom\" is excluded from API (internal testing only)",
@@ -13765,16 +13765,16 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduledTaskInterval"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval"
                         }
                     ]
                 },
                 "job_config": {
-                    "$ref": "#/definitions/types.S3JobConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.S3JobConfig"
                 }
             }
         },
-        "CreateSubscriptionLineItemRequest": {
+        "dto.CreateSubscriptionLineItemRequest": {
             "type": "object",
             "properties": {
                 "commitment_amount": {
@@ -13782,7 +13782,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "commitment_duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "commitment_overage_factor": {
                     "type": "number"
@@ -13794,7 +13794,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "commitment_type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 },
                 "commitment_windowed": {
                     "type": "boolean"
@@ -13815,7 +13815,7 @@ const docTemplate = `{
                     "description": "Price defines a new price inline; server creates a subscription-scoped price and adds the line item. Exactly one of price_id or price must be set. Entity/currency are set from the subscription.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/SubscriptionPriceCreateRequest"
+                            "$ref": "#/definitions/dto.SubscriptionPriceCreateRequest"
                         }
                     ]
                 },
@@ -13834,7 +13834,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateSubscriptionRequest": {
+        "dto.CreateSubscriptionRequest": {
             "type": "object",
             "required": [
                 "billing_cadence",
@@ -13847,22 +13847,22 @@ const docTemplate = `{
                     "description": "Addons represents addons to be added to the subscription during creation",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/AddAddonToSubscriptionRequest"
+                        "$ref": "#/definitions/dto.AddAddonToSubscriptionRequest"
                     }
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_cycle": {
                     "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCycle"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle"
                         }
                     ]
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "type": "integer",
@@ -13872,7 +13872,7 @@ const docTemplate = `{
                     "description": "collection_method determines how invoices are collected\n\"default_incomplete\" - subscription waits for payment confirmation before activation\n\"send_invoice\" - subscription activates immediately, invoice is sent for payment",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CollectionMethod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CollectionMethod"
                         }
                     ]
                 },
@@ -13884,7 +13884,7 @@ const docTemplate = `{
                     "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on MONTHLY billing)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -13898,7 +13898,7 @@ const docTemplate = `{
                     "description": "Credit grants to be applied when subscription is created",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreateCreditGrantRequest"
+                        "$ref": "#/definitions/dto.CreateCreditGrantRequest"
                     }
                 },
                 "currency": {
@@ -13930,7 +13930,7 @@ const docTemplate = `{
                     "description": "Inheritance groups all customer-hierarchy fields.\nWhen provided with at least one child ID, the subscription becomes a PARENT type.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/SubscriptionInheritanceConfig"
+                            "$ref": "#/definitions/dto.SubscriptionInheritanceConfig"
                         }
                     ]
                 },
@@ -13938,7 +13938,7 @@ const docTemplate = `{
                     "description": "LineItemCommitments allows setting commitment configuration per line item (keyed by price_id)",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/LineItemCommitmentConfig"
+                        "$ref": "#/definitions/dto.LineItemCommitmentConfig"
                     }
                 },
                 "line_item_coupons": {
@@ -13954,7 +13954,7 @@ const docTemplate = `{
                     "description": "LineItems are extra line items to add at creation (each with price_id or price), in addition to plan prices",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreateSubscriptionLineItemRequest"
+                        "$ref": "#/definitions/dto.CreateSubscriptionLineItemRequest"
                     }
                 },
                 "lookup_key": {
@@ -13974,21 +13974,21 @@ const docTemplate = `{
                     "description": "OverrideEntitlements allows customizing specific entitlements for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/OverrideEntitlementRequest"
+                        "$ref": "#/definitions/dto.OverrideEntitlementRequest"
                     }
                 },
                 "override_line_items": {
                     "description": "OverrideLineItems allows customizing specific prices for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/OverrideLineItemRequest"
+                        "$ref": "#/definitions/dto.OverrideLineItemRequest"
                     }
                 },
                 "payment_behavior": {
                     "description": "Payment behavior configuration",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentBehavior"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentBehavior"
                         }
                     ]
                 },
@@ -13996,7 +13996,7 @@ const docTemplate = `{
                     "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentTerms"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms"
                         }
                     ]
                 },
@@ -14004,7 +14004,7 @@ const docTemplate = `{
                     "description": "Phases represents subscription phases to be created with the subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionPhaseCreateRequest"
+                        "$ref": "#/definitions/dto.SubscriptionPhaseCreateRequest"
                     }
                 },
                 "plan_id": {
@@ -14014,7 +14014,7 @@ const docTemplate = `{
                     "description": "ProrationBehavior controls how proration is handled.\nIf not set, the default value is none. Possible values are create_prorations and none.\ncreate_prorations means the proration will be calculated and applied.\nnone means the proration will not be calculated.\nThis is IGNORED when the billing cycle is anniversary.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ProrationBehavior"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                         }
                     ]
                 },
@@ -14025,7 +14025,7 @@ const docTemplate = `{
                     "description": "SubscriptionStatus determines the initial status of the subscription\nIf set to \"draft\", the subscription will be created as a draft (skips invoice creation and payment processing)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                         }
                     ]
                 },
@@ -14033,7 +14033,7 @@ const docTemplate = `{
                     "description": "tax_rate_overrides is the tax rate overrides\tto be applied to the subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TaxRateOverride"
+                        "$ref": "#/definitions/dto.TaxRateOverride"
                     }
                 },
                 "trial_end": {
@@ -14044,7 +14044,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateTaskRequest": {
+        "dto.CreateTaskRequest": {
             "type": "object",
             "required": [
                 "entity_type",
@@ -14054,13 +14054,13 @@ const docTemplate = `{
             ],
             "properties": {
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntityType"
                 },
                 "file_name": {
                     "type": "string"
                 },
                 "file_type": {
-                    "$ref": "#/definitions/types.FileType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FileType"
                 },
                 "file_url": {
                     "type": "string"
@@ -14070,11 +14070,11 @@ const docTemplate = `{
                     "additionalProperties": true
                 },
                 "task_type": {
-                    "$ref": "#/definitions/types.TaskType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaskType"
                 }
             }
         },
-        "CreateTaxAssociationRequest": {
+        "dto.CreateTaxAssociationRequest": {
             "type": "object",
             "required": [
                 "tax_rate_code"
@@ -14090,7 +14090,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.TaxRateEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType"
                 },
                 "external_customer_id": {
                     "type": "string"
@@ -14109,7 +14109,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreateTaxRateRequest": {
+        "dto.CreateTaxRateRequest": {
             "type": "object",
             "required": [
                 "code",
@@ -14147,7 +14147,7 @@ const docTemplate = `{
                     "description": "scope defines where this tax rate applies",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TaxRateScope"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateScope"
                         }
                     ]
                 },
@@ -14155,13 +14155,13 @@ const docTemplate = `{
                     "description": "tax_rate_type determines how the tax is calculated (\"percentage\" or \"fixed\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TaxRateType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateType"
                         }
                     ]
                 }
             }
         },
-        "CreateUserRequest": {
+        "dto.CreateUserRequest": {
             "type": "object",
             "required": [
                 "type"
@@ -14182,13 +14182,13 @@ const docTemplate = `{
                     "description": "\"user\" or \"service_account\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.UserType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
                         }
                     ]
                 }
             }
         },
-        "CreateUserResponse": {
+        "dto.CreateUserResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -14208,14 +14208,14 @@ const docTemplate = `{
                     }
                 },
                 "tenant": {
-                    "$ref": "#/definitions/TenantResponse"
+                    "$ref": "#/definitions/dto.TenantResponse"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.UserType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
                 }
             }
         },
-        "CreateWalletRequest": {
+        "dto.CreateWalletRequest": {
             "type": "object",
             "required": [
                 "currency"
@@ -14225,7 +14225,7 @@ const docTemplate = `{
                     "description": "alert_settings is the alert settings for the wallet (optional)\nIf not provided, tenant level alert settings will be used",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.AlertSettings"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                         }
                     ]
                 },
@@ -14233,7 +14233,7 @@ const docTemplate = `{
                     "description": "auto top-up object",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.AutoTopup"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup"
                         }
                     ]
                 },
@@ -14280,18 +14280,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_type": {
-                    "$ref": "#/definitions/types.WalletType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletType"
                 }
             }
         },
-        "CreditGrantApplicationResponse": {
+        "dto.CreditGrantApplicationResponse": {
             "type": "object",
             "properties": {
                 "application_reason": {
-                    "$ref": "#/definitions/types.CreditGrantApplicationReason"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantApplicationReason"
                 },
                 "application_status": {
-                    "$ref": "#/definitions/types.ApplicationStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ApplicationStatus"
                 },
                 "applied_at": {
                     "type": "string"
@@ -14336,13 +14336,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
                 },
                 "subscription_status_at_application": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -14355,11 +14355,11 @@ const docTemplate = `{
                 }
             }
         },
-        "CreditGrantResponse": {
+        "dto.CreditGrantResponse": {
             "type": "object",
             "properties": {
                 "cadence": {
-                    "$ref": "#/definitions/types.CreditGrantCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantCadence"
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
@@ -14387,10 +14387,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "expiration_duration_unit": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryDurationUnit"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit"
                 },
                 "expiration_type": {
-                    "$ref": "#/definitions/types.CreditGrantExpiryType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType"
                 },
                 "id": {
                     "type": "string"
@@ -14402,7 +14402,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "period": {
-                    "$ref": "#/definitions/types.CreditGrantPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantPeriod"
                 },
                 "period_count": {
                     "type": "integer"
@@ -14414,13 +14414,13 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "scope": {
-                    "$ref": "#/definitions/types.CreditGrantScope"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditGrantScope"
                 },
                 "start_date": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -14440,7 +14440,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CreditNoteResponse": {
+        "dto.CreditNoteResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -14457,7 +14457,7 @@ const docTemplate = `{
                     "description": "credit_note_status represents the current status of the credit note (e.g., draft, finalized, voided)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CreditNoteStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteStatus"
                         }
                     ]
                 },
@@ -14465,7 +14465,7 @@ const docTemplate = `{
                     "description": "credit_note_type indicates the type of credit note (refund, adjustment)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CreditNoteType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteType"
                         }
                     ]
                 },
@@ -14477,7 +14477,7 @@ const docTemplate = `{
                     "description": "customer contains the customer information associated with this credit note",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/Customer"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_customer.Customer"
                         }
                     ]
                 },
@@ -14505,7 +14505,7 @@ const docTemplate = `{
                     "description": "invoice contains the associated invoice information if requested",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     ]
                 },
@@ -14536,7 +14536,7 @@ const docTemplate = `{
                     "description": "reason specifies the reason for creating this credit note (duplicate, fraudulent, order_change, product_unsatisfactory)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CreditNoteReason"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditNoteReason"
                         }
                     ]
                 },
@@ -14544,18 +14544,18 @@ const docTemplate = `{
                     "description": "refund_status represents the status of any refund associated with this credit note",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                         }
                     ]
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription": {
                     "description": "subscription contains the associated subscription information if applicable",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/SubscriptionResponse"
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
                         }
                     ]
                 },
@@ -14582,7 +14582,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CustomAnalyticItem": {
+        "dto.CustomAnalyticItem": {
             "type": "object",
             "properties": {
                 "feature_name": {
@@ -14605,7 +14605,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CustomerEntitlementsResponse": {
+        "dto.CustomerEntitlementsResponse": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -14614,12 +14614,12 @@ const docTemplate = `{
                 "features": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/AggregatedFeature"
+                        "$ref": "#/definitions/dto.AggregatedFeature"
                     }
                 }
             }
         },
-        "CustomerInvoiceSummary": {
+        "dto.CustomerInvoiceSummary": {
             "type": "object",
             "properties": {
                 "currency": {
@@ -14664,21 +14664,21 @@ const docTemplate = `{
                 }
             }
         },
-        "CustomerLookupResult": {
+        "dto.CustomerLookupResult": {
             "type": "object",
             "properties": {
                 "customer": {
-                    "$ref": "#/definitions/Customer"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_customer.Customer"
                 },
                 "error": {
-                    "$ref": "#/definitions/errors.ErrorResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus"
                 }
             }
         },
-        "CustomerMultiCurrencyInvoiceSummary": {
+        "dto.CustomerMultiCurrencyInvoiceSummary": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -14693,12 +14693,12 @@ const docTemplate = `{
                     "description": "summaries contains the invoice summaries for each currency",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CustomerInvoiceSummary"
+                        "$ref": "#/definitions/dto.CustomerInvoiceSummary"
                     }
                 }
             }
         },
-        "CustomerResponse": {
+        "dto.CustomerResponse": {
             "description": "Customer response object containing all customer information",
             "type": "object",
             "properties": {
@@ -14751,7 +14751,7 @@ const docTemplate = `{
                 "integrations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EntityIntegrationMappingResponse"
+                        "$ref": "#/definitions/dto.EntityIntegrationMappingResponse"
                     }
                 },
                 "metadata": {
@@ -14766,7 +14766,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -14779,7 +14779,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CustomerUsageSummaryResponse": {
+        "dto.CustomerUsageSummaryResponse": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -14788,38 +14788,38 @@ const docTemplate = `{
                 "features": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/FeatureUsageSummary"
+                        "$ref": "#/definitions/dto.FeatureUsageSummary"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 },
                 "period": {
-                    "$ref": "#/definitions/BillingPeriodInfo"
+                    "$ref": "#/definitions/dto.BillingPeriodInfo"
                 }
             }
         },
-        "DebugTracker": {
+        "dto.DebugTracker": {
             "type": "object",
             "properties": {
                 "customer_lookup": {
-                    "$ref": "#/definitions/CustomerLookupResult"
+                    "$ref": "#/definitions/dto.CustomerLookupResult"
                 },
                 "failure_point": {
-                    "$ref": "#/definitions/types.FailurePoint"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FailurePoint"
                 },
                 "meter_matching": {
-                    "$ref": "#/definitions/MeterMatchingResult"
+                    "$ref": "#/definitions/dto.MeterMatchingResult"
                 },
                 "price_lookup": {
-                    "$ref": "#/definitions/PriceLookupResult"
+                    "$ref": "#/definitions/dto.PriceLookupResult"
                 },
                 "subscription_line_item_lookup": {
-                    "$ref": "#/definitions/SubscriptionLineItemLookupResult"
+                    "$ref": "#/definitions/dto.SubscriptionLineItemLookupResult"
                 }
             }
         },
-        "DeleteCostsheetResponse": {
+        "dto.DeleteCostsheetResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -14830,7 +14830,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DeleteCreditGrantRequest": {
+        "dto.DeleteCreditGrantRequest": {
             "type": "object",
             "properties": {
                 "effective_date": {
@@ -14839,7 +14839,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DeletePriceRequest": {
+        "dto.DeletePriceRequest": {
             "type": "object",
             "properties": {
                 "end_date": {
@@ -14847,7 +14847,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DeleteSubscriptionLineItemRequest": {
+        "dto.DeleteSubscriptionLineItemRequest": {
             "type": "object",
             "properties": {
                 "effective_from": {
@@ -14855,11 +14855,11 @@ const docTemplate = `{
                 }
             }
         },
-        "EntitlementResponse": {
+        "dto.EntitlementResponse": {
             "type": "object",
             "properties": {
                 "addon": {
-                    "$ref": "#/definitions/AddonResponse"
+                    "$ref": "#/definitions/dto.AddonResponse"
                 },
                 "created_at": {
                     "type": "string"
@@ -14877,19 +14877,19 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntitlementEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType"
                 },
                 "environment_id": {
                     "type": "string"
                 },
                 "feature": {
-                    "$ref": "#/definitions/FeatureResponse"
+                    "$ref": "#/definitions/dto.FeatureResponse"
                 },
                 "feature_id": {
                     "type": "string"
                 },
                 "feature_type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "id": {
                     "type": "string"
@@ -14904,7 +14904,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "plan": {
-                    "$ref": "#/definitions/PlanResponse"
+                    "$ref": "#/definitions/dto.PlanResponse"
                 },
                 "plan_id": {
                     "description": "TODO: Remove this once we have a proper entitlement entity type",
@@ -14917,7 +14917,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -14932,11 +14932,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod"
                 }
             }
         },
-        "EntitlementSource": {
+        "dto.EntitlementSource": {
             "type": "object",
             "properties": {
                 "entitlement_id": {
@@ -14949,7 +14949,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/EntitlementSourceEntityType"
+                    "$ref": "#/definitions/dto.EntitlementSourceEntityType"
                 },
                 "is_enabled": {
                     "type": "boolean"
@@ -14967,11 +14967,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 }
             }
         },
-        "EntitlementSourceEntityType": {
+        "dto.EntitlementSourceEntityType": {
             "type": "string",
             "enum": [
                 "plan",
@@ -14984,7 +14984,7 @@ const docTemplate = `{
                 "EntitlementSourceEntityTypeSubscription"
             ]
         },
-        "EntityIntegrationMappingResponse": {
+        "dto.EntityIntegrationMappingResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -14997,7 +14997,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.IntegrationEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.IntegrationEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -15012,7 +15012,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -15025,7 +15025,7 @@ const docTemplate = `{
                 }
             }
         },
-        "Event": {
+        "dto.Event": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -15055,7 +15055,7 @@ const docTemplate = `{
                 }
             }
         },
-        "EventCostInfo": {
+        "dto.EventCostInfo": {
             "type": "object",
             "properties": {
                 "costNanoUsd": {
@@ -15066,7 +15066,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ExecuteSubscriptionInheritanceRequest": {
+        "dto.ExecuteSubscriptionInheritanceRequest": {
             "type": "object",
             "properties": {
                 "external_customer_ids_to_inherit_subscription": {
@@ -15077,11 +15077,11 @@ const docTemplate = `{
                 }
             }
         },
-        "FeatureResponse": {
+        "dto.FeatureResponse": {
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "created_at": {
                     "type": "string"
@@ -15099,7 +15099,7 @@ const docTemplate = `{
                     "description": "Group is the full group object when the feature belongs to a group (populated in response)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/GroupResponse"
+                            "$ref": "#/definitions/dto.GroupResponse"
                         }
                     ]
                 },
@@ -15116,7 +15116,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/types.Metadata"
                 },
                 "meter": {
-                    "$ref": "#/definitions/MeterResponse"
+                    "$ref": "#/definitions/dto.MeterResponse"
                 },
                 "meter_id": {
                     "type": "string"
@@ -15125,16 +15125,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "reporting_unit": {
-                    "$ref": "#/definitions/types.ReportingUnit"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ReportingUnit"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "unit_plural": {
                     "type": "string"
@@ -15150,7 +15150,7 @@ const docTemplate = `{
                 }
             }
         },
-        "FeatureUsageInfo": {
+        "dto.FeatureUsageInfo": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -15179,14 +15179,14 @@ const docTemplate = `{
                 }
             }
         },
-        "FeatureUsageSummary": {
+        "dto.FeatureUsageSummary": {
             "type": "object",
             "properties": {
                 "current_usage": {
                     "type": "string"
                 },
                 "feature": {
-                    "$ref": "#/definitions/FeatureResponse"
+                    "$ref": "#/definitions/dto.FeatureResponse"
                 },
                 "is_enabled": {
                     "type": "boolean"
@@ -15203,7 +15203,7 @@ const docTemplate = `{
                 "sources": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EntitlementSource"
+                        "$ref": "#/definitions/dto.EntitlementSource"
                     }
                 },
                 "total_limit": {
@@ -15214,7 +15214,7 @@ const docTemplate = `{
                 }
             }
         },
-        "GetCostAnalyticsRequest": {
+        "dto.GetCostAnalyticsRequest": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -15251,22 +15251,22 @@ const docTemplate = `{
                 }
             }
         },
-        "GetCostsheetResponse": {
+        "dto.GetCostsheetResponse": {
             "type": "object",
             "properties": {
                 "costsheet": {
-                    "$ref": "#/definitions/CostsheetResponse"
+                    "$ref": "#/definitions/dto.CostsheetResponse"
                 }
             }
         },
-        "GetDetailedCostAnalyticsResponse": {
+        "dto.GetDetailedCostAnalyticsResponse": {
             "type": "object",
             "properties": {
                 "cost_analytics": {
                     "description": "Cost analytics array (flattened from nested structure)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CostAnalyticItem"
+                        "$ref": "#/definitions/dto.CostAnalyticItem"
                     }
                 },
                 "currency": {
@@ -15303,27 +15303,27 @@ const docTemplate = `{
                 }
             }
         },
-        "GetEventByIDResponse": {
+        "dto.GetEventByIDResponse": {
             "type": "object",
             "properties": {
                 "debug_tracker": {
-                    "$ref": "#/definitions/DebugTracker"
+                    "$ref": "#/definitions/dto.DebugTracker"
                 },
                 "event": {
-                    "$ref": "#/definitions/Event"
+                    "$ref": "#/definitions/dto.Event"
                 },
                 "processed_events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/FeatureUsageInfo"
+                        "$ref": "#/definitions/dto.FeatureUsageInfo"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.EventProcessingStatusType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EventProcessingStatusType"
                 }
             }
         },
-        "GetEventsRequest": {
+        "dto.GetEventsRequest": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -15390,13 +15390,13 @@ const docTemplate = `{
                 }
             }
         },
-        "GetEventsResponse": {
+        "dto.GetEventsResponse": {
             "type": "object",
             "properties": {
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Event"
+                        "$ref": "#/definitions/dto.Event"
                     }
                 },
                 "has_more": {
@@ -15416,18 +15416,18 @@ const docTemplate = `{
                 }
             }
         },
-        "GetHuggingFaceBillingDataResponse": {
+        "dto.GetHuggingFaceBillingDataResponse": {
             "type": "object",
             "properties": {
                 "requests": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EventCostInfo"
+                        "$ref": "#/definitions/dto.EventCostInfo"
                     }
                 }
             }
         },
-        "GetPendingSchedulesResponse": {
+        "dto.GetPendingSchedulesResponse": {
             "description": "List of pending schedules for a subscription",
             "type": "object",
             "properties": {
@@ -15439,12 +15439,12 @@ const docTemplate = `{
                     "description": "schedules is the list of pending schedules",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionScheduleResponse"
+                        "$ref": "#/definitions/dto.SubscriptionScheduleResponse"
                     }
                 }
             }
         },
-        "GetPreviewInvoiceRequest": {
+        "dto.GetPreviewInvoiceRequest": {
             "type": "object",
             "required": [
                 "subscription_id"
@@ -15469,7 +15469,7 @@ const docTemplate = `{
                 }
             }
         },
-        "GetUsageAnalyticsRequest": {
+        "dto.GetUsageAnalyticsRequest": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -15523,11 +15523,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "window_size": {
-                    "$ref": "#/definitions/types.WindowSize"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                 }
             }
         },
-        "GetUsageAnalyticsResponse": {
+        "dto.GetUsageAnalyticsResponse": {
             "type": "object",
             "properties": {
                 "currency": {
@@ -15536,13 +15536,13 @@ const docTemplate = `{
                 "custom_analytics": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CustomAnalyticItem"
+                        "$ref": "#/definitions/dto.CustomAnalyticItem"
                     }
                 },
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/UsageAnalyticItem"
+                        "$ref": "#/definitions/dto.UsageAnalyticItem"
                     }
                 },
                 "total_cost": {
@@ -15550,7 +15550,7 @@ const docTemplate = `{
                 }
             }
         },
-        "GetUsageByMeterRequest": {
+        "dto.GetUsageByMeterRequest": {
             "type": "object",
             "required": [
                 "meter_id"
@@ -15565,7 +15565,7 @@ const docTemplate = `{
                     "description": "Optional, only used for MAX aggregation with windowing",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.WindowSize"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                         }
                     ],
                     "example": "HOUR"
@@ -15600,11 +15600,11 @@ const docTemplate = `{
                     "example": "2024-11-09T00:00:00Z"
                 },
                 "window_size": {
-                    "$ref": "#/definitions/types.WindowSize"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                 }
             }
         },
-        "GetUsageBySubscriptionRequest": {
+        "dto.GetUsageBySubscriptionRequest": {
             "type": "object",
             "required": [
                 "subscription_id"
@@ -15628,7 +15628,7 @@ const docTemplate = `{
                 }
             }
         },
-        "GetUsageBySubscriptionResponse": {
+        "dto.GetUsageBySubscriptionResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -15637,7 +15637,7 @@ const docTemplate = `{
                 "charges": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionUsageByMetersResponse"
+                        "$ref": "#/definitions/dto.SubscriptionUsageByMetersResponse"
                     }
                 },
                 "commitment_amount": {
@@ -15672,7 +15672,7 @@ const docTemplate = `{
                 }
             }
         },
-        "GetUsageRequest": {
+        "dto.GetUsageRequest": {
             "type": "object",
             "required": [
                 "aggregation_type",
@@ -15680,7 +15680,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "aggregation_type": {
-                    "$ref": "#/definitions/types.AggregationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType"
                 },
                 "billing_anchor": {
                     "description": "BillingAnchor enables custom monthly billing periods for usage aggregation.\n\nWhen to use:\n- WindowSize = \"MONTH\" AND you need custom monthly periods (not calendar months)\n- Subscription billing that doesn't align with calendar months\n- Example: Customer signed up on 15th, so billing periods are 15th to 15th\n\nWhen NOT to use:\n- WindowSize != \"MONTH\" (ignored for DAY, HOUR, WEEK, etc.)\n- Standard calendar-based billing (1st to 1st of each month)\n\nExample values:\n- \"2024-03-05T14:30:45.123456789Z\" (5th of each month at 2:30:45 PM)\n- \"2024-01-15T00:00:00Z\" (15th of each month at midnight)\n- \"2024-02-29T12:00:00Z\" (29th of each month at noon - handles leap years)",
@@ -15691,7 +15691,7 @@ const docTemplate = `{
                     "description": "Optional, only used for MAX aggregation with windowing",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.WindowSize"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                         }
                     ],
                     "example": "HOUR"
@@ -15738,11 +15738,11 @@ const docTemplate = `{
                     "example": "2024-03-13T00:00:00Z"
                 },
                 "window_size": {
-                    "$ref": "#/definitions/types.WindowSize"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                 }
             }
         },
-        "GetUsageResponse": {
+        "dto.GetUsageResponse": {
             "type": "object",
             "properties": {
                 "event_name": {
@@ -15751,18 +15751,18 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/UsageResult"
+                        "$ref": "#/definitions/dto.UsageResult"
                     }
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AggregationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType"
                 },
                 "value": {
                     "type": "number"
                 }
             }
         },
-        "GroupResponse": {
+        "dto.GroupResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -15800,7 +15800,7 @@ const docTemplate = `{
                 }
             }
         },
-        "IngestEventRequest": {
+        "dto.IngestEventRequest": {
             "type": "object",
             "required": [
                 "event_name",
@@ -15845,7 +15845,7 @@ const docTemplate = `{
                 }
             }
         },
-        "InvoiceCoupon": {
+        "dto.InvoiceCoupon": {
             "type": "object",
             "required": [
                 "coupon_id"
@@ -15859,7 +15859,7 @@ const docTemplate = `{
                 }
             }
         },
-        "InvoiceLineItemCoupon": {
+        "dto.InvoiceLineItemCoupon": {
             "type": "object",
             "required": [
                 "coupon_id",
@@ -15878,7 +15878,7 @@ const docTemplate = `{
                 }
             }
         },
-        "InvoiceLineItemPreview": {
+        "dto.InvoiceLineItemPreview": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -15911,14 +15911,14 @@ const docTemplate = `{
                 }
             }
         },
-        "InvoiceLineItemResponse": {
+        "dto.InvoiceLineItemResponse": {
             "type": "object",
             "properties": {
                 "amount": {
                     "type": "string"
                 },
                 "commitment_info": {
-                    "$ref": "#/definitions/types.CommitmentInfo"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo"
                 },
                 "created_at": {
                     "type": "string"
@@ -15999,7 +15999,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -16017,19 +16017,19 @@ const docTemplate = `{
                     "description": "usage_analytics contains usage analytics for this line item (legacy - grouped by source)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SourceUsageItem"
+                        "$ref": "#/definitions/dto.SourceUsageItem"
                     }
                 },
                 "usage_breakdown": {
                     "description": "usage_breakdown contains flexible usage breakdown for this line item (supports any grouping)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/UsageBreakdownItem"
+                        "$ref": "#/definitions/dto.UsageBreakdownItem"
                     }
                 }
             }
         },
-        "InvoicePreview": {
+        "dto.InvoicePreview": {
             "type": "object",
             "properties": {
                 "currency": {
@@ -16044,7 +16044,7 @@ const docTemplate = `{
                     "description": "line_items contains preview of line items",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InvoiceLineItemPreview"
+                        "$ref": "#/definitions/dto.InvoiceLineItemPreview"
                     }
                 },
                 "subtotal": {
@@ -16061,7 +16061,7 @@ const docTemplate = `{
                 }
             }
         },
-        "InvoiceResponse": {
+        "dto.InvoiceResponse": {
             "type": "object",
             "properties": {
                 "adjustment_amount": {
@@ -16096,7 +16096,7 @@ const docTemplate = `{
                     "description": "coupon_applications contains the coupon applications associated with this invoice (overrides embedded field)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CouponApplicationResponse"
+                        "$ref": "#/definitions/dto.CouponApplicationResponse"
                     }
                 },
                 "created_at": {
@@ -16113,7 +16113,7 @@ const docTemplate = `{
                     "description": "customer contains the customer information associated with this invoice",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/CustomerResponse"
+                            "$ref": "#/definitions/dto.CustomerResponse"
                         }
                     ]
                 },
@@ -16157,7 +16157,7 @@ const docTemplate = `{
                     "description": "invoice_status represents the current status of the invoice - values include draft, open, paid, void, etc.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus"
                         }
                     ]
                 },
@@ -16165,7 +16165,7 @@ const docTemplate = `{
                     "description": "invoice_type indicates the type of invoice - whether this is a subscription invoice, one-time charge, or other billing type",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType"
                         }
                     ]
                 },
@@ -16177,7 +16177,7 @@ const docTemplate = `{
                     "description": "line_items contains the individual items that make up this invoice (overrides embedded field)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InvoiceLineItemResponse"
+                        "$ref": "#/definitions/dto.InvoiceLineItemResponse"
                     }
                 },
                 "metadata": {
@@ -16200,7 +16200,7 @@ const docTemplate = `{
                     "description": "payment_status indicates whether the invoice has been paid, is pending, or failed",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                         }
                     ]
                 },
@@ -16221,13 +16221,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription": {
                     "description": "subscription contains the associated subscription information if requested",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/SubscriptionResponse"
+                            "$ref": "#/definitions/dto.SubscriptionResponse"
                         }
                     ]
                 },
@@ -16243,7 +16243,7 @@ const docTemplate = `{
                     "description": "tax_applied_records contains the tax applied records associated with this invoice",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TaxAppliedResponse"
+                        "$ref": "#/definitions/dto.TaxAppliedResponse"
                     }
                 },
                 "tenant_id": {
@@ -16281,7 +16281,7 @@ const docTemplate = `{
                 }
             }
         },
-        "LineItemCommitmentConfig": {
+        "dto.LineItemCommitmentConfig": {
             "type": "object",
             "properties": {
                 "commitment_amount": {
@@ -16292,7 +16292,7 @@ const docTemplate = `{
                     "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on MONTHLY billing)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -16304,7 +16304,7 @@ const docTemplate = `{
                     "description": "CommitmentType specifies whether commitment is based on amount or quantity",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.CommitmentType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                         }
                     ]
                 },
@@ -16322,7 +16322,7 @@ const docTemplate = `{
                 }
             }
         },
-        "LinkIntegrationMappingRequest": {
+        "dto.LinkIntegrationMappingRequest": {
             "type": "object",
             "required": [
                 "entity_id",
@@ -16336,7 +16336,7 @@ const docTemplate = `{
                     "maxLength": 255
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.IntegrationEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.IntegrationEntityType"
                 },
                 "metadata": {
                     "type": "object",
@@ -16352,71 +16352,71 @@ const docTemplate = `{
                 }
             }
         },
-        "LinkIntegrationMappingResponse": {
+        "dto.LinkIntegrationMappingResponse": {
             "type": "object",
             "properties": {
                 "mapping": {
-                    "$ref": "#/definitions/EntityIntegrationMappingResponse"
+                    "$ref": "#/definitions/dto.EntityIntegrationMappingResponse"
                 }
             }
         },
-        "ListAlertLogsResponse": {
+        "dto.ListAlertLogsResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/AlertLogResponse"
+                        "$ref": "#/definitions/dto.AlertLogResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
-        "ListCostsheetResponse": {
+        "dto.ListCostsheetResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CostsheetResponse"
+                        "$ref": "#/definitions/dto.CostsheetResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
-        "ListPaymentsResponse": {
+        "dto.ListPaymentsResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PaymentResponse"
+                        "$ref": "#/definitions/dto.PaymentResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
-        "ListSecretsResponse": {
+        "dto.ListSecretsResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SecretResponse"
+                        "$ref": "#/definitions/dto.SecretResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
-        "ListSubscriptionPausesResponse": {
+        "dto.ListSubscriptionPausesResponse": {
             "description": "Response object for listing subscription pauses with total count",
             "type": "object",
             "properties": {
@@ -16424,7 +16424,7 @@ const docTemplate = `{
                     "description": "List of subscription pause objects\n@Description Array of subscription pauses",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionPauseResponse"
+                        "$ref": "#/definitions/dto.SubscriptionPauseResponse"
                     }
                 },
                 "total": {
@@ -16433,21 +16433,21 @@ const docTemplate = `{
                 }
             }
         },
-        "ListTasksResponse": {
+        "dto.ListTasksResponse": {
             "type": "object",
             "properties": {
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TaskResponse"
+                        "$ref": "#/definitions/dto.TaskResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
-        "MatchedMeter": {
+        "dto.MatchedMeter": {
             "type": "object",
             "properties": {
                 "event_name": {
@@ -16461,7 +16461,7 @@ const docTemplate = `{
                 }
             }
         },
-        "MatchedPrice": {
+        "dto.MatchedPrice": {
             "type": "object",
             "properties": {
                 "meter_id": {
@@ -16478,7 +16478,7 @@ const docTemplate = `{
                 }
             }
         },
-        "MatchedSubscriptionLineItem": {
+        "dto.MatchedSubscriptionLineItem": {
             "type": "object",
             "properties": {
                 "end_date": {
@@ -16507,24 +16507,24 @@ const docTemplate = `{
                 }
             }
         },
-        "MeterMatchingResult": {
+        "dto.MeterMatchingResult": {
             "type": "object",
             "properties": {
                 "error": {
-                    "$ref": "#/definitions/errors.ErrorResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 },
                 "matched_meters": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/MatchedMeter"
+                        "$ref": "#/definitions/dto.MatchedMeter"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus"
                 }
             }
         },
-        "MeterResponse": {
+        "dto.MeterResponse": {
             "type": "object",
             "properties": {
                 "aggregation": {
@@ -16553,7 +16553,7 @@ const docTemplate = `{
                     "example": "API Usage Meter"
                 },
                 "reset_usage": {
-                    "$ref": "#/definitions/types.ResetUsage"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage"
                 },
                 "status": {
                     "type": "string",
@@ -16569,7 +16569,7 @@ const docTemplate = `{
                 }
             }
         },
-        "OverrideEntitlementRequest": {
+        "dto.OverrideEntitlementRequest": {
             "type": "object",
             "required": [
                 "entitlement_id"
@@ -16593,7 +16593,7 @@ const docTemplate = `{
                 }
             }
         },
-        "OverrideLineItemRequest": {
+        "dto.OverrideLineItemRequest": {
             "type": "object",
             "required": [
                 "price_id"
@@ -16604,7 +16604,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "price_id": {
                     "description": "PriceID references the plan price to override",
@@ -16618,7 +16618,7 @@ const docTemplate = `{
                     "description": "PriceUnitTiers are the tiers for the price unit (for CUSTOM type, TIERED billing model)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreatePriceTier"
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "quantity": {
@@ -16629,7 +16629,7 @@ const docTemplate = `{
                     "description": "TierMode determines how to calculate the price for a given quantity",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingTier"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                         }
                     ]
                 },
@@ -16637,7 +16637,7 @@ const docTemplate = `{
                     "description": "Tiers determines the pricing tiers for this line item",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreatePriceTier"
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -16650,7 +16650,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PauseSubscriptionRequest": {
+        "dto.PauseSubscriptionRequest": {
             "description": "Request object for pausing an active subscription with various pause modes and options",
             "type": "object",
             "required": [
@@ -16680,7 +16680,7 @@ const docTemplate = `{
                     "description": "Mode for pausing the subscription\n@Description Determines when the pause takes effect. \"immediate\" pauses right away, \"scheduled\" pauses at a specified time\n@Enum immediate,scheduled",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PauseMode"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode"
                         }
                     ]
                 },
@@ -16695,7 +16695,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PaymentAttemptResponse": {
+        "dto.PaymentAttemptResponse": {
             "type": "object",
             "properties": {
                 "attempt_number": {
@@ -16730,7 +16730,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PaymentResponse": {
+        "dto.PaymentResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -16739,7 +16739,7 @@ const docTemplate = `{
                 "attempts": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PaymentAttemptResponse"
+                        "$ref": "#/definitions/dto.PaymentAttemptResponse"
                     }
                 },
                 "created_at": {
@@ -16755,7 +16755,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "destination_type": {
-                    "$ref": "#/definitions/types.PaymentDestinationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentDestinationType"
                 },
                 "error_message": {
                     "type": "string"
@@ -16791,10 +16791,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_method_type": {
-                    "$ref": "#/definitions/types.PaymentMethodType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentMethodType"
                 },
                 "payment_status": {
-                    "$ref": "#/definitions/types.PaymentStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                 },
                 "payment_url": {
                     "type": "string"
@@ -16822,7 +16822,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PlanResponse": {
+        "dto.PlanResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -16834,7 +16834,7 @@ const docTemplate = `{
                 "credit_grants": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreditGrantResponse"
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
                     }
                 },
                 "description": {
@@ -16846,7 +16846,7 @@ const docTemplate = `{
                 "entitlements": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EntitlementResponse"
+                        "$ref": "#/definitions/dto.EntitlementResponse"
                     }
                 },
                 "environment_id": {
@@ -16868,11 +16868,11 @@ const docTemplate = `{
                     "description": "TODO: Add inline addons",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PriceResponse"
+                        "$ref": "#/definitions/dto.PriceResponse"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -16885,7 +16885,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PlanSummary": {
+        "dto.PlanSummary": {
             "type": "object",
             "properties": {
                 "description": {
@@ -16906,41 +16906,41 @@ const docTemplate = `{
                 }
             }
         },
-        "PriceLookupResult": {
+        "dto.PriceLookupResult": {
             "type": "object",
             "properties": {
                 "error": {
-                    "$ref": "#/definitions/errors.ErrorResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 },
                 "matched_prices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/MatchedPrice"
+                        "$ref": "#/definitions/dto.MatchedPrice"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus"
                 }
             }
         },
-        "PriceResponse": {
+        "dto.PriceResponse": {
             "type": "object",
             "properties": {
                 "addon": {
-                    "$ref": "#/definitions/AddonResponse"
+                    "$ref": "#/definitions/dto.AddonResponse"
                 },
                 "amount": {
                     "description": "Amount stored in main currency units (e.g., dollars, not cents)\nFor USD: 12.50 means $12.50",
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "BillingPeriodCount is the count of the billing period ex 1, 3, 6, 12",
@@ -16989,7 +16989,7 @@ const docTemplate = `{
                     "description": "EntityType holds the value of the \"entity_type\" field.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PriceEntityType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType"
                         }
                     ]
                 },
@@ -16998,7 +16998,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "group": {
-                    "$ref": "#/definitions/GroupResponse"
+                    "$ref": "#/definitions/dto.GroupResponse"
                 },
                 "group_id": {
                     "description": "GroupID references the group this price belongs to",
@@ -17009,7 +17009,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "lookup_key": {
                     "description": "LookupKey used for looking up the price in the database",
@@ -17019,7 +17019,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/price.JSONBMetadata"
                 },
                 "meter": {
-                    "$ref": "#/definitions/MeterResponse"
+                    "$ref": "#/definitions/dto.MeterResponse"
                 },
                 "meter_id": {
                     "description": "MeterID is the id of the meter for usage based pricing",
@@ -17035,7 +17035,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "plan": {
-                    "$ref": "#/definitions/PlanResponse"
+                    "$ref": "#/definitions/dto.PlanResponse"
                 },
                 "price_unit": {
                     "description": "PriceUnit is the code of the price unit (e.g., 'btc', 'eth')",
@@ -17060,25 +17060,25 @@ const docTemplate = `{
                     "description": "PriceUnitType is the type of the price unit (FIAT, CUSTOM)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PriceUnitType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType"
                         }
                     ]
                 },
                 "pricing_unit": {
-                    "$ref": "#/definitions/PriceUnitResponse"
+                    "$ref": "#/definitions/dto.PriceUnitResponse"
                 },
                 "start_date": {
                     "description": "StartDate is the start date of the price",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                 },
                 "tiers": {
                     "type": "array",
@@ -17094,7 +17094,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -17104,7 +17104,7 @@ const docTemplate = `{
                 }
             }
         },
-        "PriceUnitConfig": {
+        "dto.PriceUnitConfig": {
             "type": "object",
             "required": [
                 "price_unit"
@@ -17119,12 +17119,12 @@ const docTemplate = `{
                 "price_unit_tiers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreatePriceTier"
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 }
             }
         },
-        "PriceUnitResponse": {
+        "dto.PriceUnitResponse": {
             "type": "object",
             "properties": {
                 "base_currency": {
@@ -17155,7 +17155,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "symbol": {
                     "type": "string"
@@ -17171,7 +17171,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ProrationDetail": {
+        "dto.ProrationDetail": {
             "type": "object",
             "properties": {
                 "charge_amount": {
@@ -17200,7 +17200,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ProrationDetails": {
+        "dto.ProrationDetails": {
             "type": "object",
             "properties": {
                 "charge_amount": {
@@ -17249,7 +17249,7 @@ const docTemplate = `{
                 }
             }
         },
-        "RemoveAddonRequest": {
+        "dto.RemoveAddonRequest": {
             "type": "object",
             "required": [
                 "addon_association_id"
@@ -17263,7 +17263,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ResumeSubscriptionRequest": {
+        "dto.ResumeSubscriptionRequest": {
             "description": "Request object for resuming a paused subscription",
             "type": "object",
             "required": [
@@ -17285,13 +17285,13 @@ const docTemplate = `{
                     "description": "Mode for resuming the subscription\n@Description Determines how the subscription should be resumed\n@Enum immediate,scheduled",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ResumeMode"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode"
                         }
                     ]
                 }
             }
         },
-        "ScheduledTaskResponse": {
+        "dto.ScheduledTaskResponse": {
             "type": "object",
             "properties": {
                 "connection_id": {
@@ -17304,7 +17304,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.ScheduledTaskEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -17320,12 +17320,12 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduledTaskInterval"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval"
                         }
                     ]
                 },
                 "job_config": {
-                    "$ref": "#/definitions/types.S3JobConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.S3JobConfig"
                 },
                 "status": {
                     "type": "string"
@@ -17338,7 +17338,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SecretResponse": {
+        "dto.SecretResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -17360,7 +17360,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "provider": {
-                    "$ref": "#/definitions/types.SecretProvider"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SecretProvider"
                 },
                 "roles": {
                     "description": "RBAC roles",
@@ -17370,10 +17370,10 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.SecretType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SecretType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -17382,13 +17382,13 @@ const docTemplate = `{
                     "description": "\"user\" or \"service_account\"",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.UserType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
                         }
                     ]
                 }
             }
         },
-        "SourceUsageItem": {
+        "dto.SourceUsageItem": {
             "type": "object",
             "properties": {
                 "cost": {
@@ -17413,7 +17413,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionChangeExecuteResponse": {
+        "dto.SubscriptionChangeExecuteResponse": {
             "description": "Response after successfully executing a subscription plan change",
             "type": "object",
             "properties": {
@@ -17421,7 +17421,7 @@ const docTemplate = `{
                     "description": "change_type indicates whether this was an upgrade, downgrade, or lateral change",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionChangeType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionChangeType"
                         }
                     ]
                 },
@@ -17429,7 +17429,7 @@ const docTemplate = `{
                     "description": "credit_grants contains any credit grants created for proration credits",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreditGrantResponse"
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
                     }
                 },
                 "effective_date": {
@@ -17440,7 +17440,7 @@ const docTemplate = `{
                     "description": "invoice contains the immediate invoice generated for the change (if any)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     ]
                 },
@@ -17459,7 +17459,7 @@ const docTemplate = `{
                     "description": "new_subscription contains the new subscription details (only if is_scheduled=false)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/SubscriptionSummary"
+                            "$ref": "#/definitions/dto.SubscriptionSummary"
                         }
                     ]
                 },
@@ -17467,7 +17467,7 @@ const docTemplate = `{
                     "description": "old_subscription contains the archived subscription details (only if is_scheduled=false)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/SubscriptionSummary"
+                            "$ref": "#/definitions/dto.SubscriptionSummary"
                         }
                     ]
                 },
@@ -17475,7 +17475,7 @@ const docTemplate = `{
                     "description": "proration_applied contains details of the proration that was applied",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/ProrationDetails"
+                            "$ref": "#/definitions/dto.ProrationDetails"
                         }
                     ]
                 },
@@ -17489,7 +17489,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionChangePreviewResponse": {
+        "dto.SubscriptionChangePreviewResponse": {
             "description": "Response showing the financial impact of a subscription plan change",
             "type": "object",
             "properties": {
@@ -17497,7 +17497,7 @@ const docTemplate = `{
                     "description": "change_type indicates whether this is an upgrade, downgrade, or lateral change",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionChangeType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionChangeType"
                         }
                     ]
                 },
@@ -17505,7 +17505,7 @@ const docTemplate = `{
                     "description": "current_plan contains information about the current plan",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/PlanSummary"
+                            "$ref": "#/definitions/dto.PlanSummary"
                         }
                     ]
                 },
@@ -17524,7 +17524,7 @@ const docTemplate = `{
                     "description": "new_billing_cycle shows the new billing cycle details",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/BillingCycleInfo"
+                            "$ref": "#/definitions/dto.BillingCycleInfo"
                         }
                     ]
                 },
@@ -17532,7 +17532,7 @@ const docTemplate = `{
                     "description": "next_invoice_preview shows how the next regular invoice would be affected",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/InvoicePreview"
+                            "$ref": "#/definitions/dto.InvoicePreview"
                         }
                     ]
                 },
@@ -17540,7 +17540,7 @@ const docTemplate = `{
                     "description": "proration_details contains the calculated proration amounts",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/ProrationDetails"
+                            "$ref": "#/definitions/dto.ProrationDetails"
                         }
                     ]
                 },
@@ -17552,7 +17552,7 @@ const docTemplate = `{
                     "description": "target_plan contains information about the target plan",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/PlanSummary"
+                            "$ref": "#/definitions/dto.PlanSummary"
                         }
                     ]
                 },
@@ -17565,7 +17565,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionChangeRequest": {
+        "dto.SubscriptionChangeRequest": {
             "description": "Request object for changing a subscription plan (upgrade/downgrade)",
             "type": "object",
             "required": [
@@ -17580,7 +17580,7 @@ const docTemplate = `{
                     "description": "billing_cadence is the billing cadence for the new subscription",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCadence"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                         }
                     ]
                 },
@@ -17588,7 +17588,7 @@ const docTemplate = `{
                     "description": "billing_cycle is the billing cycle for the new subscription",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCycle"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle"
                         }
                     ]
                 },
@@ -17596,7 +17596,7 @@ const docTemplate = `{
                     "description": "billing_period is the billing period for the new subscription",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -17609,7 +17609,7 @@ const docTemplate = `{
                     "description": "change_at determines when the change should take effect (optional)\nIf not provided or null: change executes immediately\nIf \"immediate\": change executes immediately (explicit)\nIf \"period_end\": change is scheduled for the end of the current billing period",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduleType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleType"
                         }
                     ]
                 },
@@ -17624,7 +17624,7 @@ const docTemplate = `{
                     "description": "proration_behavior controls how proration is handled for the change\nOptions: create_prorations, none",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ProrationBehavior"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                         }
                     ]
                 },
@@ -17634,13 +17634,13 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionEntitlementsResponse": {
+        "dto.SubscriptionEntitlementsResponse": {
             "type": "object",
             "properties": {
                 "features": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/AggregatedFeature"
+                        "$ref": "#/definitions/dto.AggregatedFeature"
                     }
                 },
                 "plan_id": {
@@ -17651,7 +17651,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionInheritanceConfig": {
+        "dto.SubscriptionInheritanceConfig": {
             "type": "object",
             "properties": {
                 "external_customer_ids_to_inherit_subscription": {
@@ -17668,28 +17668,28 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionLineItemLookupResult": {
+        "dto.SubscriptionLineItemLookupResult": {
             "type": "object",
             "properties": {
                 "error": {
-                    "$ref": "#/definitions/errors.ErrorResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 },
                 "matched_line_items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/MatchedSubscriptionLineItem"
+                        "$ref": "#/definitions/dto.MatchedSubscriptionLineItem"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.DebugTrackerStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DebugTrackerStatus"
                 }
             }
         },
-        "SubscriptionLineItemResponse": {
+        "dto.SubscriptionLineItemResponse": {
             "type": "object",
             "properties": {
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "from price at create; default 1",
@@ -17700,7 +17700,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "commitment_duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "commitment_overage_factor": {
                     "type": "string"
@@ -17712,7 +17712,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "commitment_type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 },
                 "commitment_windowed": {
                     "type": "boolean"
@@ -17739,7 +17739,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.SubscriptionLineItemEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -17748,7 +17748,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "metadata": {
                     "type": "object",
@@ -17766,13 +17766,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "price": {
-                    "$ref": "#/definitions/PriceResponse"
+                    "$ref": "#/definitions/dto.PriceResponse"
                 },
                 "price_id": {
                     "type": "string"
                 },
                 "price_type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 },
                 "price_unit": {
                     "type": "string"
@@ -17787,7 +17787,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -17809,7 +17809,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionPauseResponse": {
+        "dto.SubscriptionPauseResponse": {
             "description": "Response object containing subscription pause information",
             "type": "object",
             "properties": {
@@ -17843,28 +17843,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pause_mode": {
-                    "$ref": "#/definitions/types.PauseMode"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode"
                 },
                 "pause_start": {
                     "description": "PauseStart is when the pause actually started",
                     "type": "string"
                 },
                 "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus"
                 },
                 "reason": {
                     "description": "Reason is the reason for pausing",
                     "type": "string"
                 },
                 "resume_mode": {
-                    "$ref": "#/definitions/types.ResumeMode"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode"
                 },
                 "resumed_at": {
                     "description": "ResumedAt is when the pause was actually ended (if manually resumed)",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "SubscriptionID is the identifier for the subscription",
@@ -17881,7 +17881,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionPhaseCreateRequest": {
+        "dto.SubscriptionPhaseCreateRequest": {
             "type": "object",
             "required": [
                 "start_date"
@@ -17917,7 +17917,7 @@ const docTemplate = `{
                     "description": "OverrideLineItems allows customizing specific prices for this phase\nIf not provided, phase will use the same line items as the subscription (plan prices)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/OverrideLineItemRequest"
+                        "$ref": "#/definitions/dto.OverrideLineItemRequest"
                     }
                 },
                 "start_date": {
@@ -17925,7 +17925,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionPhaseResponse": {
+        "dto.SubscriptionPhaseResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -17959,7 +17959,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "SubscriptionID is the identifier for the subscription",
@@ -17976,7 +17976,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionPriceCreateRequest": {
+        "dto.SubscriptionPriceCreateRequest": {
             "type": "object",
             "required": [
                 "billing_cadence",
@@ -17991,13 +17991,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "type": "integer"
@@ -18021,7 +18021,7 @@ const docTemplate = `{
                     }
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "lookup_key": {
                     "type": "string"
@@ -18039,21 +18039,21 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "price_unit_config": {
-                    "$ref": "#/definitions/PriceUnitConfig"
+                    "$ref": "#/definitions/dto.PriceUnitConfig"
                 },
                 "price_unit_type": {
-                    "$ref": "#/definitions/types.PriceUnitType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType"
                 },
                 "start_date": {
                     "type": "string"
                 },
                 "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                 },
                 "tiers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreatePriceTier"
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -18063,11 +18063,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 }
             }
         },
-        "SubscriptionResponse": {
+        "dto.SubscriptionResponse": {
             "type": "object",
             "properties": {
                 "active_pause_id": {
@@ -18079,18 +18079,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_cycle": {
                     "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCycle"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle"
                         }
                     ]
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "BillingPeriodCount is the total number units of the billing period.",
@@ -18121,7 +18121,7 @@ const docTemplate = `{
                     "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on a MONTHLY subscription)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -18129,7 +18129,7 @@ const docTemplate = `{
                     "description": "CouponAssociations are the coupon associations for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CouponAssociationResponse"
+                        "$ref": "#/definitions/dto.CouponAssociationResponse"
                     }
                 },
                 "created_at": {
@@ -18142,7 +18142,7 @@ const docTemplate = `{
                     "description": "Credit grants are the credit grants for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreditGrantResponse"
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
                     }
                 },
                 "currency": {
@@ -18158,7 +18158,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "customer": {
-                    "$ref": "#/definitions/CustomerResponse"
+                    "$ref": "#/definitions/dto.CustomerResponse"
                 },
                 "customer_id": {
                     "description": "CustomerID is the identifier for the customer in our system",
@@ -18194,7 +18194,7 @@ const docTemplate = `{
                     "description": "Latest invoice information for incomplete subscriptions",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/InvoiceResponse"
+                            "$ref": "#/definitions/dto.InvoiceResponse"
                         }
                     ]
                 },
@@ -18220,7 +18220,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus"
                 },
                 "pauses": {
                     "type": "array",
@@ -18236,7 +18236,7 @@ const docTemplate = `{
                     "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentTerms"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms"
                         }
                     ]
                 },
@@ -18244,28 +18244,28 @@ const docTemplate = `{
                     "description": "Phases are the subscription phases for this subscription",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionPhaseResponse"
+                        "$ref": "#/definitions/dto.SubscriptionPhaseResponse"
                     }
                 },
                 "plan": {
-                    "$ref": "#/definitions/PlanResponse"
+                    "$ref": "#/definitions/dto.PlanResponse"
                 },
                 "plan_id": {
                     "description": "PlanID is the identifier for the plan in our system",
                     "type": "string"
                 },
                 "proration_behavior": {
-                    "$ref": "#/definitions/types.ProrationBehavior"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                 },
                 "start_date": {
                     "description": "StartDate is the start date of the subscription",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_status": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 },
                 "subscription_type": {
                     "description": "SubscriptionType categorises the subscription within a customer hierarchy (standalone, parent, inherited).",
@@ -18298,7 +18298,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionResponseV2": {
+        "dto.SubscriptionResponseV2": {
             "type": "object",
             "properties": {
                 "active_pause_id": {
@@ -18310,18 +18310,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_cycle": {
                     "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingCycle"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCycle"
                         }
                     ]
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "BillingPeriodCount is the total number units of the billing period.",
@@ -18352,7 +18352,7 @@ const docTemplate = `{
                     "description": "CommitmentDuration is the time frame of the commitment (e.g., ANNUAL commitment on a MONTHLY subscription)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingPeriod"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                         }
                     ]
                 },
@@ -18360,7 +18360,7 @@ const docTemplate = `{
                     "description": "CouponAssociations are included when \"coupon_associations\" is in expand parameter",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CouponAssociationResponse"
+                        "$ref": "#/definitions/dto.CouponAssociationResponse"
                     }
                 },
                 "created_at": {
@@ -18373,7 +18373,7 @@ const docTemplate = `{
                     "description": "CreditGrants are included when \"credit_grants\" is in expand parameter",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreditGrantResponse"
+                        "$ref": "#/definitions/dto.CreditGrantResponse"
                     }
                 },
                 "currency": {
@@ -18392,7 +18392,7 @@ const docTemplate = `{
                     "description": "Customer is expanded only if \"customer\" is in expand parameter",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/CustomerResponse"
+                            "$ref": "#/definitions/dto.CustomerResponse"
                         }
                     ]
                 },
@@ -18430,7 +18430,7 @@ const docTemplate = `{
                     "description": "LineItems is expanded only if \"subscription_line_items\" is in expand parameter\nEach line item can optionally include expanded price data",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionLineItemResponse"
+                        "$ref": "#/definitions/dto.SubscriptionLineItemResponse"
                     }
                 },
                 "lookup_key": {
@@ -18449,7 +18449,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus"
                 },
                 "pauses": {
                     "description": "Pauses are included when subscription has pause status",
@@ -18466,7 +18466,7 @@ const docTemplate = `{
                     "description": "PaymentTerms (e.g. 15 NET, 30 NET) used to compute invoice due date from period end",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentTerms"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentTerms"
                         }
                     ]
                 },
@@ -18474,14 +18474,14 @@ const docTemplate = `{
                     "description": "Phases are included when \"phases\" is in expand parameter",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionPhaseResponse"
+                        "$ref": "#/definitions/dto.SubscriptionPhaseResponse"
                     }
                 },
                 "plan": {
                     "description": "Plan is expanded only if \"plan\" is in expand parameter",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/PlanResponse"
+                            "$ref": "#/definitions/dto.PlanResponse"
                         }
                     ]
                 },
@@ -18490,17 +18490,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "proration_behavior": {
-                    "$ref": "#/definitions/types.ProrationBehavior"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ProrationBehavior"
                 },
                 "start_date": {
                     "description": "StartDate is the start date of the subscription",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_status": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 },
                 "subscription_type": {
                     "description": "SubscriptionType categorises the subscription within a customer hierarchy (standalone, parent, inherited).",
@@ -18533,7 +18533,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionScheduleResponse": {
+        "dto.SubscriptionScheduleResponse": {
             "description": "Full details of a subscription schedule",
             "type": "object",
             "properties": {
@@ -18582,7 +18582,7 @@ const docTemplate = `{
                     "description": "schedule_type is the type of schedule (plan_change, addon_change, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionScheduleChangeType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType"
                         }
                     ]
                 },
@@ -18594,7 +18594,7 @@ const docTemplate = `{
                     "description": "status is the current status of the schedule",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ScheduleStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ScheduleStatus"
                         }
                     ]
                 },
@@ -18608,7 +18608,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SubscriptionSummary": {
+        "dto.SubscriptionSummary": {
             "type": "object",
             "properties": {
                 "archived_at": {
@@ -18643,13 +18643,13 @@ const docTemplate = `{
                     "description": "status of the subscription",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.SubscriptionStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                         }
                     ]
                 }
             }
         },
-        "SubscriptionUsageByMetersResponse": {
+        "dto.SubscriptionUsageByMetersResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -18690,7 +18690,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SuccessResponse": {
+        "dto.SuccessResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -18698,7 +18698,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TaskResponse": {
+        "dto.TaskResponse": {
             "type": "object",
             "properties": {
                 "completed_at": {
@@ -18711,7 +18711,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -18729,7 +18729,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "file_type": {
-                    "$ref": "#/definitions/types.FileType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FileType"
                 },
                 "file_url": {
                     "type": "string"
@@ -18751,16 +18751,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "successful_records": {
                     "type": "integer"
                 },
                 "task_status": {
-                    "$ref": "#/definitions/types.TaskStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaskStatus"
                 },
                 "task_type": {
-                    "$ref": "#/definitions/types.TaskType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaskType"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -18779,7 +18779,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TaxAppliedResponse": {
+        "dto.TaxAppliedResponse": {
             "type": "object",
             "properties": {
                 "applied_at": {
@@ -18798,7 +18798,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.TaxRateEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -18816,7 +18816,7 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tax_amount": {
                     "type": "string"
@@ -18825,7 +18825,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tax_rate": {
-                    "$ref": "#/definitions/TaxRateResponse"
+                    "$ref": "#/definitions/dto.TaxRateResponse"
                 },
                 "tax_rate_id": {
                     "type": "string"
@@ -18844,7 +18844,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TaxAssociationResponse": {
+        "dto.TaxAssociationResponse": {
             "type": "object",
             "properties": {
                 "auto_apply": {
@@ -18869,7 +18869,7 @@ const docTemplate = `{
                     "description": "Type of entity this tax rate applies to",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TaxRateEntityType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateEntityType"
                         }
                     ]
                 },
@@ -18893,10 +18893,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tax_rate": {
-                    "$ref": "#/definitions/TaxRateResponse"
+                    "$ref": "#/definitions/dto.TaxRateResponse"
                 },
                 "tax_rate_id": {
                     "description": "Reference to the TaxRate entity",
@@ -18913,7 +18913,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TaxAssociationUpdateRequest": {
+        "dto.TaxAssociationUpdateRequest": {
             "type": "object",
             "properties": {
                 "auto_apply": {
@@ -18930,7 +18930,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TaxRateOverride": {
+        "dto.TaxRateOverride": {
             "type": "object",
             "required": [
                 "currency",
@@ -18958,7 +18958,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TaxRateResponse": {
+        "dto.TaxRateResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -18995,16 +18995,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "scope": {
-                    "$ref": "#/definitions/types.TaxRateScope"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateScope"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tax_rate_status": {
-                    "$ref": "#/definitions/types.TaxRateStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateStatus"
                 },
                 "tax_rate_type": {
-                    "$ref": "#/definitions/types.TaxRateType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateType"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -19017,11 +19017,11 @@ const docTemplate = `{
                 }
             }
         },
-        "TenantBillingDetails": {
+        "dto.TenantBillingDetails": {
             "type": "object",
             "properties": {
                 "address": {
-                    "$ref": "#/definitions/Address"
+                    "$ref": "#/definitions/dto.Address"
                 },
                 "email": {
                     "type": "string"
@@ -19034,25 +19034,25 @@ const docTemplate = `{
                 }
             }
         },
-        "TenantBillingUsage": {
+        "dto.TenantBillingUsage": {
             "type": "object",
             "properties": {
                 "subscriptions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/SubscriptionResponse"
+                        "$ref": "#/definitions/dto.SubscriptionResponse"
                     }
                 },
                 "usage": {
-                    "$ref": "#/definitions/CustomerUsageSummaryResponse"
+                    "$ref": "#/definitions/dto.CustomerUsageSummaryResponse"
                 }
             }
         },
-        "TenantResponse": {
+        "dto.TenantResponse": {
             "type": "object",
             "properties": {
                 "billing_details": {
-                    "$ref": "#/definitions/TenantBillingDetails"
+                    "$ref": "#/definitions/dto.TenantBillingDetails"
                 },
                 "created_at": {
                     "type": "string"
@@ -19074,7 +19074,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TopUpWalletRequest": {
+        "dto.TopUpWalletRequest": {
             "type": "object",
             "required": [
                 "transaction_reason"
@@ -19113,11 +19113,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "transaction_reason": {
-                    "$ref": "#/definitions/types.TransactionReason"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason"
                 }
             }
         },
-        "TopUpWalletResponse": {
+        "dto.TopUpWalletResponse": {
             "type": "object",
             "properties": {
                 "invoice_id": {
@@ -19128,7 +19128,7 @@ const docTemplate = `{
                     "description": "Wallet details after the operation",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/WalletResponse"
+                            "$ref": "#/definitions/dto.WalletResponse"
                         }
                     ]
                 },
@@ -19136,13 +19136,13 @@ const docTemplate = `{
                     "description": "Wallet transaction created (could be PENDING or COMPLETED)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/WalletTransactionResponse"
+                            "$ref": "#/definitions/dto.WalletTransactionResponse"
                         }
                     ]
                 }
             }
         },
-        "TriggerForceRunRequest": {
+        "dto.TriggerForceRunRequest": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -19153,7 +19153,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TriggerForceRunResponse": {
+        "dto.TriggerForceRunResponse": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -19174,7 +19174,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateAddonRequest": {
+        "dto.UpdateAddonRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -19189,7 +19189,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateCostsheetRequest": {
+        "dto.UpdateCostsheetRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -19213,15 +19213,15 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateCostsheetResponse": {
+        "dto.UpdateCostsheetResponse": {
             "type": "object",
             "properties": {
                 "costsheet": {
-                    "$ref": "#/definitions/CostsheetResponse"
+                    "$ref": "#/definitions/dto.CostsheetResponse"
                 }
             }
         },
-        "UpdateCouponRequest": {
+        "dto.UpdateCouponRequest": {
             "type": "object",
             "properties": {
                 "metadata": {
@@ -19235,7 +19235,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateCreditGrantRequest": {
+        "dto.UpdateCreditGrantRequest": {
             "type": "object",
             "properties": {
                 "metadata": {
@@ -19246,7 +19246,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateCustomerRequest": {
+        "dto.UpdateCustomerRequest": {
             "description": "Request object for updating an existing customer. All fields are optional - only provided fields will be updated",
             "type": "object",
             "properties": {
@@ -19291,7 +19291,7 @@ const docTemplate = `{
                     "description": "integration_entity_mapping contains provider integration mappings for this customer",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreateEntityIntegrationMappingRequest"
+                        "$ref": "#/definitions/dto.CreateEntityIntegrationMappingRequest"
                     }
                 },
                 "metadata": {
@@ -19307,7 +19307,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateEntitlementRequest": {
+        "dto.UpdateEntitlementRequest": {
             "type": "object",
             "properties": {
                 "is_enabled": {
@@ -19323,15 +19323,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "usage_reset_period": {
-                    "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod"
                 }
             }
         },
-        "UpdateFeatureRequest": {
+        "dto.UpdateFeatureRequest": {
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "description": {
                     "type": "string"
@@ -19353,7 +19353,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "reporting_unit": {
-                    "$ref": "#/definitions/types.ReportingUnit"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ReportingUnit"
                 },
                 "unit_plural": {
                     "type": "string"
@@ -19363,7 +19363,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateInvoiceRequest": {
+        "dto.UpdateInvoiceRequest": {
             "type": "object",
             "properties": {
                 "due_date": {
@@ -19383,7 +19383,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdatePaymentRequest": {
+        "dto.UpdatePaymentRequest": {
             "type": "object",
             "properties": {
                 "error_message": {
@@ -19412,7 +19412,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdatePaymentStatusRequest": {
+        "dto.UpdatePaymentStatusRequest": {
             "type": "object",
             "required": [
                 "payment_status"
@@ -19426,13 +19426,13 @@ const docTemplate = `{
                     "description": "payment_status is the new payment status to set for the invoice (paid, unpaid, etc.)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PaymentStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                         }
                     ]
                 }
             }
         },
-        "UpdatePlanRequest": {
+        "dto.UpdatePlanRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -19452,7 +19452,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdatePriceRequest": {
+        "dto.UpdatePriceRequest": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -19460,7 +19460,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "description": {
                     "type": "string"
@@ -19493,14 +19493,14 @@ const docTemplate = `{
                     "description": "PriceUnitTiers are the price unit tiers (for CUSTOM price unit type, TIERED billing model)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreatePriceTier"
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "tier_mode": {
                     "description": "TierMode determines how to calculate the price for a given quantity",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingTier"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                         }
                     ]
                 },
@@ -19508,7 +19508,7 @@ const docTemplate = `{
                     "description": "Tiers determines the pricing tiers for this line item",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreatePriceTier"
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -19521,7 +19521,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdatePriceUnitRequest": {
+        "dto.UpdatePriceUnitRequest": {
             "type": "object",
             "properties": {
                 "metadata": {
@@ -19532,7 +19532,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateScheduledTaskRequest": {
+        "dto.UpdateScheduledTaskRequest": {
             "type": "object",
             "required": [
                 "enabled"
@@ -19543,7 +19543,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateSubscriptionLineItemRequest": {
+        "dto.UpdateSubscriptionLineItemRequest": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -19551,14 +19551,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "commitment_amount": {
                     "description": "Commitment fields",
                     "type": "number"
                 },
                 "commitment_duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "commitment_overage_factor": {
                     "type": "number"
@@ -19570,7 +19570,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "commitment_type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 },
                 "commitment_windowed": {
                     "type": "boolean"
@@ -19590,7 +19590,7 @@ const docTemplate = `{
                     "description": "TierMode determines how to calculate the price for a given quantity",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.BillingTier"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                         }
                     ]
                 },
@@ -19598,7 +19598,7 @@ const docTemplate = `{
                     "description": "Tiers determines the pricing tiers for this line item",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CreatePriceTier"
+                        "$ref": "#/definitions/dto.CreatePriceTier"
                     }
                 },
                 "transform_quantity": {
@@ -19611,7 +19611,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateSubscriptionRequest": {
+        "dto.UpdateSubscriptionRequest": {
             "type": "object",
             "properties": {
                 "cancel_at": {
@@ -19625,22 +19625,22 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.SubscriptionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                 }
             }
         },
-        "UpdateTaskStatusRequest": {
+        "dto.UpdateTaskStatusRequest": {
             "type": "object",
             "required": [
                 "task_status"
             ],
             "properties": {
                 "task_status": {
-                    "$ref": "#/definitions/types.TaskStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaskStatus"
                 }
             }
         },
-        "UpdateTaxRateRequest": {
+        "dto.UpdateTaxRateRequest": {
             "type": "object",
             "properties": {
                 "code": {
@@ -19666,17 +19666,17 @@ const docTemplate = `{
                     "description": "tax_rate_type determines how the tax is calculated (\"percentage\" or \"fixed\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.TaxRateStatus"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TaxRateStatus"
                         }
                     ]
                 }
             }
         },
-        "UpdateTenantRequest": {
+        "dto.UpdateTenantRequest": {
             "type": "object",
             "properties": {
                 "billing_details": {
-                    "$ref": "#/definitions/TenantBillingDetails"
+                    "$ref": "#/definitions/dto.TenantBillingDetails"
                 },
                 "metadata": {
                     "$ref": "#/definitions/types.Metadata"
@@ -19686,17 +19686,17 @@ const docTemplate = `{
                 }
             }
         },
-        "UpdateWalletRequest": {
+        "dto.UpdateWalletRequest": {
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "auto_topup": {
-                    "$ref": "#/definitions/types.AutoTopup"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup"
                 },
                 "config": {
-                    "$ref": "#/definitions/types.WalletConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig"
                 },
                 "description": {
                     "type": "string"
@@ -19709,7 +19709,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UsageAnalyticItem": {
+        "dto.UsageAnalyticItem": {
             "type": "object",
             "properties": {
                 "add_on_id": {
@@ -19719,15 +19719,15 @@ const docTemplate = `{
                     "description": "Full addon object (only if expand includes \"addon\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/Addon"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_addon.Addon"
                         }
                     ]
                 },
                 "aggregation_type": {
-                    "$ref": "#/definitions/types.AggregationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType"
                 },
                 "commitment_info": {
-                    "$ref": "#/definitions/types.CommitmentInfo"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo"
                 },
                 "currency": {
                     "type": "string"
@@ -19743,7 +19743,7 @@ const docTemplate = `{
                     "description": "Full feature object (only if expand includes \"feature\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/Feature"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_feature.Feature"
                         }
                     ]
                 },
@@ -19777,7 +19777,7 @@ const docTemplate = `{
                     "description": "Full plan object (only if expand includes \"plan\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/Plan"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_domain_plan.Plan"
                         }
                     ]
                 },
@@ -19787,14 +19787,14 @@ const docTemplate = `{
                 "points": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/UsageAnalyticPoint"
+                        "$ref": "#/definitions/dto.UsageAnalyticPoint"
                     }
                 },
                 "price": {
                     "description": "Full price object (only if expand includes \"price\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/PriceResponse"
+                            "$ref": "#/definitions/dto.PriceResponse"
                         }
                     ]
                 },
@@ -19813,7 +19813,7 @@ const docTemplate = `{
                     "description": "Present when total_usage_display is set (unit_singular, unit_plural, conversion_rate)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ReportingUnit"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ReportingUnit"
                         }
                     ]
                 },
@@ -19863,13 +19863,13 @@ const docTemplate = `{
                     "description": "Window size for bucketed meters (only set if meter is bucketed)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.WindowSize"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                         }
                     ]
                 }
             }
         },
-        "UsageAnalyticPoint": {
+        "dto.UsageAnalyticPoint": {
             "type": "object",
             "properties": {
                 "computed_commitment_utilized_amount": {
@@ -19897,7 +19897,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UsageBreakdownItem": {
+        "dto.UsageBreakdownItem": {
             "type": "object",
             "properties": {
                 "cost": {
@@ -19925,7 +19925,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UsageResult": {
+        "dto.UsageResult": {
             "type": "object",
             "properties": {
                 "value": {
@@ -19936,7 +19936,7 @@ const docTemplate = `{
                 }
             }
         },
-        "UserResponse": {
+        "dto.UserResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -19953,24 +19953,24 @@ const docTemplate = `{
                     }
                 },
                 "tenant": {
-                    "$ref": "#/definitions/TenantResponse"
+                    "$ref": "#/definitions/dto.TenantResponse"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.UserType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
                 }
             }
         },
-        "WalletBalanceResponse": {
+        "dto.WalletBalanceResponse": {
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "alert_state": {
-                    "$ref": "#/definitions/types.AlertState"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertState"
                 },
                 "auto_topup": {
-                    "$ref": "#/definitions/types.AutoTopup"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup"
                 },
                 "balance": {
                     "type": "string"
@@ -19979,7 +19979,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "config": {
-                    "$ref": "#/definitions/types.WalletConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig"
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
@@ -19995,7 +19995,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "credits_available_breakdown": {
-                    "$ref": "#/definitions/types.CreditBreakdown"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditBreakdown"
                 },
                 "currency": {
                     "type": "string"
@@ -20028,7 +20028,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20047,30 +20047,30 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_status": {
-                    "$ref": "#/definitions/types.WalletStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus"
                 },
                 "wallet_type": {
-                    "$ref": "#/definitions/types.WalletType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletType"
                 }
             }
         },
-        "WalletResponse": {
+        "dto.WalletResponse": {
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "alert_state": {
-                    "$ref": "#/definitions/types.AlertState"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertState"
                 },
                 "auto_topup": {
-                    "$ref": "#/definitions/types.AutoTopup"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AutoTopup"
                 },
                 "balance": {
                     "type": "string"
                 },
                 "config": {
-                    "$ref": "#/definitions/types.WalletConfig"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfig"
                 },
                 "conversion_rate": {
                     "description": "amount in the currency =  number of credits * conversion_rate\nex if conversion_rate is 1, then 1 USD = 1 credit\nex if conversion_rate is 2, then 1 USD = 0.5 credits\nex if conversion_rate is 0.5, then 1 USD = 2 credits",
@@ -20086,7 +20086,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "credits_available_breakdown": {
-                    "$ref": "#/definitions/types.CreditBreakdown"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CreditBreakdown"
                 },
                 "currency": {
                     "type": "string"
@@ -20110,7 +20110,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20126,14 +20126,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet_status": {
-                    "$ref": "#/definitions/types.WalletStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus"
                 },
                 "wallet_type": {
-                    "$ref": "#/definitions/types.WalletType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletType"
                 }
             }
         },
-        "WalletTransactionResponse": {
+        "dto.WalletTransactionResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -20150,7 +20150,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_by_user": {
-                    "$ref": "#/definitions/UserResponse"
+                    "$ref": "#/definitions/dto.UserResponse"
                 },
                 "credit_amount": {
                     "type": "string"
@@ -20168,7 +20168,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "customer": {
-                    "$ref": "#/definitions/CustomerResponse"
+                    "$ref": "#/definitions/dto.CustomerResponse"
                 },
                 "customer_id": {
                     "type": "string"
@@ -20198,10 +20198,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "reference_type": {
-                    "$ref": "#/definitions/types.WalletTxReferenceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletTxReferenceType"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20211,13 +20211,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "transaction_reason": {
-                    "$ref": "#/definitions/types.TransactionReason"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason"
                 },
                 "transaction_status": {
-                    "$ref": "#/definitions/types.TransactionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionStatus"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.TransactionType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -20226,14 +20226,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/WalletResponse"
+                    "$ref": "#/definitions/dto.WalletResponse"
                 },
                 "wallet_id": {
                     "type": "string"
                 }
             }
         },
-        "WorkflowExecutionDTO": {
+        "dto.WorkflowExecutionDTO": {
             "type": "object",
             "properties": {
                 "close_time": {
@@ -20276,7 +20276,7 @@ const docTemplate = `{
                 }
             }
         },
-        "Addon": {
+        "github_com_flexprice_flexprice_internal_domain_addon.Addon": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -20305,13 +20305,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -20321,14 +20321,14 @@ const docTemplate = `{
                 }
             }
         },
-        "Coupon": {
+        "github_com_flexprice_flexprice_internal_domain_coupon.Coupon": {
             "type": "object",
             "properties": {
                 "amount_off": {
                     "type": "string"
                 },
                 "cadence": {
-                    "$ref": "#/definitions/types.CouponCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponCadence"
                 },
                 "created_at": {
                     "type": "string"
@@ -20374,7 +20374,7 @@ const docTemplate = `{
                     "additionalProperties": true
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20383,7 +20383,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.CouponType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CouponType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -20393,7 +20393,7 @@ const docTemplate = `{
                 }
             }
         },
-        "Customer": {
+        "github_com_flexprice_flexprice_internal_domain_customer.Customer": {
             "type": "object",
             "properties": {
                 "address_city": {
@@ -20454,7 +20454,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20467,11 +20467,11 @@ const docTemplate = `{
                 }
             }
         },
-        "Feature": {
+        "github_com_flexprice_flexprice_internal_domain_feature.Feature": {
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "created_at": {
                     "type": "string"
@@ -20512,16 +20512,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "reporting_unit": {
-                    "$ref": "#/definitions/types.ReportingUnit"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ReportingUnit"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "unit_plural": {
                     "type": "string"
@@ -20537,7 +20537,7 @@ const docTemplate = `{
                 }
             }
         },
-        "Plan": {
+        "github_com_flexprice_flexprice_internal_domain_plan.Plan": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -20568,7 +20568,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -20581,7 +20581,7 @@ const docTemplate = `{
                 }
             }
         },
-        "errors.ErrorResponse": {
+        "github_com_flexprice_flexprice_internal_errors.ErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -20612,7 +20612,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.AddonAssociationEntityType": {
+        "github_com_flexprice_flexprice_internal_types.AddonAssociationEntityType": {
             "type": "string",
             "enum": [
                 "subscription",
@@ -20625,7 +20625,7 @@ const docTemplate = `{
                 "AddonAssociationEntityTypeAddon"
             ]
         },
-        "types.AddonFilter": {
+        "github_com_flexprice_flexprice_internal_types.AddonFilter": {
             "type": "object",
             "properties": {
                 "addon_ids": {
@@ -20635,7 +20635,7 @@ const docTemplate = `{
                     }
                 },
                 "addon_type": {
-                    "$ref": "#/definitions/types.AddonType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AddonType"
                 },
                 "end_time": {
                     "type": "string"
@@ -20647,7 +20647,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -20675,18 +20675,18 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.AddonStatus": {
+        "github_com_flexprice_flexprice_internal_types.AddonStatus": {
             "type": "string",
             "enum": [
                 "active",
@@ -20699,7 +20699,7 @@ const docTemplate = `{
                 "AddonStatusPaused"
             ]
         },
-        "types.AddonType": {
+        "github_com_flexprice_flexprice_internal_types.AddonType": {
             "type": "string",
             "enum": [
                 "onetime",
@@ -20710,7 +20710,7 @@ const docTemplate = `{
                 "AddonTypeMultipleInstance"
             ]
         },
-        "types.AggregationType": {
+        "github_com_flexprice_flexprice_internal_types.AggregationType": {
             "type": "string",
             "enum": [
                 "COUNT",
@@ -20736,7 +20736,7 @@ const docTemplate = `{
                 "AggregationWeightedSum"
             ]
         },
-        "types.AlertCondition": {
+        "github_com_flexprice_flexprice_internal_types.AlertCondition": {
             "type": "string",
             "enum": [
                 "above",
@@ -20747,7 +20747,7 @@ const docTemplate = `{
                 "AlertConditionBelow"
             ]
         },
-        "types.AlertEntityType": {
+        "github_com_flexprice_flexprice_internal_types.AlertEntityType": {
             "type": "string",
             "enum": [
                 "wallet",
@@ -20758,11 +20758,11 @@ const docTemplate = `{
                 "AlertEntityTypeFeature"
             ]
         },
-        "types.AlertInfo": {
+        "github_com_flexprice_flexprice_internal_types.AlertInfo": {
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "timestamp": {
                     "type": "string"
@@ -20772,14 +20772,14 @@ const docTemplate = `{
                 }
             }
         },
-        "types.AlertLogFilter": {
+        "github_com_flexprice_flexprice_internal_types.AlertLogFilter": {
             "type": "object",
             "properties": {
                 "alert_status": {
-                    "$ref": "#/definitions/types.AlertState"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertState"
                 },
                 "alert_type": {
-                    "$ref": "#/definitions/types.AlertType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertType"
                 },
                 "customer_id": {
                     "type": "string"
@@ -20791,7 +20791,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.AlertEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertEntityType"
                 },
                 "expand": {
                     "type": "string"
@@ -20800,7 +20800,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -20822,35 +20822,35 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.AlertSettings": {
+        "github_com_flexprice_flexprice_internal_types.AlertSettings": {
             "type": "object",
             "properties": {
                 "alert_enabled": {
                     "type": "boolean"
                 },
                 "critical": {
-                    "$ref": "#/definitions/types.AlertThreshold"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold"
                 },
                 "info": {
-                    "$ref": "#/definitions/types.AlertThreshold"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold"
                 },
                 "warning": {
-                    "$ref": "#/definitions/types.AlertThreshold"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertThreshold"
                 }
             }
         },
-        "types.AlertState": {
+        "github_com_flexprice_flexprice_internal_types.AlertState": {
             "type": "string",
             "enum": [
                 "ok",
@@ -20865,18 +20865,18 @@ const docTemplate = `{
                 "AlertStateInAlarm"
             ]
         },
-        "types.AlertThreshold": {
+        "github_com_flexprice_flexprice_internal_types.AlertThreshold": {
             "type": "object",
             "properties": {
                 "condition": {
-                    "$ref": "#/definitions/types.AlertCondition"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertCondition"
                 },
                 "threshold": {
                     "type": "number"
                 }
             }
         },
-        "types.AlertType": {
+        "github_com_flexprice_flexprice_internal_types.AlertType": {
             "type": "string",
             "enum": [
                 "low_ongoing_balance",
@@ -20889,7 +20889,7 @@ const docTemplate = `{
                 "AlertTypeFeatureWalletBalance"
             ]
         },
-        "types.ApplicationStatus": {
+        "github_com_flexprice_flexprice_internal_types.ApplicationStatus": {
             "type": "string",
             "enum": [
                 "applied",
@@ -20906,7 +20906,7 @@ const docTemplate = `{
                 "ApplicationStatusCancelled"
             ]
         },
-        "types.AutoTopup": {
+        "github_com_flexprice_flexprice_internal_types.AutoTopup": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -20923,7 +20923,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.BillingCadence": {
+        "github_com_flexprice_flexprice_internal_types.BillingCadence": {
             "type": "string",
             "enum": [
                 "RECURRING",
@@ -20934,7 +20934,7 @@ const docTemplate = `{
                 "BILLING_CADENCE_ONETIME"
             ]
         },
-        "types.BillingCycle": {
+        "github_com_flexprice_flexprice_internal_types.BillingCycle": {
             "type": "string",
             "enum": [
                 "anniversary",
@@ -20945,7 +20945,7 @@ const docTemplate = `{
                 "BillingCycleCalendar"
             ]
         },
-        "types.BillingModel": {
+        "github_com_flexprice_flexprice_internal_types.BillingModel": {
             "type": "string",
             "enum": [
                 "FLAT_FEE",
@@ -20958,7 +20958,7 @@ const docTemplate = `{
                 "BILLING_MODEL_TIERED"
             ]
         },
-        "types.BillingPeriod": {
+        "github_com_flexprice_flexprice_internal_types.BillingPeriod": {
             "type": "string",
             "enum": [
                 "MONTHLY",
@@ -20977,7 +20977,7 @@ const docTemplate = `{
                 "BILLING_PERIOD_HALF_YEAR"
             ]
         },
-        "types.BillingTier": {
+        "github_com_flexprice_flexprice_internal_types.BillingTier": {
             "type": "string",
             "enum": [
                 "VOLUME",
@@ -20988,7 +20988,7 @@ const docTemplate = `{
                 "BILLING_TIER_SLAB"
             ]
         },
-        "types.CancelImmediatelyInvoicePolicy": {
+        "github_com_flexprice_flexprice_internal_types.CancelImmediatelyInvoicePolicy": {
             "type": "string",
             "enum": [
                 "generate_invoice",
@@ -20999,7 +20999,7 @@ const docTemplate = `{
                 "CancelImmediatelyInvoicePolicySkip"
             ]
         },
-        "types.CancellationType": {
+        "github_com_flexprice_flexprice_internal_types.CancellationType": {
             "type": "string",
             "enum": [
                 "immediate",
@@ -21012,7 +21012,7 @@ const docTemplate = `{
                 "CancellationTypeScheduledDate"
             ]
         },
-        "types.CollectionMethod": {
+        "github_com_flexprice_flexprice_internal_types.CollectionMethod": {
             "type": "string",
             "enum": [
                 "charge_automatically",
@@ -21023,7 +21023,7 @@ const docTemplate = `{
                 "CollectionMethodSendInvoice"
             ]
         },
-        "types.CommitmentInfo": {
+        "github_com_flexprice_flexprice_internal_types.CommitmentInfo": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -21040,7 +21040,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "is_windowed": {
                     "type": "boolean"
@@ -21056,11 +21056,11 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 }
             }
         },
-        "types.CommitmentType": {
+        "github_com_flexprice_flexprice_internal_types.CommitmentType": {
             "type": "string",
             "enum": [
                 "amount",
@@ -21071,7 +21071,7 @@ const docTemplate = `{
                 "COMMITMENT_TYPE_QUANTITY"
             ]
         },
-        "types.CouponCadence": {
+        "github_com_flexprice_flexprice_internal_types.CouponCadence": {
             "type": "string",
             "enum": [
                 "once",
@@ -21084,7 +21084,7 @@ const docTemplate = `{
                 "CouponCadenceForever"
             ]
         },
-        "types.CouponFilter": {
+        "github_com_flexprice_flexprice_internal_types.CouponFilter": {
             "type": "object",
             "properties": {
                 "coupon_ids": {
@@ -21099,7 +21099,7 @@ const docTemplate = `{
                 "filters": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -21121,15 +21121,15 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.CouponType": {
+        "github_com_flexprice_flexprice_internal_types.CouponType": {
             "type": "string",
             "enum": [
                 "fixed",
@@ -21140,7 +21140,7 @@ const docTemplate = `{
                 "CouponTypePercentage"
             ]
         },
-        "types.CreditBreakdown": {
+        "github_com_flexprice_flexprice_internal_types.CreditBreakdown": {
             "type": "object",
             "properties": {
                 "free": {
@@ -21151,7 +21151,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.CreditGrantApplicationReason": {
+        "github_com_flexprice_flexprice_internal_types.CreditGrantApplicationReason": {
             "type": "string",
             "enum": [
                 "first_time_recurring_credit_grant",
@@ -21164,7 +21164,7 @@ const docTemplate = `{
                 "ApplicationReasonOnetimeCreditGrant"
             ]
         },
-        "types.CreditGrantCadence": {
+        "github_com_flexprice_flexprice_internal_types.CreditGrantCadence": {
             "type": "string",
             "enum": [
                 "ONETIME",
@@ -21175,7 +21175,7 @@ const docTemplate = `{
                 "CreditGrantCadenceRecurring"
             ]
         },
-        "types.CreditGrantExpiryDurationUnit": {
+        "github_com_flexprice_flexprice_internal_types.CreditGrantExpiryDurationUnit": {
             "type": "string",
             "enum": [
                 "DAY",
@@ -21190,7 +21190,7 @@ const docTemplate = `{
                 "CreditGrantExpiryDurationUnitYears"
             ]
         },
-        "types.CreditGrantExpiryType": {
+        "github_com_flexprice_flexprice_internal_types.CreditGrantExpiryType": {
             "type": "string",
             "enum": [
                 "NEVER",
@@ -21203,7 +21203,7 @@ const docTemplate = `{
                 "CreditGrantExpiryTypeBillingCycle"
             ]
         },
-        "types.CreditGrantPeriod": {
+        "github_com_flexprice_flexprice_internal_types.CreditGrantPeriod": {
             "type": "string",
             "enum": [
                 "DAILY",
@@ -21222,7 +21222,7 @@ const docTemplate = `{
                 "CREDIT_GRANT_PERIOD_HALF_YEARLY"
             ]
         },
-        "types.CreditGrantScope": {
+        "github_com_flexprice_flexprice_internal_types.CreditGrantScope": {
             "type": "string",
             "enum": [
                 "PLAN",
@@ -21233,7 +21233,7 @@ const docTemplate = `{
                 "CreditGrantScopeSubscription"
             ]
         },
-        "types.CreditNoteReason": {
+        "github_com_flexprice_flexprice_internal_types.CreditNoteReason": {
             "type": "string",
             "enum": [
                 "DUPLICATE",
@@ -21254,7 +21254,7 @@ const docTemplate = `{
                 "CreditNoteReasonSubscriptionCancellation"
             ]
         },
-        "types.CreditNoteStatus": {
+        "github_com_flexprice_flexprice_internal_types.CreditNoteStatus": {
             "type": "string",
             "enum": [
                 "DRAFT",
@@ -21267,7 +21267,7 @@ const docTemplate = `{
                 "CreditNoteStatusVoided"
             ]
         },
-        "types.CreditNoteType": {
+        "github_com_flexprice_flexprice_internal_types.CreditNoteType": {
             "type": "string",
             "enum": [
                 "ADJUSTMENT",
@@ -21278,7 +21278,7 @@ const docTemplate = `{
                 "CreditNoteTypeRefund"
             ]
         },
-        "types.CustomerFilter": {
+        "github_com_flexprice_flexprice_internal_types.CustomerFilter": {
             "type": "object",
             "properties": {
                 "customer_ids": {
@@ -21308,7 +21308,7 @@ const docTemplate = `{
                 "filters": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -21330,18 +21330,18 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.DataType": {
+        "github_com_flexprice_flexprice_internal_types.DataType": {
             "type": "string",
             "enum": [
                 "string",
@@ -21356,7 +21356,7 @@ const docTemplate = `{
                 "DataTypeArray"
             ]
         },
-        "types.DebugTrackerStatus": {
+        "github_com_flexprice_flexprice_internal_types.DebugTrackerStatus": {
             "type": "string",
             "enum": [
                 "unprocessed",
@@ -21371,7 +21371,7 @@ const docTemplate = `{
                 "DebugTrackerStatusError"
             ]
         },
-        "types.EntitlementEntityType": {
+        "github_com_flexprice_flexprice_internal_types.EntitlementEntityType": {
             "type": "string",
             "enum": [
                 "PLAN",
@@ -21384,7 +21384,7 @@ const docTemplate = `{
                 "ENTITLEMENT_ENTITY_TYPE_ADDON"
             ]
         },
-        "types.EntitlementFilter": {
+        "github_com_flexprice_flexprice_internal_types.EntitlementFilter": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -21397,7 +21397,7 @@ const docTemplate = `{
                     }
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.EntitlementEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.EntitlementEntityType"
                 },
                 "expand": {
                     "type": "string"
@@ -21409,13 +21409,13 @@ const docTemplate = `{
                     }
                 },
                 "feature_type": {
-                    "$ref": "#/definitions/types.FeatureType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FeatureType"
                 },
                 "filters": {
                     "description": "Specific filters for entitlements",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "is_enabled": {
@@ -21446,18 +21446,18 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.EntitlementUsageResetPeriod": {
+        "github_com_flexprice_flexprice_internal_types.EntitlementUsageResetPeriod": {
             "type": "string",
             "enum": [
                 "MONTHLY",
@@ -21478,7 +21478,7 @@ const docTemplate = `{
                 "ENTITLEMENT_USAGE_RESET_PERIOD_NEVER"
             ]
         },
-        "types.EntityType": {
+        "github_com_flexprice_flexprice_internal_types.EntityType": {
             "type": "string",
             "enum": [
                 "EVENTS",
@@ -21493,7 +21493,7 @@ const docTemplate = `{
                 "EntityTypeFeatures"
             ]
         },
-        "types.EventProcessingStatusType": {
+        "github_com_flexprice_flexprice_internal_types.EventProcessingStatusType": {
             "type": "string",
             "enum": [
                 "processed",
@@ -21506,18 +21506,18 @@ const docTemplate = `{
                 "EventProcessingStatusTypeFailed"
             ]
         },
-        "types.FailurePoint": {
+        "github_com_flexprice_flexprice_internal_types.FailurePoint": {
             "type": "object",
             "properties": {
                 "error": {
-                    "$ref": "#/definitions/errors.ErrorResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_errors.ErrorResponse"
                 },
                 "failure_point_type": {
-                    "$ref": "#/definitions/types.FailurePointType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FailurePointType"
                 }
             }
         },
-        "types.FailurePointType": {
+        "github_com_flexprice_flexprice_internal_types.FailurePointType": {
             "type": "string",
             "enum": [
                 "customer_lookup",
@@ -21532,7 +21532,7 @@ const docTemplate = `{
                 "FailurePointTypeSubscriptionLineItemLookup"
             ]
         },
-        "types.FeatureFilter": {
+        "github_com_flexprice_flexprice_internal_types.FeatureFilter": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -21552,7 +21552,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -21592,18 +21592,18 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.FeatureType": {
+        "github_com_flexprice_flexprice_internal_types.FeatureType": {
             "type": "string",
             "enum": [
                 "metered",
@@ -21616,7 +21616,7 @@ const docTemplate = `{
                 "FeatureTypeStatic"
             ]
         },
-        "types.FileType": {
+        "github_com_flexprice_flexprice_internal_types.FileType": {
             "type": "string",
             "enum": [
                 "CSV",
@@ -21627,24 +21627,24 @@ const docTemplate = `{
                 "FileTypeJSON"
             ]
         },
-        "types.FilterCondition": {
+        "github_com_flexprice_flexprice_internal_types.FilterCondition": {
             "type": "object",
             "properties": {
                 "data_type": {
-                    "$ref": "#/definitions/types.DataType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.DataType"
                 },
                 "field": {
                     "type": "string"
                 },
                 "operator": {
-                    "$ref": "#/definitions/types.FilterOperatorType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterOperatorType"
                 },
                 "value": {
-                    "$ref": "#/definitions/types.Value"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Value"
                 }
             }
         },
-        "types.FilterOperatorType": {
+        "github_com_flexprice_flexprice_internal_types.FilterOperatorType": {
             "type": "string",
             "enum": [
                 "eq",
@@ -21669,7 +21669,7 @@ const docTemplate = `{
                 "AFTER"
             ]
         },
-        "types.GroupEntityType": {
+        "github_com_flexprice_flexprice_internal_types.GroupEntityType": {
             "type": "string",
             "enum": [
                 "price",
@@ -21680,7 +21680,7 @@ const docTemplate = `{
                 "GroupEntityTypeFeature"
             ]
         },
-        "types.GroupFilter": {
+        "github_com_flexprice_flexprice_internal_types.GroupFilter": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -21696,7 +21696,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "group_ids": {
@@ -21731,18 +21731,18 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.IntegrationEntityType": {
+        "github_com_flexprice_flexprice_internal_types.IntegrationEntityType": {
             "type": "string",
             "enum": [
                 "customer",
@@ -21769,7 +21769,7 @@ const docTemplate = `{
                 "IntegrationEntityTypePrice"
             ]
         },
-        "types.InvoiceBillingReason": {
+        "github_com_flexprice_flexprice_internal_types.InvoiceBillingReason": {
             "type": "string",
             "enum": [
                 "SUBSCRIPTION_CREATE",
@@ -21786,7 +21786,7 @@ const docTemplate = `{
                 "InvoiceBillingReasonManual"
             ]
         },
-        "types.InvoiceCadence": {
+        "github_com_flexprice_flexprice_internal_types.InvoiceCadence": {
             "type": "string",
             "enum": [
                 "ARREAR",
@@ -21797,7 +21797,7 @@ const docTemplate = `{
                 "InvoiceCadenceAdvance"
             ]
         },
-        "types.InvoiceFilter": {
+        "github_com_flexprice_flexprice_internal_types.InvoiceFilter": {
             "type": "object",
             "properties": {
                 "amount_due_gt": {
@@ -21825,7 +21825,7 @@ const docTemplate = `{
                 "filters": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "invoice_ids": {
@@ -21839,14 +21839,14 @@ const docTemplate = `{
                     "description": "invoice_status filters by the current state of invoices in their lifecycle\nMultiple statuses can be specified to include invoices in any of the listed states",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.InvoiceStatus"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceStatus"
                     }
                 },
                 "invoice_type": {
                     "description": "invoice_type filters by the nature of the invoice (SUBSCRIPTION, ONE_OFF, or CREDIT)\nUse this to separate recurring charges from one-time fees or credit adjustments",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceType"
                         }
                     ]
                 },
@@ -21870,7 +21870,7 @@ const docTemplate = `{
                     "description": "payment_status filters by the payment state of invoices\nMultiple statuses can be specified to include invoices with any of the listed payment states",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.PaymentStatus"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaymentStatus"
                     }
                 },
                 "period_end_gte": {
@@ -21896,14 +21896,14 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "subscription_id filters invoices generated for a specific subscription\nOnly returns invoices that were created as part of the specified subscription's billing",
@@ -21911,7 +21911,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.InvoiceStatus": {
+        "github_com_flexprice_flexprice_internal_types.InvoiceStatus": {
             "type": "string",
             "enum": [
                 "DRAFT",
@@ -21926,7 +21926,7 @@ const docTemplate = `{
                 "InvoiceStatusSkipped"
             ]
         },
-        "types.InvoiceType": {
+        "github_com_flexprice_flexprice_internal_types.InvoiceType": {
             "type": "string",
             "enum": [
                 "SUBSCRIPTION",
@@ -21939,7 +21939,7 @@ const docTemplate = `{
                 "InvoiceTypeCredit"
             ]
         },
-        "types.PaginationResponse": {
+        "github_com_flexprice_flexprice_internal_types.PaginationResponse": {
             "type": "object",
             "properties": {
                 "limit": {
@@ -21953,7 +21953,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.PauseMode": {
+        "github_com_flexprice_flexprice_internal_types.PauseMode": {
             "type": "string",
             "enum": [
                 "immediate",
@@ -21966,7 +21966,7 @@ const docTemplate = `{
                 "PauseModePeriodEnd"
             ]
         },
-        "types.PauseStatus": {
+        "github_com_flexprice_flexprice_internal_types.PauseStatus": {
             "type": "string",
             "enum": [
                 "none",
@@ -21983,7 +21983,7 @@ const docTemplate = `{
                 "PauseStatusCancelled"
             ]
         },
-        "types.PaymentBehavior": {
+        "github_com_flexprice_flexprice_internal_types.PaymentBehavior": {
             "type": "string",
             "enum": [
                 "allow_incomplete",
@@ -21998,7 +21998,7 @@ const docTemplate = `{
                 "PaymentBehaviorDefaultActive"
             ]
         },
-        "types.PaymentDestinationType": {
+        "github_com_flexprice_flexprice_internal_types.PaymentDestinationType": {
             "type": "string",
             "enum": [
                 "INVOICE"
@@ -22007,7 +22007,7 @@ const docTemplate = `{
                 "PaymentDestinationTypeInvoice"
             ]
         },
-        "types.PaymentGatewayType": {
+        "github_com_flexprice_flexprice_internal_types.PaymentGatewayType": {
             "type": "string",
             "enum": [
                 "stripe",
@@ -22024,7 +22024,7 @@ const docTemplate = `{
                 "PaymentGatewayTypePaddle"
             ]
         },
-        "types.PaymentMethodType": {
+        "github_com_flexprice_flexprice_internal_types.PaymentMethodType": {
             "type": "string",
             "enum": [
                 "CARD",
@@ -22041,7 +22041,7 @@ const docTemplate = `{
                 "PaymentMethodTypePaymentLink"
             ]
         },
-        "types.PaymentStatus": {
+        "github_com_flexprice_flexprice_internal_types.PaymentStatus": {
             "type": "string",
             "enum": [
                 "INITIATED",
@@ -22064,7 +22064,7 @@ const docTemplate = `{
                 "PaymentStatusPartiallyRefunded"
             ]
         },
-        "types.PaymentTerms": {
+        "github_com_flexprice_flexprice_internal_types.PaymentTerms": {
             "type": "string",
             "enum": [
                 "15 NET",
@@ -22083,7 +22083,7 @@ const docTemplate = `{
                 "PaymentTerms90Net"
             ]
         },
-        "types.PlanFilter": {
+        "github_com_flexprice_flexprice_internal_types.PlanFilter": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -22096,7 +22096,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -22127,18 +22127,18 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.PriceEntityType": {
+        "github_com_flexprice_flexprice_internal_types.PriceEntityType": {
             "type": "string",
             "enum": [
                 "PLAN",
@@ -22155,7 +22155,7 @@ const docTemplate = `{
                 "PRICE_ENTITY_TYPE_COSTSHEET"
             ]
         },
-        "types.PriceFilter": {
+        "github_com_flexprice_flexprice_internal_types.PriceFilter": {
             "type": "object",
             "properties": {
                 "allow_expired_prices": {
@@ -22172,7 +22172,7 @@ const docTemplate = `{
                     }
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.PriceEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType"
                 },
                 "expand": {
                     "type": "string"
@@ -22181,7 +22181,7 @@ const docTemplate = `{
                     "description": "DSL filters",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -22232,14 +22232,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
                 }
             }
         },
-        "types.PriceType": {
+        "github_com_flexprice_flexprice_internal_types.PriceType": {
             "type": "string",
             "enum": [
                 "USAGE",
@@ -22250,7 +22250,7 @@ const docTemplate = `{
                 "PRICE_TYPE_FIXED"
             ]
         },
-        "types.PriceUnitFilter": {
+        "github_com_flexprice_flexprice_internal_types.PriceUnitFilter": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -22263,7 +22263,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -22291,18 +22291,18 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.PriceUnitType": {
+        "github_com_flexprice_flexprice_internal_types.PriceUnitType": {
             "type": "string",
             "enum": [
                 "FIAT",
@@ -22313,7 +22313,7 @@ const docTemplate = `{
                 "PRICE_UNIT_TYPE_CUSTOM"
             ]
         },
-        "types.ProrationBehavior": {
+        "github_com_flexprice_flexprice_internal_types.ProrationBehavior": {
             "type": "string",
             "enum": [
                 "create_prorations",
@@ -22328,7 +22328,7 @@ const docTemplate = `{
                 "ProrationBehaviorNone"
             ]
         },
-        "types.QueryFilter": {
+        "github_com_flexprice_flexprice_internal_types.QueryFilter": {
             "type": "object",
             "properties": {
                 "expand": {
@@ -22354,11 +22354,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 }
             }
         },
-        "types.ReportingUnit": {
+        "github_com_flexprice_flexprice_internal_types.ReportingUnit": {
             "type": "object",
             "properties": {
                 "conversion_rate": {
@@ -22375,7 +22375,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.ResetUsage": {
+        "github_com_flexprice_flexprice_internal_types.ResetUsage": {
             "type": "string",
             "enum": [
                 "BILLING_PERIOD",
@@ -22386,7 +22386,7 @@ const docTemplate = `{
                 "ResetUsageNever"
             ]
         },
-        "types.ResumeMode": {
+        "github_com_flexprice_flexprice_internal_types.ResumeMode": {
             "type": "string",
             "enum": [
                 "immediate",
@@ -22399,7 +22399,7 @@ const docTemplate = `{
                 "ResumeModeAuto"
             ]
         },
-        "types.RoundType": {
+        "github_com_flexprice_flexprice_internal_types.RoundType": {
             "type": "string",
             "enum": [
                 "up",
@@ -22410,7 +22410,7 @@ const docTemplate = `{
                 "ROUND_DOWN"
             ]
         },
-        "types.S3CompressionType": {
+        "github_com_flexprice_flexprice_internal_types.S3CompressionType": {
             "type": "string",
             "enum": [
                 "none",
@@ -22421,7 +22421,7 @@ const docTemplate = `{
                 "S3CompressionTypeGzip"
             ]
         },
-        "types.S3EncryptionType": {
+        "github_com_flexprice_flexprice_internal_types.S3EncryptionType": {
             "type": "string",
             "enum": [
                 "AES256",
@@ -22434,7 +22434,7 @@ const docTemplate = `{
                 "S3EncryptionTypeAwsKmsDsse"
             ]
         },
-        "types.S3JobConfig": {
+        "github_com_flexprice_flexprice_internal_types.S3JobConfig": {
             "type": "object",
             "properties": {
                 "bucket": {
@@ -22445,7 +22445,7 @@ const docTemplate = `{
                     "description": "Compression type: \"gzip\", \"none\" (default: \"none\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.S3CompressionType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.S3CompressionType"
                         }
                     ]
                 },
@@ -22453,7 +22453,7 @@ const docTemplate = `{
                     "description": "Encryption type: \"AES256\", \"aws:kms\", \"aws:kms:dsse\" (default: \"AES256\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.S3EncryptionType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.S3EncryptionType"
                         }
                     ]
                 },
@@ -22475,7 +22475,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.ScheduleStatus": {
+        "github_com_flexprice_flexprice_internal_types.ScheduleStatus": {
             "type": "string",
             "enum": [
                 "pending",
@@ -22492,7 +22492,7 @@ const docTemplate = `{
                 "ScheduleStatusFailed"
             ]
         },
-        "types.ScheduleType": {
+        "github_com_flexprice_flexprice_internal_types.ScheduleType": {
             "type": "string",
             "enum": [
                 "immediate",
@@ -22503,7 +22503,7 @@ const docTemplate = `{
                 "ScheduleTypePeriodEnd"
             ]
         },
-        "types.ScheduledTaskEntityType": {
+        "github_com_flexprice_flexprice_internal_types.ScheduledTaskEntityType": {
             "type": "string",
             "enum": [
                 "events",
@@ -22518,7 +22518,7 @@ const docTemplate = `{
                 "ScheduledTaskEntityTypeCreditUsage"
             ]
         },
-        "types.ScheduledTaskInterval": {
+        "github_com_flexprice_flexprice_internal_types.ScheduledTaskInterval": {
             "type": "string",
             "enum": [
                 "15MIN",
@@ -22538,7 +22538,7 @@ const docTemplate = `{
                 "ScheduledTaskIntervalDaily"
             ]
         },
-        "types.SecretProvider": {
+        "github_com_flexprice_flexprice_internal_types.SecretProvider": {
             "type": "string",
             "enum": [
                 "flexprice",
@@ -22565,7 +22565,7 @@ const docTemplate = `{
                 "SecretProviderPaddle"
             ]
         },
-        "types.SecretType": {
+        "github_com_flexprice_flexprice_internal_types.SecretType": {
             "type": "string",
             "enum": [
                 "private_key",
@@ -22578,18 +22578,18 @@ const docTemplate = `{
                 "SecretTypeIntegration"
             ]
         },
-        "types.SortCondition": {
+        "github_com_flexprice_flexprice_internal_types.SortCondition": {
             "type": "object",
             "properties": {
                 "direction": {
-                    "$ref": "#/definitions/types.SortDirection"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortDirection"
                 },
                 "field": {
                     "type": "string"
                 }
             }
         },
-        "types.SortDirection": {
+        "github_com_flexprice_flexprice_internal_types.SortDirection": {
             "type": "string",
             "enum": [
                 "asc",
@@ -22600,7 +22600,7 @@ const docTemplate = `{
                 "SortDirectionDesc"
             ]
         },
-        "types.Status": {
+        "github_com_flexprice_flexprice_internal_types.Status": {
             "type": "string",
             "enum": [
                 "published",
@@ -22613,7 +22613,7 @@ const docTemplate = `{
                 "StatusArchived"
             ]
         },
-        "types.SubscriptionChangeType": {
+        "github_com_flexprice_flexprice_internal_types.SubscriptionChangeType": {
             "type": "string",
             "enum": [
                 "upgrade",
@@ -22626,7 +22626,7 @@ const docTemplate = `{
                 "SubscriptionChangeTypeLateral"
             ]
         },
-        "types.SubscriptionFilter": {
+        "github_com_flexprice_flexprice_internal_types.SubscriptionFilter": {
             "type": "object",
             "properties": {
                 "active_at": {
@@ -22637,14 +22637,14 @@ const docTemplate = `{
                     "description": "BillingCadence filters by billing cadence",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.BillingCadence"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                     }
                 },
                 "billing_period": {
                     "description": "BillingPeriod filters by billing period",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.BillingPeriod"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                     }
                 },
                 "customer_id": {
@@ -22675,7 +22675,7 @@ const docTemplate = `{
                 "filters": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "invoicing_customer_ids": {
@@ -22715,14 +22715,14 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_ids": {
                     "type": "array",
@@ -22734,7 +22734,7 @@ const docTemplate = `{
                     "description": "SubscriptionStatus filters by subscription status",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SubscriptionStatus"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionStatus"
                     }
                 },
                 "subscription_type": {
@@ -22750,7 +22750,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.SubscriptionLineItemEntityType": {
+        "github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType": {
             "type": "string",
             "enum": [
                 "plan",
@@ -22763,7 +22763,7 @@ const docTemplate = `{
                 "SubscriptionLineItemEntityTypeSubscription"
             ]
         },
-        "types.SubscriptionScheduleChangeType": {
+        "github_com_flexprice_flexprice_internal_types.SubscriptionScheduleChangeType": {
             "type": "string",
             "enum": [
                 "plan_change",
@@ -22774,7 +22774,7 @@ const docTemplate = `{
                 "SubscriptionScheduleChangeTypeCancellation"
             ]
         },
-        "types.SubscriptionStatus": {
+        "github_com_flexprice_flexprice_internal_types.SubscriptionStatus": {
             "type": "string",
             "enum": [
                 "active",
@@ -22793,7 +22793,7 @@ const docTemplate = `{
                 "SubscriptionStatusDraft"
             ]
         },
-        "types.TaskStatus": {
+        "github_com_flexprice_flexprice_internal_types.TaskStatus": {
             "type": "string",
             "enum": [
                 "PENDING",
@@ -22808,7 +22808,7 @@ const docTemplate = `{
                 "TaskStatusFailed"
             ]
         },
-        "types.TaskType": {
+        "github_com_flexprice_flexprice_internal_types.TaskType": {
             "type": "string",
             "enum": [
                 "IMPORT",
@@ -22819,7 +22819,7 @@ const docTemplate = `{
                 "TaskTypeExport"
             ]
         },
-        "types.TaxRateEntityType": {
+        "github_com_flexprice_flexprice_internal_types.TaxRateEntityType": {
             "type": "string",
             "enum": [
                 "customer",
@@ -22834,7 +22834,7 @@ const docTemplate = `{
                 "TaxRateEntityTypeTenant"
             ]
         },
-        "types.TaxRateScope": {
+        "github_com_flexprice_flexprice_internal_types.TaxRateScope": {
             "type": "string",
             "enum": [
                 "INTERNAL",
@@ -22847,7 +22847,7 @@ const docTemplate = `{
                 "TaxRateScopeOneTime"
             ]
         },
-        "types.TaxRateStatus": {
+        "github_com_flexprice_flexprice_internal_types.TaxRateStatus": {
             "type": "string",
             "enum": [
                 "ACTIVE",
@@ -22858,7 +22858,7 @@ const docTemplate = `{
                 "TaxRateStatusInactive"
             ]
         },
-        "types.TaxRateType": {
+        "github_com_flexprice_flexprice_internal_types.TaxRateType": {
             "type": "string",
             "enum": [
                 "percentage",
@@ -22869,7 +22869,7 @@ const docTemplate = `{
                 "TaxRateTypeFixed"
             ]
         },
-        "types.TimeRangeFilter": {
+        "github_com_flexprice_flexprice_internal_types.TimeRangeFilter": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -22880,7 +22880,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.TransactionReason": {
+        "github_com_flexprice_flexprice_internal_types.TransactionReason": {
             "type": "string",
             "enum": [
                 "INVOICE_PAYMENT",
@@ -22909,7 +22909,7 @@ const docTemplate = `{
                 "TransactionReasonInvoiceVoidRefund"
             ]
         },
-        "types.TransactionStatus": {
+        "github_com_flexprice_flexprice_internal_types.TransactionStatus": {
             "type": "string",
             "enum": [
                 "pending",
@@ -22922,7 +22922,7 @@ const docTemplate = `{
                 "TransactionStatusFailed"
             ]
         },
-        "types.TransactionType": {
+        "github_com_flexprice_flexprice_internal_types.TransactionType": {
             "type": "string",
             "enum": [
                 "credit",
@@ -22933,7 +22933,7 @@ const docTemplate = `{
                 "TransactionTypeDebit"
             ]
         },
-        "types.UserFilter": {
+        "github_com_flexprice_flexprice_internal_types.UserFilter": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -22946,7 +22946,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -22974,14 +22974,14 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "type": {
                     "enum": [
@@ -22990,7 +22990,7 @@ const docTemplate = `{
                     ],
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.UserType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.UserType"
                         }
                     ]
                 },
@@ -23003,7 +23003,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.UserType": {
+        "github_com_flexprice_flexprice_internal_types.UserType": {
             "type": "string",
             "enum": [
                 "user",
@@ -23014,7 +23014,7 @@ const docTemplate = `{
                 "UserTypeServiceAccount"
             ]
         },
-        "types.Value": {
+        "github_com_flexprice_flexprice_internal_types.Value": {
             "type": "object",
             "properties": {
                 "array": {
@@ -23037,19 +23037,19 @@ const docTemplate = `{
                 }
             }
         },
-        "types.WalletConfig": {
+        "github_com_flexprice_flexprice_internal_types.WalletConfig": {
             "type": "object",
             "properties": {
                 "allowed_price_types": {
                     "description": "AllowedPriceTypes is a list of price types that are allowed for the wallet\nnil means all price types are allowed",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.WalletConfigPriceType"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletConfigPriceType"
                     }
                 }
             }
         },
-        "types.WalletConfigPriceType": {
+        "github_com_flexprice_flexprice_internal_types.WalletConfigPriceType": {
             "type": "string",
             "enum": [
                 "ALL",
@@ -23062,7 +23062,7 @@ const docTemplate = `{
                 "WalletConfigPriceTypeFixed"
             ]
         },
-        "types.WalletFilter": {
+        "github_com_flexprice_flexprice_internal_types.WalletFilter": {
             "type": "object",
             "properties": {
                 "alert_enabled": {
@@ -23091,7 +23091,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.WalletStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WalletStatus"
                 },
                 "wallet_ids": {
                     "type": "array",
@@ -23101,7 +23101,7 @@ const docTemplate = `{
                 }
             }
         },
-        "types.WalletStatus": {
+        "github_com_flexprice_flexprice_internal_types.WalletStatus": {
             "type": "string",
             "enum": [
                 "active",
@@ -23114,7 +23114,7 @@ const docTemplate = `{
                 "WalletStatusClosed"
             ]
         },
-        "types.WalletTransactionFilter": {
+        "github_com_flexprice_flexprice_internal_types.WalletTransactionFilter": {
             "type": "object",
             "properties": {
                 "created_by": {
@@ -23139,7 +23139,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "id": {
@@ -23173,27 +23173,27 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "transaction_reason": {
-                    "$ref": "#/definitions/types.TransactionReason"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionReason"
                 },
                 "transaction_status": {
-                    "$ref": "#/definitions/types.TransactionStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionStatus"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.TransactionType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.TransactionType"
                 }
             }
         },
-        "types.WalletTxReferenceType": {
+        "github_com_flexprice_flexprice_internal_types.WalletTxReferenceType": {
             "type": "string",
             "enum": [
                 "PAYMENT",
@@ -23208,7 +23208,7 @@ const docTemplate = `{
                 "WalletTxReferenceTypeInvoice"
             ]
         },
-        "types.WalletType": {
+        "github_com_flexprice_flexprice_internal_types.WalletType": {
             "type": "string",
             "enum": [
                 "PRE_PAID",
@@ -23219,7 +23219,7 @@ const docTemplate = `{
                 "WalletTypePostPaid"
             ]
         },
-        "types.WebhookEventName": {
+        "github_com_flexprice_flexprice_internal_types.WebhookEventName": {
             "type": "string",
             "enum": [
                 "subscription.created",
@@ -23310,7 +23310,7 @@ const docTemplate = `{
                 "WebhookEventCreditNoteUpdated"
             ]
         },
-        "types.WindowSize": {
+        "github_com_flexprice_flexprice_internal_types.WindowSize": {
             "type": "string",
             "enum": [
                 "MONTH",
@@ -23339,7 +23339,7 @@ const docTemplate = `{
                 "WindowSizeMonth"
             ]
         },
-        "types.WorkflowExecutionFilter": {
+        "github_com_flexprice_flexprice_internal_types.WorkflowExecutionFilter": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -23360,7 +23360,7 @@ const docTemplate = `{
                     "description": "filters allows complex filtering based on multiple fields (same as FeatureFilter)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.FilterCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.FilterCondition"
                     }
                 },
                 "limit": {
@@ -23382,14 +23382,14 @@ const docTemplate = `{
                 "sort": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.SortCondition"
+                        "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SortCondition"
                     }
                 },
                 "start_time": {
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "task_queue": {
                     "type": "string"
@@ -23417,7 +23417,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.GroupEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.GroupEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -23438,7 +23438,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -23458,7 +23458,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "commitment_info": {
-                    "$ref": "#/definitions/types.CommitmentInfo"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentInfo"
                 },
                 "created_at": {
                     "type": "string"
@@ -23539,7 +23539,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -23562,7 +23562,7 @@ const docTemplate = `{
                     "description": "BucketSize is used only for MAX aggregation when windowed aggregation is needed\nIt defines the size of time windows to calculate max values within",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.WindowSize"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WindowSize"
                         }
                     ]
                 },
@@ -23583,7 +23583,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.AggregationType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AggregationType"
                 }
             }
         },
@@ -23647,12 +23647,12 @@ const docTemplate = `{
                     "description": "ResetUsage defines whether the usage should be reset periodically or not\nFor ex meters tracking total storage used do not get reset but meters tracking\ntotal API requests do.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.ResetUsage"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResetUsage"
                         }
                     ]
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
@@ -23705,7 +23705,7 @@ const docTemplate = `{
                     "description": "up or down",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.RoundType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.RoundType"
                         }
                     ]
                 }
@@ -23719,13 +23719,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingCadence"
                 },
                 "billing_model": {
-                    "$ref": "#/definitions/types.BillingModel"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingModel"
                 },
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "BillingPeriodCount is the count of the billing period ex 1, 3, 6, 12",
@@ -23774,7 +23774,7 @@ const docTemplate = `{
                     "description": "EntityType holds the value of the \"entity_type\" field.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PriceEntityType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceEntityType"
                         }
                     ]
                 },
@@ -23791,7 +23791,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "lookup_key": {
                     "description": "LookupKey used for looking up the price in the database",
@@ -23836,7 +23836,7 @@ const docTemplate = `{
                     "description": "PriceUnitType is the type of the price unit (FIAT, CUSTOM)",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.PriceUnitType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceUnitType"
                         }
                     ]
                 },
@@ -23845,13 +23845,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "tenant_id": {
                     "type": "string"
                 },
                 "tier_mode": {
-                    "$ref": "#/definitions/types.BillingTier"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingTier"
                 },
                 "tiers": {
                     "type": "array",
@@ -23867,7 +23867,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -23905,7 +23905,7 @@ const docTemplate = `{
                     "description": "up or down",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.RoundType"
+                            "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.RoundType"
                         }
                     ]
                 }
@@ -23915,7 +23915,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "billing_period": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "billing_period_count": {
                     "description": "from price at create; default 1",
@@ -23926,7 +23926,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "commitment_duration": {
-                    "$ref": "#/definitions/types.BillingPeriod"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.BillingPeriod"
                 },
                 "commitment_overage_factor": {
                     "type": "string"
@@ -23938,7 +23938,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "commitment_type": {
-                    "$ref": "#/definitions/types.CommitmentType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.CommitmentType"
                 },
                 "commitment_windowed": {
                     "type": "boolean"
@@ -23965,7 +23965,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "entity_type": {
-                    "$ref": "#/definitions/types.SubscriptionLineItemEntityType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.SubscriptionLineItemEntityType"
                 },
                 "environment_id": {
                     "type": "string"
@@ -23974,7 +23974,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "invoice_cadence": {
-                    "$ref": "#/definitions/types.InvoiceCadence"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.InvoiceCadence"
                 },
                 "metadata": {
                     "type": "object",
@@ -23998,7 +23998,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "price_type": {
-                    "$ref": "#/definitions/types.PriceType"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PriceType"
                 },
                 "price_unit": {
                     "type": "string"
@@ -24013,7 +24013,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "type": "string"
@@ -24068,28 +24068,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pause_mode": {
-                    "$ref": "#/definitions/types.PauseMode"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseMode"
                 },
                 "pause_start": {
                     "description": "PauseStart is when the pause actually started",
                     "type": "string"
                 },
                 "pause_status": {
-                    "$ref": "#/definitions/types.PauseStatus"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PauseStatus"
                 },
                 "reason": {
                     "description": "Reason is the reason for pausing",
                     "type": "string"
                 },
                 "resume_mode": {
-                    "$ref": "#/definitions/types.ResumeMode"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.ResumeMode"
                 },
                 "resumed_at": {
                     "description": "ResumedAt is when the pause was actually ended (if manually resumed)",
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "SubscriptionID is the identifier for the subscription",
@@ -24140,7 +24140,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/types.Status"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.Status"
                 },
                 "subscription_id": {
                     "description": "SubscriptionID is the identifier for the subscription",
@@ -24163,11 +24163,11 @@ const docTemplate = `{
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/WalletResponse"
+                        "$ref": "#/definitions/dto.WalletResponse"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/types.PaginationResponse"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.PaginationResponse"
                 }
             }
         },
@@ -24200,16 +24200,16 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "customer": {
-                    "$ref": "#/definitions/CustomerResponse"
+                    "$ref": "#/definitions/dto.CustomerResponse"
                 },
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "feature": {
-                    "$ref": "#/definitions/FeatureResponse"
+                    "$ref": "#/definitions/dto.FeatureResponse"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/WalletResponse"
+                    "$ref": "#/definitions/dto.WalletResponse"
                 }
             }
         },
@@ -24217,10 +24217,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "invoice": {
-                    "$ref": "#/definitions/InvoiceResponse"
+                    "$ref": "#/definitions/dto.InvoiceResponse"
                 }
             }
         },
@@ -24228,10 +24228,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "credit_note": {
-                    "$ref": "#/definitions/CreditNoteResponse"
+                    "$ref": "#/definitions/dto.CreditNoteResponse"
                 },
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 }
             }
         },
@@ -24239,10 +24239,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "customer": {
-                    "$ref": "#/definitions/CustomerResponse"
+                    "$ref": "#/definitions/dto.CustomerResponse"
                 },
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 }
             }
         },
@@ -24250,10 +24250,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "entitlement": {
-                    "$ref": "#/definitions/EntitlementResponse"
+                    "$ref": "#/definitions/dto.EntitlementResponse"
                 },
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 }
             }
         },
@@ -24261,10 +24261,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "feature": {
-                    "$ref": "#/definitions/FeatureResponse"
+                    "$ref": "#/definitions/dto.FeatureResponse"
                 }
             }
         },
@@ -24272,10 +24272,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "invoice": {
-                    "$ref": "#/definitions/InvoiceResponse"
+                    "$ref": "#/definitions/dto.InvoiceResponse"
                 }
             }
         },
@@ -24283,10 +24283,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "payment": {
-                    "$ref": "#/definitions/PaymentResponse"
+                    "$ref": "#/definitions/dto.PaymentResponse"
                 }
             }
         },
@@ -24294,10 +24294,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "phase": {
-                    "$ref": "#/definitions/SubscriptionPhaseResponse"
+                    "$ref": "#/definitions/dto.SubscriptionPhaseResponse"
                 }
             }
         },
@@ -24305,10 +24305,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "subscription": {
-                    "$ref": "#/definitions/SubscriptionResponse"
+                    "$ref": "#/definitions/dto.SubscriptionResponse"
                 }
             }
         },
@@ -24316,13 +24316,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "transaction": {
-                    "$ref": "#/definitions/WalletTransactionResponse"
+                    "$ref": "#/definitions/dto.WalletTransactionResponse"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/WalletResponse"
+                    "$ref": "#/definitions/dto.WalletResponse"
                 }
             }
         },
@@ -24330,7 +24330,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alert_settings": {
-                    "$ref": "#/definitions/types.AlertSettings"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.AlertSettings"
                 },
                 "alert_type": {
                     "type": "string"
@@ -24353,13 +24353,13 @@ const docTemplate = `{
                     "$ref": "#/definitions/webhookDto.WalletAlertInfo"
                 },
                 "customer": {
-                    "$ref": "#/definitions/CustomerResponse"
+                    "$ref": "#/definitions/dto.CustomerResponse"
                 },
                 "event_type": {
-                    "$ref": "#/definitions/types.WebhookEventName"
+                    "$ref": "#/definitions/github_com_flexprice_flexprice_internal_types.WebhookEventName"
                 },
                 "wallet": {
-                    "$ref": "#/definitions/WalletResponse"
+                    "$ref": "#/definitions/dto.WalletResponse"
                 }
             }
         }
