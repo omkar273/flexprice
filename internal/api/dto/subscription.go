@@ -282,7 +282,7 @@ func (c *SubscriptionInheritanceConfig) Validate() error {
 }
 
 // ExecuteSubscriptionInheritanceRequest is the payload for
-// POST /subscriptions/:id/inheritance/execute.
+// POST /subscriptions/:id/modify/execute.
 type ExecuteSubscriptionInheritanceRequest struct {
 	ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
 }

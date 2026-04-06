@@ -312,6 +312,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			// Subscription plan changes (upgrade/downgrade)
 			subscription.POST("/:id/change/preview", handlers.SubscriptionChange.PreviewSubscriptionChange)
 			subscription.POST("/:id/change/execute", handlers.SubscriptionChange.ExecuteSubscriptionChange)
+			subscription.POST("/:id/modify/execute", handlers.Subscription.ExecuteSubscriptionModify)
 
 			// Subscription line item management
 			subscription.POST("/:id/lineitems", handlers.Subscription.AddSubscriptionLineItem)

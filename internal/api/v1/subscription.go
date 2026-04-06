@@ -223,6 +223,49 @@ func (h *SubscriptionHandler) CancelSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// @Summary Add customers to subscription inheritance
+// @ID executeSubscriptionModify
+// @Description Attach additional child customers (by external ID) to an active standalone or parent subscription; creates inherited skeleton subscriptions for each. The subscription must be active.
+// @Tags Subscriptions
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @x-scope "write"
+// @Param id path string true "Subscription ID"
+// @Param request body dto.ExecuteSubscriptionInheritanceRequest true "External customer IDs to inherit"
+// @Success 200 {object} dto.SubscriptionResponse
+// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
+// @Failure 404 {object} ierr.ErrorResponse "Resource not found"
+// @Failure 500 {object} ierr.ErrorResponse "Server error"
+// @Router /subscriptions/{id}/modify/execute [post]
+func (h *SubscriptionHandler) ExecuteSubscriptionModify(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		c.Error(ierr.NewError("subscription ID is required").
+			WithHint("Please provide a valid subscription ID").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	var req dto.ExecuteSubscriptionInheritanceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("Failed to bind JSON", "error", err)
+		c.Error(ierr.WithError(err).
+			WithHint("Invalid request format").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	resp, err := h.service.ExecuteSubscriptionModify(c.Request.Context(), id, req)
+	if err != nil {
+		h.log.Error("Failed to execute subscription modify", "error", err, "subscription_id", id)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // @Summary Activate draft subscription
 // @ID activateSubscription
 // @Description Use when turning a draft subscription live (e.g. after collecting payment or completing setup). Once activated, billing and entitlements apply.
