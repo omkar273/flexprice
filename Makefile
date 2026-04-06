@@ -2,16 +2,21 @@
 swagger-clean:
 	rm -rf docs/swagger
 
+# Swag v2 pin. Use `go run` for generation so CI never runs a random host `swag` from PATH while
+# expecting $(GOPATH)/bin/swag (install-swag skipped when `which swag` succeeds).
+SWAG_V2_PKG := github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5
+
 .PHONY: install-swag
 install-swag:
-	@which swag > /dev/null || (go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5)
+	go install $(SWAG_V2_PKG)
 
 .PHONY: swagger
 swagger: swagger-2-0 swagger-3-0
 
-.PHONY: swagger-2-0
-swagger-2-0: install-swag
-	$(shell go env GOPATH)/bin/swag init \
+.PHONY: swagger-2-0-generate
+swagger-2-0-generate:
+	@echo "Running swag via go run $(SWAG_V2_PKG) ..."
+	go run $(SWAG_V2_PKG) init \
 		--generalInfo cmd/server/main.go \
 		--dir . \
 		--parseDependency \
@@ -22,11 +27,16 @@ swagger-2-0: install-swag
 		--instanceName swagger \
 		--parseVendor \
 		--outputTypes go,json,yaml
-	@make swagger-fix-refs
-	@node scripts/fix_swagger_internal_types.mjs
+
+.PHONY: swagger-2-0-node
+swagger-2-0-node:
+	node scripts/fix_swagger_internal_types.mjs
+
+.PHONY: swagger-2-0
+swagger-2-0: swagger-2-0-generate swagger-fix-refs swagger-2-0-node
 
 .PHONY: swagger-3-0
-swagger-3-0: install-swag
+swagger-3-0:
 	@echo "Converting Swagger 2.0 to OpenAPI 3.0..."
 	@curl -X 'POST' \
 		'https://converter.swagger.io/api/convert' \
