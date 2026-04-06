@@ -8,4 +8,4 @@ require (
 )
 
 // When running from api/go/examples, use the parent SDK
-replace github.com/flexprice/go-sdk/v2 => ../
+replace github.com/flexprice/flexprice-go => ../

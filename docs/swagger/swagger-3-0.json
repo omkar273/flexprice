@@ -15080,8 +15080,7 @@
           },
           "billing_period": {
             "type": "string",
-            "description": "billing_period is the period this invoice covers (e.g., \"monthly\", \"yearly\")",
-            "format": "date-time"
+            "description": "billing_period is the period this invoice covers (e.g., \"monthly\", \"yearly\")"
           },
           "billing_reason": {
             "$ref": "#/components/schemas/types.InvoiceBillingReason"
@@ -17797,8 +17796,7 @@
           },
           "billing_period": {
             "type": "string",
-            "description": "billing_period describes the billing period this invoice covers (e.g., \"January 2024\", \"Q1 2024\")",
-            "format": "date-time"
+            "description": "billing_period describes the billing period this invoice covers (e.g., \"January 2024\", \"Q1 2024\")"
           },
           "billing_reason": {
             "type": "string",
@@ -17912,7 +17910,7 @@
           },
           "recalculated_invoice_id": {
             "type": "string",
-            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent\u2192child link from this (voided) invoice to the new replacement invoice."
+            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent→child link from this (voided) invoice to the new replacement invoice."
           },
           "refunded_amount": {
             "type": "string",
@@ -21763,7 +21761,8 @@
           "message": {
             "type": "string"
           }
-        }
+        },
+        "x-speakeasy-name-override": "ErrorDetail"
       },
       "DomainAddon": {
         "type": "object",
@@ -22088,7 +22087,8 @@
           "success": {
             "type": "boolean"
           }
-        }
+        },
+        "x-speakeasy-name-override": "ErrorResponse"
       },
       "types.AddonAssociationEntityType": {
         "type": "string",
