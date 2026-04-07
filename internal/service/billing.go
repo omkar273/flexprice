@@ -240,7 +240,7 @@ func (s *billingService) CalculateFixedCharges(
 					proratedAmount = amount
 				}
 				amount = proratedAmount
-				linePeriodStart, linePeriodEnd = periodStart, periodEnd
+				linePeriodStart, linePeriodEnd = effectiveStart, effectiveEnd
 			}
 		}
 
@@ -2267,7 +2267,11 @@ func (s *billingService) ClassifyLineItems(
 		// Fixed, equal billing period: existing behavior (advance → both slices; arrear → CurrentPeriodArrear).
 		if item.InvoiceCadence == types.InvoiceCadenceAdvance {
 			result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
-			result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+			// Only include in next period if still active when that period starts.
+			// Ended items were already handled via proration invoices and must not be re-billed.
+			if item.EndDate.IsZero() || !item.EndDate.Before(nextPeriodStart) {
+				result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+			}
 		}
 		if item.InvoiceCadence == types.InvoiceCadenceArrear {
 			result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
