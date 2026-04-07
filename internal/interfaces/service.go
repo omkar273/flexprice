@@ -152,6 +152,16 @@ type SubscriptionService interface {
 	CascadeCancelToInheritedSubscriptions(ctx context.Context, parentSub *subscription.Subscription) error
 }
 
+// SubscriptionModificationService handles mid-cycle subscription modifications:
+// seat/quantity changes with proration, and subscription inheritance management.
+type SubscriptionModificationService interface {
+	// Execute performs the modification and persists all changes.
+	Execute(ctx context.Context, subscriptionID string, req dto.ExecuteSubscriptionModifyRequest) (*dto.SubscriptionModifyResponse, error)
+
+	// Preview returns what would happen without committing any changes.
+	Preview(ctx context.Context, subscriptionID string, req dto.ExecuteSubscriptionModifyRequest) (*dto.SubscriptionModifyResponse, error)
+}
+
 type PriceUnitService interface {
 	CreatePriceUnit(ctx context.Context, req dto.CreatePriceUnitRequest) (*dto.CreatePriceUnitResponse, error)
 	GetPriceUnit(ctx context.Context, id string) (*dto.PriceUnitResponse, error)
