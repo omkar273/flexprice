@@ -294,11 +294,12 @@ func (s *subscriptionModificationService) executeQuantityChange(
 	changedLineItems := make([]dto.ChangedLineItem, 0)
 	changedInvoices := make([]dto.ChangedInvoice, 0)
 
-	// itemsForProration accumulates pairs of old/new line items that need proration treatment.
+	// itemsForProration accumulates pairs of old/new line items + their effective dates.
 	// It is populated inside the transaction and consumed after it commits.
 	type prorationPair struct {
-		old  *subscription.SubscriptionLineItem
-		new_ *subscription.SubscriptionLineItem
+		old           *subscription.SubscriptionLineItem
+		new_          *subscription.SubscriptionLineItem
+		effectiveDate time.Time
 	}
 	var itemsForProration []prorationPair
 
@@ -310,6 +311,22 @@ func (s *subscriptionModificationService) executeQuantityChange(
 		itemsForProration = nil   // reset for safety
 
 		for _, change := range params.LineItems {
+			// Resolve effective date: caller-supplied or now.
+			// Must be within the current billing period (not at or after period end).
+			effectiveDate := now
+			if change.EffectiveDate != nil {
+				effectiveDate = change.EffectiveDate.UTC()
+			}
+			if !effectiveDate.Before(sub.CurrentPeriodEnd) {
+				return ierr.NewError("effective_date must be before the current period end").
+					WithHint("Set effective_date to a time within the current billing period").
+					WithReportableDetails(map[string]interface{}{
+						"effective_date":       effectiveDate,
+						"current_period_end":   sub.CurrentPeriodEnd,
+					}).
+					Mark(ierr.ErrValidation)
+			}
+
 			// Fetch line item
 			lineItem, err := sp.SubscriptionLineItemRepo.Get(txCtx, change.ID)
 			if err != nil {
@@ -340,8 +357,8 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					Mark(ierr.ErrValidation)
 			}
 
-			// End the old line item
-			lineItem.EndDate = now
+			// End the old line item at effective date
+			lineItem.EndDate = effectiveDate
 			if err := sp.SubscriptionLineItemRepo.Update(txCtx, lineItem); err != nil {
 				return ierr.WithError(err).
 					WithHint("Failed to end existing line item").
@@ -369,7 +386,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 				BillingPeriodCount:      lineItem.BillingPeriodCount,
 				InvoiceCadence:          lineItem.InvoiceCadence,
 				TrialPeriod:             lineItem.TrialPeriod,
-				StartDate:               now,
+				StartDate:               effectiveDate,
 				CommitmentAmount:        lineItem.CommitmentAmount,
 				CommitmentQuantity:      lineItem.CommitmentQuantity,
 				CommitmentType:          lineItem.CommitmentType,
@@ -386,26 +403,28 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					Mark(ierr.ErrDatabase)
 			}
 
+			endDate := effectiveDate
+			startDate := effectiveDate
 			changedLineItems = append(changedLineItems,
 				dto.ChangedLineItem{
 					ID:           lineItem.ID,
 					PriceID:      lineItem.PriceID,
 					Quantity:     lineItem.Quantity,
-					EndDate:      now.Format(time.RFC3339),
+					EndDate:      &endDate,
 					ChangeAction: "ended",
 				},
 				dto.ChangedLineItem{
 					ID:           newItem.ID,
 					PriceID:      newItem.PriceID,
 					Quantity:     newItem.Quantity,
-					StartDate:    now.Format(time.RFC3339),
+					StartDate:    &startDate,
 					ChangeAction: "created",
 				},
 			)
 
 			// Collect pairs that need proration (handled after the transaction commits)
 			if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance {
-				itemsForProration = append(itemsForProration, prorationPair{old: lineItem, new_: newItem})
+				itemsForProration = append(itemsForProration, prorationPair{old: lineItem, new_: newItem, effectiveDate: effectiveDate})
 			}
 		}
 		return nil
@@ -417,7 +436,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 	// Post-transaction: handle proration outside the DB transaction because invoice creation
 	// and wallet top-ups carry their own side effects (payment attempts, credit grants).
 	for _, pair := range itemsForProration {
-		inv, err := s.handleQuantityChangeProration(ctx, sub, pair.old, pair.new_, now)
+		inv, err := s.handleQuantityChangeProration(ctx, sub, pair.old, pair.new_, pair.effectiveDate)
 		if err != nil {
 			sp.Logger.Errorw("failed to handle proration for quantity change", "error", err, "line_item_id", pair.old.ID)
 			changedInvoices = append(changedInvoices, dto.ChangedInvoice{ID: "(failed)", Action: "failed", Status: "failed"})
@@ -473,6 +492,22 @@ func (s *subscriptionModificationService) previewQuantityChange(
 	changedInvoices := make([]dto.ChangedInvoice, 0)
 
 	for _, change := range params.LineItems {
+		// Resolve effective date: caller-supplied or now.
+		// Must be within the current billing period.
+		effectiveDate := now
+		if change.EffectiveDate != nil {
+			effectiveDate = change.EffectiveDate.UTC()
+		}
+		if !effectiveDate.Before(sub.CurrentPeriodEnd) {
+			return nil, ierr.NewError("effective_date must be before the current period end").
+				WithHint("Set effective_date to a time within the current billing period").
+				WithReportableDetails(map[string]interface{}{
+					"effective_date":     effectiveDate,
+					"current_period_end": sub.CurrentPeriodEnd,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+
 		lineItem, err := sp.SubscriptionLineItemRepo.Get(ctx, change.ID)
 		if err != nil {
 			return nil, err
@@ -499,19 +534,21 @@ func (s *subscriptionModificationService) previewQuantityChange(
 				Mark(ierr.ErrValidation)
 		}
 
+		endDate := effectiveDate
+		startDate := effectiveDate
 		changedLineItems = append(changedLineItems,
 			dto.ChangedLineItem{
 				ID:           "(preview-ended)",
 				PriceID:      lineItem.PriceID,
 				Quantity:     lineItem.Quantity,
-				EndDate:      now.Format(time.RFC3339),
+				EndDate:      &endDate,
 				ChangeAction: "ended",
 			},
 			dto.ChangedLineItem{
 				ID:           "(preview-created)",
 				PriceID:      lineItem.PriceID,
 				Quantity:     change.Quantity,
-				StartDate:    now.Format(time.RFC3339),
+				StartDate:    &startDate,
 				ChangeAction: "created",
 			},
 		)
@@ -523,7 +560,7 @@ func (s *subscriptionModificationService) previewQuantityChange(
 				PriceID:  lineItem.PriceID,
 				Quantity: change.Quantity,
 			}
-			inv, err := s.handleQuantityChangeProration(ctx, sub, lineItem, previewNewItem, now)
+			inv, err := s.handleQuantityChangeProration(ctx, sub, lineItem, previewNewItem, effectiveDate)
 			if err != nil {
 				sp.Logger.Warnw("failed to preview proration for quantity change", "error", err, "line_item_id", lineItem.ID)
 			} else if inv != nil {

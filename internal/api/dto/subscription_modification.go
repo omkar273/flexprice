@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"time"
+
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/shopspring/decimal"
@@ -27,8 +29,11 @@ func (r *SubModifyInheritanceRequest) Validate() error {
 
 // LineItemQuantityChange describes a quantity change for a single line item.
 type LineItemQuantityChange struct {
-	ID       string          `json:"id" binding:"required"`
-	Quantity decimal.Decimal `json:"quantity" swaggertype:"string" binding:"required"`
+	ID            string          `json:"id" binding:"required"`
+	Quantity      decimal.Decimal `json:"quantity" swaggertype:"string" binding:"required"`
+	// EffectiveDate is when the quantity change takes effect.
+	// If omitted, the change is effective immediately (now).
+	EffectiveDate *time.Time `json:"effective_date,omitempty"`
 }
 
 // SubModifyQuantityChangeRequest is the payload for mid-cycle seat/quantity changes.
@@ -104,8 +109,8 @@ type ChangedLineItem struct {
 	ID           string          `json:"id"`
 	PriceID      string          `json:"price_id"`
 	Quantity     decimal.Decimal `json:"quantity" swaggertype:"string"`
-	StartDate    string          `json:"start_date,omitempty"`
-	EndDate      string          `json:"end_date,omitempty"`
+	StartDate    *time.Time      `json:"start_date,omitempty"`
+	EndDate      *time.Time      `json:"end_date,omitempty"`
 	ChangeAction string          `json:"change_action"` // "created" | "updated" | "ended"
 }
 
