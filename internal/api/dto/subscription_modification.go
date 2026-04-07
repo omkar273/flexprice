@@ -6,10 +6,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// =============================================
-// Inheritance (migrated from old ExecuteSubscriptionInheritanceRequest)
-// =============================================
-
 // SubModifyInheritanceRequest is the payload for adding
 // inherited child subscriptions to a parent subscription.
 type SubModifyInheritanceRequest struct {
@@ -102,10 +98,6 @@ func (r *ExecuteSubscriptionModifyRequest) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 }
-
-// =============================================
-// Response DTOs (Orb-inspired changed_resources)
-// =============================================
 
 // ChangedLineItem describes a subscription line item that was created, updated, or ended.
 type ChangedLineItem struct {
