@@ -22,6 +22,10 @@ type Invoice struct {
 	// subscription_id is the ID of the subscription this invoice is associated with (only present for subscription-based invoices)
 	SubscriptionID *string `json:"subscription_id,omitempty"`
 
+	// subscription_customer_id is the subscription owner's customer ID (Subscription.CustomerID).
+	// It may differ from customer_id when the subscription uses an invoicing customer. Set internally; nullable in DB.
+	SubscriptionCustomerID *string `json:"subscription_customer_id,omitempty"`
+
 	// invoice_type indicates the type of invoice - whether this is a subscription invoice, one-time charge, or other billing type
 	InvoiceType types.InvoiceType `json:"invoice_type"`
 
@@ -151,22 +155,23 @@ func FromEnt(e *ent.Invoice) *Invoice {
 		couponApplications = coupon_application.FromEntList(e.Edges.CouponApplications)
 	}
 	return &Invoice{
-		ID:               e.ID,
-		CustomerID:       e.CustomerID,
-		SubscriptionID:   e.SubscriptionID,
-		InvoiceType:      types.InvoiceType(e.InvoiceType),
-		InvoiceStatus:    types.InvoiceStatus(e.InvoiceStatus),
-		PaymentStatus:    types.PaymentStatus(e.PaymentStatus),
-		Currency:         e.Currency,
-		AmountDue:        e.AmountDue,
-		AmountPaid:       e.AmountPaid,
-		Subtotal:         e.Subtotal,
-		Total:            e.Total,
-		TotalDiscount:    lo.FromPtrOr(e.TotalDiscount, decimal.Zero),
-		TotalTax:         lo.FromPtrOr(e.TotalTax, decimal.Zero),
-		AmountRemaining:  e.AmountRemaining,
-		AdjustmentAmount: e.AdjustmentAmount,
-		RefundedAmount:   e.RefundedAmount,
+		ID:                     e.ID,
+		CustomerID:             e.CustomerID,
+		SubscriptionID:         e.SubscriptionID,
+		SubscriptionCustomerID: e.SubscriptionCustomerID,
+		InvoiceType:            types.InvoiceType(e.InvoiceType),
+		InvoiceStatus:          types.InvoiceStatus(e.InvoiceStatus),
+		PaymentStatus:          types.PaymentStatus(e.PaymentStatus),
+		Currency:               e.Currency,
+		AmountDue:              e.AmountDue,
+		AmountPaid:             e.AmountPaid,
+		Subtotal:               e.Subtotal,
+		Total:                  e.Total,
+		TotalDiscount:          lo.FromPtrOr(e.TotalDiscount, decimal.Zero),
+		TotalTax:               lo.FromPtrOr(e.TotalTax, decimal.Zero),
+		AmountRemaining:        e.AmountRemaining,
+		AdjustmentAmount:       e.AdjustmentAmount,
+		RefundedAmount:         e.RefundedAmount,
 		// TODO: remove optional and nillable after migration
 		TotalPrepaidCreditsApplied: lo.FromPtrOr(e.TotalPrepaidCreditsApplied, decimal.Zero),
 		InvoiceNumber:              e.InvoiceNumber,
