@@ -592,22 +592,41 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 	}
 
 	if result.NetAmount.GreaterThan(decimal.Zero) {
-		// Upgrade: create proration invoice
+		// Upgrade: create a delta-only invoice for exactly the prorated amount (Stripe-style).
+		// We do NOT re-bill the full remaining period — only the incremental charge.
 		invoiceSvc := NewInvoiceService(sp)
-		inv, _, err := invoiceSvc.CreateSubscriptionInvoice(ctx, &dto.CreateSubscriptionInvoiceRequest{
-			SubscriptionID: sub.ID,
-			PeriodStart:    effectiveDate,
-			PeriodEnd:      sub.CurrentPeriodEnd,
-			ReferencePoint: types.ReferencePointPeriodEnd,
-		}, nil, types.InvoiceFlowManual, false)
+		periodEnd := sub.CurrentPeriodEnd
+		inv, err := invoiceSvc.CreateInvoice(ctx, dto.CreateInvoiceRequest{
+			CustomerID:    sub.CustomerID,
+			SubscriptionID: &sub.ID,
+			InvoiceType:   types.InvoiceTypeSubscription,
+			Currency:      sub.Currency,
+			BillingReason: types.InvoiceBillingReasonSubscriptionUpdate,
+			AmountDue:     result.NetAmount,
+			Total:         result.NetAmount,
+			Subtotal:      result.NetAmount,
+			PeriodStart:   &effectiveDate,
+			PeriodEnd:     &periodEnd,
+		})
 		if err != nil {
-			sp.Logger.Errorw("failed to create proration invoice for quantity change", "error", err)
+			sp.Logger.Errorw("failed to create delta proration invoice for quantity change", "error", err)
 			return &dto.ChangedInvoice{ID: "(failed)", Action: "failed", Status: "failed"}, err
 		}
+		if err := invoiceSvc.FinalizeInvoice(ctx, inv.ID); err != nil {
+			sp.Logger.Warnw("failed to finalize delta proration invoice", "error", err, "invoice_id", inv.ID)
+		}
+		if err := invoiceSvc.AttemptPayment(ctx, inv.ID); err != nil {
+			sp.Logger.Warnw("failed to attempt payment for delta proration invoice", "error", err, "invoice_id", inv.ID)
+		}
+		// Re-fetch to get latest payment status after finalize+payment attempt.
+		latest, fetchErr := invoiceSvc.GetInvoice(ctx, inv.ID)
+		if fetchErr != nil {
+			latest = inv
+		}
 		return &dto.ChangedInvoice{
-			ID:     inv.ID,
+			ID:     latest.ID,
 			Action: "created",
-			Status: string(inv.PaymentStatus),
+			Status: string(latest.PaymentStatus),
 		}, nil
 	}
 
