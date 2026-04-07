@@ -211,17 +211,36 @@ func (s *billingService) CalculateFixedCharges(
 		} else {
 			// Same or shorter cadence: proration, invoice period as service period
 			amount = priceService.CalculateCost(ctx, price.Price, item.Quantity)
-			proratedAmount, err := s.applyProrationToLineItem(ctx, sub, item, price.Price, amount, &periodStart, &periodEnd)
-			if err != nil {
-				s.Logger.Warnw("failed to apply proration to line item, using original amount",
-					"error", err,
-					"subscription_id", sub.ID,
+			effectiveStart, effectiveEnd := item.GetPeriod(periodStart, periodEnd)
+			if !effectiveEnd.After(effectiveStart) {
+				s.Logger.Debugw("skipping line item: not active in invoice period",
 					"line_item_id", item.ID,
-					"price_id", item.PriceID)
-				proratedAmount = amount
+					"effective_start", effectiveStart,
+					"effective_end", effectiveEnd)
+				continue
 			}
-			amount = proratedAmount
-			linePeriodStart, linePeriodEnd = periodStart, periodEnd
+			totalDuration := periodEnd.Sub(periodStart)
+			effectiveDuration := effectiveEnd.Sub(effectiveStart)
+			if effectiveDuration < totalDuration {
+				// Partial-period line item (versioned mid-cycle): scale by time ratio
+				ratio := decimal.NewFromFloat(effectiveDuration.Seconds()).
+					Div(decimal.NewFromFloat(totalDuration.Seconds()))
+				amount = amount.Mul(ratio)
+				linePeriodStart, linePeriodEnd = effectiveStart, effectiveEnd
+			} else {
+				// Full-period line item: apply existing proration logic (first-period, cancellation, etc.)
+				proratedAmount, err := s.applyProrationToLineItem(ctx, sub, item, price.Price, amount, &periodStart, &periodEnd)
+				if err != nil {
+					s.Logger.Warnw("failed to apply proration to line item, using original amount",
+						"error", err,
+						"subscription_id", sub.ID,
+						"line_item_id", item.ID,
+						"price_id", item.PriceID)
+					proratedAmount = amount
+				}
+				amount = proratedAmount
+				linePeriodStart, linePeriodEnd = periodStart, periodEnd
+			}
 		}
 
 		// Shared: price unit amount, round, build and append invoice line item
