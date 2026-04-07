@@ -212,6 +212,13 @@ func (s *billingService) CalculateFixedCharges(
 			// Same or shorter cadence: proration, invoice period as service period
 			amount = priceService.CalculateCost(ctx, price.Price, item.Quantity)
 			effectiveStart, effectiveEnd := item.GetPeriod(periodStart, periodEnd)
+			if !effectiveEnd.After(effectiveStart) {
+				s.Logger.Debugw("skipping line item: not active in invoice period",
+					"line_item_id", item.ID,
+					"effective_start", effectiveStart,
+					"effective_end", effectiveEnd)
+				continue
+			}
 
 			totalDuration := periodEnd.Sub(periodStart)
 			effectiveDuration := effectiveEnd.Sub(effectiveStart)
