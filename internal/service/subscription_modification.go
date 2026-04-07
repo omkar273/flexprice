@@ -312,17 +312,26 @@ func (s *subscriptionModificationService) executeQuantityChange(
 
 		for _, change := range params.LineItems {
 			// Resolve effective date: caller-supplied or now.
-			// Must be within the current billing period (not at or after period end).
+			// Must be >= now (no backdating) and before the current period end.
 			effectiveDate := now
 			if change.EffectiveDate != nil {
 				effectiveDate = change.EffectiveDate.UTC()
+			}
+			if effectiveDate.Before(sub.CurrentPeriodStart) {
+				return ierr.NewError("effective_date cannot be before the current period start").
+					WithHint("Set effective_date to a time within the current billing period").
+					WithReportableDetails(map[string]interface{}{
+						"effective_date":       effectiveDate,
+						"current_period_start": sub.CurrentPeriodStart,
+					}).
+					Mark(ierr.ErrValidation)
 			}
 			if !effectiveDate.Before(sub.CurrentPeriodEnd) {
 				return ierr.NewError("effective_date must be before the current period end").
 					WithHint("Set effective_date to a time within the current billing period").
 					WithReportableDetails(map[string]interface{}{
-						"effective_date":       effectiveDate,
-						"current_period_end":   sub.CurrentPeriodEnd,
+						"effective_date":     effectiveDate,
+						"current_period_end": sub.CurrentPeriodEnd,
 					}).
 					Mark(ierr.ErrValidation)
 			}
@@ -493,10 +502,19 @@ func (s *subscriptionModificationService) previewQuantityChange(
 
 	for _, change := range params.LineItems {
 		// Resolve effective date: caller-supplied or now.
-		// Must be within the current billing period.
+		// Must be >= now (no backdating) and before the current period end.
 		effectiveDate := now
 		if change.EffectiveDate != nil {
 			effectiveDate = change.EffectiveDate.UTC()
+		}
+		if effectiveDate.Before(sub.CurrentPeriodStart) {
+			return nil, ierr.NewError("effective_date cannot be before the current period start").
+				WithHint("Set effective_date to a time within the current billing period").
+				WithReportableDetails(map[string]interface{}{
+					"effective_date":       effectiveDate,
+					"current_period_start": sub.CurrentPeriodStart,
+				}).
+				Mark(ierr.ErrValidation)
 		}
 		if !effectiveDate.Before(sub.CurrentPeriodEnd) {
 			return nil, ierr.NewError("effective_date must be before the current period end").
@@ -648,8 +666,9 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		priceID := oldItem.PriceID
 		priceType := string(price.Price.Type)
 		planDisplayName := oldItem.PlanDisplayName
-		lineItemDescription := fmt.Sprintf("Proration for quantity change: %s → %s units × $%s/unit for remaining period",
-			oldItem.Quantity.String(), newItem.Quantity.String(), price.Price.Amount.String())
+		lineItemDescription := fmt.Sprintf("Proration for quantity change: %s → %s units × $%s/unit (%s – %s)",
+			oldItem.Quantity.String(), newItem.Quantity.String(), price.Price.Amount.String(),
+			effectiveDate.Format("2 Jan 2006"), periodEnd.Format("2 Jan 2006"))
 		lineItems := []dto.CreateInvoiceLineItemRequest{
 			{
 				PriceID:         &priceID,
