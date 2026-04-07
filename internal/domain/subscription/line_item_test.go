@@ -24,8 +24,8 @@ func TestGetPeriodEnd(t *testing.T) {
 	end  := time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)
 
 	li := &subscription.SubscriptionLineItem{EndDate: mid}
-	assert.Equal(t, mid,  li.GetPeriodEnd(end))  // EndDate < default → use EndDate
-	assert.Equal(t, base, li.GetPeriodEnd(base)) // default < EndDate → use default
+	assert.Equal(t, mid,  li.GetPeriodEnd(end))  // li.EndDate (Jan15) < end (Feb1) → use EndDate
+	assert.Equal(t, base, li.GetPeriodEnd(base)) // defaultPeriodEnd (Jan1) < li.EndDate (Jan15) → clamp to default
 
 	liNoEnd := &subscription.SubscriptionLineItem{}
 	assert.Equal(t, end, liNoEnd.GetPeriodEnd(end)) // zero EndDate → use default
