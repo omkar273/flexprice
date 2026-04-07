@@ -130,6 +130,7 @@ func (s *subscriptionModificationService) executeInheritance(
 	// 5. Transaction: update parent type and create inherited subscriptions
 	changedSubs := make([]dto.ChangedSubscription, 0)
 	err = sp.DB.WithTx(ctx, func(txCtx context.Context) error {
+		changedSubs = nil // reset for safety in case of retry
 		// If standalone, promote to parent
 		if sub.SubscriptionType == types.SubscriptionTypeStandalone {
 			sub.SubscriptionType = types.SubscriptionTypeParent
@@ -292,41 +293,52 @@ func (s *subscriptionModificationService) executeQuantityChange(
 	changedLineItems := make([]dto.ChangedLineItem, 0)
 	changedInvoices := make([]dto.ChangedInvoice, 0)
 
-	for _, change := range params.LineItems {
-		// Fetch line item
-		lineItem, err := sp.SubscriptionLineItemRepo.Get(ctx, change.ID)
-		if err != nil {
-			return nil, err
-		}
+	// itemsForProration accumulates pairs of old/new line items that need proration treatment.
+	// It is populated inside the transaction and consumed after it commits.
+	type prorationPair struct {
+		old  *subscription.SubscriptionLineItem
+		new_ *subscription.SubscriptionLineItem
+	}
+	var itemsForProration []prorationPair
 
-		// Validate it belongs to the subscription
-		if lineItem.SubscriptionID != subscriptionID {
-			return nil, ierr.NewError("line item does not belong to subscription").
-				WithHint("The specified line item ID must belong to the given subscription").
-				WithReportableDetails(map[string]interface{}{"line_item_id": change.ID, "subscription_id": subscriptionID}).
-				Mark(ierr.ErrValidation)
-		}
+	// Single transaction: end all old line items and create all new ones atomically.
+	// Proration (invoice creation / wallet credits) happens after the transaction commits
+	// because those operations have their own side effects.
+	err = sp.DB.WithTx(ctx, func(txCtx context.Context) error {
+		changedLineItems = nil    // reset for safety
+		itemsForProration = nil   // reset for safety
 
-		// Validate it is published (active)
-		if lineItem.Status != types.StatusPublished {
-			return nil, ierr.NewError("line item is not active").
-				WithHint("Only published line items can have their quantity changed").
-				WithReportableDetails(map[string]interface{}{"line_item_id": change.ID}).
-				Mark(ierr.ErrValidation)
-		}
+		for _, change := range params.LineItems {
+			// Fetch line item
+			lineItem, err := sp.SubscriptionLineItemRepo.Get(txCtx, change.ID)
+			if err != nil {
+				return err
+			}
 
-		// Validate it is a fixed-price item
-		if lineItem.PriceType != types.PRICE_TYPE_FIXED {
-			return nil, ierr.NewError("line item is not a fixed-price item").
-				WithHint("Quantity changes are only supported for fixed-price line items").
-				WithReportableDetails(map[string]interface{}{"line_item_id": change.ID, "price_type": lineItem.PriceType}).
-				Mark(ierr.ErrValidation)
-		}
+			// Validate it belongs to the subscription
+			if lineItem.SubscriptionID != subscriptionID {
+				return ierr.NewError("line item does not belong to subscription").
+					WithHint("The specified line item ID must belong to the given subscription").
+					WithReportableDetails(map[string]interface{}{"line_item_id": change.ID, "subscription_id": subscriptionID}).
+					Mark(ierr.ErrValidation)
+			}
 
-		var newItem *subscription.SubscriptionLineItem
+			// Validate it is published (active)
+			if lineItem.Status != types.StatusPublished {
+				return ierr.NewError("line item is not active").
+					WithHint("Only published line items can have their quantity changed").
+					WithReportableDetails(map[string]interface{}{"line_item_id": change.ID}).
+					Mark(ierr.ErrValidation)
+			}
 
-		// Transaction: end old line item and create new one
-		err = sp.DB.WithTx(ctx, func(txCtx context.Context) error {
+			// Validate it is a fixed-price item
+			if lineItem.PriceType != types.PRICE_TYPE_FIXED {
+				return ierr.NewError("line item is not a fixed-price item").
+					WithHint("Quantity changes are only supported for fixed-price line items").
+					WithReportableDetails(map[string]interface{}{"line_item_id": change.ID, "price_type": lineItem.PriceType}).
+					Mark(ierr.ErrValidation)
+			}
+
 			// End the old line item
 			lineItem.EndDate = now
 			if err := sp.SubscriptionLineItemRepo.Update(txCtx, lineItem); err != nil {
@@ -336,7 +348,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 			}
 
 			// Create new line item (copy with new quantity)
-			newItem = &subscription.SubscriptionLineItem{
+			newItem := &subscription.SubscriptionLineItem{
 				ID:                      types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
 				SubscriptionID:          lineItem.SubscriptionID,
 				CustomerID:              lineItem.CustomerID,
@@ -372,37 +384,46 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					WithHint("Failed to create new line item with updated quantity").
 					Mark(ierr.ErrDatabase)
 			}
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
 
-		changedLineItems = append(changedLineItems,
-			dto.ChangedLineItem{
-				ID:           lineItem.ID,
-				PriceID:      lineItem.PriceID,
-				Quantity:     lineItem.Quantity,
-				EndDate:      now.Format(time.RFC3339),
-				ChangeAction: "ended",
-			},
-			dto.ChangedLineItem{
-				ID:           newItem.ID,
-				PriceID:      newItem.PriceID,
-				Quantity:     newItem.Quantity,
-				StartDate:    now.Format(time.RFC3339),
-				ChangeAction: "created",
-			},
-		)
+			changedLineItems = append(changedLineItems,
+				dto.ChangedLineItem{
+					ID:           lineItem.ID,
+					PriceID:      lineItem.PriceID,
+					Quantity:     lineItem.Quantity,
+					EndDate:      now.Format(time.RFC3339),
+					ChangeAction: "ended",
+				},
+				dto.ChangedLineItem{
+					ID:           newItem.ID,
+					PriceID:      newItem.PriceID,
+					Quantity:     newItem.Quantity,
+					StartDate:    now.Format(time.RFC3339),
+					ChangeAction: "created",
+				},
+			)
 
-		// Handle proration for in-advance line items
-		if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance {
-			inv, err := s.handleQuantityChangeProration(ctx, sub, lineItem, newItem, now)
-			if err != nil {
-				sp.Logger.Warnw("failed to handle proration for quantity change", "error", err, "line_item_id", lineItem.ID)
-			} else if inv != nil {
-				changedInvoices = append(changedInvoices, *inv)
+			// Collect pairs that need proration (handled after the transaction commits)
+			if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance {
+				itemsForProration = append(itemsForProration, prorationPair{old: lineItem, new_: newItem})
 			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Post-transaction: handle proration outside the DB transaction because invoice creation
+	// and wallet top-ups carry their own side effects (payment attempts, credit grants).
+	for _, pair := range itemsForProration {
+		inv, err := s.handleQuantityChangeProration(ctx, sub, pair.old, pair.new_, now)
+		if err != nil {
+			sp.Logger.Errorw("failed to handle proration for quantity change", "error", err, "line_item_id", pair.old.ID)
+			changedInvoices = append(changedInvoices, dto.ChangedInvoice{ID: "(failed)", Action: "failed", Status: "failed"})
+			continue
+		}
+		if inv != nil {
+			changedInvoices = append(changedInvoices, *inv)
 		}
 	}
 
@@ -542,7 +563,7 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		return nil, err
 	}
 
-	params := proration.ProrationParams{
+	prorationParams := proration.ProrationParams{
 		SubscriptionID:     sub.ID,
 		LineItemID:         oldItem.ID,
 		PlanPayInAdvance:   price.Price.InvoiceCadence == types.InvoiceCadenceAdvance,
@@ -561,7 +582,7 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		PlanDisplayName:    oldItem.PlanDisplayName,
 	}
 
-	result, err := prorationSvc.CalculateProration(ctx, params)
+	result, err := prorationSvc.CalculateProration(ctx, prorationParams)
 	if err != nil {
 		return nil, err
 	}
@@ -580,8 +601,8 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 			ReferencePoint: types.ReferencePointPeriodEnd,
 		}, nil, types.InvoiceFlowManual, false)
 		if err != nil {
-			sp.Logger.Warnw("failed to create proration invoice for quantity change", "error", err)
-			return nil, nil
+			sp.Logger.Errorw("failed to create proration invoice for quantity change", "error", err)
+			return &dto.ChangedInvoice{ID: "(failed)", Action: "failed", Status: "failed"}, err
 		}
 		return &dto.ChangedInvoice{
 			ID:     inv.ID,
@@ -594,7 +615,7 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 	walletSvc := NewWalletService(sp)
 	creditAmount := result.NetAmount.Abs()
 	if err := walletSvc.TopUpWalletForProratedCharge(ctx, sub.CustomerID, creditAmount, sub.Currency); err != nil {
-		sp.Logger.Warnw("failed to top up wallet for downgrade proration", "error", err)
+		sp.Logger.Errorw("failed to top up wallet for downgrade proration", "error", err)
 	}
 	return &dto.ChangedInvoice{
 		ID:     "(wallet_credit)",
