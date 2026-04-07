@@ -254,6 +254,11 @@ feature_flag:
   # Tenant ID to force use v1 analytics service (empty string means no tenant is forced to v1)
   force_v1_for_tenant: ""
 
+# Google Gemini (server-side AI pricing parse for dashboard). Set FLEXPRICE_GEMINI_API_KEY in secure environments.
+gemini:
+  api_key: ""
+  model: "gemini-2.0-flash"
+
 email:
   enabled: false # Set to true to enable email sending (override with FLEXPRICE_EMAIL_ENABLED=true)
   resend_api_key: "" # Resend API key (set via FLEXPRICE_EMAIL_RESEND_API_KEY environment variable)

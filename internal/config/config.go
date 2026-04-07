@@ -56,6 +56,13 @@ type Configuration struct {
 	RawEventsReprocessing      RawEventsReprocessingConfig      `mapstructure:"raw_events_reprocessing" validate:"required"`
 	RawEventConsumption        RawEventConsumptionConfig        `mapstructure:"raw_event_consumption" validate:"required"`
 	IntegrationEvents          IntegrationEventsConfig          `mapstructure:"integration_events" validate:"omitempty"`
+	Gemini                     GeminiConfig                     `mapstructure:"gemini" validate:"omitempty"`
+}
+
+// GeminiConfig holds Google Gemini API settings for server-side AI pricing parse (portal).
+type GeminiConfig struct {
+	APIKey string `mapstructure:"api_key" validate:"omitempty"`
+	Model  string `mapstructure:"model" validate:"omitempty"`
 }
 
 type CacheConfig struct {

@@ -58,6 +58,7 @@ type Handlers struct {
 
 	// Portal handlers
 	Onboarding     *v1.OnboardingHandler
+	AIPricing      *v1.AIPricingHandler
 	CustomerPortal *v1.CustomerPortalHandler
 	// Cron jobs : TODO: move crons out of API based architecture
 	CronSubscription       *cron.SubscriptionHandler
@@ -525,6 +526,15 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 		adminRoutes.Use(middleware.APIKeyAuthMiddleware(cfg, secretService, logger))
 		{
 			// All admin routes to go here
+		}
+
+		// AI helpers (authenticated; same middleware as other /v1 private routes)
+		aiRoutes := v1Private.Group("/ai")
+		{
+			aiPricing := aiRoutes.Group("/pricing")
+			{
+				aiPricing.POST("/parse-gemini", handlers.AIPricing.ParseGeminiPricing)
+			}
 		}
 
 		// Portal routes (UI-specific endpoints)

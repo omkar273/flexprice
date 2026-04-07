@@ -241,6 +241,7 @@ func main() {
 			service.NewTaskService,
 			service.NewSecretService,
 			service.NewOnboardingService,
+			service.NewGeminiPricingService,
 			service.NewBillingService,
 			service.NewCreditGrantService,
 			service.NewCostsheetService,
@@ -354,6 +355,7 @@ func provideHandlers(
 	dashboardService service.DashboardService,
 	workflowService service.WorkflowService,
 	meterUsageService service.MeterUsageService,
+	geminiPricingService service.GeminiPricingService,
 ) api.Handlers {
 	return api.Handlers{
 		Events:                 v1.NewEventsHandler(eventService, eventPostProcessingService, featureUsageTrackingService, rawEventsReprocessingService, rawEventConsumptionService, cfg, logger),
@@ -380,6 +382,7 @@ func provideHandlers(
 		Secret:                 v1.NewSecretHandler(secretService, logger),
 		Tax:                    v1.NewTaxHandler(taxService, logger),
 		Onboarding:             v1.NewOnboardingHandler(onboardingService, logger),
+		AIPricing:              v1.NewAIPricingHandler(geminiPricingService, logger),
 		CronSubscription:       cron.NewSubscriptionHandler(subscriptionService, logger),
 		CronWallet:             cron.NewWalletCronHandler(logger, walletService, tenantService, environmentService, featureService, alertLogsService),
 		CronInvoice:            cron.NewInvoiceHandler(invoiceService, subscriptionService, connectionService, tenantService, environmentService, integrationFactory, logger),
