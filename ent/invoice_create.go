@@ -134,6 +134,20 @@ func (ic *InvoiceCreate) SetNillableSubscriptionID(s *string) *InvoiceCreate {
 	return ic
 }
 
+// SetSubscriptionCustomerID sets the "subscription_customer_id" field.
+func (ic *InvoiceCreate) SetSubscriptionCustomerID(s string) *InvoiceCreate {
+	ic.mutation.SetSubscriptionCustomerID(s)
+	return ic
+}
+
+// SetNillableSubscriptionCustomerID sets the "subscription_customer_id" field if the given value is not nil.
+func (ic *InvoiceCreate) SetNillableSubscriptionCustomerID(s *string) *InvoiceCreate {
+	if s != nil {
+		ic.SetSubscriptionCustomerID(*s)
+	}
+	return ic
+}
+
 // SetInvoiceType sets the "invoice_type" field.
 func (ic *InvoiceCreate) SetInvoiceType(tt types.InvoiceType) *InvoiceCreate {
 	ic.mutation.SetInvoiceType(tt)
@@ -831,6 +845,10 @@ func (ic *InvoiceCreate) createSpec() (*Invoice, *sqlgraph.CreateSpec) {
 	if value, ok := ic.mutation.SubscriptionID(); ok {
 		_spec.SetField(invoice.FieldSubscriptionID, field.TypeString, value)
 		_node.SubscriptionID = &value
+	}
+	if value, ok := ic.mutation.SubscriptionCustomerID(); ok {
+		_spec.SetField(invoice.FieldSubscriptionCustomerID, field.TypeString, value)
+		_node.SubscriptionCustomerID = &value
 	}
 	if value, ok := ic.mutation.InvoiceType(); ok {
 		_spec.SetField(invoice.FieldInvoiceType, field.TypeString, value)
