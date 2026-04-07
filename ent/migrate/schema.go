@@ -974,6 +974,7 @@ var (
 		{Name: "environment_id", Type: field.TypeString, Nullable: true, Default: "", SchemaType: map[string]string{"postgres": "varchar(50)"}},
 		{Name: "customer_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
 		{Name: "subscription_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "subscription_customer_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(50)"}},
 		{Name: "invoice_type", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
 		{Name: "invoice_status", Type: field.TypeString, Default: "DRAFT", SchemaType: map[string]string{"postgres": "varchar(50)"}},
 		{Name: "payment_status", Type: field.TypeString, Default: "PENDING", SchemaType: map[string]string{"postgres": "varchar(50)"}},
@@ -1015,7 +1016,7 @@ var (
 			{
 				Name:    "idx_tenant_customer_status",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[8], InvoicesColumns[11], InvoicesColumns[12], InvoicesColumns[2]},
+				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[8], InvoicesColumns[12], InvoicesColumns[13], InvoicesColumns[2]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "status = 'published'",
 				},
@@ -1023,22 +1024,22 @@ var (
 			{
 				Name:    "idx_tenant_subscription_status",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[9], InvoicesColumns[11], InvoicesColumns[12], InvoicesColumns[2]},
+				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[9], InvoicesColumns[12], InvoicesColumns[13], InvoicesColumns[2]},
 			},
 			{
 				Name:    "idx_tenant_type_status",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[10], InvoicesColumns[11], InvoicesColumns[12], InvoicesColumns[2]},
+				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[11], InvoicesColumns[12], InvoicesColumns[13], InvoicesColumns[2]},
 			},
 			{
 				Name:    "idx_tenant_due_date_status",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[24], InvoicesColumns[11], InvoicesColumns[12], InvoicesColumns[2]},
+				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[25], InvoicesColumns[12], InvoicesColumns[13], InvoicesColumns[2]},
 			},
 			{
 				Name:    "idx_tenant_environment_invoice_number_unique",
 				Unique:  true,
-				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[36]},
+				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[37]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "invoice_number IS NOT NULL AND invoice_number != '' AND status = 'published'",
 				},
@@ -1046,7 +1047,7 @@ var (
 			{
 				Name:    "idx_tenant_environment_idempotency_key_unique",
 				Unique:  true,
-				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[39]},
+				Columns: []*schema.Column{InvoicesColumns[1], InvoicesColumns[7], InvoicesColumns[40]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "idempotency_key IS NOT NULL",
 				},
@@ -1054,7 +1055,7 @@ var (
 			{
 				Name:    "idx_subscription_period_unique",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[9], InvoicesColumns[30], InvoicesColumns[31]},
+				Columns: []*schema.Column{InvoicesColumns[9], InvoicesColumns[31], InvoicesColumns[32]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "invoice_status != 'VOIDED' AND subscription_id IS NOT NULL",
 				},
