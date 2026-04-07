@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
@@ -563,6 +564,11 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		return nil, err
 	}
 
+	customerTimezone := sub.CustomerTimezone
+	if customerTimezone == "" {
+		customerTimezone = "UTC"
+	}
+
 	prorationParams := proration.ProrationParams{
 		SubscriptionID:     sub.ID,
 		LineItemID:         oldItem.ID,
@@ -580,6 +586,7 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		ProrationStrategy:  types.StrategySecondBased,
 		Currency:           sub.Currency,
 		PlanDisplayName:    oldItem.PlanDisplayName,
+		CustomerTimezone:   customerTimezone,
 	}
 
 	result, err := prorationSvc.CalculateProration(ctx, prorationParams)
@@ -596,25 +603,53 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		// We do NOT re-bill the full remaining period — only the incremental charge.
 		invoiceSvc := NewInvoiceService(sp)
 		periodEnd := sub.CurrentPeriodEnd
+		billingPeriod := string(sub.BillingPeriod)
+
+		// Build a descriptive line item for the delta charge.
+		qtyDelta := newItem.Quantity.Sub(oldItem.Quantity)
+		displayName := oldItem.PlanDisplayName + " — Quantity Change Proration"
+		priceID := oldItem.PriceID
+		priceType := string(price.Price.Type)
+		planDisplayName := oldItem.PlanDisplayName
+		lineItemDescription := fmt.Sprintf("Proration for quantity change: %s → %s units × $%s/unit for remaining period",
+			oldItem.Quantity.String(), newItem.Quantity.String(), price.Price.Amount.String())
+		lineItems := []dto.CreateInvoiceLineItemRequest{
+			{
+				PriceID:         &priceID,
+				PriceType:       &priceType,
+				PlanDisplayName: &planDisplayName,
+				DisplayName:     &displayName,
+				Amount:          result.NetAmount,
+				Quantity:        qtyDelta,
+				PeriodStart:     &effectiveDate,
+				PeriodEnd:       &periodEnd,
+				Metadata:        types.Metadata{"description": lineItemDescription},
+			},
+		}
+
+		// Use InvoiceTypeOneOff so ComputeInvoice uses the explicit delta amount rather
+		// than recomputing from the subscription's (now-updated) line items.
+		// SubscriptionID is set for reference/traceability only.
 		inv, err := invoiceSvc.CreateInvoice(ctx, dto.CreateInvoiceRequest{
-			CustomerID:    sub.CustomerID,
+			CustomerID:     sub.CustomerID,
 			SubscriptionID: &sub.ID,
-			InvoiceType:   types.InvoiceTypeSubscription,
-			Currency:      sub.Currency,
-			BillingReason: types.InvoiceBillingReasonSubscriptionUpdate,
-			AmountDue:     result.NetAmount,
-			Total:         result.NetAmount,
-			Subtotal:      result.NetAmount,
-			PeriodStart:   &effectiveDate,
-			PeriodEnd:     &periodEnd,
+			InvoiceType:    types.InvoiceTypeOneOff,
+			Currency:       sub.Currency,
+			BillingReason:  types.InvoiceBillingReasonSubscriptionUpdate,
+			AmountDue:      result.NetAmount,
+			Total:          result.NetAmount,
+			Subtotal:       result.NetAmount,
+			PeriodStart:    &effectiveDate,
+			PeriodEnd:      &periodEnd,
+			BillingPeriod:  &billingPeriod,
+			LineItems:      lineItems,
 		})
 		if err != nil {
 			sp.Logger.Errorw("failed to create delta proration invoice for quantity change", "error", err)
 			return &dto.ChangedInvoice{ID: "(failed)", Action: "failed", Status: "failed"}, err
 		}
-		if err := invoiceSvc.FinalizeInvoice(ctx, inv.ID); err != nil {
-			sp.Logger.Warnw("failed to finalize delta proration invoice", "error", err, "invoice_id", inv.ID)
-		}
+		// CreateInvoice with InvoiceTypeOneOff already finalizes the invoice internally.
+		// Attempt payment (credits + payment method charge).
 		if err := invoiceSvc.AttemptPayment(ctx, inv.ID); err != nil {
 			sp.Logger.Warnw("failed to attempt payment for delta proration invoice", "error", err, "invoice_id", inv.ID)
 		}
