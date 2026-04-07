@@ -81,7 +81,6 @@ type SubscriptionService interface {
 	GetSubscriptionV2(ctx context.Context, id string, expand types.Expand) (*dto.SubscriptionResponseV2, error)
 	UpdateSubscription(ctx context.Context, subscriptionID string, req dto.UpdateSubscriptionRequest) (*dto.SubscriptionResponse, error)
 	CancelSubscription(ctx context.Context, subscriptionID string, req *dto.CancelSubscriptionRequest) (*dto.CancelSubscriptionResponse, error)
-	ExecuteSubscriptionModify(ctx context.Context, subscriptionID string, req dto.ExecuteSubscriptionInheritanceRequest) (*dto.SubscriptionResponse, error)
 	ActivateIncompleteSubscription(ctx context.Context, subscriptionID string) error
 	ListSubscriptions(ctx context.Context, filter *types.SubscriptionFilter) (*dto.ListSubscriptionsResponse, error)
 

@@ -281,27 +281,6 @@ func (c *SubscriptionInheritanceConfig) Validate() error {
 	return nil
 }
 
-// ExecuteSubscriptionInheritanceRequest is the payload for
-// POST /subscriptions/:id/modify/execute.
-type ExecuteSubscriptionInheritanceRequest struct {
-	ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
-}
-
-func (r *ExecuteSubscriptionInheritanceRequest) Validate() error {
-	if len(r.ExternalCustomerIDsToInheritSubscription) == 0 {
-		return ierr.NewError("at least one external customer ID is required").
-			WithHint("Provide external_customer_ids_to_inherit_subscription with at least one non-empty value").
-			Mark(ierr.ErrValidation)
-	}
-	for i, extID := range r.ExternalCustomerIDsToInheritSubscription {
-		if extID == "" {
-			return ierr.NewError("external_customer_ids_to_inherit_subscription cannot contain empty values").
-				WithHint(fmt.Sprintf("External customer ID at index %d is empty", i)).
-				Mark(ierr.ErrValidation)
-		}
-	}
-	return nil
-}
 
 type CreateSubscriptionRequest struct {
 
