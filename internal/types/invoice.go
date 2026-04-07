@@ -332,6 +332,9 @@ type InvoiceFilter struct {
 	// Only returns invoices that were created as part of the specified subscription's billing
 	SubscriptionID string `json:"subscription_id,omitempty" form:"subscription_id"`
 
+	// subscription_customer_id filters invoices by the subscription owner's customer ID
+	SubscriptionCustomerIDs []string `json:"subscription_customer_id,omitempty" form:"subscription_customer_id"`
+
 	// invoice_type filters by the nature of the invoice (SUBSCRIPTION, ONE_OFF, or CREDIT)
 	// Use this to separate recurring charges from one-time fees or credit adjustments
 	InvoiceType InvoiceType `json:"invoice_type,omitempty" form:"invoice_type"`
