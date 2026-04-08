@@ -1612,5 +1612,8 @@ func (s *temporalService) buildEnvironmentCloneInput(_ context.Context, tenantID
 	}
 	input.TenantID = tenantID
 	input.UserID = userID
+	if err := input.Validate(); err != nil {
+		return nil, err
+	}
 	return input, nil
 }

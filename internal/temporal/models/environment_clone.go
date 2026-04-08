@@ -25,9 +25,14 @@ func (e *EnvironmentCloneWorkflowInput) Validate() error {
 			WithHint("Target environment ID is required").
 			Mark(ierr.ErrValidation)
 	}
-	if e.TenantID == "" || e.UserID == "" {
-		return ierr.NewError("tenant ID and user ID are required").
-			WithHint("Tenant ID and user ID are required").
+	if e.SourceEnvironmentID == e.TargetEnvironmentID {
+		return ierr.NewError("source and target environment IDs cannot be the same").
+			WithHint("Source and target environment IDs cannot be the same").
+			Mark(ierr.ErrValidation)
+	}
+	if e.TenantID == "" {
+		return ierr.NewError("tenant ID is required").
+			WithHint("Tenant ID is required").
 			Mark(ierr.ErrValidation)
 	}
 	return nil

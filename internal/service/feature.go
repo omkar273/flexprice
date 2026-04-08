@@ -472,6 +472,11 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	// Determine target environment: use request override or source feature's environment
 	targetEnvID := sourceFeature.EnvironmentID
 	if req.TargetEnvironmentID != "" {
+		if req.TargetEnvironmentID == sourceFeature.EnvironmentID {
+			return nil, ierr.NewError("target environment must be different from source environment").
+				WithHint("Use the standard clone endpoint for same-environment cloning, or omit target_environment_id").
+				Mark(ierr.ErrValidation)
+		}
 		targetEnvID = req.TargetEnvironmentID
 	}
 
@@ -511,20 +516,6 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	}
 	merged["source_feature_id"] = id
 
-	// For cross-env cloning, resolve the group in the target environment.
-	// Groups are env-scoped so we need to find or create the corresponding group.
-	targetGroupID := sourceFeature.GroupID
-	if req.TargetEnvironmentID != "" && sourceFeature.GroupID != "" {
-		resolvedID, err := s.resolveOrCreateGroup(ctx, targetCtx, sourceFeature.GroupID)
-		if err != nil {
-			s.Logger.WarnwCtx(ctx, "failed to resolve group for cross-env feature clone, clearing group_id",
-				"source_group_id", sourceFeature.GroupID, "error", err)
-			targetGroupID = ""
-		} else {
-			targetGroupID = resolvedID
-		}
-	}
-
 	newFeature := &feature.Feature{
 		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_FEATURE),
 		Name:          req.Name,
@@ -536,12 +527,28 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 		UnitPlural:    sourceFeature.UnitPlural,
 		ReportingUnit: sourceFeature.ReportingUnit,
 		AlertSettings: sourceFeature.AlertSettings,
-		GroupID:       targetGroupID,
+		GroupID:       sourceFeature.GroupID,
 		EnvironmentID: targetEnvID,
 		BaseModel:     types.GetDefaultBaseModel(targetCtx),
 	}
 
 	err = s.DB.WithTx(targetCtx, func(txCtx context.Context) error {
+		// For cross-env cloning, resolve the group in the target environment.
+		// Groups are env-scoped so we need to find or create the corresponding group.
+		// Done inside the transaction so group creation rolls back if feature creation fails.
+		if req.TargetEnvironmentID != "" && sourceFeature.GroupID != "" {
+			resolvedID, err := s.resolveOrCreateGroup(ctx, targetCtx, sourceFeature.GroupID)
+			if err != nil {
+				s.Logger.Warnw("failed to resolve group in target environment, clearing group_id",
+					"source_group_id", sourceFeature.GroupID,
+					"error", err,
+				)
+				newFeature.GroupID = ""
+			} else {
+				newFeature.GroupID = resolvedID
+			}
+		}
+
 		// For metered features, clone the underlying meter so the new feature
 		// has its own independent meter instance.
 		if sourceFeature.Type == types.FeatureTypeMetered && sourceFeature.MeterID != "" {

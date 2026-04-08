@@ -811,6 +811,11 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 	// Determine target environment: use request override or source plan's environment
 	targetEnvID := sourcePlan.EnvironmentID
 	if req.TargetEnvironmentID != "" {
+		if req.TargetEnvironmentID == sourcePlan.EnvironmentID {
+			return nil, ierr.NewError("target environment must be different from source environment").
+				WithHint("Use the standard clone endpoint for same-environment cloning, or omit target_environment_id").
+				Mark(ierr.ErrValidation)
+		}
 		targetEnvID = req.TargetEnvironmentID
 	}
 
@@ -895,6 +900,9 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 
 	// For cross-env cloning, resolve price groups in the target environment.
 	// Build a mapping from source group ID → target group ID.
+	// Note: group resolution happens outside the main transaction. This is acceptable
+	// because groups are idempotent by lookup_key — orphan groups from a failed clone
+	// are harmless and will be reused by subsequent clone attempts.
 	groupIDMap := make(map[string]string)
 	if req.TargetEnvironmentID != "" {
 		uniqueGroupIDs := make(map[string]struct{})
@@ -906,12 +914,14 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		for srcGroupID := range uniqueGroupIDs {
 			targetGID, err := s.resolveOrCreateGroup(ctx, targetCtx, srcGroupID)
 			if err != nil {
-				s.Logger.WarnwCtx(ctx, "failed to resolve group for cross-env plan clone, clearing group_id",
-					"source_group_id", srcGroupID, "error", err)
-				groupIDMap[srcGroupID] = "" // clear it
-			} else {
-				groupIDMap[srcGroupID] = targetGID
+				s.Logger.Warnw("failed to resolve group in target environment, clearing group_id",
+					"source_group_id", srcGroupID,
+					"error", err,
+				)
+				groupIDMap[srcGroupID] = ""
+				continue
 			}
+			groupIDMap[srcGroupID] = targetGID
 		}
 	}
 

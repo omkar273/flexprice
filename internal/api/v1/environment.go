@@ -91,6 +91,19 @@ func (h *EnvironmentHandler) UpdateEnvironment(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// @Summary Clone an environment
+// @Description Clone an existing environment and asynchronously clone all published features and plans from the source environment
+// @Tags Environments
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param id path string true "Source Environment ID"
+// @Param request body dto.CloneEnvironmentRequest true "Clone configuration (name and type for the new environment)"
+// @Success 202 {object} dto.CloneEnvironmentResponse
+// @Failure 400 {object} ierr.ErrorResponse
+// @Failure 404 {object} ierr.ErrorResponse
+// @Failure 500 {object} ierr.ErrorResponse
+// @Router /environments/{id}/clone [post]
 func (h *EnvironmentHandler) CloneEnvironment(c *gin.Context) {
 	sourceEnvID := c.Param("id")
 	if sourceEnvID == "" {
@@ -110,6 +123,14 @@ func (h *EnvironmentHandler) CloneEnvironment(c *gin.Context) {
 
 	if err := req.Validate(); err != nil {
 		c.Error(err)
+		return
+	}
+
+	// Validate that the source environment exists before creating the target
+	if _, err := h.service.GetEnvironment(c.Request.Context(), sourceEnvID); err != nil {
+		c.Error(ierr.WithError(err).
+			WithHint("Source environment not found").
+			Mark(ierr.ErrNotFound))
 		return
 	}
 

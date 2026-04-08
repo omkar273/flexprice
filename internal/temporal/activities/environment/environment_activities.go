@@ -2,9 +2,9 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
+	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/service"
 	"github.com/flexprice/flexprice/internal/types"
@@ -47,6 +47,18 @@ type CloneEnvironmentFeaturesOutput struct {
 func (a *EnvironmentActivities) CloneEnvironmentFeatures(ctx context.Context, input CloneEnvironmentFeaturesInput) (*CloneEnvironmentFeaturesOutput, error) {
 	log := logger.GetLogger()
 
+	// Validate required input fields
+	if input.SourceEnvironmentID == "" || input.TargetEnvironmentID == "" {
+		return nil, ierr.NewError("source and target environment IDs are required").
+			WithHint("Source and target environment IDs are required").
+			Mark(ierr.ErrValidation)
+	}
+	if input.TenantID == "" {
+		return nil, ierr.NewError("tenant ID is required").
+			WithHint("Tenant ID is required").
+			Mark(ierr.ErrValidation)
+	}
+
 	// Set context to source environment for fetching
 	sourceCtx := types.SetTenantID(ctx, input.TenantID)
 	sourceCtx = types.SetEnvironmentID(sourceCtx, input.SourceEnvironmentID)
@@ -57,7 +69,9 @@ func (a *EnvironmentActivities) CloneEnvironmentFeatures(ctx context.Context, in
 	filter.QueryFilter.Status = lo.ToPtr(types.StatusPublished)
 	featuresResp, err := a.featureService.GetFeatures(sourceCtx, filter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list features from source environment: %w", err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to list features from source environment").
+			Mark(ierr.ErrDatabase)
 	}
 
 	output := &CloneEnvironmentFeaturesOutput{}
@@ -70,9 +84,8 @@ func (a *EnvironmentActivities) CloneEnvironmentFeatures(ctx context.Context, in
 
 		cloned, err := a.featureService.CloneFeature(sourceCtx, f.ID, cloneReq)
 		if err != nil {
-			errMsg := fmt.Sprintf("feature %s (%s): %v", f.ID, f.LookupKey, err)
-			log.Warnw("env_clone_feature_skipped", "error", errMsg)
-			output.Errors = append(output.Errors, errMsg)
+			log.Warnw("env_clone_feature_skipped", "error", err)
+			output.Errors = append(output.Errors, err.Error())
 			continue
 		}
 		output.FeaturesCloned++
@@ -109,6 +122,18 @@ type CloneEnvironmentPlansOutput struct {
 func (a *EnvironmentActivities) CloneEnvironmentPlans(ctx context.Context, input CloneEnvironmentPlansInput) (*CloneEnvironmentPlansOutput, error) {
 	log := logger.GetLogger()
 
+	// Validate required input fields
+	if input.SourceEnvironmentID == "" || input.TargetEnvironmentID == "" {
+		return nil, ierr.NewError("source and target environment IDs are required").
+			WithHint("Source and target environment IDs are required").
+			Mark(ierr.ErrValidation)
+	}
+	if input.TenantID == "" {
+		return nil, ierr.NewError("tenant ID is required").
+			WithHint("Tenant ID is required").
+			Mark(ierr.ErrValidation)
+	}
+
 	// Set context to source environment for fetching
 	sourceCtx := types.SetTenantID(ctx, input.TenantID)
 	sourceCtx = types.SetEnvironmentID(sourceCtx, input.SourceEnvironmentID)
@@ -119,7 +144,9 @@ func (a *EnvironmentActivities) CloneEnvironmentPlans(ctx context.Context, input
 	filter.QueryFilter.Status = lo.ToPtr(types.StatusPublished)
 	plansResp, err := a.planService.GetPlans(sourceCtx, filter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list plans from source environment: %w", err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to list plans from source environment").
+			Mark(ierr.ErrDatabase)
 	}
 
 	output := &CloneEnvironmentPlansOutput{}
@@ -132,9 +159,8 @@ func (a *EnvironmentActivities) CloneEnvironmentPlans(ctx context.Context, input
 
 		cloned, err := a.planService.ClonePlan(sourceCtx, p.ID, cloneReq)
 		if err != nil {
-			errMsg := fmt.Sprintf("plan %s (%s): %v", p.ID, p.LookupKey, err)
-			log.Warnw("env_clone_plan_skipped", "error", errMsg)
-			output.Errors = append(output.Errors, errMsg)
+			log.Warnw("env_clone_plan_skipped", "error", err)
+			output.Errors = append(output.Errors, err.Error())
 			continue
 		}
 		output.PlansCloned++

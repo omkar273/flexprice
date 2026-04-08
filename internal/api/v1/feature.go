@@ -208,7 +208,7 @@ func (h *FeatureHandler) QueryFeatures(c *gin.Context) {
 // @Produce json
 // @Security ApiKeyAuth
 // @Param id path string true "Source Feature ID"
-// @Param request body dto.ClonePlanRequest true "Clone configuration"
+// @Param request body dto.CloneFeatureRequest true "Clone configuration"
 // @Success 201 {object} dto.FeatureResponse
 // @Failure 400 {object} ierr.ErrorResponse
 // @Failure 404 {object} ierr.ErrorResponse
