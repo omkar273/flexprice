@@ -77,6 +77,8 @@ func (s *SubscriptionModificationServiceSuite) buildServiceParams() ServiceParam
 		SettingsRepo:               s.GetStores().SettingsRepo,
 		TaxAssociationRepo:         s.GetStores().TaxAssociationRepo,
 		TaxRateRepo:                s.GetStores().TaxRateRepo,
+		TaxAppliedRepo:             s.GetStores().TaxAppliedRepo,
+		AlertLogsRepo:              s.GetStores().AlertLogsRepo,
 		EventPublisher:             s.GetPublisher(),
 		WebhookPublisher:           s.GetWebhookPublisher(),
 		ProrationCalculator:        s.GetCalculator(),
@@ -218,6 +220,182 @@ func (s *SubscriptionModificationServiceSuite) setSubPeriod(subID string, start,
 	sub.CurrentPeriodEnd = end
 	sub.BillingAnchor = start
 	s.Require().NoError(s.GetStores().SubscriptionRepo.Update(ctx, sub))
+}
+
+// ─────────────────────────────────────────────
+// Advance proration tests
+// ─────────────────────────────────────────────
+
+// TestExecuteQuantityChange_Advance verifies invoice creation for upgrades,
+// wallet credit for downgrades, proration-behavior=none, and same-quantity no-ops
+// on ADVANCE (in-advance) line items.
+func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance() {
+	type tc struct {
+		name               string
+		oldQty             decimal.Decimal
+		newQty             decimal.Decimal
+		effectiveDayOffset int // days after periodStart; -1 = special sentinel (periodEnd - 1s)
+		prorationBehavior  types.ProrationBehavior
+		wantLineItems      int    // expected len(ChangedResources.LineItems)
+		wantInvoiceAction  string // "created", "wallet_credit", or "" (no invoice)
+		wantNoOp           bool   // old line item EndDate must remain zero
+	}
+	cases := []tc{
+		{
+			name:               "upgrade_midperiod",
+			oldQty:             decimal.NewFromInt(1),
+			newQty:             decimal.NewFromInt(3),
+			effectiveDayOffset: 15,
+			prorationBehavior:  types.ProrationBehaviorCreateProrations,
+			wantLineItems:      2,
+			wantInvoiceAction:  "created",
+		},
+		{
+			name:               "downgrade_midperiod",
+			oldQty:             decimal.NewFromInt(3),
+			newQty:             decimal.NewFromInt(1),
+			effectiveDayOffset: 15,
+			prorationBehavior:  types.ProrationBehaviorCreateProrations,
+			wantLineItems:      2,
+			wantInvoiceAction:  "wallet_credit",
+		},
+		{
+			name:               "upgrade_at_period_start",
+			oldQty:             decimal.NewFromInt(1),
+			newQty:             decimal.NewFromInt(3),
+			effectiveDayOffset: 0,
+			prorationBehavior:  types.ProrationBehaviorCreateProrations,
+			wantLineItems:      2,
+			wantInvoiceAction:  "created",
+		},
+		{
+			name:               "upgrade_near_period_end",
+			oldQty:             decimal.NewFromInt(1),
+			newQty:             decimal.NewFromInt(3),
+			effectiveDayOffset: -1, // sentinel: periodEnd - 1 second
+			prorationBehavior:  types.ProrationBehaviorCreateProrations,
+			wantLineItems:      2,
+			wantInvoiceAction:  "", // proration amount rounds to 0 at 1s before period end
+		},
+		{
+			name:               "proration_behavior_none",
+			oldQty:             decimal.NewFromInt(1),
+			newQty:             decimal.NewFromInt(3),
+			effectiveDayOffset: 15,
+			prorationBehavior:  types.ProrationBehaviorNone,
+			wantLineItems:      2,
+			wantInvoiceAction:  "",
+		},
+		{
+			name:               "same_quantity_noop",
+			oldQty:             decimal.NewFromInt(5),
+			newQty:             decimal.NewFromInt(5),
+			effectiveDayOffset: 5,
+			prorationBehavior:  types.ProrationBehaviorCreateProrations,
+			wantLineItems:      0,
+			wantInvoiceAction:  "",
+			wantNoOp:           true,
+		},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.name, func() {
+			ctx := s.GetContext()
+			periodStart := s.GetNow()
+			periodEnd := periodStart.AddDate(0, 1, 0)
+
+			var effectiveDate time.Time
+			switch tc.effectiveDayOffset {
+			case -1:
+				effectiveDate = periodEnd.Add(-time.Second)
+			default:
+				effectiveDate = periodStart.AddDate(0, 0, tc.effectiveDayOffset)
+			}
+
+			cust := s.createCustomer("adv-" + tc.name)
+			sub := s.createActiveSub(cust.ID)
+
+			// Patch proration behavior when test requires "none"
+			if tc.prorationBehavior == types.ProrationBehaviorNone {
+				storedSub, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
+				s.Require().NoError(err)
+				storedSub.ProrationBehavior = types.ProrationBehaviorNone
+				s.Require().NoError(s.GetStores().SubscriptionRepo.Update(ctx, storedSub))
+			}
+
+			priceAmount := decimal.NewFromInt(50)
+			p := s.createFixedPrice(priceAmount, types.InvoiceCadenceAdvance)
+			li := s.createFixedLineItemWithPrice(sub.ID, cust.ID, tc.oldQty, types.InvoiceCadenceAdvance, p.ID)
+
+			req := dto.ExecuteSubscriptionModifyRequest{
+				Type: dto.SubscriptionModifyTypeQuantityChange,
+				LineItems: []dto.LineItemQuantityChange{
+					{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+				},
+			}
+			resp, err := s.service.Execute(ctx, sub.ID, req)
+			s.Require().NoError(err)
+			s.Require().NotNil(resp)
+
+			s.Len(resp.ChangedResources.LineItems, tc.wantLineItems)
+
+			if tc.wantNoOp {
+				// Old line item must be untouched
+				orig, err := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+				s.Require().NoError(err)
+				s.True(orig.EndDate.IsZero(), "EndDate must remain zero for no-op")
+				s.Empty(resp.ChangedResources.Invoices)
+				return
+			}
+
+			if tc.wantInvoiceAction == "" {
+				s.Empty(resp.ChangedResources.Invoices, "expected no invoices for proration_behavior=none")
+				return
+			}
+
+			s.Require().Len(resp.ChangedResources.Invoices, 1)
+			inv := resp.ChangedResources.Invoices[0]
+			s.Equal(tc.wantInvoiceAction, inv.Action)
+			s.NotEqual("failed", inv.Status)
+
+			if tc.wantInvoiceAction == "created" {
+				// Fetch real invoice and verify amount is positive and approximately correct
+				realInv, fetchErr := s.GetStores().InvoiceRepo.Get(ctx, inv.ID)
+				s.Require().NoError(fetchErr)
+				s.True(realInv.AmountDue.GreaterThan(decimal.Zero),
+					"invoice amount must be positive for upgrade, got %s", realInv.AmountDue.String())
+
+				// Derive expected amount using same second-based formula as the service
+				effectivePeriodEnd := periodEnd.Add(-time.Second)
+				totalSec := effectivePeriodEnd.Sub(periodStart).Seconds()
+				remainingSec := effectivePeriodEnd.Sub(effectiveDate).Seconds()
+				if remainingSec < 0 {
+					remainingSec = 0
+				}
+				coeff := decimal.NewFromFloat(remainingSec / totalSec)
+				qtyDelta := tc.newQty.Sub(tc.oldQty)
+				expectedAmt := qtyDelta.Mul(priceAmount).Mul(coeff)
+				tolerance := decimal.NewFromFloat(0.01)
+				diff := realInv.AmountDue.Sub(expectedAmt).Abs()
+				s.True(diff.LessThanOrEqual(tolerance),
+					"invoice amount %s should be ≈ %s (diff=%s)",
+					realInv.AmountDue.String(), expectedAmt.String(), diff.String())
+			}
+
+			if tc.wantInvoiceAction == "wallet_credit" {
+				s.Equal("issued", inv.Status)
+				wallets, err := s.GetStores().WalletRepo.GetWalletsByCustomerID(ctx, cust.ID)
+				s.Require().NoError(err)
+				s.Require().NotEmpty(wallets, "a PRE_PAID wallet must exist after downgrade credit")
+				var totalBalance decimal.Decimal
+				for _, w := range wallets {
+					totalBalance = totalBalance.Add(w.Balance)
+				}
+				s.True(totalBalance.GreaterThan(decimal.Zero),
+					"wallet balance must be positive after downgrade credit")
+			}
+		})
+	}
 }
 
 // ─────────────────────────────────────────────
