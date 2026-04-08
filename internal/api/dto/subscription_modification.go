@@ -8,14 +8,29 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// SubModifyInheritanceRequest is the payload for adding
+// inherited child subscriptions to a parent subscription.
+type SubModifyInheritanceRequest struct {
+	ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
+}
+
+func (r *SubModifyInheritanceRequest) Validate() error {
+	if len(r.ExternalCustomerIDsToInheritSubscription) == 0 {
+		return ierr.NewError("at least one external customer ID is required").
+			WithHint("Provide external_customer_ids_to_inherit_subscription with at least one non-empty value").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
 // =============================================
 // Quantity change
 // =============================================
 
 // LineItemQuantityChange describes a quantity change for a single line item.
 type LineItemQuantityChange struct {
-	ID       string          `json:"id" binding:"required"`
-	Quantity decimal.Decimal `json:"quantity" swaggertype:"string" binding:"required"`
+	ID            string          `json:"id" binding:"required"`
+	Quantity      decimal.Decimal `json:"quantity" swaggertype:"string" binding:"required"`
 	// EffectiveDate is when the quantity change takes effect.
 	// If omitted, the change is effective immediately (now).
 	EffectiveDate *time.Time `json:"effective_date,omitempty"`
@@ -42,15 +57,6 @@ func validateQuantityChangeLineItems(items []LineItemQuantityChange) error {
 	return nil
 }
 
-func validateInheritanceExternalCustomerIDs(ids []string) error {
-	if len(ids) == 0 {
-		return ierr.NewError("at least one external customer ID is required").
-			WithHint("Provide external_customer_ids_to_inherit_subscription with at least one non-empty value").
-			Mark(ierr.ErrValidation)
-	}
-	return nil
-}
-
 // =============================================
 // Unified execute / preview request
 // =============================================
@@ -65,12 +71,12 @@ const (
 
 // ExecuteSubscriptionModifyRequest is the unified body for
 // POST /subscriptions/:id/modify/execute and /modify/preview.
-// For type inheritance, set external_customer_ids_to_inherit_subscription only.
+// For type inheritance, set inheritance_params only.
 // For type quantity_change, set line_items only.
 type ExecuteSubscriptionModifyRequest struct {
-	Type                                     SubscriptionModifyType   `json:"type" binding:"required"`
-	ExternalCustomerIDsToInheritSubscription []string                 `json:"external_customer_ids_to_inherit_subscription,omitempty"`
-	LineItems                                []LineItemQuantityChange `json:"line_items,omitempty"`
+	Type              SubscriptionModifyType       `json:"type" binding:"required"`
+	InheritanceParams *SubModifyInheritanceRequest `json:"inheritance_params,omitempty"`
+	LineItems         []LineItemQuantityChange     `json:"line_items,omitempty"`
 }
 
 func (r *ExecuteSubscriptionModifyRequest) Validate() error {
@@ -78,13 +84,17 @@ func (r *ExecuteSubscriptionModifyRequest) Validate() error {
 	case SubscriptionModifyTypeInheritance:
 		if len(r.LineItems) > 0 {
 			return ierr.NewError("line_items must not be set for type 'inheritance'").
-				WithHint("Use external_customer_ids_to_inherit_subscription only for inheritance modifications").
+				WithHint("Use inheritance_params only for inheritance modifications").
 				Mark(ierr.ErrValidation)
 		}
-		return validateInheritanceExternalCustomerIDs(r.ExternalCustomerIDsToInheritSubscription)
+		if r.InheritanceParams == nil {
+			return ierr.NewError("inheritance_params is required for type 'inheritance'").
+				Mark(ierr.ErrValidation)
+		}
+		return r.InheritanceParams.Validate()
 	case SubscriptionModifyTypeQuantityChange:
-		if len(r.ExternalCustomerIDsToInheritSubscription) > 0 {
-			return ierr.NewError("external_customer_ids_to_inherit_subscription must not be set for type 'quantity_change'").
+		if r.InheritanceParams != nil {
+			return ierr.NewError("inheritance_params must not be set for type 'quantity_change'").
 				WithHint("Use line_items only for quantity change modifications").
 				Mark(ierr.ErrValidation)
 		}
