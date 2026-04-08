@@ -9,6 +9,7 @@ import (
 	domainCreditGrant "github.com/flexprice/flexprice/internal/domain/creditgrant"
 	domainEntitlement "github.com/flexprice/flexprice/internal/domain/entitlement"
 	"github.com/flexprice/flexprice/internal/domain/events"
+	domainGroup "github.com/flexprice/flexprice/internal/domain/group"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/domain/planpricesync"
 	domainPrice "github.com/flexprice/flexprice/internal/domain/price"
@@ -892,6 +893,28 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		BaseModel:     types.GetDefaultBaseModel(targetCtx),
 	}
 
+	// For cross-env cloning, resolve price groups in the target environment.
+	// Build a mapping from source group ID → target group ID.
+	groupIDMap := make(map[string]string)
+	if req.TargetEnvironmentID != "" {
+		uniqueGroupIDs := make(map[string]struct{})
+		for _, p := range sourcePrices {
+			if p.GroupID != "" {
+				uniqueGroupIDs[p.GroupID] = struct{}{}
+			}
+		}
+		for srcGroupID := range uniqueGroupIDs {
+			targetGID, err := s.resolveOrCreateGroup(ctx, targetCtx, srcGroupID)
+			if err != nil {
+				s.Logger.WarnwCtx(ctx, "failed to resolve group for cross-env plan clone, clearing group_id",
+					"source_group_id", srcGroupID, "error", err)
+				groupIDMap[srcGroupID] = "" // clear it
+			} else {
+				groupIDMap[srcGroupID] = targetGID
+			}
+		}
+	}
+
 	emptyLookupKey := ""
 	entityTypePlan := types.PRICE_ENTITY_TYPE_PLAN
 	entEntityTypePlan := types.ENTITLEMENT_ENTITY_TYPE_PLAN
@@ -899,12 +922,19 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 
 	newPrices := make([]*domainPrice.Price, 0, len(sourcePrices))
 	for _, p := range sourcePrices {
-		newPrices = append(newPrices, p.CopyWith(targetCtx, &domainPrice.PriceCloneOverrides{
+		overrides := &domainPrice.PriceCloneOverrides{
 			ID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE)),
 			EntityType: &entityTypePlan,
 			EntityID:   &newPlan.ID,
 			LookupKey:  lo.ToPtr(emptyLookupKey),
-		}))
+		}
+		// Remap group ID for cross-env cloning
+		if req.TargetEnvironmentID != "" && p.GroupID != "" {
+			if newGID, ok := groupIDMap[p.GroupID]; ok {
+				overrides.GroupID = lo.ToPtr(newGID)
+			}
+		}
+		newPrices = append(newPrices, p.CopyWith(targetCtx, overrides))
 	}
 
 	newEntitlements := make([]*domainEntitlement.Entitlement, 0, len(sourceEntitlements))
@@ -989,4 +1019,37 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		Entitlements: entitlementResponses,
 		CreditGrants: grantResponses,
 	}, nil
+}
+
+// resolveOrCreateGroup looks up the source group and finds or creates a matching
+// group in the target environment (by lookup_key). Returns the target group ID.
+func (s *planService) resolveOrCreateGroup(sourceCtx, targetCtx context.Context, sourceGroupID string) (string, error) {
+	sourceGroup, err := s.GroupRepo.Get(sourceCtx, sourceGroupID)
+	if err != nil {
+		return "", err
+	}
+
+	// Try to find a group with the same lookup_key in the target environment
+	existingGroup, err := s.GroupRepo.GetByLookupKey(targetCtx, sourceGroup.LookupKey)
+	if err == nil && existingGroup != nil {
+		return existingGroup.ID, nil
+	}
+	if err != nil && !ierr.IsNotFound(err) {
+		return "", err
+	}
+
+	// Group doesn't exist in target env — create it
+	newGroup := &domainGroup.Group{
+		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_GROUP),
+		Name:          sourceGroup.Name,
+		EntityType:    sourceGroup.EntityType,
+		EnvironmentID: types.GetEnvironmentID(targetCtx),
+		LookupKey:     sourceGroup.LookupKey,
+		Metadata:      sourceGroup.Metadata,
+		BaseModel:     types.GetDefaultBaseModel(targetCtx),
+	}
+	if err := s.GroupRepo.Create(targetCtx, newGroup); err != nil {
+		return "", err
+	}
+	return newGroup.ID, nil
 }

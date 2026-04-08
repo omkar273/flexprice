@@ -8,6 +8,7 @@ import (
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/feature"
+	domainGroup "github.com/flexprice/flexprice/internal/domain/group"
 	"github.com/flexprice/flexprice/internal/domain/meter"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
@@ -510,6 +511,20 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	}
 	merged["source_feature_id"] = id
 
+	// For cross-env cloning, resolve the group in the target environment.
+	// Groups are env-scoped so we need to find or create the corresponding group.
+	targetGroupID := sourceFeature.GroupID
+	if req.TargetEnvironmentID != "" && sourceFeature.GroupID != "" {
+		resolvedID, err := s.resolveOrCreateGroup(ctx, targetCtx, sourceFeature.GroupID)
+		if err != nil {
+			s.Logger.WarnwCtx(ctx, "failed to resolve group for cross-env feature clone, clearing group_id",
+				"source_group_id", sourceFeature.GroupID, "error", err)
+			targetGroupID = ""
+		} else {
+			targetGroupID = resolvedID
+		}
+	}
+
 	newFeature := &feature.Feature{
 		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_FEATURE),
 		Name:          req.Name,
@@ -521,7 +536,7 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 		UnitPlural:    sourceFeature.UnitPlural,
 		ReportingUnit: sourceFeature.ReportingUnit,
 		AlertSettings: sourceFeature.AlertSettings,
-		GroupID:       sourceFeature.GroupID,
+		GroupID:       targetGroupID,
 		EnvironmentID: targetEnvID,
 		BaseModel:     types.GetDefaultBaseModel(targetCtx),
 	}
@@ -584,4 +599,37 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 		}
 	}
 	return response, nil
+}
+
+// resolveOrCreateGroup looks up the source group and finds or creates a matching
+// group in the target environment (by lookup_key). Returns the target group ID.
+func (s *featureService) resolveOrCreateGroup(sourceCtx, targetCtx context.Context, sourceGroupID string) (string, error) {
+	sourceGroup, err := s.GroupRepo.Get(sourceCtx, sourceGroupID)
+	if err != nil {
+		return "", err
+	}
+
+	// Try to find a group with the same lookup_key in the target environment
+	existingGroup, err := s.GroupRepo.GetByLookupKey(targetCtx, sourceGroup.LookupKey)
+	if err == nil && existingGroup != nil {
+		return existingGroup.ID, nil
+	}
+	if err != nil && !ierr.IsNotFound(err) {
+		return "", err
+	}
+
+	// Group doesn't exist in target env — create it
+	newGroup := &domainGroup.Group{
+		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_GROUP),
+		Name:          sourceGroup.Name,
+		EntityType:    sourceGroup.EntityType,
+		EnvironmentID: types.GetEnvironmentID(targetCtx),
+		LookupKey:     sourceGroup.LookupKey,
+		Metadata:      sourceGroup.Metadata,
+		BaseModel:     types.GetDefaultBaseModel(targetCtx),
+	}
+	if err := s.GroupRepo.Create(targetCtx, newGroup); err != nil {
+		return "", err
+	}
+	return newGroup.ID, nil
 }
