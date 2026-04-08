@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/flexprice/flexprice/internal/domain/environment"
+	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/flexprice/flexprice/internal/validator"
 )
@@ -32,6 +33,35 @@ type ListEnvironmentsResponse struct {
 	Total        int                   `json:"total"`
 	Offset       int                   `json:"offset"`
 	Limit        int                   `json:"limit"`
+}
+
+// CloneEnvironmentRequest represents the request to clone an environment's published features and plans.
+// A new environment is always created from the name and type provided, then all published features
+// and plans are cloned from the source environment into it.
+type CloneEnvironmentRequest struct {
+	// Name of the new environment (required)
+	Name string `json:"name" validate:"required"`
+	// Type of the new environment, e.g. "production" or "development" (required)
+	Type types.EnvironmentType `json:"type" validate:"required"`
+}
+
+func (r *CloneEnvironmentRequest) Validate() error {
+	if err := validator.ValidateRequest(r); err != nil {
+		return err
+	}
+	if r.Type != types.EnvironmentDevelopment && r.Type != types.EnvironmentProduction {
+		return ierr.NewError("invalid environment type").
+			WithHintf("type must be one of: %s, %s", types.EnvironmentDevelopment, types.EnvironmentProduction).
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
+// CloneEnvironmentResponse represents the async response when an environment clone workflow is started.
+type CloneEnvironmentResponse struct {
+	WorkflowID string `json:"workflow_id"`
+	RunID      string `json:"run_id"`
+	Message    string `json:"message"`
 }
 
 func (r *CreateEnvironmentRequest) Validate() error {

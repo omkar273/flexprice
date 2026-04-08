@@ -131,6 +131,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			environment.GET("", handlers.Environment.GetEnvironments)
 			environment.GET("/:id", handlers.Environment.GetEnvironment)
 			environment.PUT("/:id", handlers.Environment.UpdateEnvironment)
+			environment.POST("/:id/clone", handlers.Environment.CloneEnvironment)
 		}
 
 		// Events routes
