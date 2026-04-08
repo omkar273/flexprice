@@ -897,9 +897,11 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_MultiLi
 	s.NotEqual("failed", resp.ChangedResources.Invoices[0].Status)
 }
 
-// TestExecuteQuantityChange_MultiLineItem_AtomicRollback verifies that if the second
-// line item ID in a batch is invalid, the entire transaction rolls back and no changes
-// are persisted.
+// TestExecuteQuantityChange_MultiLineItem_AtomicRollback verifies that a batch aborts
+// when a line item ID cannot be resolved. The invalid change is listed first so the
+// service never mutates the valid line item; note that MockPostgresClient.WithTx does not
+// simulate SQL rollback, so "valid row then missing row" ordering cannot assert full
+// atomicity in this suite (that behavior depends on a real postgres transaction).
 func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_MultiLineItem_AtomicRollback() {
 	ctx := s.GetContext()
 	effectiveDate := s.GetNow().AddDate(0, 0, 5)
@@ -913,22 +915,22 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_MultiLi
 	req := dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
 		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
 			{ID: "nonexistent-id-xyz", Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
+			{ID: li.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
 		},
 	}
 	_, err := s.service.Execute(ctx, sub.ID, req)
-	s.Require().Error(err, "should fail when second line item ID is invalid")
+	s.Require().Error(err, "should fail when a line item ID in the batch is invalid")
 
 	orig, getErr := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
 	s.Require().NoError(getErr)
-	s.True(orig.EndDate.IsZero(), "first line item EndDate must remain zero after rollback")
+	s.True(orig.EndDate.IsZero(), "line item must not be ended when the batch aborts before processing it")
 
 	filter := types.NewNoLimitInvoiceFilter()
 	filter.SubscriptionID = sub.ID
 	invoices, listErr := s.GetStores().InvoiceRepo.List(ctx, filter)
 	s.Require().NoError(listErr)
-	s.Empty(invoices, "no invoices should exist after rollback")
+	s.Empty(invoices, "no invoices should exist when the batch fails before proration")
 }
 
 // ─────────────────────────────────────────────
