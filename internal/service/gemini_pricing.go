@@ -17,6 +17,7 @@ import (
 )
 
 const defaultGeminiModel = "gemini-2.0-flash"
+const maxGeminiParseAttempts = 2
 
 // GeminiPricingService calls Gemini generateContent and returns canonical JSON for the pricing schema payload.
 type GeminiPricingService interface {
@@ -138,109 +139,120 @@ func (s *geminiPricingService) ParsePricing(ctx context.Context, req *dto.ParseG
 			Mark(ierr.ErrSystem)
 	}
 
-	httpResp, err := s.client.Send(ctx, &httpclient.Request{
-		Method: http.MethodPost,
-		URL:    apiURL,
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
-		Body: body,
-	})
-	if err != nil {
-		if httpErr, ok := httpclient.IsHTTPError(err); ok {
-			s.log.WarnwCtx(ctx, "gemini non-success status", "status", httpErr.StatusCode)
-			return nil, mapGeminiUpstreamHTTPError(err, httpErr.StatusCode)
+	for attempt := 1; attempt <= maxGeminiParseAttempts; attempt++ {
+		httpResp, err := s.client.Send(ctx, &httpclient.Request{
+			Method: http.MethodPost,
+			URL:    apiURL,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+			},
+			Body: body,
+		})
+		if err != nil {
+			if httpErr, ok := httpclient.IsHTTPError(err); ok {
+				s.log.WarnwCtx(ctx, "gemini non-success status", "status", httpErr.StatusCode)
+				return nil, mapGeminiUpstreamHTTPError(err, httpErr.StatusCode)
+			}
+			s.log.WarnwCtx(ctx, "gemini request failed", "error", err)
+			return nil, ierr.WithError(err).
+				WithHint("AI service temporarily unavailable").
+				Mark(ierr.ErrHTTPClient)
 		}
-		s.log.WarnwCtx(ctx, "gemini request failed", "error", err)
-		return nil, ierr.WithError(err).
-			WithHint("AI service temporarily unavailable").
-			Mark(ierr.ErrHTTPClient)
+
+		if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300 {
+			s.log.WarnwCtx(ctx, "gemini non-success status",
+				"status", httpResp.StatusCode,
+				"body_len", len(httpResp.Body),
+			)
+			return nil, ierr.NewErrorf("gemini returned status %d", httpResp.StatusCode).
+				WithHint("AI service temporarily unavailable").
+				Mark(ierr.ErrHTTPClient)
+		}
+
+		var genResp geminiGenerateResponse
+		if err := json.Unmarshal(httpResp.Body, &genResp); err != nil {
+			s.log.WarnwCtx(ctx, "gemini response not json", "error", err)
+			return nil, ierr.NewError("invalid response from AI service").
+				WithHint("AI service returned an unexpected response").
+				Mark(ierr.ErrHTTPClient)
+		}
+
+		if genResp.Error != nil && genResp.Error.Message != "" {
+			s.log.WarnwCtx(ctx, "gemini error object present",
+				"code", genResp.Error.Code,
+				"status", genResp.Error.Status,
+			)
+			return nil, ierr.NewError("AI provider rejected the request").
+				WithHint("AI service temporarily unavailable").
+				Mark(ierr.ErrHTTPClient)
+		}
+
+		if genResp.PromptFeedback != nil && genResp.PromptFeedback.BlockReason != "" {
+			return nil, ierr.NewError("prompt was blocked").
+				WithHint("The request could not be processed by the AI service").
+				Mark(ierr.ErrInvalidOperation)
+		}
+
+		if len(genResp.Candidates) == 0 {
+			return nil, ierr.NewError("no candidates in AI response").
+				WithHint("AI service returned an empty result").
+				Mark(ierr.ErrHTTPClient)
+		}
+
+		cand := genResp.Candidates[0]
+		if cand.Content == nil || len(cand.Content.Parts) == 0 {
+			return nil, ierr.NewError("no content parts in AI response").
+				WithHint("AI service returned an empty result").
+				Mark(ierr.ErrHTTPClient)
+		}
+
+		text := normalizeGeminiJSONText(cand.Content.Parts[0].Text)
+		if text == "" {
+			if attempt < maxGeminiParseAttempts {
+				s.log.WarnwCtx(ctx, "gemini returned non-json text, retrying", "attempt", attempt)
+				continue
+			}
+			return nil, ierr.NewError("AI output is not valid JSON").
+				WithHint("AI service returned invalid data").
+				Mark(ierr.ErrHTTPClient)
+		}
+
+		var rawObj json.RawMessage
+		if err := json.Unmarshal([]byte(text), &rawObj); err != nil {
+			if attempt < maxGeminiParseAttempts {
+				s.log.WarnwCtx(ctx, "gemini invalid json payload, retrying", "attempt", attempt)
+				continue
+			}
+			return nil, ierr.WithError(err).
+				WithHint("AI service returned invalid data").
+				Mark(ierr.ErrHTTPClient)
+		}
+
+		// Reject non-objects at top level (pricing schema must be an object).
+		var typeCheck map[string]json.RawMessage
+		if err := json.Unmarshal(rawObj, &typeCheck); err != nil {
+			if attempt < maxGeminiParseAttempts {
+				s.log.WarnwCtx(ctx, "gemini non-object json payload, retrying", "attempt", attempt)
+				continue
+			}
+			return nil, ierr.WithError(err).
+				WithHint("AI service returned invalid data").
+				Mark(ierr.ErrHTTPClient)
+		}
+
+		out, err := json.Marshal(rawObj)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Could not normalize AI response").
+				Mark(ierr.ErrInternal)
+		}
+
+		return out, nil
 	}
 
-	if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300 {
-		s.log.WarnwCtx(ctx, "gemini non-success status",
-			"status", httpResp.StatusCode,
-			"body_len", len(httpResp.Body),
-		)
-		return nil, ierr.NewErrorf("gemini returned status %d", httpResp.StatusCode).
-			WithHint("AI service temporarily unavailable").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	var genResp geminiGenerateResponse
-	if err := json.Unmarshal(httpResp.Body, &genResp); err != nil {
-		s.log.WarnwCtx(ctx, "gemini response not json", "error", err)
-		return nil, ierr.NewError("invalid response from AI service").
-			WithHint("AI service returned an unexpected response").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	if genResp.Error != nil && genResp.Error.Message != "" {
-		s.log.WarnwCtx(ctx, "gemini error object present",
-			"code", genResp.Error.Code,
-			"status", genResp.Error.Status,
-		)
-		return nil, ierr.NewError("AI provider rejected the request").
-			WithHint("AI service temporarily unavailable").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	if genResp.PromptFeedback != nil && genResp.PromptFeedback.BlockReason != "" {
-		return nil, ierr.NewError("prompt was blocked").
-			WithHint("The request could not be processed by the AI service").
-			Mark(ierr.ErrInvalidOperation)
-	}
-
-	if len(genResp.Candidates) == 0 {
-		return nil, ierr.NewError("no candidates in AI response").
-			WithHint("AI service returned an empty result").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	cand := genResp.Candidates[0]
-	if cand.Content == nil || len(cand.Content.Parts) == 0 {
-		return nil, ierr.NewError("no content parts in AI response").
-			WithHint("AI service returned an empty result").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	text := strings.TrimSpace(cand.Content.Parts[0].Text)
-	if text == "" {
-		return nil, ierr.NewError("empty text in AI response").
-			WithHint("AI service returned an empty result").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	// Validate JSON object and return canonical encoding for the client.
-	if !json.Valid([]byte(text)) {
-		return nil, ierr.NewError("AI output is not valid JSON").
-			WithHint("AI service returned invalid data").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	var rawObj json.RawMessage
-	if err := json.Unmarshal([]byte(text), &rawObj); err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("AI service returned invalid data").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	// Reject non-objects at top level (pricing schema must be an object).
-	var typeCheck map[string]json.RawMessage
-	if err := json.Unmarshal(rawObj, &typeCheck); err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("AI service returned invalid data").
-			Mark(ierr.ErrHTTPClient)
-	}
-
-	out, err := json.Marshal(rawObj)
-	if err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("Could not normalize AI response").
-			Mark(ierr.ErrInternal)
-	}
-
-	return out, nil
+	return nil, ierr.NewError("AI output is not valid JSON").
+		WithHint("AI service returned invalid data").
+		Mark(ierr.ErrHTTPClient)
 }
 
 // mapGeminiUpstreamHTTPError maps Google Generative Language API HTTP errors to client-facing errors.
@@ -280,4 +292,42 @@ func geminiGenerateURL(model, apiKey string) (string, error) {
 	q.Set("key", apiKey)
 	u.RawQuery = q.Encode()
 	return u.String(), nil
+}
+
+// normalizeGeminiJSONText attempts to recover JSON object text from model output.
+// Handles plain JSON, markdown fenced code blocks, and leading/trailing commentary.
+func normalizeGeminiJSONText(text string) string {
+	trimmed := strings.TrimSpace(text)
+	if trimmed == "" {
+		return ""
+	}
+
+	// Case 1: already valid JSON object text.
+	if json.Valid([]byte(trimmed)) {
+		return trimmed
+	}
+
+	// Case 2: markdown fenced payload.
+	if strings.HasPrefix(trimmed, "```") {
+		trimmed = strings.TrimPrefix(trimmed, "```json")
+		trimmed = strings.TrimPrefix(trimmed, "```JSON")
+		trimmed = strings.TrimPrefix(trimmed, "```")
+		trimmed = strings.TrimSuffix(strings.TrimSpace(trimmed), "```")
+		trimmed = strings.TrimSpace(trimmed)
+		if json.Valid([]byte(trimmed)) {
+			return trimmed
+		}
+	}
+
+	// Case 3: extract first object-looking span.
+	start := strings.Index(trimmed, "{")
+	end := strings.LastIndex(trimmed, "}")
+	if start >= 0 && end > start {
+		candidate := strings.TrimSpace(trimmed[start : end+1])
+		if json.Valid([]byte(candidate)) {
+			return candidate
+		}
+	}
+
+	return ""
 }

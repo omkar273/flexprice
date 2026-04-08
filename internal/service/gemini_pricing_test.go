@@ -119,6 +119,82 @@ func TestGeminiPricingService_ParsePricing_upstreamError(t *testing.T) {
 	require.True(t, ierr.IsTooManyRequests(err), "expected rate-limit error, got %v", err)
 }
 
+func TestGeminiPricingService_ParsePricing_fencedJSON_isAccepted(t *testing.T) {
+	pricingJSON := "```json\n{\"features\":[],\"plans\":[]}\n```"
+	geminiBody := map[string]any{
+		"candidates": []any{
+			map[string]any{
+				"content": map[string]any{
+					"parts": []any{
+						map[string]any{"text": pricingJSON},
+					},
+				},
+			},
+		},
+	}
+	geminiBytes, err := json.Marshal(geminiBody)
+	require.NoError(t, err)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(geminiBytes)
+	}))
+	t.Cleanup(srv.Close)
+
+	cfg := &config.Configuration{
+		Gemini: config.GeminiConfig{APIKey: "k", Model: "m"},
+	}
+	stub := &stubHTTPClient{
+		baseURL: strings.TrimPrefix(srv.URL, "http://"),
+		scheme:  "http",
+	}
+	svc := newGeminiPricingService(cfg, stub, testLogger(t))
+	req := &dto.ParseGeminiPricingRequest{
+		SystemPrompt:   "s",
+		UserPrompt:     "u",
+		ResponseSchema: json.RawMessage(`{}`),
+	}
+
+	out, err := svc.ParsePricing(context.Background(), req)
+	require.NoError(t, err)
+	require.JSONEq(t, `{"features":[],"plans":[]}`, string(out))
+}
+
+func TestGeminiPricingService_ParsePricing_retriesOnInvalidJSON(t *testing.T) {
+	callCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if callCount == 1 {
+			_, _ = w.Write([]byte(`{"candidates":[{"content":{"parts":[{"text":"not json"}]}}]}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"candidates":[{"content":{"parts":[{"text":"{\"features\":[],\"plans\":[]}"}]}}]}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	cfg := &config.Configuration{
+		Gemini: config.GeminiConfig{APIKey: "k", Model: "m"},
+	}
+	stub := &stubHTTPClient{
+		baseURL: strings.TrimPrefix(srv.URL, "http://"),
+		scheme:  "http",
+	}
+	svc := newGeminiPricingService(cfg, stub, testLogger(t))
+	req := &dto.ParseGeminiPricingRequest{
+		SystemPrompt:   "s",
+		UserPrompt:     "u",
+		ResponseSchema: json.RawMessage(`{}`),
+	}
+
+	out, err := svc.ParsePricing(context.Background(), req)
+	require.NoError(t, err)
+	require.Equal(t, 2, callCount)
+	require.JSONEq(t, `{"features":[],"plans":[]}`, string(out))
+}
+
 // stubHTTPClient rewrites requests to httptest.Server (GeminiPricingService builds googleapis URL).
 type stubHTTPClient struct {
 	baseURL string
