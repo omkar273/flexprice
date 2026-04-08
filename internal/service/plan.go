@@ -822,6 +822,15 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 	// Use target environment context for uniqueness checks and entity creation
 	targetCtx := types.SetEnvironmentID(ctx, targetEnvID)
 
+	// Validate target environment exists before writing to it
+	if req.TargetEnvironmentID != "" {
+		if _, err := s.EnvironmentRepo.Get(targetCtx, targetEnvID); err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Target environment not found").
+				Mark(ierr.ErrNotFound)
+		}
+	}
+
 	// GetByLookupKey only matches published plans, so a successful lookup means the
 	// key is already taken — covers both "same as source" and "taken by another plan".
 	existing, err := s.PlanRepo.GetByLookupKey(targetCtx, req.LookupKey)

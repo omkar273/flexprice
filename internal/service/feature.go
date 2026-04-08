@@ -483,6 +483,15 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	// Use target environment context for uniqueness checks and entity creation
 	targetCtx := types.SetEnvironmentID(ctx, targetEnvID)
 
+	// Validate target environment exists before writing to it
+	if req.TargetEnvironmentID != "" {
+		if _, err := s.EnvironmentRepo.Get(targetCtx, targetEnvID); err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Target environment not found").
+				Mark(ierr.ErrNotFound)
+		}
+	}
+
 	// Check lookup_key uniqueness among published features in the target environment
 	lookupFilter := types.NewNoLimitFeatureFilter()
 	lookupFilter.LookupKey = req.LookupKey
