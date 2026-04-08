@@ -468,11 +468,20 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 		return nil, err
 	}
 
-	// Check lookup_key uniqueness among published features
+	// Determine target environment: use request override or source feature's environment
+	targetEnvID := sourceFeature.EnvironmentID
+	if req.TargetEnvironmentID != "" {
+		targetEnvID = req.TargetEnvironmentID
+	}
+
+	// Use target environment context for uniqueness checks and entity creation
+	targetCtx := types.SetEnvironmentID(ctx, targetEnvID)
+
+	// Check lookup_key uniqueness among published features in the target environment
 	lookupFilter := types.NewNoLimitFeatureFilter()
 	lookupFilter.LookupKey = req.LookupKey
 	lookupFilter.QueryFilter.Status = lo.ToPtr(types.StatusPublished)
-	existing, err := s.FeatureRepo.List(ctx, lookupFilter)
+	existing, err := s.FeatureRepo.List(targetCtx, lookupFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -513,15 +522,15 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 		ReportingUnit: sourceFeature.ReportingUnit,
 		AlertSettings: sourceFeature.AlertSettings,
 		GroupID:       sourceFeature.GroupID,
-		EnvironmentID: sourceFeature.EnvironmentID,
-		BaseModel:     types.GetDefaultBaseModel(ctx),
+		EnvironmentID: targetEnvID,
+		BaseModel:     types.GetDefaultBaseModel(targetCtx),
 	}
 
-	err = s.DB.WithTx(ctx, func(txCtx context.Context) error {
+	err = s.DB.WithTx(targetCtx, func(txCtx context.Context) error {
 		// For metered features, clone the underlying meter so the new feature
 		// has its own independent meter instance.
 		if sourceFeature.Type == types.FeatureTypeMetered && sourceFeature.MeterID != "" {
-			sourceMeter, err := s.MeterRepo.GetMeter(txCtx, sourceFeature.MeterID)
+			sourceMeter, err := s.MeterRepo.GetMeter(ctx, sourceFeature.MeterID)
 			if err != nil {
 				return err
 			}
@@ -532,7 +541,7 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 				Aggregation:   sourceMeter.Aggregation,
 				Filters:       sourceMeter.Filters,
 				ResetUsage:    sourceMeter.ResetUsage,
-				EnvironmentID: sourceMeter.EnvironmentID,
+				EnvironmentID: targetEnvID,
 				BaseModel:     types.GetDefaultBaseModel(txCtx),
 			}
 			newMeter.Status = types.StatusPublished
@@ -551,14 +560,15 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	s.Logger.InfowCtx(ctx, "feature cloned successfully",
 		"source_feature_id", id,
 		"new_feature_id", newFeature.ID,
+		"target_environment_id", targetEnvID,
 	)
 
 	// Publish webhook event
-	s.publishSystemEvent(ctx, types.WebhookEventFeatureCreated, newFeature.ID)
+	s.publishSystemEvent(targetCtx, types.WebhookEventFeatureCreated, newFeature.ID)
 
 	response := &dto.FeatureResponse{Feature: newFeature}
 	if newFeature.Type == types.FeatureTypeMetered && newFeature.MeterID != "" {
-		newMeter, err := s.MeterRepo.GetMeter(ctx, newFeature.MeterID)
+		newMeter, err := s.MeterRepo.GetMeter(targetCtx, newFeature.MeterID)
 		if err != nil {
 			s.Logger.WarnwCtx(ctx, "failed to fetch cloned meter for response", "meter_id", newFeature.MeterID, "error", err)
 		} else {
@@ -567,7 +577,7 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	}
 	if newFeature.GroupID != "" {
 		groupService := NewGroupService(s.ServiceParams)
-		if groupResp, err := groupService.GetGroup(ctx, newFeature.GroupID); err != nil {
+		if groupResp, err := groupService.GetGroup(targetCtx, newFeature.GroupID); err != nil {
 			s.Logger.WarnwCtx(ctx, "failed to fetch group for cloned feature response", "group_id", newFeature.GroupID, "error", err)
 		} else {
 			response.Group = groupResp

@@ -807,9 +807,18 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		return nil, err
 	}
 
+	// Determine target environment: use request override or source plan's environment
+	targetEnvID := sourcePlan.EnvironmentID
+	if req.TargetEnvironmentID != "" {
+		targetEnvID = req.TargetEnvironmentID
+	}
+
+	// Use target environment context for uniqueness checks and entity creation
+	targetCtx := types.SetEnvironmentID(ctx, targetEnvID)
+
 	// GetByLookupKey only matches published plans, so a successful lookup means the
 	// key is already taken — covers both "same as source" and "taken by another plan".
-	existing, err := s.PlanRepo.GetByLookupKey(ctx, req.LookupKey)
+	existing, err := s.PlanRepo.GetByLookupKey(targetCtx, req.LookupKey)
 	if err != nil && !ierr.IsNotFound(err) {
 		return nil, err
 	}
@@ -822,7 +831,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 			Mark(ierr.ErrAlreadyExists)
 	}
 
-	// Active prices: published + not expired
+	// Active prices: published + not expired (fetched from source environment)
 	sourcePrices, err := s.PriceRepo.List(ctx, types.NewNoLimitPriceFilter().
 		WithEntityIDs([]string{id}).
 		WithEntityType(types.PRICE_ENTITY_TYPE_PLAN).
@@ -877,10 +886,10 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		Name:          req.Name,
 		LookupKey:     req.LookupKey,
 		Description:   description,
-		EnvironmentID: sourcePlan.EnvironmentID,
+		EnvironmentID: targetEnvID,
 		Metadata:      metadata,
 		DisplayOrder:  displayOrder,
-		BaseModel:     types.GetDefaultBaseModel(ctx),
+		BaseModel:     types.GetDefaultBaseModel(targetCtx),
 	}
 
 	emptyLookupKey := ""
@@ -890,7 +899,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 
 	newPrices := make([]*domainPrice.Price, 0, len(sourcePrices))
 	for _, p := range sourcePrices {
-		newPrices = append(newPrices, p.CopyWith(ctx, &domainPrice.PriceCloneOverrides{
+		newPrices = append(newPrices, p.CopyWith(targetCtx, &domainPrice.PriceCloneOverrides{
 			ID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE)),
 			EntityType: &entityTypePlan,
 			EntityID:   &newPlan.ID,
@@ -900,7 +909,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 
 	newEntitlements := make([]*domainEntitlement.Entitlement, 0, len(sourceEntitlements))
 	for _, e := range sourceEntitlements {
-		newEntitlements = append(newEntitlements, e.CopyWith(ctx, &domainEntitlement.EntitlementCloneOverrides{
+		newEntitlements = append(newEntitlements, e.CopyWith(targetCtx, &domainEntitlement.EntitlementCloneOverrides{
 			ID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_ENTITLEMENT)),
 			EntityType: &entEntityTypePlan,
 			EntityID:   &newPlan.ID,
@@ -910,7 +919,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 	newGrants := make([]*domainCreditGrant.CreditGrant, 0, len(sourceGrants))
 	newPlanID := newPlan.ID
 	for _, cg := range sourceGrants {
-		newGrants = append(newGrants, cg.CopyWith(ctx, &domainCreditGrant.CreditGrantCloneOverrides{
+		newGrants = append(newGrants, cg.CopyWith(targetCtx, &domainCreditGrant.CreditGrantCloneOverrides{
 			ID:     lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CREDIT_GRANT)),
 			Scope:  &scopePlan,
 			PlanID: &newPlanID,
@@ -923,7 +932,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 	// Inside tx: plan create then batched bulk creates
 	var entitlementsCreated []*domainEntitlement.Entitlement
 	var grantsCreated []*domainCreditGrant.CreditGrant
-	err = s.DB.WithTx(ctx, func(txCtx context.Context) error {
+	err = s.DB.WithTx(targetCtx, func(txCtx context.Context) error {
 		if err := s.PlanRepo.Create(txCtx, newPlan); err != nil {
 			return err
 		}
@@ -955,6 +964,7 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 	s.Logger.InfowCtx(ctx, "plan cloned successfully",
 		"source_plan_id", id,
 		"new_plan_id", newPlan.ID,
+		"target_environment_id", targetEnvID,
 		"prices_cloned", len(newPrices),
 		"entitlements_cloned", len(entitlementsCreated),
 		"grants_cloned", len(grantsCreated),

@@ -133,6 +133,9 @@ type CloneFeatureRequest struct {
 	Description *string `json:"description,omitempty"`
 	// Metadata overrides the source feature's metadata when provided
 	Metadata types.Metadata `json:"metadata,omitempty"`
+	// TargetEnvironmentID optionally specifies the target environment for cross-env cloning.
+	// When empty, the feature is cloned within the same environment.
+	TargetEnvironmentID string `json:"target_environment_id,omitempty"`
 }
 
 func (r *CloneFeatureRequest) Validate() error {
