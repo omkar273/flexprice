@@ -396,10 +396,7 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 			return false, err
 		}
 		refPoint := types.ReferencePointPeriodEnd
-		switch types.InvoiceBillingReason(inv.BillingReason) {
-		case types.InvoiceBillingReasonSubscriptionCreate:
-			refPoint = types.ReferencePointPeriodStart
-		case types.InvoiceBillingReasonProration:
+		if inv.BillingReason == string(types.InvoiceBillingReasonProration) {
 			refPoint = types.ReferencePointCancel
 		}
 		billingService := NewBillingService(s.ServiceParams)
