@@ -223,6 +223,12 @@ feature_usage_tracking_replay:
   rate_limit: 1
   consumer_group: "v1_feature_tracking_service_replay"
 
+meter_usage_tracking:
+  enabled: true
+  topic: "events"
+  rate_limit: 1
+  consumer_group: "v1_meter_usage_tracking_service"
+
 costsheet_usage_tracking:
   enabled: true
   topic: "events"

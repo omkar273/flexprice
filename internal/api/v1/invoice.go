@@ -523,6 +523,37 @@ func (h *InvoiceHandler) GetInternalPreviewInvoice(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// GetMeterUsagePreviewInvoice godoc
+// @Summary Get invoice preview using meter_usage data
+// @ID getMeterUsagePreviewInvoice
+// @Description Preview invoice using the meter_usage table for usage data instead of feature_usage.
+// @Tags Invoices
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param request body dto.GetPreviewInvoiceRequest true "Preview Invoice Request"
+// @Success 200 {object} dto.InvoiceResponse
+// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
+// @Failure 500 {object} ierr.ErrorResponse "Server error"
+// @Router /invoices/meter-usage-preview [post]
+func (h *InvoiceHandler) GetMeterUsagePreviewInvoice(c *gin.Context) {
+	var req dto.GetPreviewInvoiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind request body", "error", err)
+		c.Error(ierr.WithError(err).WithHint("failed to bind request body").Mark(ierr.ErrValidation))
+		return
+	}
+
+	resp, err := h.invoiceService.GetMeterUsagePreviewInvoice(c.Request.Context(), req)
+	if err != nil {
+		h.logger.Error("Failed to get meter usage preview invoice", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // GetCustomerInvoiceSummary godoc
 // @Summary Get customer invoice summary
 // @ID getCustomerInvoiceSummary

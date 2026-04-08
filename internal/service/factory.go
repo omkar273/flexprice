@@ -70,6 +70,7 @@ type ServiceParams struct {
 	ProcessedEventRepo           events.ProcessedEventRepository
 	FeatureUsageRepo             events.FeatureUsageRepository
 	RawEventRepo                 events.RawEventRepository
+	MeterUsageRepo               events.MeterUsageRepository
 	MeterRepo                    meter.Repository
 	PriceRepo                    price.Repository
 	PriceUnitRepo                priceunit.Repository
