@@ -10,14 +10,14 @@ type AddonLineItemTerminationDelta struct {
 	LineItemID     string
 	SubscriptionID string
 	PriceID        string
-	TargetEndDate  time.Time
+	TargetEndDate  time.Time // NOT NULL in this delta query
 }
 
 // AddonLineItemCreationDelta is an addon-sync delta row for creating a new line item.
 type AddonLineItemCreationDelta struct {
 	SubscriptionID string
 	PriceID        string // addon price ID (entity_type=ADDON)
-	CustomerID     string
+	CustomerID     string // subscription's customer_id, for reprocessing without listing subscriptions
 }
 
 type ListAddonLineItemsToTerminateParams struct {
@@ -38,7 +38,7 @@ type TerminateExpiredAddonPricesLineItemsParams struct {
 
 // Repository defines the interface for addon price sync delta queries.
 //
-// Scoped to two canonical DB-driven queries:
+// This repo is intentionally scoped to two canonical DB-driven queries:
 // 1) addon-derived line items whose end_date must be set to price.end_date
 // 2) missing (subscription_id, price_id) pairs where an addon-derived line item must be created
 type Repository interface {
