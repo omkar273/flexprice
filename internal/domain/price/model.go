@@ -171,6 +171,8 @@ func (p *Price) CopyWith(ctx context.Context, overrides *PriceCloneOverrides) *P
 	} else {
 		out.BaseModel = types.GetDefaultBaseModel(ctx)
 	}
+	// Always set EnvironmentID from context — it is NOT part of BaseModel
+	out.EnvironmentID = types.GetEnvironmentID(ctx)
 	if overrides.ParentPriceID != nil {
 		out.ParentPriceID = lo.FromPtr(overrides.ParentPriceID)
 	} else {

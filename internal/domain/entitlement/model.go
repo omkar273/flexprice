@@ -63,6 +63,8 @@ func (e *Entitlement) CopyWith(ctx context.Context, overrides *EntitlementCloneO
 	} else {
 		out.BaseModel = types.GetDefaultBaseModel(ctx)
 	}
+	// Always set EnvironmentID from context — it is NOT part of BaseModel
+	out.EnvironmentID = types.GetEnvironmentID(ctx)
 	return lo.ToPtr(out)
 }
 
