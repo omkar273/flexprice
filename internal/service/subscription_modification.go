@@ -270,6 +270,42 @@ func (s *subscriptionModificationService) previewInheritance(
 // Sub-feature 2: Quantity Change
 // ─────────────────────────────────────────────
 
+// validateQuantityChangeEffectiveDateWithinLineItemWindow ensures effectiveDate lies in
+// [lineItem.StartDate, lineEnd), where lineEnd is lineItem.EndDate when set, otherwise
+// sub.CurrentPeriodEnd (open-ended line item). Subscription period bounds are validated separately.
+func validateQuantityChangeEffectiveDateWithinLineItemWindow(
+	effectiveDate time.Time,
+	sub *subscription.Subscription,
+	lineItem *subscription.SubscriptionLineItem,
+	lineItemID string,
+) error {
+	if !lineItem.StartDate.IsZero() && effectiveDate.Before(lineItem.StartDate) {
+		return ierr.NewError("effective_date cannot be before the line item start date").
+			WithHint("Set effective_date to a time when the line item is active").
+			WithReportableDetails(map[string]interface{}{
+				"effective_date":  effectiveDate,
+				"line_item_id":    lineItemID,
+				"line_item_start": lineItem.StartDate,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	lineEnd := sub.CurrentPeriodEnd
+	if !lineItem.EndDate.IsZero() {
+		lineEnd = lineItem.EndDate
+	}
+	if !effectiveDate.Before(lineEnd) {
+		return ierr.NewError("effective_date must be before the line item end date").
+			WithHint("Set effective_date to a time before the line item's active window ends").
+			WithReportableDetails(map[string]interface{}{
+				"effective_date": effectiveDate,
+				"line_item_id":   lineItemID,
+				"line_item_end":  lineEnd,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
 func (s *subscriptionModificationService) executeQuantityChange(
 	ctx context.Context,
 	subscriptionID string,
@@ -368,6 +404,10 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					Mark(ierr.ErrValidation)
 			}
 
+			if err := validateQuantityChangeEffectiveDateWithinLineItemWindow(effectiveDate, sub, lineItem, change.ID); err != nil {
+				return err
+			}
+
 			// Skip no-op: quantity unchanged avoids unnecessary DB writes and a spurious invoice.
 			if change.Quantity.Equal(lineItem.Quantity) {
 				sp.Logger.Debugw("skipping quantity change: quantity is unchanged",
@@ -459,9 +499,15 @@ func (s *subscriptionModificationService) executeQuantityChange(
 	for _, pair := range itemsForProration {
 		inv, err := s.handleQuantityChangeProration(ctx, sub, pair.old, pair.new_, pair.effectiveDate)
 		if err != nil {
-			sp.Logger.Errorw("failed to handle proration for quantity change", "error", err, "line_item_id", pair.old.ID)
-			changedInvoices = append(changedInvoices, dto.ChangedInvoice{ID: "(failed)", Action: "failed", Status: "failed"})
-			continue
+			sp.Logger.Errorw("failed to handle proration for quantity change", "error", err,
+				"subscription_id", subscriptionID, "line_item_id", pair.old.ID)
+			return nil, ierr.WithError(err).
+				WithHint("Failed to apply proration after quantity change; line items were updated but proration did not complete").
+				WithReportableDetails(map[string]interface{}{
+					"subscription_id": subscriptionID,
+					"line_item_id":    pair.old.ID,
+				}).
+				Error()
 		}
 		if inv != nil {
 			changedInvoices = append(changedInvoices, *inv)
@@ -562,6 +608,10 @@ func (s *subscriptionModificationService) previewQuantityChange(
 				WithHint("Quantity changes are only supported for fixed-price line items").
 				WithReportableDetails(map[string]interface{}{"line_item_id": change.ID, "price_type": lineItem.PriceType}).
 				Mark(ierr.ErrValidation)
+		}
+
+		if err := validateQuantityChangeEffectiveDateWithinLineItemWindow(effectiveDate, sub, lineItem, change.ID); err != nil {
+			return nil, err
 		}
 
 		// Skip no-op: same quantity as current.
@@ -723,7 +773,7 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		})
 		if err != nil {
 			sp.Logger.Errorw("failed to create delta proration invoice for quantity change", "error", err)
-			return &dto.ChangedInvoice{ID: "(failed)", Action: "failed", Status: "failed"}, err
+			return nil, err
 		}
 		// CreateInvoice with InvoiceTypeOneOff already finalizes the invoice internally.
 		// Attempt payment (credits + payment method charge).
@@ -749,11 +799,7 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 	idempotencyKey := fmt.Sprintf("proration_credit_%s_%s_%s", sub.ID, oldItem.ID, effectiveDate.Format(time.RFC3339))
 	if err := walletSvc.TopUpWalletForProratedCharge(ctx, sub.CustomerID, creditAmount, sub.Currency, idempotencyKey); err != nil {
 		sp.Logger.Errorw("failed to top up wallet for downgrade proration", "error", err)
-		return &dto.ChangedInvoice{
-			ID:     "(wallet_credit)",
-			Action: "wallet_credit",
-			Status: "failed",
-		}, err
+		return nil, err
 	}
 	return &dto.ChangedInvoice{
 		ID:     "(wallet_credit)",
