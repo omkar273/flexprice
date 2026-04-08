@@ -57,13 +57,16 @@ func (r *addonPriceSyncRepository) TerminateExpiredAddonPricesLineItems(
 					aa.entity_id AS id
 				FROM
 					addon_associations aa
+					JOIN subscriptions sub ON sub.id = aa.entity_id
 				WHERE
 					aa.tenant_id = $1
 					AND aa.environment_id = $2
 					AND aa.status = '%s'
 					AND aa.addon_id = $3
-					AND aa.entity_type = 'SUBSCRIPTION'
-					AND aa.addon_status = 'active'
+					AND aa.entity_type = '%s'
+					AND aa.addon_status = '%s'
+					AND sub.status = '%s'
+					AND sub.subscription_status IN ('%s', '%s')
 			),
 			ended_addon_prices AS (
 				SELECT
@@ -109,6 +112,11 @@ func (r *addonPriceSyncRepository) TerminateExpiredAddonPricesLineItems(
 			li.id = t.line_item_id
 	`,
 		string(types.StatusPublished),
+		string(types.AddonAssociationEntityTypeSubscription),
+		string(types.AddonStatusActive),
+		string(types.StatusPublished),
+		string(types.SubscriptionStatusActive),
+		string(types.SubscriptionStatusTrialing),
 		string(types.StatusPublished),
 		string(types.PRICE_ENTITY_TYPE_ADDON),
 		string(types.PRICE_TYPE_FIXED),
@@ -181,13 +189,16 @@ func (r *addonPriceSyncRepository) ListAddonLineItemsToTerminate(
 					aa.entity_id AS id
 				FROM
 					addon_associations aa
+					JOIN subscriptions sub ON sub.id = aa.entity_id
 				WHERE
 					aa.tenant_id = $1
 					AND aa.environment_id = $2
 					AND aa.status = '%s'
 					AND aa.addon_id = $3
-					AND aa.entity_type = 'SUBSCRIPTION'
-					AND aa.addon_status = 'active'
+					AND aa.entity_type = '%s'
+					AND aa.addon_status = '%s'
+					AND sub.status = '%s'
+					AND sub.subscription_status IN ('%s', '%s')
 			),
 			ended_addon_prices AS (
 				SELECT
@@ -223,6 +234,11 @@ func (r *addonPriceSyncRepository) ListAddonLineItemsToTerminate(
 		LIMIT $4
 	`,
 		string(types.StatusPublished),
+		string(types.AddonAssociationEntityTypeSubscription),
+		string(types.AddonStatusActive),
+		string(types.StatusPublished),
+		string(types.SubscriptionStatusActive),
+		string(types.SubscriptionStatusTrialing),
 		string(types.StatusPublished),
 		string(types.PRICE_ENTITY_TYPE_ADDON),
 		string(types.PRICE_TYPE_FIXED),
@@ -318,8 +334,8 @@ func (r *addonPriceSyncRepository) ListAddonLineItemsToCreate(
 					AND aa.environment_id = $2
 					AND aa.status = '%s'
 					AND aa.addon_id = $3
-					AND aa.entity_type = 'SUBSCRIPTION'
-					AND aa.addon_status = 'active'
+					AND aa.entity_type = '%s'
+					AND aa.addon_status = '%s'
 					AND sub.status = '%s'
 					AND sub.subscription_status IN ('%s', '%s')
 					%s
@@ -384,6 +400,8 @@ func (r *addonPriceSyncRepository) ListAddonLineItemsToCreate(
 			)
 		`,
 		string(types.StatusPublished),
+		string(types.AddonAssociationEntityTypeSubscription),
+		string(types.AddonStatusActive),
 		string(types.StatusPublished),
 		string(types.SubscriptionStatusActive),
 		string(types.SubscriptionStatusTrialing),
@@ -479,8 +497,8 @@ func (r *addonPriceSyncRepository) GetLastSubscriptionIDInBatch(
 					AND aa.environment_id = $2
 					AND aa.status = '%s'
 					AND aa.addon_id = $3
-					AND aa.entity_type = 'SUBSCRIPTION'
-					AND aa.addon_status = 'active'
+					AND aa.entity_type = '%s'
+					AND aa.addon_status = '%s'
 					%s
 				ORDER BY aa.entity_id
 				LIMIT $4
@@ -491,6 +509,8 @@ func (r *addonPriceSyncRepository) GetLastSubscriptionIDInBatch(
 			subs_batch s
 		`,
 		string(types.StatusPublished),
+		string(types.AddonAssociationEntityTypeSubscription),
+		string(types.AddonStatusActive),
 		cursorCondition,
 	)
 
@@ -525,6 +545,8 @@ func (r *addonPriceSyncRepository) GetLastSubscriptionIDInBatch(
 	}
 
 	if rowsErr := rows.Err(); rowsErr != nil {
+		r.log.Errorw("failed to iterate rows for last addon subscription ID",
+			"addon_id", addonID, "limit", limit, "error", rowsErr)
 		return nil, ierr.WithError(rowsErr).Mark(ierr.ErrDatabase)
 	}
 
