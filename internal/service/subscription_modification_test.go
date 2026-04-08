@@ -2,10 +2,12 @@ package service
 
 import (
 	"testing"
+	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/customer"
 	"github.com/flexprice/flexprice/internal/domain/plan"
+	"github.com/flexprice/flexprice/internal/domain/price"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	"github.com/flexprice/flexprice/internal/testutil"
 	"github.com/flexprice/flexprice/internal/types"
@@ -154,6 +156,68 @@ func (s *SubscriptionModificationServiceSuite) createFixedLineItem(subID, custom
 	}
 	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Create(ctx, li))
 	return li
+}
+
+// createFixedPrice inserts a Price record into PriceRepo and returns it.
+// Used by proration tests that need GetPrice to succeed.
+func (s *SubscriptionModificationServiceSuite) createFixedPrice(
+	amount decimal.Decimal,
+	cadence types.InvoiceCadence,
+) *price.Price {
+	ctx := s.GetContext()
+	p := &price.Price{
+		ID:             types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE),
+		BaseModel:      types.GetDefaultBaseModel(ctx),
+		Amount:         amount,
+		Currency:       "USD",
+		Type:           types.PRICE_TYPE_FIXED,
+		BillingModel:   types.BILLING_MODEL_FLAT_FEE,
+		BillingCadence: types.BILLING_CADENCE_RECURRING,
+		BillingPeriod:  types.BILLING_PERIOD_MONTHLY,
+		InvoiceCadence: cadence,
+	}
+	s.Require().NoError(s.GetStores().PriceRepo.Create(ctx, p))
+	return p
+}
+
+// createFixedLineItemWithPrice creates a SubscriptionLineItem tied to a specific PriceID.
+// Use this instead of createFixedLineItem when proration tests require GetPrice to resolve.
+func (s *SubscriptionModificationServiceSuite) createFixedLineItemWithPrice(
+	subID, customerID string,
+	qty decimal.Decimal,
+	cadence types.InvoiceCadence,
+	priceID string,
+) *subscription.SubscriptionLineItem {
+	ctx := s.GetContext()
+	now := s.GetNow()
+	li := &subscription.SubscriptionLineItem{
+		ID:             types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
+		BaseModel:      types.GetDefaultBaseModel(ctx),
+		SubscriptionID: subID,
+		CustomerID:     customerID,
+		PriceID:        priceID,
+		PriceType:      types.PRICE_TYPE_FIXED,
+		Quantity:       qty,
+		Currency:       "USD",
+		BillingPeriod:  types.BILLING_PERIOD_MONTHLY,
+		InvoiceCadence: cadence,
+		StartDate:      now,
+		EntityType:     types.SubscriptionLineItemEntityTypePlan,
+	}
+	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Create(ctx, li))
+	return li
+}
+
+// setSubPeriod overrides CurrentPeriodStart and CurrentPeriodEnd on the subscription
+// stored in SubRepo. Use in math-regression tests that need a deterministic calendar month.
+func (s *SubscriptionModificationServiceSuite) setSubPeriod(subID string, start, end time.Time) {
+	ctx := s.GetContext()
+	sub, err := s.GetStores().SubscriptionRepo.Get(ctx, subID)
+	s.Require().NoError(err)
+	sub.CurrentPeriodStart = start
+	sub.CurrentPeriodEnd = end
+	sub.BillingAnchor = start
+	s.Require().NoError(s.GetStores().SubscriptionRepo.Update(ctx, sub))
 }
 
 // ─────────────────────────────────────────────
