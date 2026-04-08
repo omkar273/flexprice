@@ -473,6 +473,80 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Arrear(
 }
 
 // ─────────────────────────────────────────────
+// Effective-date validation tests
+// ─────────────────────────────────────────────
+
+// TestExecuteQuantityChange_EffectiveDateValidation tests all boundary conditions
+// for the effective_date parameter.
+func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_EffectiveDateValidation() {
+	type tc struct {
+		name      string
+		buildDate func(start, end time.Time) time.Time
+		wantError bool
+	}
+	cases := []tc{
+		{
+			name:      "before_period_start",
+			buildDate: func(start, end time.Time) time.Time { return start.Add(-time.Nanosecond) },
+			wantError: true,
+		},
+		{
+			name:      "at_period_start",
+			buildDate: func(start, end time.Time) time.Time { return start },
+			wantError: false,
+		},
+		{
+			name:      "at_period_end",
+			buildDate: func(start, end time.Time) time.Time { return end },
+			wantError: true,
+		},
+		{
+			name:      "one_ns_before_end",
+			buildDate: func(start, end time.Time) time.Time { return end.Add(-time.Nanosecond) },
+			wantError: false,
+		},
+		{
+			name:      "future_within_period",
+			buildDate: func(start, end time.Time) time.Time { return start.AddDate(0, 0, 10) },
+			wantError: false,
+		},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.name, func() {
+			ctx := s.GetContext()
+			periodStart := s.GetNow()
+			periodEnd := periodStart.AddDate(0, 1, 0)
+
+			effectiveDate := tc.buildDate(periodStart, periodEnd)
+
+			cust := s.createCustomer("effdt-" + tc.name)
+			sub := s.createActiveSub(cust.ID)
+			// Use a simple ARREAR item — cadence doesn't affect date validation
+			li := s.createFixedLineItem(sub.ID, cust.ID, decimal.NewFromInt(2), types.InvoiceCadenceArrear)
+
+			newQty := decimal.NewFromInt(4)
+			req := dto.ExecuteSubscriptionModifyRequest{
+				Type: dto.SubscriptionModifyTypeQuantityChange,
+				LineItems: []dto.LineItemQuantityChange{
+					{ID: li.ID, Quantity: newQty, EffectiveDate: &effectiveDate},
+				},
+			}
+			_, err := s.service.Execute(ctx, sub.ID, req)
+			if tc.wantError {
+				s.Require().Error(err, "expected validation error for %s", tc.name)
+			} else {
+				s.Require().NoError(err, "expected no error for %s", tc.name)
+				// Verify versioning occurred for success cases
+				old, getErr := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+				s.Require().NoError(getErr)
+				s.False(old.EndDate.IsZero(), "old line item must be ended after valid quantity change")
+			}
+		})
+	}
+}
+
+// ─────────────────────────────────────────────
 // Inheritance tests
 // ─────────────────────────────────────────────
 
@@ -783,6 +857,356 @@ func (s *SubscriptionModificationServiceSuite) TestPreviewQuantityChange_Effecti
 		},
 	})
 	s.Require().Error(err, "effective date at or after line item end should be rejected (preview)")
+}
+
+// ─────────────────────────────────────────────
+// Multi-line-item tests
+// ─────────────────────────────────────────────
+
+// TestExecuteQuantityChange_MultiLineItem_MixedCadence verifies that in a single Execute
+// call with one ADVANCE and one ARREAR line item, the ADVANCE item generates a proration
+// invoice while the ARREAR item does not.
+func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_MultiLineItem_MixedCadence() {
+	ctx := s.GetContext()
+	effectiveDate := s.GetNow().AddDate(0, 0, 10)
+
+	cust := s.createCustomer("multi-mixed-001")
+	sub := s.createActiveSub(cust.ID)
+
+	advPrice := s.createFixedPrice(decimal.NewFromInt(50), types.InvoiceCadenceAdvance)
+	arrPrice := s.createFixedPrice(decimal.NewFromInt(30), types.InvoiceCadenceArrear)
+
+	advLI := s.createFixedLineItemWithPrice(sub.ID, cust.ID, decimal.NewFromInt(1), types.InvoiceCadenceAdvance, advPrice.ID)
+	arrLI := s.createFixedLineItemWithPrice(sub.ID, cust.ID, decimal.NewFromInt(2), types.InvoiceCadenceArrear, arrPrice.ID)
+
+	req := dto.ExecuteSubscriptionModifyRequest{
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		LineItems: []dto.LineItemQuantityChange{
+			{ID: advLI.ID, Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
+			{ID: arrLI.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+		},
+	}
+	resp, err := s.service.Execute(ctx, sub.ID, req)
+	s.Require().NoError(err)
+	s.Require().NotNil(resp)
+
+	s.Len(resp.ChangedResources.LineItems, 4)
+
+	s.Require().Len(resp.ChangedResources.Invoices, 1)
+	s.Equal("created", resp.ChangedResources.Invoices[0].Action)
+	s.NotEqual("failed", resp.ChangedResources.Invoices[0].Status)
+}
+
+// TestExecuteQuantityChange_MultiLineItem_AtomicRollback verifies that if the second
+// line item ID in a batch is invalid, the entire transaction rolls back and no changes
+// are persisted.
+func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_MultiLineItem_AtomicRollback() {
+	ctx := s.GetContext()
+	effectiveDate := s.GetNow().AddDate(0, 0, 5)
+
+	cust := s.createCustomer("multi-rollback-001")
+	sub := s.createActiveSub(cust.ID)
+
+	p := s.createFixedPrice(decimal.NewFromInt(50), types.InvoiceCadenceAdvance)
+	li := s.createFixedLineItemWithPrice(sub.ID, cust.ID, decimal.NewFromInt(2), types.InvoiceCadenceAdvance, p.ID)
+
+	req := dto.ExecuteSubscriptionModifyRequest{
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		LineItems: []dto.LineItemQuantityChange{
+			{ID: li.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+			{ID: "nonexistent-id-xyz", Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
+		},
+	}
+	_, err := s.service.Execute(ctx, sub.ID, req)
+	s.Require().Error(err, "should fail when second line item ID is invalid")
+
+	orig, getErr := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+	s.Require().NoError(getErr)
+	s.True(orig.EndDate.IsZero(), "first line item EndDate must remain zero after rollback")
+
+	filter := types.NewNoLimitInvoiceFilter()
+	filter.SubscriptionID = sub.ID
+	invoices, listErr := s.GetStores().InvoiceRepo.List(ctx, filter)
+	s.Require().NoError(listErr)
+	s.Empty(invoices, "no invoices should exist after rollback")
+}
+
+// ─────────────────────────────────────────────
+// Preview tests (table-driven)
+// ─────────────────────────────────────────────
+
+// TestPreviewQuantityChange verifies that Preview returns the correct placeholder IDs
+// and status values, and that no persistent store is mutated.
+func (s *SubscriptionModificationServiceSuite) TestPreviewQuantityChange() {
+	type tc struct {
+		name              string
+		oldQty            decimal.Decimal
+		newQty            decimal.Decimal
+		cadence           types.InvoiceCadence
+		wantLineItems     int
+		wantInvoiceID     string
+		wantInvoiceStatus string
+	}
+	cases := []tc{
+		{
+			name:              "upgrade_advance",
+			oldQty:            decimal.NewFromInt(1),
+			newQty:            decimal.NewFromInt(3),
+			cadence:           types.InvoiceCadenceAdvance,
+			wantLineItems:     2,
+			wantInvoiceID:     "(preview-invoice)",
+			wantInvoiceStatus: "preview",
+		},
+		{
+			name:              "downgrade_advance",
+			oldQty:            decimal.NewFromInt(3),
+			newQty:            decimal.NewFromInt(1),
+			cadence:           types.InvoiceCadenceAdvance,
+			wantLineItems:     2,
+			wantInvoiceID:     "(preview-wallet-credit)",
+			wantInvoiceStatus: "preview",
+		},
+		{
+			name:          "same_qty",
+			oldQty:        decimal.NewFromInt(5),
+			newQty:        decimal.NewFromInt(5),
+			cadence:       types.InvoiceCadenceAdvance,
+			wantLineItems: 0,
+			wantInvoiceID: "",
+		},
+		{
+			name:          "arrear_increase",
+			oldQty:        decimal.NewFromInt(1),
+			newQty:        decimal.NewFromInt(5),
+			cadence:       types.InvoiceCadenceArrear,
+			wantLineItems: 2,
+			wantInvoiceID: "",
+		},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.name, func() {
+			ctx := s.GetContext()
+			effectiveDate := s.GetNow().AddDate(0, 0, 10)
+
+			cust := s.createCustomer("prev-" + tc.name)
+			sub := s.createActiveSub(cust.ID)
+			p := s.createFixedPrice(decimal.NewFromInt(50), tc.cadence)
+			li := s.createFixedLineItemWithPrice(sub.ID, cust.ID, tc.oldQty, tc.cadence, p.ID)
+
+			req := dto.ExecuteSubscriptionModifyRequest{
+				Type: dto.SubscriptionModifyTypeQuantityChange,
+				LineItems: []dto.LineItemQuantityChange{
+					{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+				},
+			}
+			resp, err := s.service.Preview(ctx, sub.ID, req)
+			s.Require().NoError(err)
+			s.Require().NotNil(resp)
+
+			s.Len(resp.ChangedResources.LineItems, tc.wantLineItems)
+
+			orig, getErr := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+			s.Require().NoError(getErr)
+			s.True(orig.EndDate.IsZero(),
+				"Preview must not mutate the line item EndDate (tc=%s)", tc.name)
+
+			filter := types.NewNoLimitInvoiceFilter()
+			filter.SubscriptionID = sub.ID
+			invoices, listErr := s.GetStores().InvoiceRepo.List(ctx, filter)
+			s.Require().NoError(listErr)
+			s.Empty(invoices, "Preview must not persist any invoice (tc=%s)", tc.name)
+
+			wallets, _ := s.GetStores().WalletRepo.GetWalletsByCustomerID(ctx, cust.ID)
+			var totalBal decimal.Decimal
+			for _, w := range wallets {
+				totalBal = totalBal.Add(w.Balance)
+			}
+			s.True(totalBal.IsZero(), "Preview must not create wallet credits (tc=%s)", tc.name)
+
+			if tc.wantInvoiceID == "" {
+				s.Empty(resp.ChangedResources.Invoices,
+					"expected no invoice entry in response (tc=%s)", tc.name)
+			} else {
+				s.Require().Len(resp.ChangedResources.Invoices, 1)
+				s.Equal(tc.wantInvoiceID, resp.ChangedResources.Invoices[0].ID)
+				s.Equal(tc.wantInvoiceStatus, resp.ChangedResources.Invoices[0].Status)
+			}
+		})
+	}
+}
+
+// ─────────────────────────────────────────────
+// Proration math regression tests
+// ─────────────────────────────────────────────
+
+// TestProrationMath_Upgrade pins upgrade proration to a deterministic value using a
+// fixed 31-day billing period (January 2026).
+func (s *SubscriptionModificationServiceSuite) TestProrationMath_Upgrade() {
+	periodStart := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	periodEnd := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	effectivePeriodEnd := periodEnd.Add(-time.Second)
+
+	type tc struct {
+		name          string
+		oldQty        decimal.Decimal
+		newQty        decimal.Decimal
+		pricePerUnit  decimal.Decimal
+		effectiveDate time.Time
+	}
+	cases := []tc{
+		{
+			name:          "15_days_remaining",
+			oldQty:        decimal.NewFromInt(1),
+			newQty:        decimal.NewFromInt(3),
+			pricePerUnit:  decimal.NewFromInt(50),
+			effectiveDate: time.Date(2026, 1, 16, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:          "1_day_remaining",
+			oldQty:        decimal.NewFromInt(1),
+			newQty:        decimal.NewFromInt(2),
+			pricePerUnit:  decimal.NewFromInt(100),
+			effectiveDate: time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:          "full_period",
+			oldQty:        decimal.NewFromInt(1),
+			newQty:        decimal.NewFromInt(3),
+			pricePerUnit:  decimal.NewFromInt(50),
+			effectiveDate: periodStart,
+		},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.name, func() {
+			ctx := s.GetContext()
+
+			totalSec := decimal.NewFromFloat(effectivePeriodEnd.Sub(periodStart).Seconds())
+			remainingSec := decimal.NewFromFloat(effectivePeriodEnd.Sub(tc.effectiveDate).Seconds())
+			if remainingSec.LessThan(decimal.Zero) {
+				remainingSec = decimal.Zero
+			}
+			coeff := remainingSec.Div(totalSec)
+			qtyDelta := tc.newQty.Sub(tc.oldQty)
+			expectedAmt := qtyDelta.Mul(tc.pricePerUnit).Mul(coeff)
+
+			cust := s.createCustomer("math-" + tc.name)
+			sub := s.createActiveSub(cust.ID)
+			s.setSubPeriod(sub.ID, periodStart, periodEnd)
+
+			p := s.createFixedPrice(tc.pricePerUnit, types.InvoiceCadenceAdvance)
+			li := s.createFixedLineItemWithPrice(sub.ID, cust.ID, tc.oldQty, types.InvoiceCadenceAdvance, p.ID)
+			storedLI, updErr := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+			s.Require().NoError(updErr)
+			storedLI.StartDate = periodStart
+			storedLI.EndDate = time.Time{}
+			s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Update(ctx, storedLI))
+
+			req := dto.ExecuteSubscriptionModifyRequest{
+				Type: dto.SubscriptionModifyTypeQuantityChange,
+				LineItems: []dto.LineItemQuantityChange{
+					{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &tc.effectiveDate},
+				},
+			}
+			resp, err := s.service.Execute(ctx, sub.ID, req)
+			s.Require().NoError(err)
+			s.Require().NotNil(resp)
+			s.Require().Len(resp.ChangedResources.Invoices, 1)
+
+			inv := resp.ChangedResources.Invoices[0]
+			s.Equal("created", inv.Action)
+			s.NotEqual("failed", inv.Status)
+
+			realInv, fetchErr := s.GetStores().InvoiceRepo.Get(ctx, inv.ID)
+			s.Require().NoError(fetchErr)
+
+			tolerance := decimal.NewFromFloat(0.01)
+			diff := realInv.AmountDue.Sub(expectedAmt).Abs()
+			s.True(diff.LessThanOrEqual(tolerance),
+				"invoice amount %s should be ≈ %s (diff=%s, tc=%s)",
+				realInv.AmountDue.String(), expectedAmt.String(), diff.String(), tc.name)
+		})
+	}
+}
+
+// ─────────────────────────────────────────────
+// Guard condition tests
+// ─────────────────────────────────────────────
+
+// TestExecuteQuantityChange_NonFixedPriceRejected verifies that attempting to change
+// the quantity of a USAGE-type line item returns a validation error.
+func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_NonFixedPriceRejected() {
+	ctx := s.GetContext()
+	effectiveDate := s.GetNow().AddDate(0, 0, 5)
+
+	cust := s.createCustomer("guard-usage-001")
+	sub := s.createActiveSub(cust.ID)
+
+	li := &subscription.SubscriptionLineItem{
+		ID:             types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
+		BaseModel:      types.GetDefaultBaseModel(ctx),
+		SubscriptionID: sub.ID,
+		CustomerID:     cust.ID,
+		PriceID:        types.GenerateUUID(),
+		PriceType:      types.PRICE_TYPE_USAGE,
+		Quantity:       decimal.NewFromInt(1),
+		Currency:       "USD",
+		BillingPeriod:  types.BILLING_PERIOD_MONTHLY,
+		InvoiceCadence: types.InvoiceCadenceArrear,
+		StartDate:      s.GetNow(),
+		EntityType:     types.SubscriptionLineItemEntityTypePlan,
+	}
+	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Create(ctx, li))
+
+	req := dto.ExecuteSubscriptionModifyRequest{
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		LineItems: []dto.LineItemQuantityChange{
+			{ID: li.ID, Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
+		},
+	}
+	_, err := s.service.Execute(ctx, sub.ID, req)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "not a fixed-price item")
+}
+
+// TestExecuteQuantityChange_InactiveLineItemRejected verifies that attempting to change
+// the quantity of a non-published line item returns a validation error.
+func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_InactiveLineItemRejected() {
+	ctx := s.GetContext()
+	effectiveDate := s.GetNow().AddDate(0, 0, 5)
+
+	cust := s.createCustomer("guard-inactive-001")
+	sub := s.createActiveSub(cust.ID)
+
+	li := &subscription.SubscriptionLineItem{
+		ID:             types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
+		BaseModel:      types.GetDefaultBaseModel(ctx),
+		SubscriptionID: sub.ID,
+		CustomerID:     cust.ID,
+		PriceID:        types.GenerateUUID(),
+		PriceType:      types.PRICE_TYPE_FIXED,
+		Quantity:       decimal.NewFromInt(2),
+		Currency:       "USD",
+		BillingPeriod:  types.BILLING_PERIOD_MONTHLY,
+		InvoiceCadence: types.InvoiceCadenceArrear,
+		StartDate:      s.GetNow(),
+		EntityType:     types.SubscriptionLineItemEntityTypePlan,
+	}
+	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Create(ctx, li))
+
+	li.Status = types.StatusArchived
+	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Update(ctx, li))
+
+	req := dto.ExecuteSubscriptionModifyRequest{
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		LineItems: []dto.LineItemQuantityChange{
+			{ID: li.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+		},
+	}
+	_, err := s.service.Execute(ctx, sub.ID, req)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "not active")
 }
 
 // ─────────────────────────────────────────────
