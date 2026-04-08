@@ -46,7 +46,7 @@ func (s *subscriptionModificationService) Execute(ctx context.Context, subscript
 
 	switch req.Type {
 	case dto.SubscriptionModifyTypeInheritance:
-		return s.executeInheritance(ctx, subscriptionID, req.InheritanceParams)
+		return s.executeInheritance(ctx, subscriptionID, req.ExternalCustomerIDsToInheritSubscription)
 	case dto.SubscriptionModifyTypeQuantityChange:
 		return s.executeQuantityChange(ctx, subscriptionID, req.LineItems)
 	default:
@@ -64,7 +64,7 @@ func (s *subscriptionModificationService) Preview(ctx context.Context, subscript
 
 	switch req.Type {
 	case dto.SubscriptionModifyTypeInheritance:
-		return s.previewInheritance(ctx, subscriptionID, req.InheritanceParams)
+		return s.previewInheritance(ctx, subscriptionID, req.ExternalCustomerIDsToInheritSubscription)
 	case dto.SubscriptionModifyTypeQuantityChange:
 		return s.previewQuantityChange(ctx, subscriptionID, req.LineItems)
 	default:
@@ -81,7 +81,7 @@ func (s *subscriptionModificationService) Preview(ctx context.Context, subscript
 func (s *subscriptionModificationService) executeInheritance(
 	ctx context.Context,
 	subscriptionID string,
-	params *dto.SubModifyInheritanceRequest,
+	externalCustomerIDs []string,
 ) (*dto.SubscriptionModifyResponse, error) {
 	sp := s.serviceParams
 
@@ -106,7 +106,7 @@ func (s *subscriptionModificationService) executeInheritance(
 	}
 
 	// 3. Resolve external customers for inheritance
-	childCustomerIDs, err := s.resolveExternalCustomersForInheritance(ctx, sub.CustomerID, params.ExternalCustomerIDsToInheritSubscription)
+	childCustomerIDs, err := s.resolveExternalCustomersForInheritance(ctx, sub.CustomerID, externalCustomerIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (s *subscriptionModificationService) executeInheritance(
 func (s *subscriptionModificationService) previewInheritance(
 	ctx context.Context,
 	subscriptionID string,
-	params *dto.SubModifyInheritanceRequest,
+	externalCustomerIDs []string,
 ) (*dto.SubscriptionModifyResponse, error) {
 	sp := s.serviceParams
 
@@ -212,7 +212,7 @@ func (s *subscriptionModificationService) previewInheritance(
 	}
 
 	// Resolve external customers
-	childCustomerIDs, err := s.resolveExternalCustomersForInheritance(ctx, sub.CustomerID, params.ExternalCustomerIDsToInheritSubscription)
+	childCustomerIDs, err := s.resolveExternalCustomersForInheritance(ctx, sub.CustomerID, externalCustomerIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -308,8 +308,8 @@ func (s *subscriptionModificationService) executeQuantityChange(
 	// Proration (invoice creation / wallet credits) happens after the transaction commits
 	// because those operations have their own side effects.
 	err = sp.DB.WithTx(ctx, func(txCtx context.Context) error {
-		changedLineItems = nil    // reset for safety
-		itemsForProration = nil   // reset for safety
+		changedLineItems = nil  // reset for safety
+		itemsForProration = nil // reset for safety
 
 		for _, change := range lineItems {
 			// Resolve effective date: caller-supplied or now.

@@ -170,10 +170,8 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteInheritance_Success() 
 	sub := s.createActiveSub(parent.ID)
 
 	req := dto.ExecuteSubscriptionModifyRequest{
-		Type: dto.SubscriptionModifyTypeInheritance,
-		InheritanceParams: &dto.SubModifyInheritanceRequest{
-			ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
-		},
+		Type:                                     dto.SubscriptionModifyTypeInheritance,
+		ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
 	}
 
 	resp, err := s.service.Execute(ctx, sub.ID, req)
@@ -206,10 +204,8 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteInheritance_DuplicateC
 	sub := s.createActiveSub(parent.ID)
 
 	req := dto.ExecuteSubscriptionModifyRequest{
-		Type: dto.SubscriptionModifyTypeInheritance,
-		InheritanceParams: &dto.SubModifyInheritanceRequest{
-			ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
-		},
+		Type:                                     dto.SubscriptionModifyTypeInheritance,
+		ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
 	}
 
 	// First call should succeed
@@ -234,10 +230,8 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteInheritance_InheritedS
 
 	// Create the first inheritance (parent -> child)
 	_, err := s.service.Execute(ctx, parentSub.ID, dto.ExecuteSubscriptionModifyRequest{
-		Type: dto.SubscriptionModifyTypeInheritance,
-		InheritanceParams: &dto.SubModifyInheritanceRequest{
-			ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
-		},
+		Type:                                     dto.SubscriptionModifyTypeInheritance,
+		ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
 	})
 	s.Require().NoError(err)
 
@@ -252,10 +246,8 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteInheritance_InheritedS
 
 	// Attempting to add children to an inherited subscription should fail
 	_, err = s.service.Execute(ctx, childSub.ID, dto.ExecuteSubscriptionModifyRequest{
-		Type: dto.SubscriptionModifyTypeInheritance,
-		InheritanceParams: &dto.SubModifyInheritanceRequest{
-			ExternalCustomerIDsToInheritSubscription: []string{grandchild.ExternalID},
-		},
+		Type:                                     dto.SubscriptionModifyTypeInheritance,
+		ExternalCustomerIDsToInheritSubscription: []string{grandchild.ExternalID},
 	})
 	s.Require().Error(err)
 }
@@ -409,7 +401,7 @@ func (s *SubscriptionModificationServiceSuite) TestExecute_UnknownTypeRejected()
 }
 
 // TestExecute_ModalityMixedPayloadRejected verifies that inheritance requests must not
-// include line_items and quantity_change requests must not include inheritance_params.
+// include line_items and quantity_change requests must not include external_customer_ids_to_inherit_subscription.
 func (s *SubscriptionModificationServiceSuite) TestExecute_ModalityMixedPayloadRejected() {
 	ctx := s.GetContext()
 
@@ -421,10 +413,8 @@ func (s *SubscriptionModificationServiceSuite) TestExecute_ModalityMixedPayloadR
 	li := s.createFixedLineItem(subQty.ID, custQty.ID, decimal.NewFromInt(5), types.InvoiceCadenceArrear)
 
 	_, err := s.service.Execute(ctx, subInh.ID, dto.ExecuteSubscriptionModifyRequest{
-		Type: dto.SubscriptionModifyTypeInheritance,
-		InheritanceParams: &dto.SubModifyInheritanceRequest{
-			ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
-		},
+		Type:                                     dto.SubscriptionModifyTypeInheritance,
+		ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
 		LineItems: []dto.LineItemQuantityChange{
 			{ID: li.ID, Quantity: decimal.NewFromInt(9)},
 		},
@@ -432,13 +422,11 @@ func (s *SubscriptionModificationServiceSuite) TestExecute_ModalityMixedPayloadR
 	s.Require().Error(err, "inheritance with line_items should be rejected")
 
 	_, err = s.service.Execute(ctx, subQty.ID, dto.ExecuteSubscriptionModifyRequest{
-		Type: dto.SubscriptionModifyTypeQuantityChange,
-		InheritanceParams: &dto.SubModifyInheritanceRequest{
-			ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
-		},
+		Type:                                     dto.SubscriptionModifyTypeQuantityChange,
+		ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
 		LineItems: []dto.LineItemQuantityChange{
 			{ID: li.ID, Quantity: decimal.NewFromInt(7)},
 		},
 	})
-	s.Require().Error(err, "quantity_change with inheritance_params should be rejected")
+	s.Require().Error(err, "quantity_change with external_customer_ids_to_inherit_subscription should be rejected")
 }
