@@ -311,7 +311,7 @@ func (r *MeterUsageRepository) GetUsageForBucketedMeters(ctx context.Context, pa
 
 	for rows.Next() {
 		var total decimal.Decimal
-		var windowStart interface{}
+		var windowStart time.Time
 		var value decimal.Decimal
 
 		if hasGroupBy {
@@ -323,7 +323,7 @@ func (r *MeterUsageRepository) GetUsageForBucketedMeters(ctx context.Context, pa
 			}
 			result.Value = total
 			result.Results = append(result.Results, events.UsageResult{
-				WindowSize: parseWindowTime(windowStart),
+				WindowSize: windowStart,
 				Value:      value,
 				GroupKey:   groupKey,
 			})
@@ -335,24 +335,13 @@ func (r *MeterUsageRepository) GetUsageForBucketedMeters(ctx context.Context, pa
 			}
 			result.Value = total
 			result.Results = append(result.Results, events.UsageResult{
-				WindowSize: parseWindowTime(windowStart),
+				WindowSize: windowStart,
 				Value:      value,
 			})
 		}
 	}
 
 	return &result, nil
-}
-
-// parseWindowTime converts a ClickHouse timestamp column to time.Time.
-// ClickHouse may return DateTime as time.Time directly.
-func parseWindowTime(v interface{}) time.Time {
-	switch t := v.(type) {
-	case time.Time:
-		return t
-	default:
-		return time.Time{}
-	}
 }
 
 // getMeterUsageAggExprs returns the SQL expression pair for a given aggregator.
