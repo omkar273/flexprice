@@ -399,6 +399,80 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 }
 
 // ─────────────────────────────────────────────
+// Arrear tests
+// ─────────────────────────────────────────────
+
+// TestExecuteQuantityChange_Arrear verifies that ARREAR line items are versioned
+// (old item ended, new item created) but no proration invoice or wallet credit is issued.
+func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Arrear() {
+	type tc struct {
+		name          string
+		oldQty        decimal.Decimal
+		newQty        decimal.Decimal
+		wantLineItems int
+		wantNoOp      bool
+	}
+	cases := []tc{
+		{name: "increase_arrear", oldQty: decimal.NewFromInt(1), newQty: decimal.NewFromInt(5), wantLineItems: 2},
+		{name: "decrease_arrear", oldQty: decimal.NewFromInt(5), newQty: decimal.NewFromInt(1), wantLineItems: 2},
+		{name: "same_qty_arrear", oldQty: decimal.NewFromInt(3), newQty: decimal.NewFromInt(3), wantLineItems: 0, wantNoOp: true},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.name, func() {
+			ctx := s.GetContext()
+			effectiveDate := s.GetNow().AddDate(0, 0, 5)
+
+			cust := s.createCustomer("arr-" + tc.name)
+			sub := s.createActiveSub(cust.ID)
+			p := s.createFixedPrice(decimal.NewFromInt(30), types.InvoiceCadenceArrear)
+			li := s.createFixedLineItemWithPrice(sub.ID, cust.ID, tc.oldQty, types.InvoiceCadenceArrear, p.ID)
+
+			req := dto.ExecuteSubscriptionModifyRequest{
+				Type: dto.SubscriptionModifyTypeQuantityChange,
+				LineItems: []dto.LineItemQuantityChange{
+					{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+				},
+			}
+			resp, err := s.service.Execute(ctx, sub.ID, req)
+			s.Require().NoError(err)
+			s.Require().NotNil(resp)
+
+			s.Len(resp.ChangedResources.LineItems, tc.wantLineItems)
+			s.Empty(resp.ChangedResources.Invoices, "ARREAR items must never generate a proration invoice")
+
+			if !tc.wantNoOp {
+				// Old line item must have EndDate set
+				old, err := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+				s.Require().NoError(err)
+				s.False(old.EndDate.IsZero(), "old line item EndDate should be set after versioning")
+
+				// Verify the new line item exists with updated quantity
+				var newLIID string
+				for _, cli := range resp.ChangedResources.LineItems {
+					if cli.ChangeAction == "created" {
+						newLIID = cli.ID
+					}
+				}
+				s.Require().NotEmpty(newLIID, "a 'created' line item entry must exist")
+				newLI, err := s.GetStores().SubscriptionLineItemRepo.Get(ctx, newLIID)
+				s.Require().NoError(err)
+				s.True(tc.newQty.Equal(newLI.Quantity), "new line item quantity mismatch")
+			}
+
+			// No wallet balance should exist (no credit issued)
+			wallets, err := s.GetStores().WalletRepo.GetWalletsByCustomerID(ctx, cust.ID)
+			s.Require().NoError(err)
+			var totalBalance decimal.Decimal
+			for _, w := range wallets {
+				totalBalance = totalBalance.Add(w.Balance)
+			}
+			s.True(totalBalance.IsZero(), "no wallet credit should be issued for ARREAR items")
+		})
+	}
+}
+
+// ─────────────────────────────────────────────
 // Inheritance tests
 // ─────────────────────────────────────────────
 
@@ -622,6 +696,93 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Invalid
 		},
 	})
 	s.Require().Error(err, "zero quantity should be rejected")
+}
+
+// TestExecuteQuantityChange_EffectiveDateOutsideLineItemWindowRejected verifies that
+// effective_date must fall within each line item's active window [StartDate, lineEnd),
+// where an open-ended line item uses the subscription's current period end.
+func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_EffectiveDateOutsideLineItemWindowRejected() {
+	ctx := s.GetContext()
+	periodStart := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+	periodEnd := periodStart.AddDate(0, 1, 0)
+
+	cust := s.createCustomer("ext-qty-line-window-exec")
+	sub := s.createActiveSub(cust.ID)
+	s.setSubPeriod(sub.ID, periodStart, periodEnd)
+
+	li := s.createFixedLineItem(sub.ID, cust.ID, decimal.NewFromInt(5), types.InvoiceCadenceArrear)
+	stored, err := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+	s.Require().NoError(err)
+	lineStart := periodStart.Add(10 * 24 * time.Hour)
+	stored.StartDate = lineStart
+	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Update(ctx, stored))
+
+	effectiveBeforeLine := periodStart.Add(5 * 24 * time.Hour)
+	_, err = s.service.Execute(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		LineItems: []dto.LineItemQuantityChange{
+			{ID: li.ID, Quantity: decimal.NewFromInt(8), EffectiveDate: &effectiveBeforeLine},
+		},
+	})
+	s.Require().Error(err, "effective date before line item start should be rejected")
+
+	stored2, err := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+	s.Require().NoError(err)
+	stored2.StartDate = periodStart
+	stored2.EndDate = periodStart.Add(15 * 24 * time.Hour)
+	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Update(ctx, stored2))
+
+	effectiveAfterLineEnd := periodStart.Add(20 * 24 * time.Hour)
+	_, err = s.service.Execute(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		LineItems: []dto.LineItemQuantityChange{
+			{ID: li.ID, Quantity: decimal.NewFromInt(9), EffectiveDate: &effectiveAfterLineEnd},
+		},
+	})
+	s.Require().Error(err, "effective date at or after line item end should be rejected")
+}
+
+// TestPreviewQuantityChange_EffectiveDateOutsideLineItemWindowRejected mirrors
+// TestExecuteQuantityChange_EffectiveDateOutsideLineItemWindowRejected for Preview.
+func (s *SubscriptionModificationServiceSuite) TestPreviewQuantityChange_EffectiveDateOutsideLineItemWindowRejected() {
+	ctx := s.GetContext()
+	periodStart := time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)
+	periodEnd := periodStart.AddDate(0, 1, 0)
+
+	cust := s.createCustomer("ext-qty-line-window-preview")
+	sub := s.createActiveSub(cust.ID)
+	s.setSubPeriod(sub.ID, periodStart, periodEnd)
+
+	li := s.createFixedLineItem(sub.ID, cust.ID, decimal.NewFromInt(5), types.InvoiceCadenceArrear)
+	stored, err := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+	s.Require().NoError(err)
+	lineStart := periodStart.Add(10 * 24 * time.Hour)
+	stored.StartDate = lineStart
+	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Update(ctx, stored))
+
+	effectiveBeforeLine := periodStart.Add(5 * 24 * time.Hour)
+	_, err = s.service.Preview(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		LineItems: []dto.LineItemQuantityChange{
+			{ID: li.ID, Quantity: decimal.NewFromInt(8), EffectiveDate: &effectiveBeforeLine},
+		},
+	})
+	s.Require().Error(err, "effective date before line item start should be rejected (preview)")
+
+	stored2, err := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
+	s.Require().NoError(err)
+	stored2.StartDate = periodStart
+	stored2.EndDate = periodStart.Add(15 * 24 * time.Hour)
+	s.Require().NoError(s.GetStores().SubscriptionLineItemRepo.Update(ctx, stored2))
+
+	effectiveAfterLineEnd := periodStart.Add(20 * 24 * time.Hour)
+	_, err = s.service.Preview(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		LineItems: []dto.LineItemQuantityChange{
+			{ID: li.ID, Quantity: decimal.NewFromInt(9), EffectiveDate: &effectiveAfterLineEnd},
+		},
+	})
+	s.Require().Error(err, "effective date at or after line item end should be rejected (preview)")
 }
 
 // ─────────────────────────────────────────────
