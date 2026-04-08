@@ -329,8 +329,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 
 			req := dto.ExecuteSubscriptionModifyRequest{
 				Type: dto.SubscriptionModifyTypeQuantityChange,
-				LineItems: []dto.LineItemQuantityChange{
-					{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+				QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+					LineItems: []dto.LineItemQuantityChange{
+						{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+					},
 				},
 			}
 			resp, err := s.service.Execute(ctx, sub.ID, req)
@@ -430,8 +432,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Arrear(
 
 			req := dto.ExecuteSubscriptionModifyRequest{
 				Type: dto.SubscriptionModifyTypeQuantityChange,
-				LineItems: []dto.LineItemQuantityChange{
-					{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+				QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+					LineItems: []dto.LineItemQuantityChange{
+						{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+					},
 				},
 			}
 			resp, err := s.service.Execute(ctx, sub.ID, req)
@@ -528,8 +532,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Effecti
 			newQty := decimal.NewFromInt(4)
 			req := dto.ExecuteSubscriptionModifyRequest{
 				Type: dto.SubscriptionModifyTypeQuantityChange,
-				LineItems: []dto.LineItemQuantityChange{
-					{ID: li.ID, Quantity: newQty, EffectiveDate: &effectiveDate},
+				QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+					LineItems: []dto.LineItemQuantityChange{
+						{ID: li.ID, Quantity: newQty, EffectiveDate: &effectiveDate},
+					},
 				},
 			}
 			_, err := s.service.Execute(ctx, sub.ID, req)
@@ -812,8 +818,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Effecti
 	effectiveBeforeLine := periodStart.Add(5 * 24 * time.Hour)
 	_, err = s.service.Execute(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(8), EffectiveDate: &effectiveBeforeLine},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.NewFromInt(8), EffectiveDate: &effectiveBeforeLine},
+			},
 		},
 	})
 	s.Require().Error(err, "effective date before line item start should be rejected")
@@ -827,8 +835,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Effecti
 	effectiveAfterLineEnd := periodStart.Add(20 * 24 * time.Hour)
 	_, err = s.service.Execute(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(9), EffectiveDate: &effectiveAfterLineEnd},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.NewFromInt(9), EffectiveDate: &effectiveAfterLineEnd},
+			},
 		},
 	})
 	s.Require().Error(err, "effective date at or after line item end should be rejected")
@@ -855,8 +865,10 @@ func (s *SubscriptionModificationServiceSuite) TestPreviewQuantityChange_Effecti
 	effectiveBeforeLine := periodStart.Add(5 * 24 * time.Hour)
 	_, err = s.service.Preview(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(8), EffectiveDate: &effectiveBeforeLine},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.NewFromInt(8), EffectiveDate: &effectiveBeforeLine},
+			},
 		},
 	})
 	s.Require().Error(err, "effective date before line item start should be rejected (preview)")
@@ -870,8 +882,10 @@ func (s *SubscriptionModificationServiceSuite) TestPreviewQuantityChange_Effecti
 	effectiveAfterLineEnd := periodStart.Add(20 * 24 * time.Hour)
 	_, err = s.service.Preview(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(9), EffectiveDate: &effectiveAfterLineEnd},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.NewFromInt(9), EffectiveDate: &effectiveAfterLineEnd},
+			},
 		},
 	})
 	s.Require().Error(err, "effective date at or after line item end should be rejected (preview)")
@@ -899,9 +913,11 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_MultiLi
 
 	req := dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: advLI.ID, Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
-			{ID: arrLI.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: advLI.ID, Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
+				{ID: arrLI.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+			},
 		},
 	}
 	resp, err := s.service.Execute(ctx, sub.ID, req)
@@ -932,9 +948,11 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_MultiLi
 
 	req := dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: "nonexistent-id-xyz", Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
-			{ID: li.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: "nonexistent-id-xyz", Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
+				{ID: li.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+			},
 		},
 	}
 	_, err := s.service.Execute(ctx, sub.ID, req)
@@ -1016,8 +1034,10 @@ func (s *SubscriptionModificationServiceSuite) TestPreviewQuantityChange() {
 
 			req := dto.ExecuteSubscriptionModifyRequest{
 				Type: dto.SubscriptionModifyTypeQuantityChange,
-				LineItems: []dto.LineItemQuantityChange{
-					{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+				QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+					LineItems: []dto.LineItemQuantityChange{
+						{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &effectiveDate},
+					},
 				},
 			}
 			resp, err := s.service.Preview(ctx, sub.ID, req)
@@ -1125,8 +1145,10 @@ func (s *SubscriptionModificationServiceSuite) TestProrationMath_Upgrade() {
 
 			req := dto.ExecuteSubscriptionModifyRequest{
 				Type: dto.SubscriptionModifyTypeQuantityChange,
-				LineItems: []dto.LineItemQuantityChange{
-					{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &tc.effectiveDate},
+				QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+					LineItems: []dto.LineItemQuantityChange{
+						{ID: li.ID, Quantity: tc.newQty, EffectiveDate: &tc.effectiveDate},
+					},
 				},
 			}
 			resp, err := s.service.Execute(ctx, sub.ID, req)
@@ -1181,8 +1203,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_NonFixe
 
 	req := dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.NewFromInt(3), EffectiveDate: &effectiveDate},
+			},
 		},
 	}
 	_, err := s.service.Execute(ctx, sub.ID, req)
@@ -1220,8 +1244,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Inactiv
 
 	req := dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.NewFromInt(5), EffectiveDate: &effectiveDate},
+			},
 		},
 	}
 	_, err := s.service.Execute(ctx, sub.ID, req)
