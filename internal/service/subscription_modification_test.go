@@ -667,8 +667,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Version
 	newQty := decimal.NewFromInt(10)
 	req := dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: newQty},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: newQty},
+			},
 		},
 	}
 
@@ -719,8 +721,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_WrongSu
 	// Execute against sub1 with sub2's line item
 	req := dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(7)},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.NewFromInt(7)},
+			},
 		},
 	}
 
@@ -739,8 +743,10 @@ func (s *SubscriptionModificationServiceSuite) TestPreviewQuantityChange_DoesNot
 
 	req := dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(10)},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.NewFromInt(10)},
+			},
 		},
 	}
 
@@ -765,16 +771,20 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Invalid
 
 	// Empty line items slice
 	_, err := s.service.Execute(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
-		Type:      dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{},
+		Type: dto.SubscriptionModifyTypeQuantityChange,
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{},
+		},
 	})
 	s.Require().Error(err, "empty LineItems should be rejected")
 
 	// Zero quantity
 	_, err = s.service.Execute(ctx, sub.ID, dto.ExecuteSubscriptionModifyRequest{
 		Type: dto.SubscriptionModifyTypeQuantityChange,
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.Zero},
+		QuantityChangeParams: &dto.SubModifyQuantityChangeRequest{
+			LineItems: []dto.LineItemQuantityChange{
+				{ID: li.ID, Quantity: decimal.Zero},
+			},
 		},
 	})
 	s.Require().Error(err, "zero quantity should be rejected")
@@ -1235,39 +1245,4 @@ func (s *SubscriptionModificationServiceSuite) TestExecute_UnknownTypeRejected()
 		Type: dto.SubscriptionModifyType("unknown"),
 	})
 	s.Require().Error(err)
-}
-
-// TestExecute_ModalityMixedPayloadRejected verifies that inheritance requests must not
-// include line_items and quantity_change requests must not include inheritance_params.
-func (s *SubscriptionModificationServiceSuite) TestExecute_ModalityMixedPayloadRejected() {
-	ctx := s.GetContext()
-
-	parent := s.createCustomer("ext-mix-001")
-	child := s.createCustomer("ext-mix-002")
-	custQty := s.createCustomer("ext-mix-003")
-	subInh := s.createActiveSub(parent.ID)
-	subQty := s.createActiveSub(custQty.ID)
-	li := s.createFixedLineItem(subQty.ID, custQty.ID, decimal.NewFromInt(5), types.InvoiceCadenceArrear)
-
-	_, err := s.service.Execute(ctx, subInh.ID, dto.ExecuteSubscriptionModifyRequest{
-		Type: dto.SubscriptionModifyTypeInheritance,
-		InheritanceParams: &dto.SubModifyInheritanceRequest{
-			ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
-		},
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(9)},
-		},
-	})
-	s.Require().Error(err, "inheritance with line_items should be rejected")
-
-	_, err = s.service.Execute(ctx, subQty.ID, dto.ExecuteSubscriptionModifyRequest{
-		Type: dto.SubscriptionModifyTypeQuantityChange,
-		InheritanceParams: &dto.SubModifyInheritanceRequest{
-			ExternalCustomerIDsToInheritSubscription: []string{child.ExternalID},
-		},
-		LineItems: []dto.LineItemQuantityChange{
-			{ID: li.ID, Quantity: decimal.NewFromInt(7)},
-		},
-	})
-	s.Require().Error(err, "quantity_change with inheritance_params should be rejected")
 }

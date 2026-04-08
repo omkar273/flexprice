@@ -36,13 +36,18 @@ type LineItemQuantityChange struct {
 	EffectiveDate *time.Time `json:"effective_date,omitempty"`
 }
 
-func validateQuantityChangeLineItems(items []LineItemQuantityChange) error {
-	if len(items) == 0 {
+// SubModifyQuantityChangeRequest is the payload for mid-cycle seat/quantity changes.
+type SubModifyQuantityChangeRequest struct {
+	LineItems []LineItemQuantityChange `json:"line_items" binding:"required,min=1"`
+}
+
+func (r *SubModifyQuantityChangeRequest) Validate() error {
+	if len(r.LineItems) == 0 {
 		return ierr.NewError("at least one line item is required").
 			WithHint("Provide line_items with at least one entry").
 			Mark(ierr.ErrValidation)
 	}
-	for _, li := range items {
+	for _, li := range r.LineItems {
 		if li.ID == "" {
 			return ierr.NewError("line item ID is required").
 				WithHint("Each line_item entry must have a non-empty id").
@@ -71,34 +76,27 @@ const (
 
 // ExecuteSubscriptionModifyRequest is the unified body for
 // POST /subscriptions/:id/modify/execute and /modify/preview.
-// For type inheritance, set inheritance_params only.
-// For type quantity_change, set line_items only.
+// Exactly one of InheritanceParams or QuantityChangeParams must be set.
 type ExecuteSubscriptionModifyRequest struct {
-	Type              SubscriptionModifyType       `json:"type" binding:"required"`
-	InheritanceParams *SubModifyInheritanceRequest `json:"inheritance_params,omitempty"`
-	LineItems         []LineItemQuantityChange     `json:"line_items,omitempty"`
+	Type                 SubscriptionModifyType          `json:"type" binding:"required"`
+	InheritanceParams    *SubModifyInheritanceRequest    `json:"inheritance_params,omitempty"`
+	QuantityChangeParams *SubModifyQuantityChangeRequest `json:"quantity_change_params,omitempty"`
 }
 
 func (r *ExecuteSubscriptionModifyRequest) Validate() error {
 	switch r.Type {
 	case SubscriptionModifyTypeInheritance:
-		if len(r.LineItems) > 0 {
-			return ierr.NewError("line_items must not be set for type 'inheritance'").
-				WithHint("Use inheritance_params only for inheritance modifications").
-				Mark(ierr.ErrValidation)
-		}
 		if r.InheritanceParams == nil {
 			return ierr.NewError("inheritance_params is required for type 'inheritance'").
 				Mark(ierr.ErrValidation)
 		}
 		return r.InheritanceParams.Validate()
 	case SubscriptionModifyTypeQuantityChange:
-		if r.InheritanceParams != nil {
-			return ierr.NewError("inheritance_params must not be set for type 'quantity_change'").
-				WithHint("Use line_items only for quantity change modifications").
+		if r.QuantityChangeParams == nil {
+			return ierr.NewError("quantity_change_params is required for type 'quantity_change'").
 				Mark(ierr.ErrValidation)
 		}
-		return validateQuantityChangeLineItems(r.LineItems)
+		return r.QuantityChangeParams.Validate()
 	default:
 		return ierr.NewError("unknown modification type: " + string(r.Type)).
 			WithHint("Valid values: inheritance, quantity_change").

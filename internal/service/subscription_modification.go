@@ -48,7 +48,7 @@ func (s *subscriptionModificationService) Execute(ctx context.Context, subscript
 	case dto.SubscriptionModifyTypeInheritance:
 		return s.executeInheritance(ctx, subscriptionID, req.InheritanceParams)
 	case dto.SubscriptionModifyTypeQuantityChange:
-		return s.executeQuantityChange(ctx, subscriptionID, req.LineItems)
+		return s.executeQuantityChange(ctx, subscriptionID, req.QuantityChangeParams)
 	default:
 		return nil, ierr.NewError("unknown modification type: " + string(req.Type)).
 			WithHint("Valid values: inheritance, quantity_change").
@@ -66,7 +66,7 @@ func (s *subscriptionModificationService) Preview(ctx context.Context, subscript
 	case dto.SubscriptionModifyTypeInheritance:
 		return s.previewInheritance(ctx, subscriptionID, req.InheritanceParams)
 	case dto.SubscriptionModifyTypeQuantityChange:
-		return s.previewQuantityChange(ctx, subscriptionID, req.LineItems)
+		return s.previewQuantityChange(ctx, subscriptionID, req.QuantityChangeParams)
 	default:
 		return nil, ierr.NewError("unknown modification type: " + string(req.Type)).
 			WithHint("Valid values: inheritance, quantity_change").
@@ -309,7 +309,7 @@ func validateQuantityChangeEffectiveDateWithinLineItemWindow(
 func (s *subscriptionModificationService) executeQuantityChange(
 	ctx context.Context,
 	subscriptionID string,
-	lineItems []dto.LineItemQuantityChange,
+	params *dto.SubModifyQuantityChangeRequest,
 ) (*dto.SubscriptionModifyResponse, error) {
 	sp := s.serviceParams
 
@@ -347,7 +347,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 		changedLineItems = nil    // reset for safety
 		itemsForProration = nil   // reset for safety
 
-		for _, change := range lineItems {
+		for _, change := range params.LineItems {
 			// Resolve effective date: caller-supplied or now.
 			// Backdating within the current period is allowed (e.g. to backfill a change);
 			// dates before the period start or at/after the period end are rejected.
@@ -536,7 +536,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 func (s *subscriptionModificationService) previewQuantityChange(
 	ctx context.Context,
 	subscriptionID string,
-	lineItems []dto.LineItemQuantityChange,
+	params *dto.SubModifyQuantityChangeRequest,
 ) (*dto.SubscriptionModifyResponse, error) {
 	sp := s.serviceParams
 
@@ -558,7 +558,7 @@ func (s *subscriptionModificationService) previewQuantityChange(
 	changedLineItems := make([]dto.ChangedLineItem, 0)
 	changedInvoices := make([]dto.ChangedInvoice, 0)
 
-	for _, change := range lineItems {
+	for _, change := range params.LineItems {
 		// Resolve effective date: caller-supplied or now.
 		// Must be >= now (no backdating) and before the current period end.
 		effectiveDate := now
