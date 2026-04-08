@@ -90,8 +90,10 @@ type WalletService interface {
 	// CheckBalanceThresholds checks if wallet balance is below threshold and triggers alerts
 	CheckBalanceThresholds(ctx context.Context, w *wallet.Wallet, balance *dto.WalletBalanceResponse) error
 
-	// TopUpWalletForProratedCharge tops up a wallet for proration credits from subscription changes
-	TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string) error
+	// TopUpWalletForProratedCharge tops up a wallet for proration credits from subscription changes.
+	// idempotencyKey should be a stable string derived from the change (e.g. lineItemID + effectiveDate)
+	// to prevent duplicate credits on retries.
+	TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string, idempotencyKey string) error
 
 	// CompletePurchasedCreditTransaction completes a pending wallet transaction when payment succeeds
 	CompletePurchasedCreditTransactionWithRetry(ctx context.Context, walletTransactionID string) error
@@ -2218,7 +2220,7 @@ func (s *walletService) CheckBalanceThresholds(ctx context.Context, w *wallet.Wa
 	return nil
 }
 
-func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string) error {
+func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string, idempotencyKey string) error {
 	if customerID == "" {
 		return ierr.NewError("customer_id is required").
 			WithHint("Customer ID is required for wallet top-up").
@@ -2309,7 +2311,7 @@ func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, custom
 			"source":      "subscription_change_proration",
 			"customer_id": customerID,
 		},
-		IdempotencyKey: lo.ToPtr(fmt.Sprintf("proration_credit_%s_%s", customerID, time.Now().Format("20060102150405"))),
+		IdempotencyKey: lo.ToPtr(idempotencyKey),
 	}
 
 	_, err = s.TopUpWallet(ctx, selectedWallet.ID, topUpReq)

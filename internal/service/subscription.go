@@ -1837,7 +1837,8 @@ func (s *subscriptionService) CancelSubscription(
 		// Step 9: Top up wallet for proration credit (only if there's a credit amount)
 		if totalCreditAmount.GreaterThan(decimal.Zero) {
 			walletService := NewWalletService(s.ServiceParams)
-			err = walletService.TopUpWalletForProratedCharge(ctx, subscription.CustomerID, totalCreditAmount.Abs(), subscription.Currency)
+			cancelKey := fmt.Sprintf("proration_credit_cancel_%s_%s", subscription.ID, effectiveDate.Format(time.RFC3339))
+			err = walletService.TopUpWalletForProratedCharge(ctx, subscription.CustomerID, totalCreditAmount.Abs(), subscription.Currency, cancelKey)
 			if err != nil {
 				return err
 			}

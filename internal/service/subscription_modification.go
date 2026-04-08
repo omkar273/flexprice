@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
@@ -312,7 +313,8 @@ func (s *subscriptionModificationService) executeQuantityChange(
 
 		for _, change := range params.LineItems {
 			// Resolve effective date: caller-supplied or now.
-			// Must be >= now (no backdating) and before the current period end.
+			// Backdating within the current period is allowed (e.g. to backfill a change);
+			// dates before the period start or at/after the period end are rejected.
 			effectiveDate := now
 			if change.EffectiveDate != nil {
 				effectiveDate = change.EffectiveDate.UTC()
@@ -364,6 +366,13 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					WithHint("Quantity changes are only supported for fixed-price line items").
 					WithReportableDetails(map[string]interface{}{"line_item_id": change.ID, "price_type": lineItem.PriceType}).
 					Mark(ierr.ErrValidation)
+			}
+
+			// Skip no-op: quantity unchanged avoids unnecessary DB writes and a spurious invoice.
+			if change.Quantity.Equal(lineItem.Quantity) {
+				sp.Logger.Debugw("skipping quantity change: quantity is unchanged",
+					"line_item_id", change.ID, "quantity", change.Quantity)
+				continue
 			}
 
 			// End the old line item at effective date
@@ -431,8 +440,11 @@ func (s *subscriptionModificationService) executeQuantityChange(
 				},
 			)
 
-			// Collect pairs that need proration (handled after the transaction commits)
-			if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance {
+			// Collect pairs that need proration (handled after the transaction commits).
+			// Only ADVANCE items are prorated immediately; ARREAR items settle at period end.
+			// Respect the subscription's proration_behavior setting.
+			if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance &&
+				sub.ProrationBehavior != types.ProrationBehaviorNone {
 				itemsForProration = append(itemsForProration, prorationPair{old: lineItem, new_: newItem, effectiveDate: effectiveDate})
 			}
 		}
@@ -552,6 +564,11 @@ func (s *subscriptionModificationService) previewQuantityChange(
 				Mark(ierr.ErrValidation)
 		}
 
+		// Skip no-op: same quantity as current.
+		if change.Quantity.Equal(lineItem.Quantity) {
+			continue
+		}
+
 		endDate := effectiveDate
 		startDate := effectiveDate
 		changedLineItems = append(changedLineItems,
@@ -571,14 +588,14 @@ func (s *subscriptionModificationService) previewQuantityChange(
 			},
 		)
 
-		// Preview proration for in-advance line items
-		if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance {
-			// Build a preview new item to compute proration
+		// Preview proration for ADVANCE items — calculate only, do NOT create invoices or wallet credits.
+		if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance &&
+			sub.ProrationBehavior != types.ProrationBehaviorNone {
 			previewNewItem := &subscription.SubscriptionLineItem{
 				PriceID:  lineItem.PriceID,
 				Quantity: change.Quantity,
 			}
-			inv, err := s.handleQuantityChangeProration(ctx, sub, lineItem, previewNewItem, effectiveDate)
+			inv, err := s.previewQuantityChangeProration(ctx, sub, lineItem, previewNewItem, effectiveDate)
 			if err != nil {
 				sp.Logger.Warnw("failed to preview proration for quantity change", "error", err, "line_item_id", lineItem.ID)
 			} else if inv != nil {
@@ -669,8 +686,9 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		priceID := oldItem.PriceID
 		priceType := string(price.Price.Type)
 		planDisplayName := oldItem.PlanDisplayName
-		lineItemDescription := fmt.Sprintf("Proration for quantity change: %s → %s units × $%s/unit (%s – %s)",
-			oldItem.Quantity.String(), newItem.Quantity.String(), price.Price.Amount.String(),
+		lineItemDescription := fmt.Sprintf("Proration for quantity change: %s → %s units × %s %s/unit (%s – %s)",
+			oldItem.Quantity.String(), newItem.Quantity.String(),
+			strings.ToUpper(sub.Currency), price.Price.Amount.String(),
 			effectiveDate.Format("2 Jan 2006"), periodEnd.Format("2 Jan 2006"))
 		lineItems := []dto.CreateInvoiceLineItemRequest{
 			{
@@ -727,13 +745,88 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 	// Downgrade: wallet credit
 	walletSvc := NewWalletService(sp)
 	creditAmount := result.NetAmount.Abs()
-	if err := walletSvc.TopUpWalletForProratedCharge(ctx, sub.CustomerID, creditAmount, sub.Currency); err != nil {
+	// Stable idempotency key: prevents duplicate credits if this call is retried.
+	idempotencyKey := fmt.Sprintf("proration_credit_%s_%s_%s", sub.ID, oldItem.ID, effectiveDate.Format(time.RFC3339))
+	if err := walletSvc.TopUpWalletForProratedCharge(ctx, sub.CustomerID, creditAmount, sub.Currency, idempotencyKey); err != nil {
 		sp.Logger.Errorw("failed to top up wallet for downgrade proration", "error", err)
+		return &dto.ChangedInvoice{
+			ID:     "(wallet_credit)",
+			Action: "wallet_credit",
+			Status: "failed",
+		}, err
 	}
 	return &dto.ChangedInvoice{
 		ID:     "(wallet_credit)",
 		Action: "wallet_credit",
 		Status: "issued",
+	}, nil
+}
+
+// previewQuantityChangeProration calculates what proration would occur without creating any
+// invoices, wallet credits, or other side effects. Safe to call from the preview endpoint.
+func (s *subscriptionModificationService) previewQuantityChangeProration(
+	ctx context.Context,
+	sub *subscription.Subscription,
+	oldItem *subscription.SubscriptionLineItem,
+	newItem *subscription.SubscriptionLineItem,
+	effectiveDate time.Time,
+) (*dto.ChangedInvoice, error) {
+	sp := s.serviceParams
+	prorationSvc := NewProrationService(sp)
+	priceSvc := NewPriceService(sp)
+
+	price, err := priceSvc.GetPrice(ctx, oldItem.PriceID)
+	if err != nil {
+		return nil, err
+	}
+
+	customerTimezone := sub.CustomerTimezone
+	if customerTimezone == "" {
+		customerTimezone = "UTC"
+	}
+
+	prorationParams := proration.ProrationParams{
+		SubscriptionID:     sub.ID,
+		LineItemID:         oldItem.ID,
+		PlanPayInAdvance:   price.Price.InvoiceCadence == types.InvoiceCadenceAdvance,
+		CurrentPeriodStart: sub.CurrentPeriodStart,
+		CurrentPeriodEnd:   sub.CurrentPeriodEnd.Add(-time.Second),
+		Action:             types.ProrationActionQuantityChange,
+		NewPriceID:         newItem.PriceID,
+		OldQuantity:        oldItem.Quantity,
+		NewQuantity:        newItem.Quantity,
+		NewPricePerUnit:    price.Price.Amount,
+		OldPricePerUnit:    price.Price.Amount,
+		ProrationDate:      effectiveDate,
+		ProrationBehavior:  types.ProrationBehaviorCreateProrations,
+		ProrationStrategy:  types.StrategySecondBased,
+		Currency:           sub.Currency,
+		PlanDisplayName:    oldItem.PlanDisplayName,
+		CustomerTimezone:   customerTimezone,
+	}
+
+	result, err := prorationSvc.CalculateProration(ctx, prorationParams)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.NetAmount.IsZero() {
+		return nil, nil
+	}
+
+	// Return a preview-only ChangedInvoice — no invoice is created, no payment attempted.
+	if result.NetAmount.GreaterThan(decimal.Zero) {
+		return &dto.ChangedInvoice{
+			ID:     "(preview-invoice)",
+			Action: "created",
+			Status: "preview",
+		}, nil
+	}
+	// Downgrade preview
+	return &dto.ChangedInvoice{
+		ID:     "(preview-wallet-credit)",
+		Action: "wallet_credit",
+		Status: "preview",
 	}, nil
 }
 
