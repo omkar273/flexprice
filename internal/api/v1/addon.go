@@ -344,6 +344,12 @@ func (h *AddonHandler) SyncAddonPrices(c *gin.Context) {
 		return
 	}
 	h.log.Infow("addon_price_sync_lock_acquired", "addon_id", id, "lock_key", lockKey)
+	// Release lock if workflow dispatch fails (activity releases it on success path).
+	defer func() {
+		if c.IsAborted() || len(c.Errors) > 0 {
+			redisCache.Delete(c.Request.Context(), lockKey)
+		}
+	}()
 
 	workflowInput := models.PriceSyncWorkflowInput{
 		EntityType: types.PRICE_ENTITY_TYPE_ADDON,

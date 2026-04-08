@@ -458,6 +458,9 @@ func (r *addonPriceSyncRepository) ListAddonLineItemsToCreate(
 }
 
 // GetLastSubscriptionIDInBatch returns the last subscription ID from the batch for cursor advancement.
+// Note: this query intentionally omits the subscription_status filter that ListAddonLineItemsToCreate uses.
+// The cursor is used only to advance the page boundary; ListAddonLineItemsToCreate will apply the full
+// filter on the next page, so at worst this produces an extra empty-batch iteration (no correctness impact).
 func (r *addonPriceSyncRepository) GetLastSubscriptionIDInBatch(
 	ctx context.Context,
 	p addonpricesync.ListAddonLineItemsToCreateParams,
