@@ -561,7 +561,9 @@ func (s *addonService) SyncAddonPrices(ctx context.Context, addonID string) (*dt
 		AddonID: addonID,
 		Limit:   1000,
 	}
+	terminationIteration := 0
 	for {
+		terminationIteration++
 		numTerminated, err := s.AddonPriceSyncRepo.TerminateExpiredAddonPricesLineItems(ctx, terminationParams)
 		if err != nil {
 			s.Logger.ErrorwCtx(ctx, "failed to terminate expired addon price line items", "addon_id", addonID, "error", err)
@@ -577,7 +579,9 @@ func (s *addonService) SyncAddonPrices(ctx context.Context, addonID string) (*dt
 	// Cursor creation loop
 	creationStartTime := time.Now()
 	cursorSubID := ""
+	creationIteration := 0
 	for {
+		creationIteration++
 		queryParams := addonpricesync.ListAddonLineItemsToCreateParams{
 			AddonID:    addonID,
 			Limit:      1000,
@@ -663,7 +667,8 @@ func (s *addonService) SyncAddonPrices(ctx context.Context, addonID string) (*dt
 				if err = s.SubscriptionLineItemRepo.CreateBulk(ctx, batch); err != nil {
 					s.Logger.ErrorwCtx(ctx, "failed to create addon line items in bulk batch",
 						"addon_id", addonID, "error", err,
-						"batch_start", i, "batch_end", end)
+						"batch_start", i, "batch_end", end,
+						"batch_count", len(batch), "total_count", len(lineItemsToCreate))
 					return nil, err
 				}
 				totalCreated += len(batch)
@@ -692,7 +697,7 @@ func (s *addonService) SyncAddonPrices(ctx context.Context, addonID string) (*dt
 						"addon_id", addonID, "missing_pairs_count", len(missingPairs), "error", err)
 				} else {
 					s.Logger.DebugwCtx(ctx, "reprocess events workflow started for addon",
-						"addon_id", addonID, "workflow_id", workflowRun.GetID())
+						"addon_id", addonID, "workflow_id", workflowRun.GetID(), "run_id", workflowRun.GetRunID())
 				}
 			}
 		}
