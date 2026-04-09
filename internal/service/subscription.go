@@ -5622,11 +5622,39 @@ func (s *subscriptionService) GetMeterUsageBySubscription(ctx context.Context, r
 		"end_time", usageEndTime,
 		"metered_line_items", len(priceIDs))
 
-	// Build meter_id → line items map and group meters by aggregation type
+	// Performance optimization: query distinct meter_ids that have data in meter_usage
+	// for this customer and time range. Skips meters with zero usage — reduces processing
+	// from potentially hundreds of meters down to only those with actual data.
+	useFinal := req.Source == string(types.UsageSourceInvoiceCreation)
+	distinctMeterIDs, err := s.MeterUsageRepo.GetDistinctMeterIDs(ctx, &events.MeterUsageQueryParams{
+		TenantID:            types.GetTenantID(ctx),
+		EnvironmentID:       types.GetEnvironmentID(ctx),
+		ExternalCustomerIDs: externalCustomerIDs,
+		StartTime:           usageStartTime,
+		EndTime:             usageEndTime,
+		UseFinal:            useFinal,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get distinct meter_ids from meter_usage: %w", err)
+	}
+	activeMeterIDs := make(map[string]bool, len(distinctMeterIDs))
+	for _, id := range distinctMeterIDs {
+		activeMeterIDs[id] = true
+	}
+
+	s.Logger.DebugwCtx(ctx, "distinct meter_ids optimization",
+		"subscription_id", req.SubscriptionID,
+		"total_distinct_meters", len(distinctMeterIDs),
+		"total_line_items", len(lineItems))
+
+	// Build meter_id → line items map, skipping meters with no data in meter_usage
 	meterToLineItems := make(map[string][]*subscription.SubscriptionLineItem)
 	meterAggType := make(map[string]types.AggregationType)
 	for _, item := range lineItems {
 		if item.PriceType != types.PRICE_TYPE_USAGE || item.MeterID == "" {
+			continue
+		}
+		if !activeMeterIDs[item.MeterID] {
 			continue
 		}
 		meterToLineItems[item.MeterID] = append(meterToLineItems[item.MeterID], item)
@@ -5657,8 +5685,6 @@ func (s *subscriptionService) GetMeterUsageBySubscription(ctx context.Context, r
 			aggTypeToMeterIDs[aggType] = append(aggTypeToMeterIDs[aggType], meterID)
 		}
 	}
-
-	useFinal := req.Source == string(types.UsageSourceInvoiceCreation)
 
 	// --- Query non-bucketed meters via GetUsageMultiMeter (scalar, batched) ---
 	meterResults := make(map[string]*events.MeterUsageAggregationResult)

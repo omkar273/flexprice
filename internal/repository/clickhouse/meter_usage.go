@@ -344,6 +344,46 @@ func (r *MeterUsageRepository) GetUsageForBucketedMeters(ctx context.Context, pa
 	return &result, nil
 }
 
+// GetDistinctMeterIDs returns the set of meter_ids that have data in meter_usage
+// for the given customer(s) and time range.
+func (r *MeterUsageRepository) GetDistinctMeterIDs(ctx context.Context, params *events.MeterUsageQueryParams) ([]string, error) {
+	if params == nil {
+		return nil, nil
+	}
+
+	where, args := r.qb.BuildWhereClause(params)
+	finalClause, settings := r.qb.BuildFinalClause(params.UseFinal)
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT meter_id
+		FROM meter_usage %s
+		WHERE %s
+		ORDER BY meter_id
+		%s
+	`, finalClause, where, settings)
+
+	rows, err := r.store.GetConn().Query(ctx, query, args...)
+	if err != nil {
+		return nil, ierr.WithError(err).
+			WithHint("Failed to query distinct meter_ids from meter_usage").
+			Mark(ierr.ErrDatabase)
+	}
+	defer rows.Close()
+
+	var meterIDs []string
+	for rows.Next() {
+		var meterID string
+		if err := rows.Scan(&meterID); err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Failed to scan distinct meter_id").
+				Mark(ierr.ErrDatabase)
+		}
+		meterIDs = append(meterIDs, meterID)
+	}
+
+	return meterIDs, nil
+}
+
 // getMeterUsageAggExprs returns the SQL expression pair for a given aggregator.
 // This bridges the aggregator strategy with multi-meter queries that need raw expressions.
 func getMeterUsageAggExprs(agg MeterUsageAggregator) (aggExpr string, countExpr string) {

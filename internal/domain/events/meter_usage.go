@@ -77,4 +77,8 @@ type MeterUsageRepository interface {
 	// GetUsageForBucketedMeters returns windowed aggregation results for bucketed meters (MAX/SUM with bucket_size).
 	// Returns *AggregationResult (shared type with feature_usage) for compatibility with calculateBucketedMeterCost.
 	GetUsageForBucketedMeters(ctx context.Context, params *MeterUsageQueryParams) (*AggregationResult, error)
+
+	// GetDistinctMeterIDs returns the set of meter_ids that have data in the meter_usage table
+	// for the given customer(s) and time range. Used to skip meters with zero usage.
+	GetDistinctMeterIDs(ctx context.Context, params *MeterUsageQueryParams) ([]string, error)
 }
