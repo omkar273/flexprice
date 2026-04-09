@@ -728,6 +728,9 @@ func (iu *InvoiceUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if iu.mutation.SubscriptionIDCleared() {
 		_spec.ClearField(invoice.FieldSubscriptionID, field.TypeString)
 	}
+	if iu.mutation.SubscriptionCustomerIDCleared() {
+		_spec.ClearField(invoice.FieldSubscriptionCustomerID, field.TypeString)
+	}
 	if value, ok := iu.mutation.InvoiceStatus(); ok {
 		_spec.SetField(invoice.FieldInvoiceStatus, field.TypeString, value)
 	}
@@ -1716,6 +1719,9 @@ func (iuo *InvoiceUpdateOne) sqlSave(ctx context.Context) (_node *Invoice, err e
 	}
 	if iuo.mutation.SubscriptionIDCleared() {
 		_spec.ClearField(invoice.FieldSubscriptionID, field.TypeString)
+	}
+	if iuo.mutation.SubscriptionCustomerIDCleared() {
+		_spec.ClearField(invoice.FieldSubscriptionCustomerID, field.TypeString)
 	}
 	if value, ok := iuo.mutation.InvoiceStatus(); ok {
 		_spec.SetField(invoice.FieldInvoiceStatus, field.TypeString, value)

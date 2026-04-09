@@ -238,6 +238,7 @@ func main() {
 			service.NewTaskService,
 			service.NewSecretService,
 			service.NewOnboardingService,
+			service.NewGeminiPricingService,
 			service.NewBillingService,
 			service.NewCreditGrantService,
 			service.NewCostsheetService,
@@ -352,6 +353,7 @@ func provideHandlers(
 	customerPortalService service.CustomerPortalService,
 	dashboardService service.DashboardService,
 	workflowService service.WorkflowService,
+	geminiPricingService service.GeminiPricingService,
 ) api.Handlers {
 	return api.Handlers{
 		Events:                   v1.NewEventsHandler(eventService, eventPostProcessingService, featureUsageTrackingService, rawEventsReprocessingService, rawEventConsumptionService, cfg, logger),

@@ -112,6 +112,11 @@ func SubscriptionID(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldSubscriptionID, v))
 }
 
+// SubscriptionCustomerID applies equality check predicate on the "subscription_customer_id" field. It's identical to SubscriptionCustomerIDEQ.
+func SubscriptionCustomerID(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldSubscriptionCustomerID, v))
+}
+
 // InvoiceType applies equality check predicate on the "invoice_type" field. It's identical to InvoiceTypeEQ.
 func InvoiceType(v types.InvoiceType) predicate.Invoice {
 	vc := string(v)
@@ -839,6 +844,81 @@ func SubscriptionIDEqualFold(v string) predicate.Invoice {
 // SubscriptionIDContainsFold applies the ContainsFold predicate on the "subscription_id" field.
 func SubscriptionIDContainsFold(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldContainsFold(FieldSubscriptionID, v))
+}
+
+// SubscriptionCustomerIDEQ applies the EQ predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDNEQ applies the NEQ predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDIn applies the In predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldSubscriptionCustomerID, vs...))
+}
+
+// SubscriptionCustomerIDNotIn applies the NotIn predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldSubscriptionCustomerID, vs...))
+}
+
+// SubscriptionCustomerIDGT applies the GT predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDGTE applies the GTE predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDLT applies the LT predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDLTE applies the LTE predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDContains applies the Contains predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDHasPrefix applies the HasPrefix predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDHasSuffix applies the HasSuffix predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDIsNil applies the IsNil predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDIsNil() predicate.Invoice {
+	return predicate.Invoice(sql.FieldIsNull(FieldSubscriptionCustomerID))
+}
+
+// SubscriptionCustomerIDNotNil applies the NotNil predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDNotNil() predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotNull(FieldSubscriptionCustomerID))
+}
+
+// SubscriptionCustomerIDEqualFold applies the EqualFold predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldSubscriptionCustomerID, v))
+}
+
+// SubscriptionCustomerIDContainsFold applies the ContainsFold predicate on the "subscription_customer_id" field.
+func SubscriptionCustomerIDContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldSubscriptionCustomerID, v))
 }
 
 // InvoiceTypeEQ applies the EQ predicate on the "invoice_type" field.

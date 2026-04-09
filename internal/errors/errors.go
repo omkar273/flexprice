@@ -27,6 +27,7 @@ var (
 	ErrSystem             = new(ErrCodeSystemError, "system error")
 	ErrInternal           = new(ErrCodeInternalError, "internal error")
 	ErrServiceUnavailable = new(ErrCodeServiceUnavailable, "service unavailable")
+	ErrTooManyRequests    = new(ErrCodeTooManyRequests, "too many requests")
 
 	// errMappings is the single map that ties sentinel → (HTTP status, error code).
 	// ResolveError iterates this once to get both values.
@@ -42,6 +43,7 @@ var (
 		ErrSystem:             {http.StatusInternalServerError, ErrCodeSystemError},
 		ErrInternal:           {http.StatusInternalServerError, ErrCodeInternalError},
 		ErrServiceUnavailable: {http.StatusServiceUnavailable, ErrCodeServiceUnavailable},
+		ErrTooManyRequests:    {http.StatusTooManyRequests, ErrCodeTooManyRequests},
 	}
 )
 
@@ -57,6 +59,7 @@ const (
 	ErrCodePermissionDenied   = "permission_denied"
 	ErrCodeDatabase           = "database_error"
 	ErrCodeServiceUnavailable = "service_unavailable"
+	ErrCodeTooManyRequests    = "too_many_requests"
 )
 
 // InternalError represents a domain error
@@ -158,6 +161,11 @@ func IsHTTPClient(err error) bool {
 // IsServiceUnavailable checks if an error is a service unavailable error
 func IsServiceUnavailable(err error) bool {
 	return errors.Is(err, ErrServiceUnavailable)
+}
+
+// IsTooManyRequests checks if an error is a rate-limit / 429 style error
+func IsTooManyRequests(err error) bool {
+	return errors.Is(err, ErrTooManyRequests)
 }
 
 // ResolveError returns both the HTTP status code and machine-readable error

@@ -38,6 +38,8 @@ type Invoice struct {
 	CustomerID string `json:"customer_id,omitempty"`
 	// SubscriptionID holds the value of the "subscription_id" field.
 	SubscriptionID *string `json:"subscription_id,omitempty"`
+	// Subscription owner customer ID; set internally for subscription invoices
+	SubscriptionCustomerID *string `json:"subscription_customer_id,omitempty"`
 	// InvoiceType holds the value of the "invoice_type" field.
 	InvoiceType types.InvoiceType `json:"invoice_type,omitempty"`
 	// InvoiceStatus holds the value of the "invoice_status" field.
@@ -148,7 +150,7 @@ func (*Invoice) scanValues(columns []string) ([]any, error) {
 			values[i] = new(decimal.Decimal)
 		case invoice.FieldVersion, invoice.FieldBillingSequence:
 			values[i] = new(sql.NullInt64)
-		case invoice.FieldID, invoice.FieldTenantID, invoice.FieldStatus, invoice.FieldCreatedBy, invoice.FieldUpdatedBy, invoice.FieldEnvironmentID, invoice.FieldCustomerID, invoice.FieldSubscriptionID, invoice.FieldInvoiceType, invoice.FieldInvoiceStatus, invoice.FieldPaymentStatus, invoice.FieldCurrency, invoice.FieldDescription, invoice.FieldBillingPeriod, invoice.FieldInvoicePdfURL, invoice.FieldBillingReason, invoice.FieldInvoiceNumber, invoice.FieldIdempotencyKey, invoice.FieldRecalculatedInvoiceID:
+		case invoice.FieldID, invoice.FieldTenantID, invoice.FieldStatus, invoice.FieldCreatedBy, invoice.FieldUpdatedBy, invoice.FieldEnvironmentID, invoice.FieldCustomerID, invoice.FieldSubscriptionID, invoice.FieldSubscriptionCustomerID, invoice.FieldInvoiceType, invoice.FieldInvoiceStatus, invoice.FieldPaymentStatus, invoice.FieldCurrency, invoice.FieldDescription, invoice.FieldBillingPeriod, invoice.FieldInvoicePdfURL, invoice.FieldBillingReason, invoice.FieldInvoiceNumber, invoice.FieldIdempotencyKey, invoice.FieldRecalculatedInvoiceID:
 			values[i] = new(sql.NullString)
 		case invoice.FieldCreatedAt, invoice.FieldUpdatedAt, invoice.FieldDueDate, invoice.FieldPaidAt, invoice.FieldVoidedAt, invoice.FieldFinalizedAt, invoice.FieldLastComputedAt, invoice.FieldPeriodStart, invoice.FieldPeriodEnd:
 			values[i] = new(sql.NullTime)
@@ -227,6 +229,13 @@ func (i *Invoice) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				i.SubscriptionID = new(string)
 				*i.SubscriptionID = value.String
+			}
+		case invoice.FieldSubscriptionCustomerID:
+			if value, ok := values[j].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field subscription_customer_id", values[j])
+			} else if value.Valid {
+				i.SubscriptionCustomerID = new(string)
+				*i.SubscriptionCustomerID = value.String
 			}
 		case invoice.FieldInvoiceType:
 			if value, ok := values[j].(*sql.NullString); !ok {
@@ -504,6 +513,11 @@ func (i *Invoice) String() string {
 	builder.WriteString(", ")
 	if v := i.SubscriptionID; v != nil {
 		builder.WriteString("subscription_id=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := i.SubscriptionCustomerID; v != nil {
+		builder.WriteString("subscription_customer_id=")
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")

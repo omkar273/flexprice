@@ -343,6 +343,7 @@ func (s *invoiceService) CreateDraftInvoiceForSubscription(ctx context.Context, 
 	if referencePoint == types.ReferencePointCancel {
 		req.BillingReason = types.InvoiceBillingReasonProration
 	}
+	req.SubscriptionCustomerID = &sub.CustomerID
 	return s.CreateEmptyDraftInvoice(ctx, req)
 }
 
@@ -1764,6 +1765,7 @@ func (s *invoiceService) CreateSubscriptionInvoice(ctx context.Context, req *dto
 	if flowType == types.InvoiceFlowSubscriptionCreation {
 		draftReq.BillingReason = types.InvoiceBillingReasonSubscriptionCreate
 	}
+	draftReq.SubscriptionCustomerID = &subscription.CustomerID
 	draft, err := s.CreateEmptyDraftInvoice(ctx, draftReq)
 	if err != nil {
 		return nil, nil, err
