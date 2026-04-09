@@ -97,6 +97,9 @@ func (r *CreateFeatureRequest) ToFeature(ctx context.Context) (*feature.Feature,
 		}
 		feature.AlertSettings = r.AlertSettings
 	}
+	if feature.LookupKey == "" {
+		feature.LookupKey = types.GenerateLookupKey(r.Name)
+	}
 	return feature, nil
 }
 
