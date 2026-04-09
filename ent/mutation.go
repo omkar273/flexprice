@@ -26066,6 +26066,7 @@ type InvoiceMutation struct {
 	environment_id                *string
 	customer_id                   *string
 	subscription_id               *string
+	subscription_customer_id      *string
 	invoice_type                  *types.InvoiceType
 	invoice_status                *types.InvoiceStatus
 	payment_status                *types.PaymentStatus
@@ -26589,6 +26590,55 @@ func (m *InvoiceMutation) SubscriptionIDCleared() bool {
 func (m *InvoiceMutation) ResetSubscriptionID() {
 	m.subscription_id = nil
 	delete(m.clearedFields, invoice.FieldSubscriptionID)
+}
+
+// SetSubscriptionCustomerID sets the "subscription_customer_id" field.
+func (m *InvoiceMutation) SetSubscriptionCustomerID(s string) {
+	m.subscription_customer_id = &s
+}
+
+// SubscriptionCustomerID returns the value of the "subscription_customer_id" field in the mutation.
+func (m *InvoiceMutation) SubscriptionCustomerID() (r string, exists bool) {
+	v := m.subscription_customer_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubscriptionCustomerID returns the old "subscription_customer_id" field's value of the Invoice entity.
+// If the Invoice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InvoiceMutation) OldSubscriptionCustomerID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubscriptionCustomerID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubscriptionCustomerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubscriptionCustomerID: %w", err)
+	}
+	return oldValue.SubscriptionCustomerID, nil
+}
+
+// ClearSubscriptionCustomerID clears the value of the "subscription_customer_id" field.
+func (m *InvoiceMutation) ClearSubscriptionCustomerID() {
+	m.subscription_customer_id = nil
+	m.clearedFields[invoice.FieldSubscriptionCustomerID] = struct{}{}
+}
+
+// SubscriptionCustomerIDCleared returns if the "subscription_customer_id" field was cleared in this mutation.
+func (m *InvoiceMutation) SubscriptionCustomerIDCleared() bool {
+	_, ok := m.clearedFields[invoice.FieldSubscriptionCustomerID]
+	return ok
+}
+
+// ResetSubscriptionCustomerID resets all changes to the "subscription_customer_id" field.
+func (m *InvoiceMutation) ResetSubscriptionCustomerID() {
+	m.subscription_customer_id = nil
+	delete(m.clearedFields, invoice.FieldSubscriptionCustomerID)
 }
 
 // SetInvoiceType sets the "invoice_type" field.
@@ -28189,7 +28239,7 @@ func (m *InvoiceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InvoiceMutation) Fields() []string {
-	fields := make([]string, 0, 40)
+	fields := make([]string, 0, 41)
 	if m.tenant_id != nil {
 		fields = append(fields, invoice.FieldTenantID)
 	}
@@ -28216,6 +28266,9 @@ func (m *InvoiceMutation) Fields() []string {
 	}
 	if m.subscription_id != nil {
 		fields = append(fields, invoice.FieldSubscriptionID)
+	}
+	if m.subscription_customer_id != nil {
+		fields = append(fields, invoice.FieldSubscriptionCustomerID)
 	}
 	if m.invoice_type != nil {
 		fields = append(fields, invoice.FieldInvoiceType)
@@ -28336,6 +28389,8 @@ func (m *InvoiceMutation) Field(name string) (ent.Value, bool) {
 		return m.CustomerID()
 	case invoice.FieldSubscriptionID:
 		return m.SubscriptionID()
+	case invoice.FieldSubscriptionCustomerID:
+		return m.SubscriptionCustomerID()
 	case invoice.FieldInvoiceType:
 		return m.InvoiceType()
 	case invoice.FieldInvoiceStatus:
@@ -28425,6 +28480,8 @@ func (m *InvoiceMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCustomerID(ctx)
 	case invoice.FieldSubscriptionID:
 		return m.OldSubscriptionID(ctx)
+	case invoice.FieldSubscriptionCustomerID:
+		return m.OldSubscriptionCustomerID(ctx)
 	case invoice.FieldInvoiceType:
 		return m.OldInvoiceType(ctx)
 	case invoice.FieldInvoiceStatus:
@@ -28558,6 +28615,13 @@ func (m *InvoiceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSubscriptionID(v)
+		return nil
+	case invoice.FieldSubscriptionCustomerID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubscriptionCustomerID(v)
 		return nil
 	case invoice.FieldInvoiceType:
 		v, ok := value.(types.InvoiceType)
@@ -28845,6 +28909,9 @@ func (m *InvoiceMutation) ClearedFields() []string {
 	if m.FieldCleared(invoice.FieldSubscriptionID) {
 		fields = append(fields, invoice.FieldSubscriptionID)
 	}
+	if m.FieldCleared(invoice.FieldSubscriptionCustomerID) {
+		fields = append(fields, invoice.FieldSubscriptionCustomerID)
+	}
 	if m.FieldCleared(invoice.FieldSubtotal) {
 		fields = append(fields, invoice.FieldSubtotal)
 	}
@@ -28939,6 +29006,9 @@ func (m *InvoiceMutation) ClearField(name string) error {
 		return nil
 	case invoice.FieldSubscriptionID:
 		m.ClearSubscriptionID()
+		return nil
+	case invoice.FieldSubscriptionCustomerID:
+		m.ClearSubscriptionCustomerID()
 		return nil
 	case invoice.FieldSubtotal:
 		m.ClearSubtotal()
@@ -29043,6 +29113,9 @@ func (m *InvoiceMutation) ResetField(name string) error {
 		return nil
 	case invoice.FieldSubscriptionID:
 		m.ResetSubscriptionID()
+		return nil
+	case invoice.FieldSubscriptionCustomerID:
+		m.ResetSubscriptionCustomerID()
 		return nil
 	case invoice.FieldInvoiceType:
 		m.ResetInvoiceType()

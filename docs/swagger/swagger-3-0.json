@@ -15280,6 +15280,10 @@
               "$ref": "#/components/schemas/TaxRateResponse"
             }
           },
+          "subscription_customer_id": {
+            "type": "string",
+            "description": "subscription_customer_id is the subscription owner's customer ID when it differs from customer_id (invoicing customer)"
+          },
           "subscription_id": {
             "type": "string",
             "description": "subscription_id is the optional unique identifier of the subscription associated with this invoice"
@@ -18024,6 +18028,10 @@
           },
           "subscription": {
             "$ref": "#/components/schemas/SubscriptionResponse"
+          },
+          "subscription_customer_id": {
+            "type": "string",
+            "description": "subscription_customer_id is the subscription owner's customer ID (Subscription.CustomerID).\nIt may differ from customer_id when the subscription uses an invoicing customer."
           },
           "subscription_id": {
             "type": "string",
@@ -23581,6 +23589,10 @@
           "status": {
             "$ref": "#/components/schemas/types.Status"
           },
+          "subscription_customer_id": {
+            "type": "string",
+            "description": "subscription_customer_id filters invoices by the subscription owner's customer ID"
+          },
           "subscription_id": {
             "type": "string",
             "description": "subscription_id filters invoices generated for a specific subscription\nOnly returns invoices that were created as part of the specified subscription's billing"
@@ -24508,6 +24520,20 @@
           "SubscriptionStatusDraft"
         ],
         "x-speakeasy-name-override": "SubscriptionStatus"
+      },
+      "types.SubscriptionType": {
+        "type": "string",
+        "enum": [
+          "standalone",
+          "parent",
+          "inherited"
+        ],
+        "x-enum-varnames": [
+          "SubscriptionTypeStandalone",
+          "SubscriptionTypeParent",
+          "SubscriptionTypeInherited"
+        ],
+        "x-speakeasy-name-override": "SubscriptionType"
       },
       "types.TaskStatus": {
         "type": "string",
@@ -25903,20 +25929,6 @@
           "type": "string"
         },
         "x-speakeasy-name-override": "Metadata"
-      },
-      "types.SubscriptionType": {
-        "type": "string",
-        "enum": [
-          "standalone",
-          "parent",
-          "inherited"
-        ],
-        "x-enum-varnames": [
-          "SubscriptionTypeStandalone",
-          "SubscriptionTypeParent",
-          "SubscriptionTypeInherited"
-        ],
-        "x-speakeasy-name-override": "SubscriptionType"
       },
       "webhookDto.AlertWebhookPayload": {
         "type": "object",

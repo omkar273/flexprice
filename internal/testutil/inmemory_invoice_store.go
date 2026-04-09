@@ -77,6 +77,7 @@ func copyInvoice(inv *invoice.Invoice) *invoice.Invoice {
 		ID:                         inv.ID,
 		CustomerID:                 inv.CustomerID,
 		SubscriptionID:             inv.SubscriptionID,
+		SubscriptionCustomerID:     inv.SubscriptionCustomerID,
 		InvoiceType:                inv.InvoiceType,
 		InvoiceStatus:              inv.InvoiceStatus,
 		PaymentStatus:              inv.PaymentStatus,

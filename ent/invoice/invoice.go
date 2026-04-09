@@ -34,6 +34,8 @@ const (
 	FieldCustomerID = "customer_id"
 	// FieldSubscriptionID holds the string denoting the subscription_id field in the database.
 	FieldSubscriptionID = "subscription_id"
+	// FieldSubscriptionCustomerID holds the string denoting the subscription_customer_id field in the database.
+	FieldSubscriptionCustomerID = "subscription_customer_id"
 	// FieldInvoiceType holds the string denoting the invoice_type field in the database.
 	FieldInvoiceType = "invoice_type"
 	// FieldInvoiceStatus holds the string denoting the invoice_status field in the database.
@@ -130,6 +132,7 @@ var Columns = []string{
 	FieldEnvironmentID,
 	FieldCustomerID,
 	FieldSubscriptionID,
+	FieldSubscriptionCustomerID,
 	FieldInvoiceType,
 	FieldInvoiceStatus,
 	FieldPaymentStatus,
@@ -271,6 +274,11 @@ func ByCustomerID(opts ...sql.OrderTermOption) OrderOption {
 // BySubscriptionID orders the results by the subscription_id field.
 func BySubscriptionID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscriptionID, opts...).ToFunc()
+}
+
+// BySubscriptionCustomerID orders the results by the subscription_customer_id field.
+func BySubscriptionCustomerID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubscriptionCustomerID, opts...).ToFunc()
 }
 
 // ByInvoiceType orders the results by the invoice_type field.

@@ -158,19 +158,21 @@ func (r *CreateInvoiceRequest) ToComputeRequest() InvoiceComputeRequest {
 // draft invoice. No amounts, no line items, no coupons, no taxes — those are populated
 // later by ComputeInvoice. Used by CreateEmptyDraftInvoice and CreateDraftInvoiceForSubscription.
 type CreateDraftInvoiceRequest struct {
-	CustomerID     string                       `json:"customer_id" validate:"required"`
-	SubscriptionID *string                      `json:"subscription_id,omitempty"`
-	InvoiceType    types.InvoiceType            `json:"invoice_type" validate:"required"`
-	Currency       string                       `json:"currency" validate:"required"`
-	PeriodStart    *time.Time                   `json:"period_start,omitempty"`
-	PeriodEnd      *time.Time                   `json:"period_end,omitempty"`
-	BillingPeriod  *string                      `json:"billing_period,omitempty"`
-	BillingReason  types.InvoiceBillingReason   `json:"billing_reason,omitempty"`
-	Description    string                       `json:"description,omitempty"`
-	DueDate        *time.Time                   `json:"due_date,omitempty"`
-	Metadata       types.Metadata               `json:"metadata,omitempty"`
-	IdempotencyKey *string                      `json:"idempotency_key,omitempty"`
-	InvoicePDFURL  *string                      `json:"invoice_pdf_url,omitempty"`
+	CustomerID     string  `json:"customer_id" validate:"required"`
+	SubscriptionID *string `json:"subscription_id,omitempty"`
+	// SubscriptionCustomerID is the subscription owner's customer ID; set by service only (not in JSON).
+	SubscriptionCustomerID *string                    `json:"-"`
+	InvoiceType            types.InvoiceType          `json:"invoice_type" validate:"required"`
+	Currency               string                     `json:"currency" validate:"required"`
+	PeriodStart            *time.Time                 `json:"period_start,omitempty"`
+	PeriodEnd              *time.Time                 `json:"period_end,omitempty"`
+	BillingPeriod          *string                    `json:"billing_period,omitempty"`
+	BillingReason          types.InvoiceBillingReason `json:"billing_reason,omitempty"`
+	Description            string                     `json:"description,omitempty"`
+	DueDate                *time.Time                 `json:"due_date,omitempty"`
+	Metadata               types.Metadata             `json:"metadata,omitempty"`
+	IdempotencyKey         *string                    `json:"idempotency_key,omitempty"`
+	InvoicePDFURL          *string                    `json:"invoice_pdf_url,omitempty"`
 }
 
 // Validate validates the draft invoice creation request.
@@ -219,29 +221,30 @@ func (r *CreateDraftInvoiceRequest) ToDraftInvoice(ctx context.Context) (*invoic
 	}
 
 	return &invoice.Invoice{
-		ID:              types.GenerateUUIDWithPrefix(types.UUID_PREFIX_INVOICE),
-		CustomerID:      r.CustomerID,
-		SubscriptionID:  r.SubscriptionID,
-		InvoiceType:     r.InvoiceType,
-		Currency:        strings.ToLower(r.Currency),
-		AmountDue:       decimal.Zero,
-		Total:           decimal.Zero,
-		Subtotal:        decimal.Zero,
-		AmountPaid:      decimal.Zero,
-		AmountRemaining: decimal.Zero,
-		TotalDiscount:   decimal.Zero,
-		TotalTax:        decimal.Zero,
-		Description:     r.Description,
-		DueDate:         r.DueDate,
-		PeriodStart:     r.PeriodStart,
-		BillingPeriod:   r.BillingPeriod,
-		PeriodEnd:       r.PeriodEnd,
-		BillingReason:   string(r.BillingReason),
-		Metadata:        r.Metadata,
-		InvoicePDFURL:   r.InvoicePDFURL,
-		InvoiceStatus:   types.InvoiceStatusDraft,
-		PaymentStatus:   types.PaymentStatusPending,
-		BaseModel:       types.GetDefaultBaseModel(ctx),
+		ID:                     types.GenerateUUIDWithPrefix(types.UUID_PREFIX_INVOICE),
+		CustomerID:             r.CustomerID,
+		SubscriptionID:         r.SubscriptionID,
+		SubscriptionCustomerID: r.SubscriptionCustomerID,
+		InvoiceType:            r.InvoiceType,
+		Currency:               strings.ToLower(r.Currency),
+		AmountDue:              decimal.Zero,
+		Total:                  decimal.Zero,
+		Subtotal:               decimal.Zero,
+		AmountPaid:             decimal.Zero,
+		AmountRemaining:        decimal.Zero,
+		TotalDiscount:          decimal.Zero,
+		TotalTax:               decimal.Zero,
+		Description:            r.Description,
+		DueDate:                r.DueDate,
+		PeriodStart:            r.PeriodStart,
+		BillingPeriod:          r.BillingPeriod,
+		PeriodEnd:              r.PeriodEnd,
+		BillingReason:          string(r.BillingReason),
+		Metadata:               r.Metadata,
+		InvoicePDFURL:          r.InvoicePDFURL,
+		InvoiceStatus:          types.InvoiceStatusDraft,
+		PaymentStatus:          types.PaymentStatusPending,
+		BaseModel:              types.GetDefaultBaseModel(ctx),
 	}, nil
 }
 
