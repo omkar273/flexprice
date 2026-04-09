@@ -19,9 +19,34 @@ import (
 	"github.com/flexprice/flexprice/internal/pubsub/kafka"
 	pubsubRouter "github.com/flexprice/flexprice/internal/pubsub/router"
 	"github.com/flexprice/flexprice/internal/types"
+	goCache "github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
 )
+
+// meterCacheTTL is how long we cache meter lists per (tenant, environment, eventName).
+//
+// Why 10 minutes:
+//   - Meters are append-only in practice; existing meters never change after creation.
+//   - The TTL only matters for newly-created meters: a consumer process will start
+//     seeing a new meter within at most meterCacheTTL of it being created.
+//   - Using NoExpiration would be marginally faster but would require a process
+//     restart to pick up new meters. 10 minutes is a safe middle ground.
+//
+// Why in-process and not Redis:
+//   - The global cache.Type may be "redis", which adds a network hop on every
+//     lookup and would not improve latency over a fresh Postgres query.
+//   - Meter data per (tenant, environment, eventName) key is tiny (~KB), so a
+//     per-process copy across N consumer pods is perfectly fine.
+//
+// Memory footprint estimate (worst case):
+//   - 200 tenants × 20 event names × 10 meters × ~500 B/meter ≈ 20 MB
+//
+// Singleton guarantee:
+//   - This service is registered via fx.Provide() (main.go) and is therefore
+//     instantiated exactly once per process. The goCache.Cache inside it, and
+//     its single background cleanup goroutine, are also allocated exactly once.
+const meterCacheTTL = 10 * time.Minute
 
 // MeterUsageTrackingService handles meter-level usage tracking.
 // Unlike FeatureUsageTrackingService, this skips subscription/feature/price resolution.
@@ -39,6 +64,12 @@ type meterUsageTrackingService struct {
 	pubSub              pubsub.PubSub
 	meterUsageRepo      events.MeterUsageRepository
 	expressionEvaluator expression.Evaluator
+	// meterListCache is a dedicated in-memory cache for meter lists keyed by
+	// "tenantID:environmentID:eventName". It is intentionally separate from the
+	// global cache so it is always in-memory (fast) and unaffected by the
+	// global cache.Type config (which may be Redis). Meters are immutable after
+	// creation so no active invalidation is required.
+	meterListCache *goCache.Cache
 }
 
 // NewMeterUsageTrackingService creates a new meter usage tracking service
@@ -50,6 +81,7 @@ func NewMeterUsageTrackingService(
 		ServiceParams:       params,
 		meterUsageRepo:      meterUsageRepo,
 		expressionEvaluator: expression.NewCELEvaluator(),
+		meterListCache:      goCache.New(meterCacheTTL, 2*meterCacheTTL),
 	}
 
 	ps, err := kafka.NewPubSubFromConfig(
@@ -161,14 +193,45 @@ func (s *meterUsageTrackingService) processMessage(msg *message.Message) error {
 	return nil
 }
 
+// getMetersForEvent returns meters matching the given event name.
+// Results are cached in-process for meterCacheTTL to avoid a Postgres round-trip
+// on every Kafka message. The cache is nil-safe: if the service was constructed
+// without a cache (e.g. directly in unit tests) it falls through to the repo.
+func (s *meterUsageTrackingService) getMetersForEvent(ctx context.Context, eventName string) ([]*meter.Meter, error) {
+	if s.meterListCache != nil {
+		tenantID := types.GetTenantID(ctx)
+		environmentID := types.GetEnvironmentID(ctx)
+		cacheKey := tenantID + ":" + environmentID + ":" + eventName
+
+		if cached, ok := s.meterListCache.Get(cacheKey); ok {
+			return cached.([]*meter.Meter), nil
+		}
+
+		meterFilter := types.NewNoLimitMeterFilter()
+		meterFilter.EventName = eventName
+
+		meters, err := s.MeterRepo.List(ctx, meterFilter)
+		if err != nil {
+			return nil, err
+		}
+
+		// goCache.DefaultExpiration (0) means "use the TTL set at New() time",
+		// i.e. meterCacheTTL. The stored slice is never mutated after insertion so
+		// concurrent reads do not need additional synchronisation.
+		s.meterListCache.Set(cacheKey, meters, goCache.DefaultExpiration)
+		return meters, nil
+	}
+
+	meterFilter := types.NewNoLimitMeterFilter()
+	meterFilter.EventName = eventName
+	return s.MeterRepo.List(ctx, meterFilter)
+}
+
 // processEvent matches an event to meters and writes meter_usage records.
 // No subscription/feature/price resolution needed.
 func (s *meterUsageTrackingService) processEvent(ctx context.Context, event *events.Event) error {
-	// Step 1: Lookup meters by event name
-	meterFilter := types.NewNoLimitMeterFilter()
-	meterFilter.EventName = event.EventName
-
-	meters, err := s.MeterRepo.List(ctx, meterFilter)
+	// Step 1: Lookup meters by event name (cache-first)
+	meters, err := s.getMetersForEvent(ctx, event.EventName)
 	if err != nil {
 		return fmt.Errorf("failed to list meters for event %s: %w", event.EventName, err)
 	}
