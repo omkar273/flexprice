@@ -220,6 +220,13 @@ func (s *meterUsageTrackingService) processEvent(ctx context.Context, event *eve
 		return nil
 	}
 
+	// Clear properties for tenants not in the allowlist
+	if !s.isPropertiesEnabled(ctx) {
+		for _, rec := range records {
+			rec.Properties = nil
+		}
+	}
+
 	// Step 3: Bulk insert
 	if err := s.meterUsageRepo.BulkInsertMeterUsage(ctx, records); err != nil {
 		return fmt.Errorf("failed to bulk insert meter usage: %w", err)
@@ -231,6 +238,17 @@ func (s *meterUsageTrackingService) processEvent(ctx context.Context, event *eve
 	)
 
 	return nil
+}
+
+// isPropertiesEnabled checks if the current tenant is in the properties allowlist
+func (s *meterUsageTrackingService) isPropertiesEnabled(ctx context.Context) bool {
+	tenantID, _ := ctx.Value(types.CtxTenantID).(string)
+	for _, t := range s.Config.MeterUsageTracking.PropertiesEnabledTenants {
+		if t == tenantID {
+			return true
+		}
+	}
+	return false
 }
 
 // checkMeterFilters validates that all meter filters match the event properties
@@ -259,16 +277,16 @@ func (s *meterUsageTrackingService) checkMeterFilters(event *events.Event, filte
 // 1. event_name + event_id // for non COUNT_UNIQUE aggregation types
 // 2. event_name + event_field_name + event_field_value // for COUNT_UNIQUE aggregation types
 func (s *meterUsageTrackingService) generateUniqueHash(event *events.Event, m *meter.Meter) string {
-	hashStr := fmt.Sprintf("%s:%s", event.EventName, event.ID)
 
 	if m.Aggregation.Type == types.AggregationCountUnique && m.Aggregation.Field != "" {
 		if fieldValue, ok := event.Properties[m.Aggregation.Field]; ok {
-			hashStr = fmt.Sprintf("%s:%s:%v", event.EventName, m.Aggregation.Field, fieldValue)
+			hashStr := fmt.Sprintf("%s:%s:%v", event.EventName, m.Aggregation.Field, fieldValue)
+			hash := sha256.Sum256([]byte(hashStr))
+			return hex.EncodeToString(hash[:])
 		}
 	}
 
-	hash := sha256.Sum256([]byte(hashStr))
-	return hex.EncodeToString(hash[:])
+	return ""
 }
 
 // extractQuantity extracts the quantity from event properties based on the meter's aggregation config.
