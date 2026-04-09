@@ -10,6 +10,7 @@ import (
 	domainEntitlement "github.com/flexprice/flexprice/internal/domain/entitlement"
 	"github.com/flexprice/flexprice/internal/domain/events"
 	domainGroup "github.com/flexprice/flexprice/internal/domain/group"
+	domainFeature "github.com/flexprice/flexprice/internal/domain/feature"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/domain/planpricesync"
 	domainPrice "github.com/flexprice/flexprice/internal/domain/price"
@@ -909,6 +910,17 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		}
 	}
 
+	// For cross-env cloning, resolve feature/meter ID mappings by looking up each source
+	// feature's lookup_key in the target environment. This is the single source of truth —
+	// whether called from the env-clone workflow or a direct API call, the same resolution
+	// logic runs so entitlement FeatureIDs and usage-price MeterIDs always point to the
+	// correct target-env entities.
+	featureIDMap := make(map[string]string)
+	meterIDMap := make(map[string]string)
+	if req.TargetEnvironmentID != "" {
+		featureIDMap, meterIDMap = s.buildCrossEnvIDMaps(ctx, targetCtx)
+	}
+
 	emptyLookupKey := ""
 	entityTypePlan := types.PRICE_ENTITY_TYPE_PLAN
 	entEntityTypePlan := types.ENTITLEMENT_ENTITY_TYPE_PLAN
@@ -928,16 +940,29 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 				overrides.GroupID = lo.ToPtr(newGID)
 			}
 		}
+		// Remap meter ID: either from workflow-provided map or from lookup-key resolution above.
+		if p.MeterID != "" {
+			if newMID, ok := meterIDMap[p.MeterID]; ok && newMID != "" {
+				overrides.MeterID = &newMID
+			}
+		}
 		newPrices = append(newPrices, p.CopyWith(targetCtx, overrides))
 	}
 
 	newEntitlements := make([]*domainEntitlement.Entitlement, 0, len(sourceEntitlements))
 	for _, e := range sourceEntitlements {
-		newEntitlements = append(newEntitlements, e.CopyWith(targetCtx, &domainEntitlement.EntitlementCloneOverrides{
+		entOverrides := &domainEntitlement.EntitlementCloneOverrides{
 			ID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_ENTITLEMENT)),
 			EntityType: &entEntityTypePlan,
 			EntityID:   &newPlan.ID,
-		}))
+		}
+		// Remap feature ID: either from workflow-provided map or from lookup-key resolution above.
+		if e.FeatureID != "" {
+			if newFID, ok := featureIDMap[e.FeatureID]; ok && newFID != "" {
+				entOverrides.FeatureID = &newFID
+			}
+		}
+		newEntitlements = append(newEntitlements, e.CopyWith(targetCtx, entOverrides))
 	}
 
 	newGrants := make([]*domainCreditGrant.CreditGrant, 0, len(sourceGrants))
@@ -1013,6 +1038,53 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		Entitlements: entitlementResponses,
 		CreditGrants: grantResponses,
 	}, nil
+}
+
+// buildCrossEnvIDMaps resolves feature and meter ID translations for cross-env plan cloning.
+// lookup_key is the stable identifier across environments — this function fetches all published
+// features from source and target, joins them by lookup_key, and returns two simple maps:
+//   - featureIDMap: srcFeatureID → tgtFeatureID (for entitlements)
+//   - meterIDMap:   srcMeterID   → tgtMeterID   (for usage prices)
+func (s *planService) buildCrossEnvIDMaps(
+	sourceCtx, targetCtx context.Context,
+) (featureIDMap, meterIDMap map[string]string) {
+	featureIDMap = make(map[string]string)
+	meterIDMap = make(map[string]string)
+
+	publishedFilter := types.NewNoLimitFeatureFilter()
+	publishedFilter.QueryFilter.Status = lo.ToPtr(types.StatusPublished)
+
+	sourceFeatures, err := s.FeatureRepo.List(sourceCtx, publishedFilter)
+	if err != nil {
+		s.Logger.Warnw("buildCrossEnvIDMaps: failed to fetch source features", "error", err)
+		return
+	}
+
+	targetFeatures, err := s.FeatureRepo.List(targetCtx, publishedFilter)
+	if err != nil {
+		s.Logger.Warnw("buildCrossEnvIDMaps: failed to fetch target features", "error", err)
+		return
+	}
+
+	// Index target features by lookup_key
+	tgtByKey := make(map[string]*domainFeature.Feature, len(targetFeatures))
+	for _, f := range targetFeatures {
+		tgtByKey[f.LookupKey] = f
+	}
+
+	// Join source → target by lookup_key
+	for _, src := range sourceFeatures {
+		tgt, ok := tgtByKey[src.LookupKey]
+		if !ok {
+			continue
+		}
+		featureIDMap[src.ID] = tgt.ID
+		if src.MeterID != "" && tgt.MeterID != "" {
+			meterIDMap[src.MeterID] = tgt.MeterID
+		}
+	}
+
+	return
 }
 
 // resolveOrCreateGroup looks up the source group and finds or creates a matching

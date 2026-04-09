@@ -35,6 +35,7 @@ type EntitlementCloneOverrides struct {
 	ID            *string
 	EntityType    *types.EntitlementEntityType
 	EntityID      *string
+	FeatureID     *string // nil = keep existing; non-nil = remap (e.g. cross-env clone)
 	EnvironmentID *string // nil = derive from ctx; non-nil = use explicit value
 	BaseModel     *types.BaseModel
 }
@@ -58,6 +59,9 @@ func (e *Entitlement) CopyWith(ctx context.Context, overrides *EntitlementCloneO
 	}
 	if overrides.EntityID != nil {
 		out.EntityID = lo.FromPtr(overrides.EntityID)
+	}
+	if overrides.FeatureID != nil {
+		out.FeatureID = lo.FromPtr(overrides.FeatureID)
 	}
 	if overrides.BaseModel != nil {
 		out.BaseModel = lo.FromPtr(overrides.BaseModel)

@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	WorkflowEnvironmentClone          = "EnvironmentCloneWorkflow"
-	ActivityCloneEnvironmentFeatures   = "CloneEnvironmentFeatures"
-	ActivityCloneEnvironmentPlans      = "CloneEnvironmentPlans"
+	WorkflowEnvironmentClone         = "EnvironmentCloneWorkflow"
+	ActivityCloneEnvironmentFeatures = "CloneEnvironmentFeatures"
+	ActivityCloneEnvironmentPlans    = "CloneEnvironmentPlans"
 )
 
 // EnvironmentCloneResult is the output of the environment clone workflow.

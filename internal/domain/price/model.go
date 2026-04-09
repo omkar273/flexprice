@@ -140,6 +140,7 @@ type PriceCloneOverrides struct {
 	LookupKey     *string
 	ParentPriceID *string // nil = clear (e.g. for clones); non-nil = set value
 	GroupID       *string // nil = keep existing; non-nil = set value
+	MeterID       *string // nil = keep existing; non-nil = remap (e.g. cross-env clone)
 	EnvironmentID *string // nil = derive from ctx; non-nil = use explicit value
 	BaseModel     *types.BaseModel
 }
@@ -185,6 +186,9 @@ func (p *Price) CopyWith(ctx context.Context, overrides *PriceCloneOverrides) *P
 	}
 	if overrides.GroupID != nil {
 		out.GroupID = lo.FromPtr(overrides.GroupID)
+	}
+	if overrides.MeterID != nil {
+		out.MeterID = lo.FromPtr(overrides.MeterID)
 	}
 
 	return lo.ToPtr(out)
