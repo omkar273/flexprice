@@ -13,6 +13,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/entitlement"
 	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/invoice"
+	meterDomain "github.com/flexprice/flexprice/internal/domain/meter"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/interfaces"
 
@@ -5634,15 +5635,33 @@ func (s *subscriptionService) GetMeterUsageBySubscription(ctx context.Context, r
 		}
 	}
 
-	aggTypeToMeterIDs := make(map[types.AggregationType][]string)
-	for meterID, aggType := range meterAggType {
-		aggTypeToMeterIDs[aggType] = append(aggTypeToMeterIDs[aggType], meterID)
+	// Separate bucketed meters (MAX/SUM with bucket_size) from non-bucketed meters.
+	// Bucketed meters need windowed queries with per-line-item time ranges,
+	// while non-bucketed meters can be batched by aggregation type.
+	bucketedMeterIDs := make(map[string]bool)
+	meterDomainMap := make(map[string]*meterDomain.Meter) // converted meter objects for bucketed meters
+	for meterID, meterResp := range meterMap {
+		if meterResp != nil {
+			m := meterResp.ToMeter()
+			if m.IsBucketedMaxMeter() || m.IsBucketedSumMeter() {
+				bucketedMeterIDs[meterID] = true
+				meterDomainMap[meterID] = m
+			}
+		}
 	}
 
-	// Query meter_usage for each aggregation-type group
-	useFinal := req.Source == string(types.UsageSourceInvoiceCreation)
-	meterResults := make(map[string]*events.MeterUsageAggregationResult)
+	// Only non-bucketed meters go into the batch GetUsageMultiMeter calls
+	aggTypeToMeterIDs := make(map[types.AggregationType][]string)
+	for meterID, aggType := range meterAggType {
+		if !bucketedMeterIDs[meterID] {
+			aggTypeToMeterIDs[aggType] = append(aggTypeToMeterIDs[aggType], meterID)
+		}
+	}
 
+	useFinal := req.Source == string(types.UsageSourceInvoiceCreation)
+
+	// --- Query non-bucketed meters via GetUsageMultiMeter (scalar, batched) ---
+	meterResults := make(map[string]*events.MeterUsageAggregationResult)
 	for aggType, meterIDs := range aggTypeToMeterIDs {
 		results, err := s.MeterUsageRepo.GetUsageMultiMeter(ctx, &events.MeterUsageQueryParams{
 			TenantID:            types.GetTenantID(ctx),
@@ -5665,6 +5684,7 @@ func (s *subscriptionService) GetMeterUsageBySubscription(ctx context.Context, r
 	s.Logger.DebugwCtx(ctx, "fetched meter usage results",
 		"meter_ids", lo.Keys(meterResults),
 		"total_meters_with_usage", len(meterResults),
+		"bucketed_meter_count", len(bucketedMeterIDs),
 		"subscription_id", req.SubscriptionID)
 
 	// Map results back to line items and build charges
@@ -5672,6 +5692,7 @@ func (s *subscriptionService) GetMeterUsageBySubscription(ctx context.Context, r
 	totalCost := decimal.Zero
 	processedLineItems := make(map[string]bool)
 
+	// Build charges for non-bucketed meters (flat scalar totals)
 	for meterID, result := range meterResults {
 		items := meterToLineItems[meterID]
 		for _, item := range items {
@@ -5702,6 +5723,59 @@ func (s *subscriptionService) GetMeterUsageBySubscription(ctx context.Context, r
 
 			if m := meterMap[meterID]; m != nil {
 				for _, filter := range m.Filters {
+					charge.FilterValues[filter.Key] = filter.Values
+				}
+			}
+
+			usageCharges = append(usageCharges, charge)
+			processedLineItems[item.ID] = true
+		}
+	}
+
+	// --- Query bucketed meters per line item (windowed, with BucketedUsageResult) ---
+	for meterID := range bucketedMeterIDs {
+		m := meterDomainMap[meterID]
+		items := meterToLineItems[meterID]
+		for _, item := range items {
+			priceObj := priceMap[item.PriceID]
+			if priceObj == nil {
+				s.Logger.WarnwCtx(ctx, "price object not found for bucketed meter usage, skipping",
+					"price_id", item.PriceID,
+					"meter_id", meterID,
+					"subscription_id", req.SubscriptionID)
+				continue
+			}
+
+			itemStart := item.GetPeriodStart(usageStartTime)
+			itemEnd := item.GetPeriodEnd(usageEndTime)
+
+			usageResult, err := s.queryBucketedMeterUsage(
+				ctx, m, externalCustomerIDs,
+				itemStart, itemEnd, &sub.BillingAnchor, useFinal,
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to query bucketed meter usage for meter %s: %w", meterID, err)
+			}
+
+			hasGroupBy := m.IsBucketedMaxMeter() && m.Aggregation.GroupBy != ""
+			bucketedCost := calculateBucketedMeterCost(ctx, priceService, priceObj, usageResult, hasGroupBy)
+			totalCost = totalCost.Add(bucketedCost.Amount)
+
+			charge := &dto.SubscriptionUsageByMetersResponse{
+				SubscriptionLineItemID: item.ID,
+				Amount:                 bucketedCost.Amount.InexactFloat64(),
+				Currency:               priceObj.Currency,
+				DisplayAmount:          fmt.Sprintf("%.2f %s", bucketedCost.Amount.InexactFloat64(), priceObj.Currency),
+				Quantity:               bucketedCost.Quantity.InexactFloat64(),
+				FilterValues:           make(price.JSONBFilters),
+				MeterID:                meterID,
+				MeterDisplayName:       meterDisplayNames[meterID],
+				Price:                  priceObj,
+				BucketedUsageResult:    usageResult,
+			}
+
+			if meterResp := meterMap[meterID]; meterResp != nil {
+				for _, filter := range meterResp.Filters {
 					charge.FilterValues[filter.Key] = filter.Values
 				}
 			}
@@ -5866,6 +5940,34 @@ func (s *subscriptionService) GetMeterUsageBySubscription(ctx context.Context, r
 		"currency", response.Currency)
 
 	return response, nil
+}
+
+// queryBucketedMeterUsage queries the meter_usage table for a single bucketed meter,
+// returning a per-bucket AggregationResult suitable for calculateBucketedMeterCost.
+func (s *subscriptionService) queryBucketedMeterUsage(
+	ctx context.Context,
+	m *meterDomain.Meter,
+	externalCustomerIDs []string,
+	periodStart, periodEnd time.Time,
+	billingAnchor *time.Time,
+	useFinal bool,
+) (*events.AggregationResult, error) {
+	aggType := m.Aggregation.Type
+	groupBy := m.Aggregation.GroupBy
+	params := &events.MeterUsageQueryParams{
+		TenantID:            types.GetTenantID(ctx),
+		EnvironmentID:       types.GetEnvironmentID(ctx),
+		ExternalCustomerIDs: externalCustomerIDs,
+		MeterID:             m.ID,
+		StartTime:           periodStart,
+		EndTime:             periodEnd,
+		AggregationType:     aggType,
+		WindowSize:          m.Aggregation.BucketSize,
+		BillingAnchor:       billingAnchor,
+		GroupByProperty:     groupBy,
+		UseFinal:            useFinal,
+	}
+	return s.MeterUsageRepo.GetUsageForBucketedMeters(ctx, params)
 }
 
 // GetSubscriptionEntitlements retrieves all entitlements associated with a subscription

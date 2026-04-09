@@ -208,24 +208,6 @@ func (s *meterUsageTrackingService) processEvent(ctx context.Context, event *eve
 
 		uniqueHash := s.generateUniqueHash(event, m)
 
-		// Dedup check: skip if this event+meter combo already exists in ClickHouse
-		isDup, err := s.meterUsageRepo.IsDuplicate(ctx, m.ID, uniqueHash)
-		if err != nil {
-			s.Logger.Errorw("failed to check for duplicate meter usage, skipping meter",
-				"event_id", event.ID,
-				"meter_id", m.ID,
-				"error", err,
-			)
-			continue
-		}
-		if isDup {
-			s.Logger.Debugw("duplicate meter usage record, skipping",
-				"event_id", event.ID,
-				"meter_id", m.ID,
-			)
-			continue
-		}
-
 		records = append(records, &events.MeterUsage{
 			Event:      *event,
 			MeterID:    m.ID,
@@ -272,9 +254,10 @@ func (s *meterUsageTrackingService) checkMeterFilters(event *events.Event, filte
 	return true
 }
 
-// generateUniqueHash generates a SHA256 dedup hash.
-// For COUNT_UNIQUE: hash of event_name:field_name:field_value (dedup at aggregation level).
-// For all others: hash of event_name:event_id.
+// Generate a unique hash for deduplication
+// there are 2 cases:
+// 1. event_name + event_id // for non COUNT_UNIQUE aggregation types
+// 2. event_name + event_field_name + event_field_value // for COUNT_UNIQUE aggregation types
 func (s *meterUsageTrackingService) generateUniqueHash(event *events.Event, m *meter.Meter) string {
 	hashStr := fmt.Sprintf("%s:%s", event.EventName, event.ID)
 
