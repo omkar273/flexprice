@@ -26,7 +26,8 @@ type Handlers struct {
 	Plan                   *v1.PlanHandler
 	Subscription           *v1.SubscriptionHandler
 	SubscriptionPause      *v1.SubscriptionPauseHandler
-	SubscriptionChange     *v1.SubscriptionChangeHandler
+	SubscriptionChange         *v1.SubscriptionChangeHandler
+	SubscriptionModification   *v1.SubscriptionModificationHandler
 	SubscriptionSchedule   *v1.SubscriptionScheduleHandler
 	Wallet                 *v1.WalletHandler
 	Tenant                 *v1.TenantHandler
@@ -290,7 +291,8 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			// Subscription plan changes (upgrade/downgrade)
 			subscription.POST("/:id/change/preview", handlers.SubscriptionChange.PreviewSubscriptionChange)
 			subscription.POST("/:id/change/execute", handlers.SubscriptionChange.ExecuteSubscriptionChange)
-			subscription.POST("/:id/modify/execute", handlers.Subscription.ExecuteSubscriptionModify)
+			subscription.POST(":id/modify/execute", handlers.SubscriptionModification.Execute)
+			subscription.POST(":id/modify/preview", handlers.SubscriptionModification.Preview)
 
 			// Subscription line item management
 			subscription.POST("/:id/lineitems", handlers.Subscription.AddSubscriptionLineItem)

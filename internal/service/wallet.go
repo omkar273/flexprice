@@ -90,8 +90,10 @@ type WalletService interface {
 	// CheckBalanceThresholds checks if wallet balance is below threshold and triggers alerts
 	CheckBalanceThresholds(ctx context.Context, w *wallet.Wallet, balance *dto.WalletBalanceResponse) error
 
-	// TopUpWalletForProratedCharge tops up a wallet for proration credits from subscription changes
-	TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string) error
+	// TopUpWalletForProratedCharge tops up a wallet for proration credits from subscription changes.
+	// idempotencyKey should be a stable string derived from the change (e.g. lineItemID + effectiveDate)
+	// to prevent duplicate credits on retries.
+	TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string, idempotencyKey string) error
 
 	// CompletePurchasedCreditTransaction completes a pending wallet transaction when payment succeeds
 	CompletePurchasedCreditTransactionWithRetry(ctx context.Context, walletTransactionID string) error
@@ -2218,7 +2220,7 @@ func (s *walletService) CheckBalanceThresholds(ctx context.Context, w *wallet.Wa
 	return nil
 }
 
-func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string) error {
+func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, customerID string, amount decimal.Decimal, currency string, idempotencyKey string) error {
 	if customerID == "" {
 		return ierr.NewError("customer_id is required").
 			WithHint("Customer ID is required for wallet top-up").
@@ -2257,23 +2259,21 @@ func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, custom
 			Mark(ierr.ErrDatabase)
 	}
 
-	// Find or create a suitable wallet for the proration credit
-	// Use postpaid wallet since proration credits should be usable for payments
-	// and only postpaid wallets can be used for payments
-
+	// Find or create a suitable prepaid wallet for the proration credit.
+	// Prepaid wallets represent customer-owned balance that can be consumed on future invoices.
 	var selectedWallet *dto.WalletResponse
 	for _, w := range existingWallets {
 		if w.WalletStatus == types.WalletStatusActive &&
 			types.IsMatchingCurrency(w.Currency, currency) &&
-			w.WalletType == types.WalletTypePostPaid {
+			w.WalletType == types.WalletTypePrePaid {
 			selectedWallet = w
 			break
 		}
 	}
 
-	// Create a new wallet if none exists
+	// Create a new prepaid wallet if none exists
 	if selectedWallet == nil {
-		s.Logger.InfowCtx(ctx, "creating new wallet for proration credit",
+		s.Logger.InfowCtx(ctx, "creating new prepaid wallet for proration credit",
 			"customer_id", customerID,
 			"currency", currency,
 			"amount", amount.String())
@@ -2283,7 +2283,7 @@ func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, custom
 			CustomerID:     customerID,
 			Currency:       currency,
 			ConversionRate: decimal.NewFromInt(1), // 1:1 conversion rate for credits
-			WalletType:     types.WalletTypePostPaid,
+			WalletType:     types.WalletTypePrePaid,
 			Metadata: types.Metadata{
 				"created_for": "proration_credit",
 				"source":      "subscription_change",
@@ -2311,7 +2311,7 @@ func (s *walletService) TopUpWalletForProratedCharge(ctx context.Context, custom
 			"source":      "subscription_change_proration",
 			"customer_id": customerID,
 		},
-		IdempotencyKey: lo.ToPtr(fmt.Sprintf("proration_credit_%s_%s", customerID, time.Now().Format("20060102150405"))),
+		IdempotencyKey: lo.ToPtr(idempotencyKey),
 	}
 
 	_, err = s.TopUpWallet(ctx, selectedWallet.ID, topUpReq)

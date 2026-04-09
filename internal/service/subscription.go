@@ -1641,77 +1641,6 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 	return s.GetSubscription(ctx, subscriptionID)
 }
 
-// ExecuteSubscriptionModify adds inherited child subscriptions for external customer IDs on an active standalone or parent subscription.
-func (s *subscriptionService) ExecuteSubscriptionModify(ctx context.Context, subscriptionID string, req dto.ExecuteSubscriptionInheritanceRequest) (*dto.SubscriptionResponse, error) {
-	if err := req.Validate(); err != nil {
-		return nil, err
-	}
-
-	sub, err := s.SubRepo.Get(ctx, subscriptionID)
-	if err != nil {
-		return nil, err
-	}
-
-	if sub.SubscriptionType == types.SubscriptionTypeInherited {
-		return nil, ierr.NewError("inherited subscription cannot add inheritance children").
-			WithHint("Use the parent subscription to add customers to inheritance").
-			WithReportableDetails(map[string]interface{}{"subscription_id": subscriptionID}).
-			Mark(ierr.ErrValidation)
-	}
-
-	if sub.SubscriptionStatus != types.SubscriptionStatusActive {
-		return nil, ierr.NewError("subscription is not active").
-			WithHint("The subscription must be active to add inherited customers").
-			WithReportableDetails(map[string]interface{}{"subscription_id": subscriptionID, "subscription_status": sub.SubscriptionStatus}).
-			Mark(ierr.ErrValidation)
-	}
-
-	childCustomerIDs, err := s.resolveExternalCustomersForInheritance(ctx, sub.CustomerID, req.ExternalCustomerIDsToInheritSubscription)
-	if err != nil {
-		return nil, err
-	}
-
-	existingInherited, err := s.getInheritedSubscriptions(ctx, subscriptionID)
-	if err != nil {
-		return nil, err
-	}
-	existingByCustomer := lo.SliceToMap(existingInherited, func(ch *subscription.Subscription) (string, bool) {
-		return ch.CustomerID, true
-	})
-	for _, cid := range childCustomerIDs {
-		if _, dup := existingByCustomer[cid]; dup {
-			return nil, ierr.NewError("customer already inherits this subscription").
-				WithHint("Each customer may only have one inherited subscription per parent").
-				WithReportableDetails(map[string]interface{}{
-					"subscription_id": subscriptionID,
-					"customer_id":     cid,
-				}).
-				Mark(ierr.ErrValidation)
-		}
-	}
-
-	err = s.DB.WithTx(ctx, func(txCtx context.Context) error {
-		if sub.SubscriptionType == types.SubscriptionTypeStandalone {
-			sub.SubscriptionType = types.SubscriptionTypeParent
-			err := s.SubRepo.Update(txCtx, sub)
-			if err != nil {
-				return err
-			}
-		}
-		for _, childID := range childCustomerIDs {
-			if err := s.createInheritedSubscriptions(txCtx, sub, childID); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	s.publishSystemEvent(ctx, types.WebhookEventSubscriptionUpdated, subscriptionID)
-	return s.GetSubscription(ctx, subscriptionID)
-}
 
 // CancelSubscription provides enhanced cancellation with proration support
 func (s *subscriptionService) CancelSubscription(
@@ -1908,7 +1837,8 @@ func (s *subscriptionService) CancelSubscription(
 		// Step 9: Top up wallet for proration credit (only if there's a credit amount)
 		if totalCreditAmount.GreaterThan(decimal.Zero) {
 			walletService := NewWalletService(s.ServiceParams)
-			err = walletService.TopUpWalletForProratedCharge(ctx, subscription.CustomerID, totalCreditAmount.Abs(), subscription.Currency)
+			cancelKey := s.buildCancellationProrationKey(subscription, req, effectiveDate)
+			err = walletService.TopUpWalletForProratedCharge(ctx, subscription.CustomerID, totalCreditAmount.Abs(), subscription.Currency, cancelKey)
 			if err != nil {
 				return err
 			}
@@ -4904,6 +4834,32 @@ func (s *subscriptionService) determineEffectiveDate(
 			WithHintf("Unsupported cancellation type: %s", cancellationType).
 			Mark(ierr.ErrValidation)
 	}
+}
+
+// buildCancellationProrationKey returns a stable idempotency key for wallet proration credits on cancel.
+// For immediate cancellation, effectiveDate is time.Now() and must not be used alone (retries would change it).
+// For other cancellation types, effectiveDate is already deterministic from subscription or request.
+func (s *subscriptionService) buildCancellationProrationKey(
+	sub *subscription.Subscription,
+	req *dto.CancelSubscriptionRequest,
+	effectiveDate time.Time,
+) string {
+	ct := string(req.CancellationType)
+	if req.CancellationType == types.CancellationTypeImmediate {
+		return fmt.Sprintf(
+			"proration_credit_cancel|%s|%s|%s|%s",
+			sub.ID,
+			ct,
+			sub.CurrentPeriodStart.UTC().Format(time.RFC3339Nano),
+			sub.CurrentPeriodEnd.UTC().Format(time.RFC3339Nano),
+		)
+	}
+	return fmt.Sprintf(
+		"proration_credit_cancel|%s|%s|%s",
+		sub.ID,
+		ct,
+		effectiveDate.UTC().Format(time.RFC3339Nano),
+	)
 }
 
 // convertProrationResultToDetails converts SubscriptionProrationResult to response format
