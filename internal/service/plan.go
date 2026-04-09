@@ -811,25 +811,15 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 	// Determine target environment: use request override or source plan's environment
 	targetEnvID := sourcePlan.EnvironmentID
 	if req.TargetEnvironmentID != "" {
-		if req.TargetEnvironmentID == sourcePlan.EnvironmentID {
-			return nil, ierr.NewError("target environment must be different from source environment").
-				WithHint("Use the standard clone endpoint for same-environment cloning, or omit target_environment_id").
-				Mark(ierr.ErrValidation)
+		// Validate target environment exists before rebinding context
+		if _, err := s.EnvironmentRepo.Get(ctx, req.TargetEnvironmentID); err != nil {
+			return nil, err
 		}
 		targetEnvID = req.TargetEnvironmentID
 	}
 
 	// Use target environment context for uniqueness checks and entity creation
 	targetCtx := types.SetEnvironmentID(ctx, targetEnvID)
-
-	// Validate target environment exists before writing to it
-	if req.TargetEnvironmentID != "" {
-		if _, err := s.EnvironmentRepo.Get(targetCtx, targetEnvID); err != nil {
-			return nil, ierr.WithError(err).
-				WithHint("Target environment not found").
-				Mark(ierr.ErrNotFound)
-		}
-	}
 
 	// GetByLookupKey only matches published plans, so a successful lookup means the
 	// key is already taken — covers both "same as source" and "taken by another plan".
@@ -875,11 +865,6 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		return nil, err
 	}
 
-	// Resolve fields: request overrides take precedence over source values
-	description := sourcePlan.Description
-	if req.Description != nil {
-		description = *req.Description
-	}
 	// Merge metadata: source plan first, then req overlay (req overwrites/adds), then source_plan_id
 	merged := make(types.Metadata, len(sourcePlan.Metadata)+len(req.Metadata)+1)
 	for k, v := range sourcePlan.Metadata {
@@ -889,23 +874,16 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 		merged[k] = v
 	}
 	merged["source_plan_id"] = id
-	metadata := merged
 
-	displayOrder := sourcePlan.DisplayOrder
-	if req.DisplayOrder != nil {
-		displayOrder = req.DisplayOrder
-	}
-
-	newPlan := &plan.Plan{
-		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PLAN),
-		Name:          req.Name,
-		LookupKey:     req.LookupKey,
-		Description:   description,
-		EnvironmentID: targetEnvID,
-		Metadata:      metadata,
-		DisplayOrder:  displayOrder,
-		BaseModel:     types.GetDefaultBaseModel(targetCtx),
-	}
+	newPlan := sourcePlan.CopyWith(targetCtx, &plan.PlanCloneOverrides{
+		ID:            lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PLAN)),
+		Name:          &req.Name,
+		LookupKey:     &req.LookupKey,
+		Description:   req.Description,
+		EnvironmentID: &targetEnvID,
+		Metadata:      merged,
+		DisplayOrder:  req.DisplayOrder,
+	})
 
 	// For cross-env cloning, resolve price groups in the target environment.
 	// Build a mapping from source group ID → target group ID.
@@ -914,13 +892,10 @@ func (s *planService) ClonePlan(ctx context.Context, id string, req dto.ClonePla
 	// are harmless and will be reused by subsequent clone attempts.
 	groupIDMap := make(map[string]string)
 	if req.TargetEnvironmentID != "" {
-		uniqueGroupIDs := make(map[string]struct{})
-		for _, p := range sourcePrices {
-			if p.GroupID != "" {
-				uniqueGroupIDs[p.GroupID] = struct{}{}
-			}
-		}
-		for srcGroupID := range uniqueGroupIDs {
+		uniqueGroupIDs := lo.Uniq(lo.FilterMap(sourcePrices, func(p *domainPrice.Price, _ int) (string, bool) {
+			return p.GroupID, p.GroupID != ""
+		}))
+		for _, srcGroupID := range uniqueGroupIDs {
 			targetGID, err := s.resolveOrCreateGroup(ctx, targetCtx, srcGroupID)
 			if err != nil {
 				s.Logger.Warnw("failed to resolve group in target environment, clearing group_id",

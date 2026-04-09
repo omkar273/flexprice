@@ -472,25 +472,15 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	// Determine target environment: use request override or source feature's environment
 	targetEnvID := sourceFeature.EnvironmentID
 	if req.TargetEnvironmentID != "" {
-		if req.TargetEnvironmentID == sourceFeature.EnvironmentID {
-			return nil, ierr.NewError("target environment must be different from source environment").
-				WithHint("Use the standard clone endpoint for same-environment cloning, or omit target_environment_id").
-				Mark(ierr.ErrValidation)
+		// Validate target environment exists before rebinding context
+		if _, err := s.EnvironmentRepo.Get(ctx, req.TargetEnvironmentID); err != nil {
+			return nil, err
 		}
 		targetEnvID = req.TargetEnvironmentID
 	}
 
 	// Use target environment context for uniqueness checks and entity creation
 	targetCtx := types.SetEnvironmentID(ctx, targetEnvID)
-
-	// Validate target environment exists before writing to it
-	if req.TargetEnvironmentID != "" {
-		if _, err := s.EnvironmentRepo.Get(targetCtx, targetEnvID); err != nil {
-			return nil, ierr.WithError(err).
-				WithHint("Target environment not found").
-				Mark(ierr.ErrNotFound)
-		}
-	}
 
 	// Check lookup_key uniqueness among published features in the target environment
 	lookupFilter := types.NewNoLimitFeatureFilter()

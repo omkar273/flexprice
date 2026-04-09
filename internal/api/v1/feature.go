@@ -202,8 +202,10 @@ func (h *FeatureHandler) QueryFeatures(c *gin.Context) {
 }
 
 // @Summary Clone a feature
+// @ID cloneFeature
 // @Description Clone an existing feature
 // @Tags Features
+// @x-scope "write"
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth

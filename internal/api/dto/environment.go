@@ -57,13 +57,6 @@ func (r *CloneEnvironmentRequest) Validate() error {
 	return nil
 }
 
-// CloneEnvironmentResponse represents the async response when an environment clone workflow is started.
-type CloneEnvironmentResponse struct {
-	WorkflowID string `json:"workflow_id"`
-	RunID      string `json:"run_id"`
-	Message    string `json:"message"`
-}
-
 func (r *CreateEnvironmentRequest) Validate() error {
 	return validator.ValidateRequest(r)
 }

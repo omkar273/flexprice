@@ -14,13 +14,12 @@ import (
 )
 
 type EnvironmentHandler struct {
-	service         service.EnvironmentService
-	temporalService temporalservice.TemporalService
-	log             *logger.Logger
+	service service.EnvironmentService
+	log     *logger.Logger
 }
 
-func NewEnvironmentHandler(service service.EnvironmentService, temporalService temporalservice.TemporalService, log *logger.Logger) *EnvironmentHandler {
-	return &EnvironmentHandler{service: service, temporalService: temporalService, log: log}
+func NewEnvironmentHandler(service service.EnvironmentService, log *logger.Logger) *EnvironmentHandler {
+	return &EnvironmentHandler{service: service, log: log}
 }
 
 func (h *EnvironmentHandler) CreateEnvironment(c *gin.Context) {
@@ -92,14 +91,16 @@ func (h *EnvironmentHandler) UpdateEnvironment(c *gin.Context) {
 }
 
 // @Summary Clone an environment
+// @ID cloneEnvironment
 // @Description Clone an existing environment and asynchronously clone all published features and plans from the source environment
 // @Tags Environments
+// @x-scope "write"
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Param id path string true "Source Environment ID"
 // @Param request body dto.CloneEnvironmentRequest true "Clone configuration (name and type for the new environment)"
-// @Success 202 {object} dto.CloneEnvironmentResponse
+// @Success 202 {object} temporalmodels.TemporalWorkflowResult
 // @Failure 400 {object} ierr.ErrorResponse
 // @Failure 404 {object} ierr.ErrorResponse
 // @Failure 500 {object} ierr.ErrorResponse
@@ -128,9 +129,7 @@ func (h *EnvironmentHandler) CloneEnvironment(c *gin.Context) {
 
 	// Validate that the source environment exists before creating the target
 	if _, err := h.service.GetEnvironment(c.Request.Context(), sourceEnvID); err != nil {
-		c.Error(ierr.WithError(err).
-			WithHint("Source environment not found").
-			Mark(ierr.ErrNotFound))
+		c.Error(err)
 		return
 	}
 
@@ -145,7 +144,16 @@ func (h *EnvironmentHandler) CloneEnvironment(c *gin.Context) {
 		return
 	}
 
-	workflowRun, err := h.temporalService.ExecuteWorkflow(
+	ts := temporalservice.GetGlobalTemporalService()
+	if ts == nil {
+		h.log.Error("temporal service not available")
+		c.Error(ierr.NewError("temporal service not available").
+			WithHint("Workflow engine is not configured").
+			Mark(ierr.ErrSystem))
+		return
+	}
+
+	workflowRun, err := ts.ExecuteWorkflow(
 		c.Request.Context(),
 		types.TemporalEnvironmentCloneWorkflow,
 		temporalmodels.EnvironmentCloneWorkflowInput{
@@ -159,7 +167,7 @@ func (h *EnvironmentHandler) CloneEnvironment(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusAccepted, &dto.CloneEnvironmentResponse{
+	c.JSON(http.StatusAccepted, &temporalmodels.TemporalWorkflowResult{
 		WorkflowID: workflowRun.GetID(),
 		RunID:      workflowRun.GetRunID(),
 		Message:    "Environment clone workflow started successfully",

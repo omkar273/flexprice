@@ -356,7 +356,7 @@ func provideHandlers(
 		Meter:                  v1.NewMeterHandler(meterService, logger),
 		Auth:                   v1.NewAuthHandler(cfg, authService, logger),
 		User:                   v1.NewUserHandler(userService, logger),
-		Environment:            v1.NewEnvironmentHandler(environmentService, temporalService, logger),
+		Environment:            v1.NewEnvironmentHandler(environmentService, logger),
 		Health:                 v1.NewHealthHandler(logger),
 		Price:                  v1.NewPriceHandler(priceService, logger),
 		PriceUnit:              v1.NewPriceUnitHandler(priceUnitService, logger),

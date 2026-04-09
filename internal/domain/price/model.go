@@ -140,6 +140,7 @@ type PriceCloneOverrides struct {
 	LookupKey     *string
 	ParentPriceID *string // nil = clear (e.g. for clones); non-nil = set value
 	GroupID       *string // nil = keep existing; non-nil = set value
+	EnvironmentID *string // nil = derive from ctx; non-nil = use explicit value
 	BaseModel     *types.BaseModel
 }
 
@@ -171,8 +172,12 @@ func (p *Price) CopyWith(ctx context.Context, overrides *PriceCloneOverrides) *P
 	} else {
 		out.BaseModel = types.GetDefaultBaseModel(ctx)
 	}
-	// Always set EnvironmentID from context — it is NOT part of BaseModel
-	out.EnvironmentID = types.GetEnvironmentID(ctx)
+	// EnvironmentID is NOT part of BaseModel — set explicitly or fall back to context
+	if overrides.EnvironmentID != nil {
+		out.EnvironmentID = lo.FromPtr(overrides.EnvironmentID)
+	} else {
+		out.EnvironmentID = types.GetEnvironmentID(ctx)
+	}
 	if overrides.ParentPriceID != nil {
 		out.ParentPriceID = lo.FromPtr(overrides.ParentPriceID)
 	} else {
