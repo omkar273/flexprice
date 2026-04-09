@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/price"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	ierr "github.com/flexprice/flexprice/internal/errors"
@@ -1620,6 +1621,10 @@ type SubscriptionUsageByMetersResponse struct {
 	Price                  *price.Price       `json:"price"`
 	IsOverage              bool               `json:"is_overage"`               // Whether this charge is at overage rate
 	OverageFactor          float64            `json:"overage_factor,omitempty"` // Factor applied to this charge if in overage
+
+	// BucketedUsageResult holds per-bucket usage data for bucketed meters (MAX/SUM with bucket_size).
+	// Populated by GetMeterUsageBySubscription so CalculateMeterUsageCharges doesn't re-query ClickHouse.
+	BucketedUsageResult *events.AggregationResult `json:"-"`
 }
 
 type SubscriptionUpdatePeriodResponse struct {
