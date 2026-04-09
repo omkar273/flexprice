@@ -1084,7 +1084,7 @@ func (s *subscriptionService) normalizePhaseCoupons(
 }
 
 // createPhaseExtraLineItems creates extra line items defined in a phase request (e.g. one-time charges).
-// charge_date (or start_date) defaults to phase.StartDate when not provided.
+// start_date defaults to phase.StartDate when not provided.
 // Returns the created line items so callers can merge them into coupon resolution maps.
 func (s *subscriptionService) createPhaseExtraLineItems(
 	ctx context.Context,
@@ -1094,33 +1094,25 @@ func (s *subscriptionService) createPhaseExtraLineItems(
 ) ([]*subscription.SubscriptionLineItem, error) {
 	var created []*subscription.SubscriptionLineItem
 	for _, liReq := range phaseReq.LineItems {
-		// Default charge_date and start_date to phase start when not set.
-		if liReq.ChargeDate == nil && liReq.StartDate == nil {
-			liReq.ChargeDate = &phaseReq.StartDate
+		if liReq.StartDate == nil {
+			liReq.StartDate = &phaseReq.StartDate
 		}
-
-		// Validate charge_date (or the effective start date) falls within the phase window.
-		effectiveDate := phaseReq.StartDate
-		if liReq.ChargeDate != nil {
-			effectiveDate = *liReq.ChargeDate
-		} else if liReq.StartDate != nil {
-			effectiveDate = *liReq.StartDate
-		}
+		effectiveDate := *liReq.StartDate
 		if effectiveDate.Before(phaseReq.StartDate) {
-			return nil, ierr.NewError("line item charge_date cannot be before phase start date").
-				WithHint("charge_date must be on or after the phase's start date.").
+			return nil, ierr.NewError("line item start_date cannot be before phase start date").
+				WithHint("start_date must be on or after the phase's start date.").
 				WithReportableDetails(map[string]interface{}{
-					"charge_date":  effectiveDate,
-					"phase_start":  phaseReq.StartDate,
+					"start_date":  effectiveDate,
+					"phase_start": phaseReq.StartDate,
 				}).
 				Mark(ierr.ErrValidation)
 		}
 		if phaseReq.EndDate != nil && effectiveDate.After(lo.FromPtr(phaseReq.EndDate)) {
-			return nil, ierr.NewError("line item charge_date cannot be after phase end date").
-				WithHint("charge_date must be on or before the phase's end date when the phase has an end date.").
+			return nil, ierr.NewError("line item start_date cannot be after phase end date").
+				WithHint("start_date must be on or before the phase's end date when the phase has an end date.").
 				WithReportableDetails(map[string]interface{}{
-					"charge_date": effectiveDate,
-					"phase_end":   phaseReq.EndDate,
+					"start_date": effectiveDate,
+					"phase_end":  phaseReq.EndDate,
 				}).
 				Mark(ierr.ErrValidation)
 		}

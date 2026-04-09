@@ -64,9 +64,8 @@ func (li *SubscriptionLineItem) IsActive(t time.Time) bool {
 		return false
 	}
 
-	// For ONETIME items, treat a zero EndDate as closed at StartDate (the charge
-	// date).  This prevents them from appearing "active forever" after their
-	// single charge date has passed.
+	// For ONETIME items, treat a zero EndDate as closed at StartDate. This prevents
+	// them from appearing "active forever" after their billing instant has passed.
 	effectiveEnd := li.EndDate
 	if li.IsOneTime() && li.EndDate.IsZero() {
 		effectiveEnd = li.StartDate
@@ -95,12 +94,6 @@ func (li *SubscriptionLineItem) IsOneTime() bool {
 	}
 	// Fallback for test fixtures and paths where price is not pre-loaded.
 	return li.PriceType == types.PRICE_TYPE_FIXED && li.BillingPeriod == ""
-}
-
-// GetChargeDate returns the date on which a ONETIME charge should be invoiced.
-// For ONETIME charges, this is always the StartDate of the line item.
-func (li *SubscriptionLineItem) GetChargeDate() time.Time {
-	return li.StartDate
 }
 
 // HasCommitment returns true if the line item has commitment configured
@@ -239,10 +232,10 @@ func (li *SubscriptionLineItem) GetPeriodStart(defaultPeriodStart time.Time) tim
 // It clips the line item's EndDate against the period boundary: returns min(EndDate, defaultPeriodEnd).
 // If EndDate is zero (line item is still active), defaultPeriodEnd is returned.
 func (li *SubscriptionLineItem) GetPeriodEnd(defaultPeriodEnd time.Time) time.Time {
-	// For ONETIME items with no explicit EndDate, the effective period is the
-	// single charge date (StartDate).  Returning StartDate here ensures callers
-	// see a zero-duration period [chargeDate, chargeDate] rather than the billing
-	// period end, which prevents accidental proration or window mis-bucketing.
+	// For ONETIME items with no explicit EndDate, the effective period is a single
+	// instant (StartDate). Returning StartDate here ensures callers see a
+	// zero-duration period [start, start] rather than the billing period end, which
+	// prevents accidental proration or window mis-bucketing.
 	if li.IsOneTime() && li.EndDate.IsZero() {
 		return li.StartDate
 	}

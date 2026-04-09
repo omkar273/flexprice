@@ -195,7 +195,7 @@ func (s *BillingOnetimeSuite) setupSharedFixtures() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // makeOnetimeLineItem builds a minimal ONETIME ADVANCE SubscriptionLineItem.
-func (s *BillingOnetimeSuite) makeOnetimeLineItem(priceID string, cadence types.InvoiceCadence, chargeDate time.Time) *subscription.SubscriptionLineItem {
+func (s *BillingOnetimeSuite) makeOnetimeLineItem(priceID string, cadence types.InvoiceCadence, startDate time.Time) *subscription.SubscriptionLineItem {
 	return &subscription.SubscriptionLineItem{
 		ID:             "li_" + priceID,
 		SubscriptionID: s.sub.ID,
@@ -206,7 +206,7 @@ func (s *BillingOnetimeSuite) makeOnetimeLineItem(priceID string, cadence types.
 		InvoiceCadence: cadence,
 		Quantity:       decimal.NewFromInt(1),
 		Currency:       "usd",
-		StartDate:      chargeDate, // charge date = StartDate for ONETIME
+		StartDate:      startDate,
 		BaseModel:      types.GetDefaultBaseModel(s.GetContext()),
 	}
 }
@@ -235,20 +235,20 @@ func (s *BillingOnetimeSuite) billingService() *billingService {
 // Group 1: ClassifyLineItems — ONETIME
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Test 1: ONETIME ADVANCE — charge date at period start (inclusive lower bound)
-func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_ChargeDateAtPeriodStart() {
+// Test 1: ONETIME ADVANCE — StartDate at period start (inclusive lower bound)
+func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_BillingDateAtPeriodStart() {
 	item := s.makeOnetimeLineItem("price_onetime_advance", types.InvoiceCadenceAdvance, s.jan1)
 	s.sub.LineItems = []*subscription.SubscriptionLineItem{item}
 
 	result := s.billingService().ClassifyLineItems(s.sub, s.jan1, s.feb1, s.feb1, s.mar1)
 
-	s.Len(result.CurrentPeriodAdvance, 1, "charge date == period start should be in CurrentPeriodAdvance")
+	s.Len(result.CurrentPeriodAdvance, 1, "StartDate == period start should be in CurrentPeriodAdvance")
 	s.Empty(result.CurrentPeriodArrear)
 	s.Empty(result.NextPeriodAdvance, "ONETIME at period start should NOT bleed into NextPeriodAdvance")
 }
 
-// Test 2: ONETIME ADVANCE — charge date mid-period
-func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_ChargeDateMidPeriod() {
+// Test 2: ONETIME ADVANCE — StartDate mid-period
+func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_BillingDateMidPeriod() {
 	item := s.makeOnetimeLineItem("price_onetime_advance", types.InvoiceCadenceAdvance, s.jan15)
 	s.sub.LineItems = []*subscription.SubscriptionLineItem{item}
 
@@ -259,8 +259,8 @@ func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_ChargeDateMidPeriod() 
 	s.Empty(result.NextPeriodAdvance)
 }
 
-// Test 3: ONETIME ADVANCE — charge date == period end (exclusive upper bound for ADVANCE)
-func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_ChargeDateAtPeriodEnd() {
+// Test 3: ONETIME ADVANCE — StartDate == period end (exclusive upper bound for ADVANCE)
+func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_BillingDateAtPeriodEnd() {
 	// Feb 1 is the period END — exclusive for ADVANCE → NOT in current, but IS in next
 	item := s.makeOnetimeLineItem("price_onetime_advance", types.InvoiceCadenceAdvance, s.feb1)
 	s.sub.LineItems = []*subscription.SubscriptionLineItem{item}
@@ -271,19 +271,19 @@ func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_ChargeDateAtPeriodEnd(
 	s.Len(result.NextPeriodAdvance, 1, "should land in next period (Feb 1 is next period start)")
 }
 
-// Test 4: ONETIME ADVANCE — charge date in next period only
-func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_ChargeDateInNextPeriod() {
+// Test 4: ONETIME ADVANCE — StartDate in next period only
+func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_BillingDateInNextPeriod() {
 	item := s.makeOnetimeLineItem("price_onetime_advance", types.InvoiceCadenceAdvance, s.feb15)
 	s.sub.LineItems = []*subscription.SubscriptionLineItem{item}
 
 	result := s.billingService().ClassifyLineItems(s.sub, s.jan1, s.feb1, s.feb1, s.mar1)
 
 	s.Empty(result.CurrentPeriodAdvance)
-	s.Len(result.NextPeriodAdvance, 1, "charge date in next period should land in NextPeriodAdvance")
+	s.Len(result.NextPeriodAdvance, 1, "StartDate in next period should land in NextPeriodAdvance")
 }
 
-// Test 5: ONETIME ADVANCE — charge date in the past (before both periods)
-func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_ChargeDateOutsideBothPeriods() {
+// Test 5: ONETIME ADVANCE — StartDate in the past (before both periods)
+func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_BillingDateOutsideBothPeriods() {
 	dec15 := time.Date(2025, 12, 15, 0, 0, 0, 0, time.UTC)
 	item := s.makeOnetimeLineItem("price_onetime_advance", types.InvoiceCadenceAdvance, dec15)
 	s.sub.LineItems = []*subscription.SubscriptionLineItem{item}
@@ -295,8 +295,8 @@ func (s *BillingOnetimeSuite) TestClassify_OneTimeAdvance_ChargeDateOutsideBothP
 	s.Empty(result.CurrentPeriodArrear)
 }
 
-// Test 6: ONETIME ARREAR — charge date mid-period
-func (s *BillingOnetimeSuite) TestClassify_OneTimeArrear_ChargeDateMidPeriod() {
+// Test 6: ONETIME ARREAR — StartDate mid-period
+func (s *BillingOnetimeSuite) TestClassify_OneTimeArrear_BillingDateMidPeriod() {
 	item := s.makeOnetimeLineItem("price_onetime_arrear", types.InvoiceCadenceArrear, s.jan15)
 	s.sub.LineItems = []*subscription.SubscriptionLineItem{item}
 
@@ -306,8 +306,8 @@ func (s *BillingOnetimeSuite) TestClassify_OneTimeArrear_ChargeDateMidPeriod() {
 	s.Empty(result.CurrentPeriodAdvance)
 }
 
-// Test 7: ONETIME ARREAR — charge date == period start (exclusive lower bound for ARREAR)
-func (s *BillingOnetimeSuite) TestClassify_OneTimeArrear_ChargeDateAtPeriodStart() {
+// Test 7: ONETIME ARREAR — StartDate == period start (exclusive lower bound for ARREAR)
+func (s *BillingOnetimeSuite) TestClassify_OneTimeArrear_BillingDateAtPeriodStart() {
 	// Jan 1 == period start, exclusive for ARREAR → should NOT be classified
 	item := s.makeOnetimeLineItem("price_onetime_arrear", types.InvoiceCadenceArrear, s.jan1)
 	s.sub.LineItems = []*subscription.SubscriptionLineItem{item}
@@ -317,8 +317,8 @@ func (s *BillingOnetimeSuite) TestClassify_OneTimeArrear_ChargeDateAtPeriodStart
 	s.Empty(result.CurrentPeriodArrear, "period start is exclusive for ARREAR")
 }
 
-// Test 8: ONETIME ARREAR — charge date == period end (inclusive upper bound for ARREAR)
-func (s *BillingOnetimeSuite) TestClassify_OneTimeArrear_ChargeDateAtPeriodEnd() {
+// Test 8: ONETIME ARREAR — StartDate == period end (inclusive upper bound for ARREAR)
+func (s *BillingOnetimeSuite) TestClassify_OneTimeArrear_BillingDateAtPeriodEnd() {
 	item := s.makeOnetimeLineItem("price_onetime_arrear", types.InvoiceCadenceArrear, s.feb1)
 	s.sub.LineItems = []*subscription.SubscriptionLineItem{item}
 
@@ -352,7 +352,7 @@ func (s *BillingOnetimeSuite) TestClassify_MixedRecurringAndOnetime() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Group 2: IsOneTime and GetChargeDate helpers
+// Group 2: IsOneTime and ONETIME billing date (StartDate)
 // ─────────────────────────────────────────────────────────────────────────────
 
 func (s *BillingOnetimeSuite) TestIsOneTime_True() {
@@ -365,9 +365,9 @@ func (s *BillingOnetimeSuite) TestIsOneTime_False_Recurring() {
 	s.False(item.IsOneTime())
 }
 
-func (s *BillingOnetimeSuite) TestGetChargeDate_ReturnsStartDate() {
+func (s *BillingOnetimeSuite) TestOneTimeBillingDate_IsStartDate() {
 	item := s.makeOnetimeLineItem("p", types.InvoiceCadenceAdvance, s.jan15)
-	s.Equal(s.jan15, item.GetChargeDate())
+	s.Equal(s.jan15, item.StartDate)
 }
 
 // TestIsOneTime_ViaMapper verifies that the production Ent→domain mapping path
@@ -434,7 +434,7 @@ func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_FullAmountNoProration()
 			InvoiceCadence: types.InvoiceCadenceAdvance,
 			Quantity:       decimal.NewFromInt(1),
 			Currency:       "usd",
-			StartDate:      s.jan15, // charge date
+			StartDate:      s.jan15,
 			BaseModel:      types.GetDefaultBaseModel(ctx),
 		},
 	}
@@ -445,7 +445,7 @@ func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_FullAmountNoProration()
 	s.Equal("500", total.String(), "ONETIME charge must be full $500, no proration")
 }
 
-func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_LineItemPeriodIsChargeDate() {
+func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_LineItemPeriodIsBillingDate() {
 	ctx := s.GetContext()
 
 	sub := *s.sub
@@ -470,8 +470,8 @@ func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_LineItemPeriodIsChargeD
 	li := lineItems[0]
 	s.NotNil(li.PeriodStart)
 	s.NotNil(li.PeriodEnd)
-	s.True(li.PeriodStart.Equal(s.jan15), "PeriodStart should equal charge date")
-	s.True(li.PeriodEnd.Equal(s.jan15), "PeriodEnd should equal charge date")
+	s.True(li.PeriodStart.Equal(s.jan15), "PeriodStart should equal line item StartDate")
+	s.True(li.PeriodEnd.Equal(s.jan15), "PeriodEnd should equal line item StartDate")
 }
 
 func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_WithQuantity3() {
@@ -512,14 +512,14 @@ func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_SkippedIfStartDateAfter
 			InvoiceCadence: types.InvoiceCadenceAdvance,
 			Quantity:       decimal.NewFromInt(1),
 			Currency:       "usd",
-			StartDate:      s.mar1, // future charge date — after the invoice period
+			StartDate:      s.mar1, // after the invoice period
 			BaseModel:      types.GetDefaultBaseModel(ctx),
 		},
 	}
 
 	lineItems, total, err := s.billingService().CalculateFixedCharges(ctx, &sub, s.jan1, s.feb1)
 	s.NoError(err)
-	s.Empty(lineItems, "charge date after period end should be skipped")
+	s.Empty(lineItems, "StartDate after period end should be skipped")
 	s.True(total.IsZero())
 }
 
@@ -589,7 +589,7 @@ func (s *BillingOnetimeSuite) TestOnetime_ZeroDurationLineItemPeriod() {
 	lineItems, _, err := s.billingService().CalculateFixedCharges(ctx, &sub, s.jan1, s.feb1)
 	s.NoError(err)
 	s.Require().Len(lineItems, 1)
-	// PeriodStart == PeriodEnd == charge date
+	// PeriodStart == PeriodEnd == line item StartDate
 	s.True(lo.FromPtr(lineItems[0].PeriodStart).Equal(s.jan1))
 	s.True(lo.FromPtr(lineItems[0].PeriodEnd).Equal(s.jan1))
 }

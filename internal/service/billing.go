@@ -186,12 +186,12 @@ func (s *billingService) CalculateFixedCharges(
 		var amount decimal.Decimal
 		var linePeriodStart, linePeriodEnd time.Time
 
-		// ONETIME charge: full amount, no proration; service period = charge date.
+		// ONETIME charge: full amount, no proration; service period = line item start (billing date).
 		if item.IsOneTime() {
 			amount = priceService.CalculateCost(ctx, price.Price, item.Quantity)
-			chargeDate := item.GetChargeDate()
-			linePeriodStart = chargeDate
-			linePeriodEnd = chargeDate
+			billingDate := item.StartDate
+			linePeriodStart = billingDate
+			linePeriodEnd = billingDate
 			// fall through to shared rounding + line item build below
 		} else if types.BillingPeriodGreaterThan(item.BillingPeriod, sub.BillingPeriod) {
 			// Line item has longer cadence than subscription (e.g. quarterly line on monthly sub):
@@ -2233,17 +2233,17 @@ func (s *billingService) checkIfChargeInvoiced(
 		lineStart := lo.FromPtr(item.PeriodStart)
 		lineEnd := lo.FromPtr(item.PeriodEnd)
 
-		// ONETIME charges have a zero-duration period (PeriodStart == PeriodEnd == chargeDate).
+		// ONETIME line items use a zero-duration invoice period (PeriodStart == PeriodEnd == StartDate).
 		// The standard open-interval overlap check (lineEnd > periodStart) would miss boundary
-		// cases where chargeDate == periodStart (since chargeDate.After(chargeDate) is false).
-		// Instead, check that the charge date falls within [periodStart, periodEnd).
+		// cases where that instant equals periodStart (a point has no duration, so lineEnd > periodStart fails).
+		// Instead, check that the billing instant falls within [periodStart, periodEnd).
 		if lineStart.Equal(lineEnd) {
-			chargeDate := lineStart
+			billingInstant := lineStart
 			// Use a closed interval [periodStart, periodEnd] so that arrear one-time
-			// charges with chargeDate == periodEnd are correctly detected as already
+			// items with billingInstant == periodEnd are correctly detected as already
 			// invoiced.  ClassifyLineItems uses (start, end] for ARREAR, so we must
 			// be at least as inclusive here to avoid duplicate billing at the boundary.
-			if !chargeDate.Before(periodStart) && !chargeDate.After(periodEnd) {
+			if !billingInstant.Before(periodStart) && !billingInstant.After(periodEnd) {
 				return true
 			}
 			continue
@@ -2302,23 +2302,23 @@ func (s *billingService) ClassifyLineItems(
 			continue
 		}
 
-		// ONETIME charges: classified by whether the charge date (StartDate) falls in the period.
+		// ONETIME charges: classified by whether the line item start (billing date) falls in the period.
 		// They are never auto-added to both current and next (unlike RECURRING ADVANCE).
 		// FilterLineItemsToBeInvoiced prevents double-billing if the charge was already invoiced.
 		if item.IsOneTime() {
-			chargeDate := item.GetChargeDate()
+			billingDate := item.StartDate
 			if item.InvoiceCadence == types.InvoiceCadenceAdvance {
-				// Advance: charge date in [currentPeriodStart, currentPeriodEnd)
-				if !chargeDate.Before(currentPeriodStart) && chargeDate.Before(currentPeriodEnd) {
+				// Advance: billing date in [currentPeriodStart, currentPeriodEnd)
+				if !billingDate.Before(currentPeriodStart) && billingDate.Before(currentPeriodEnd) {
 					result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
 				}
-				// Also check if charge date falls in the next period window
-				if !chargeDate.Before(nextPeriodStart) && chargeDate.Before(nextPeriodEnd) {
+				// Also check if billing date falls in the next period window
+				if !billingDate.Before(nextPeriodStart) && billingDate.Before(nextPeriodEnd) {
 					result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
 				}
 			} else {
-				// Arrear: charge date in (currentPeriodStart, currentPeriodEnd]
-				if chargeDate.After(currentPeriodStart) && !chargeDate.After(currentPeriodEnd) {
+				// Arrear: billing date in (currentPeriodStart, currentPeriodEnd]
+				if billingDate.After(currentPeriodStart) && !billingDate.After(currentPeriodEnd) {
 					result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
 				}
 			}
