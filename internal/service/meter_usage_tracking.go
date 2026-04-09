@@ -215,10 +215,17 @@ func (s *meterUsageTrackingService) getMetersForEvent(ctx context.Context, event
 			return nil, err
 		}
 
+		// Only cache non-empty results. Caching empty slices for event names that
+		// have no matching meters would cause unbounded cache growth when the
+		// consumer receives high-cardinality event names. Unknown event names are
+		// cheap to query (indexed, returns zero rows quickly).
+		//
 		// goCache.DefaultExpiration (0) means "use the TTL set at New() time",
 		// i.e. meterCacheTTL. The stored slice is never mutated after insertion so
 		// concurrent reads do not need additional synchronisation.
-		s.meterListCache.Set(cacheKey, meters, goCache.DefaultExpiration)
+		if len(meters) > 0 {
+			s.meterListCache.Set(cacheKey, meters, goCache.DefaultExpiration)
+		}
 		return meters, nil
 	}
 
@@ -335,21 +342,26 @@ func (s *meterUsageTrackingService) checkMeterFilters(event *events.Event, filte
 	return true
 }
 
-// Generate a unique hash for deduplication
-// there are 2 cases:
-// 1. event_name + event_id // for non COUNT_UNIQUE aggregation types
-// 2. event_name + event_field_name + event_field_value // for COUNT_UNIQUE aggregation types
+// generateUniqueHash returns a SHA-256 hex string used for deduplication.
+// Two cases:
+//  1. COUNT_UNIQUE: hash(eventName + fieldName + fieldValue) — two events with
+//     the same field value produce the same hash and are deduplicated.
+//  2. All other types: hash(eventName + eventID) — every distinct event is unique.
 func (s *meterUsageTrackingService) generateUniqueHash(event *events.Event, m *meter.Meter) string {
+	var hashStr string
 
 	if m.Aggregation.Type == types.AggregationCountUnique && m.Aggregation.Field != "" {
 		if fieldValue, ok := event.Properties[m.Aggregation.Field]; ok {
-			hashStr := fmt.Sprintf("%s:%s:%v", event.EventName, m.Aggregation.Field, fieldValue)
-			hash := sha256.Sum256([]byte(hashStr))
-			return hex.EncodeToString(hash[:])
+			hashStr = fmt.Sprintf("%s:%s:%v", event.EventName, m.Aggregation.Field, fieldValue)
 		}
 	}
 
-	return ""
+	if hashStr == "" {
+		hashStr = event.EventName + ":" + event.ID
+	}
+
+	hash := sha256.Sum256([]byte(hashStr))
+	return hex.EncodeToString(hash[:])
 }
 
 // extractQuantity extracts the quantity from event properties based on the meter's aggregation config.
