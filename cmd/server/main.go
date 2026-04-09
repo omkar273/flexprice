@@ -41,7 +41,6 @@ import (
 	"go.uber.org/fx"
 
 	_ "github.com/flexprice/flexprice/docs/swagger"
-	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/proration"
 	ee "github.com/flexprice/flexprice/internal/ee/service"
 	"github.com/flexprice/flexprice/internal/integration"
@@ -227,6 +226,7 @@ func main() {
 			service.NewRawEventConsumptionService,
 			service.NewCostSheetUsageTrackingService,
 			service.NewMeterUsageTrackingService,
+			service.NewMeterUsageService,
 			service.NewPriceService,
 			service.NewPriceUnitService,
 			service.NewCustomerService,
@@ -353,7 +353,7 @@ func provideHandlers(
 	customerPortalService service.CustomerPortalService,
 	dashboardService service.DashboardService,
 	workflowService service.WorkflowService,
-	meterUsageRepo events.MeterUsageRepository,
+	meterUsageService service.MeterUsageService,
 ) api.Handlers {
 	return api.Handlers{
 		Events:                 v1.NewEventsHandler(eventService, eventPostProcessingService, featureUsageTrackingService, rawEventsReprocessingService, rawEventConsumptionService, cfg, logger),
@@ -404,7 +404,7 @@ func provideHandlers(
 		CustomerPortal:         v1.NewCustomerPortalHandler(customerPortalService, logger),
 		Dashboard:              v1.NewDashboardHandler(dashboardService, logger),
 		Workflow:               v1.NewWorkflowHandler(workflowService, logger),
-		MeterUsage:             v1.NewMeterUsageHandler(meterUsageRepo, logger),
+		MeterUsage:             v1.NewMeterUsageHandler(meterUsageService, logger),
 	}
 }
 

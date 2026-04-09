@@ -4,23 +4,23 @@ import (
 	"net/http"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
-	"github.com/flexprice/flexprice/internal/domain/events"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
+	"github.com/flexprice/flexprice/internal/service"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/gin-gonic/gin"
 )
 
 // MeterUsageHandler handles meter_usage query endpoints
 type MeterUsageHandler struct {
-	meterUsageRepo events.MeterUsageRepository
-	log            *logger.Logger
+	meterUsageService service.MeterUsageService
+	log               *logger.Logger
 }
 
-func NewMeterUsageHandler(meterUsageRepo events.MeterUsageRepository, log *logger.Logger) *MeterUsageHandler {
+func NewMeterUsageHandler(meterUsageService service.MeterUsageService, log *logger.Logger) *MeterUsageHandler {
 	return &MeterUsageHandler{
-		meterUsageRepo: meterUsageRepo,
-		log:            log,
+		meterUsageService: meterUsageService,
+		log:               log,
 	}
 }
 
@@ -57,7 +57,7 @@ func (h *MeterUsageHandler) QueryUsage(c *gin.Context) {
 	environmentID := types.GetEnvironmentID(ctx)
 	params := req.ToParams(tenantID, environmentID)
 
-	result, err := h.meterUsageRepo.GetUsage(ctx, params)
+	result, err := h.meterUsageService.GetUsage(ctx, params)
 	if err != nil {
 		h.log.ErrorwCtx(ctx, "failed to query meter usage",
 			"error", err,
@@ -103,7 +103,7 @@ func (h *MeterUsageHandler) GetAnalytics(c *gin.Context) {
 	environmentID := types.GetEnvironmentID(ctx)
 	params := req.ToParams(tenantID, environmentID)
 
-	results, err := h.meterUsageRepo.GetUsageMultiMeter(ctx, params)
+	results, err := h.meterUsageService.GetUsageMultiMeter(ctx, params)
 	if err != nil {
 		h.log.ErrorwCtx(ctx, "failed to query meter usage analytics",
 			"error", err,
