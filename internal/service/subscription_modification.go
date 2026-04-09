@@ -344,8 +344,8 @@ func (s *subscriptionModificationService) executeQuantityChange(
 	// Proration (invoice creation / wallet credits) happens after the transaction commits
 	// because those operations have their own side effects.
 	err = sp.DB.WithTx(ctx, func(txCtx context.Context) error {
-		changedLineItems = nil    // reset for safety
-		itemsForProration = nil   // reset for safety
+		changedLineItems = nil  // reset for safety
+		itemsForProration = nil // reset for safety
 
 		for _, change := range params.LineItems {
 			// Resolve effective date: caller-supplied or now.
@@ -488,30 +488,23 @@ func (s *subscriptionModificationService) executeQuantityChange(
 				itemsForProration = append(itemsForProration, prorationPair{old: lineItem, new_: newItem, effectiveDate: effectiveDate})
 			}
 		}
+
+		// Post-transaction: handle proration outside the DB transaction because invoice creation
+		// and wallet top-ups carry their own side effects (payment attempts, credit grants).
+		for _, pair := range itemsForProration {
+			inv, err := s.handleQuantityChangeProration(ctx, sub, pair.old, pair.new_, pair.effectiveDate)
+			if err != nil {
+				return err
+			}
+			if inv != nil {
+				changedInvoices = append(changedInvoices, *inv)
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	// Post-transaction: handle proration outside the DB transaction because invoice creation
-	// and wallet top-ups carry their own side effects (payment attempts, credit grants).
-	for _, pair := range itemsForProration {
-		inv, err := s.handleQuantityChangeProration(ctx, sub, pair.old, pair.new_, pair.effectiveDate)
-		if err != nil {
-			sp.Logger.Errorw("failed to handle proration for quantity change", "error", err,
-				"subscription_id", subscriptionID, "line_item_id", pair.old.ID)
-			return nil, ierr.WithError(err).
-				WithHint("Failed to apply proration after quantity change; line items were updated but proration did not complete").
-				WithReportableDetails(map[string]interface{}{
-					"subscription_id": subscriptionID,
-					"line_item_id":    pair.old.ID,
-				}).
-				Error()
-		}
-		if inv != nil {
-			changedInvoices = append(changedInvoices, *inv)
-		}
 	}
 
 	// Publish webhook event
