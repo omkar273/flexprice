@@ -36,18 +36,34 @@ type ListEnvironmentsResponse struct {
 }
 
 // CloneEnvironmentRequest represents the request to clone an environment's published features and plans.
-// A new environment is always created from the name and type provided, then all published features
-// and plans are cloned from the source environment into it.
+// If TargetEnvironmentID is provided, entities are cloned into that existing environment.
+// If TargetEnvironmentID is omitted, a new environment is created from Name and Type, then entities are cloned into it.
 type CloneEnvironmentRequest struct {
-	// Name of the new environment (required)
-	Name string `json:"name" validate:"required"`
-	// Type of the new environment, e.g. "production" or "development" (required)
-	Type types.EnvironmentType `json:"type" validate:"required"`
+	// TargetEnvironmentID is the ID of an existing environment to clone into (optional).
+	// When provided, Name and Type are ignored. When omitted, Name and Type are required.
+	TargetEnvironmentID string `json:"target_environment_id,omitempty"`
+	// Name of the new environment (required when target_environment_id is not provided)
+	Name string `json:"name"`
+	// Type of the new environment, e.g. "production" or "development" (required when target_environment_id is not provided)
+	Type types.EnvironmentType `json:"type"`
 }
 
 func (r *CloneEnvironmentRequest) Validate() error {
-	if err := validator.ValidateRequest(r); err != nil {
-		return err
+	if r.TargetEnvironmentID != "" {
+		// When cloning into an existing environment, Name and Type are not needed
+		return nil
+	}
+
+	// Creating a new environment — Name and Type are required
+	if r.Name == "" {
+		return ierr.NewError("name is required when target_environment_id is not provided").
+			WithHint("Provide a name for the new environment or specify a target_environment_id").
+			Mark(ierr.ErrValidation)
+	}
+	if r.Type == "" {
+		return ierr.NewError("type is required when target_environment_id is not provided").
+			WithHint("Provide a type for the new environment or specify a target_environment_id").
+			Mark(ierr.ErrValidation)
 	}
 	if r.Type != types.EnvironmentDevelopment && r.Type != types.EnvironmentProduction {
 		return ierr.NewError("invalid environment type").

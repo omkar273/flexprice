@@ -92,14 +92,14 @@ func (h *EnvironmentHandler) UpdateEnvironment(c *gin.Context) {
 
 // @Summary Clone an environment
 // @ID cloneEnvironment
-// @Description Clone an existing environment and asynchronously clone all published features and plans from the source environment
+// @Description Clone all published features and plans from the source environment into a target environment. If target_environment_id is provided, entities are cloned into that existing environment. Otherwise a new environment is created from name and type first.
 // @Tags Environments
 // @x-scope "write"
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
 // @Param id path string true "Source Environment ID"
-// @Param request body dto.CloneEnvironmentRequest true "Clone configuration (name and type for the new environment)"
+// @Param request body dto.CloneEnvironmentRequest true "Clone configuration"
 // @Success 202 {object} temporalmodels.TemporalWorkflowResult
 // @Failure 400 {object} ierr.ErrorResponse
 // @Failure 404 {object} ierr.ErrorResponse
@@ -127,21 +127,41 @@ func (h *EnvironmentHandler) CloneEnvironment(c *gin.Context) {
 		return
 	}
 
-	// Validate that the source environment exists before creating the target
+	// Validate that the source environment exists
 	if _, err := h.service.GetEnvironment(c.Request.Context(), sourceEnvID); err != nil {
 		c.Error(err)
 		return
 	}
 
-	// Create the new target environment first
-	newEnv, err := h.service.CreateEnvironment(c.Request.Context(), dto.CreateEnvironmentRequest{
-		Name: req.Name,
-		Type: string(req.Type),
-	})
-	if err != nil {
-		h.log.Error("failed to create target environment for clone", "error", err)
-		c.Error(err)
-		return
+	var targetEnvID string
+
+	if req.TargetEnvironmentID != "" {
+		// Clone into an existing environment — validate it exists and isn't the source
+		if req.TargetEnvironmentID == sourceEnvID {
+			c.Error(ierr.NewError("target environment cannot be the same as source environment").
+				WithHint("Please provide a different target environment ID").
+				Mark(ierr.ErrValidation))
+			return
+		}
+
+		if _, err := h.service.GetEnvironment(c.Request.Context(), req.TargetEnvironmentID); err != nil {
+			c.Error(err)
+			return
+		}
+
+		targetEnvID = req.TargetEnvironmentID
+	} else {
+		// Create a new target environment from Name and Type
+		newEnv, err := h.service.CreateEnvironment(c.Request.Context(), dto.CreateEnvironmentRequest{
+			Name: req.Name,
+			Type: string(req.Type),
+		})
+		if err != nil {
+			h.log.Error("failed to create target environment for clone", "error", err)
+			c.Error(err)
+			return
+		}
+		targetEnvID = newEnv.ID
 	}
 
 	ts := temporalservice.GetGlobalTemporalService()
@@ -158,11 +178,11 @@ func (h *EnvironmentHandler) CloneEnvironment(c *gin.Context) {
 		types.TemporalEnvironmentCloneWorkflow,
 		temporalmodels.EnvironmentCloneWorkflowInput{
 			SourceEnvironmentID: sourceEnvID,
-			TargetEnvironmentID: newEnv.ID,
+			TargetEnvironmentID: targetEnvID,
 		},
 	)
 	if err != nil {
-		h.log.Error("failed to start environment clone workflow", "error", err, "source_env", sourceEnvID, "target_env", newEnv.ID)
+		h.log.Error("failed to start environment clone workflow", "error", err, "source_env", sourceEnvID, "target_env", targetEnvID)
 		c.Error(err)
 		return
 	}
