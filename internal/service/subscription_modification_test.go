@@ -227,15 +227,13 @@ func (s *SubscriptionModificationServiceSuite) setSubPeriod(subID string, start,
 // ─────────────────────────────────────────────
 
 // TestExecuteQuantityChange_Advance verifies invoice creation for upgrades,
-// wallet credit for downgrades, proration-behavior=none, and same-quantity no-ops
-// on ADVANCE (in-advance) line items.
+// wallet credit for downgrades, and same-quantity no-ops on ADVANCE (in-advance) line items.
 func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance() {
 	type tc struct {
 		name               string
 		oldQty             decimal.Decimal
 		newQty             decimal.Decimal
-		effectiveDayOffset int // days after periodStart; -1 = special sentinel (periodEnd - 1s)
-		prorationBehavior  types.ProrationBehavior
+		effectiveDayOffset int    // days after periodStart; -1 = special sentinel (periodEnd - 1s)
 		wantLineItems      int    // expected len(ChangedResources.LineItems)
 		wantInvoiceAction  string // "created", "wallet_credit", or "" (no invoice)
 		wantNoOp           bool   // old line item EndDate must remain zero
@@ -246,7 +244,6 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			oldQty:             decimal.NewFromInt(1),
 			newQty:             decimal.NewFromInt(3),
 			effectiveDayOffset: 15,
-			prorationBehavior:  types.ProrationBehaviorCreateProrations,
 			wantLineItems:      2,
 			wantInvoiceAction:  "created",
 		},
@@ -255,7 +252,6 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			oldQty:             decimal.NewFromInt(3),
 			newQty:             decimal.NewFromInt(1),
 			effectiveDayOffset: 15,
-			prorationBehavior:  types.ProrationBehaviorCreateProrations,
 			wantLineItems:      2,
 			wantInvoiceAction:  "wallet_credit",
 		},
@@ -264,7 +260,6 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			oldQty:             decimal.NewFromInt(1),
 			newQty:             decimal.NewFromInt(3),
 			effectiveDayOffset: 0,
-			prorationBehavior:  types.ProrationBehaviorCreateProrations,
 			wantLineItems:      2,
 			wantInvoiceAction:  "created",
 		},
@@ -273,25 +268,14 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			oldQty:             decimal.NewFromInt(1),
 			newQty:             decimal.NewFromInt(3),
 			effectiveDayOffset: -1, // sentinel: periodEnd - 1 second
-			prorationBehavior:  types.ProrationBehaviorCreateProrations,
 			wantLineItems:      2,
 			wantInvoiceAction:  "", // proration amount rounds to 0 at 1s before period end
-		},
-		{
-			name:               "proration_behavior_none",
-			oldQty:             decimal.NewFromInt(1),
-			newQty:             decimal.NewFromInt(3),
-			effectiveDayOffset: 15,
-			prorationBehavior:  types.ProrationBehaviorNone,
-			wantLineItems:      2,
-			wantInvoiceAction:  "",
 		},
 		{
 			name:               "same_quantity_noop",
 			oldQty:             decimal.NewFromInt(5),
 			newQty:             decimal.NewFromInt(5),
 			effectiveDayOffset: 5,
-			prorationBehavior:  types.ProrationBehaviorCreateProrations,
 			wantLineItems:      0,
 			wantInvoiceAction:  "",
 			wantNoOp:           true,
@@ -314,14 +298,6 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 
 			cust := s.createCustomer("adv-" + tc.name)
 			sub := s.createActiveSub(cust.ID)
-
-			// Patch proration behavior when test requires "none"
-			if tc.prorationBehavior == types.ProrationBehaviorNone {
-				storedSub, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
-				s.Require().NoError(err)
-				storedSub.ProrationBehavior = types.ProrationBehaviorNone
-				s.Require().NoError(s.GetStores().SubscriptionRepo.Update(ctx, storedSub))
-			}
 
 			priceAmount := decimal.NewFromInt(50)
 			p := s.createFixedPrice(priceAmount, types.InvoiceCadenceAdvance)
@@ -351,7 +327,8 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			}
 
 			if tc.wantInvoiceAction == "" {
-				s.Empty(resp.ChangedResources.Invoices, "expected no invoices for proration_behavior=none")
+				s.Empty(resp.ChangedResources.Invoices,
+					"expected no proration invoice or wallet credit (tc=%s)", tc.name)
 				return
 			}
 
