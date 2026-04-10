@@ -205,6 +205,24 @@ const (
 	DEFAULT_BATCH_SIZE = 100
 )
 
+func (b BillingModel) Validate() error {
+	allowed := []BillingModel{
+		BILLING_MODEL_FLAT_FEE,
+		BILLING_MODEL_PACKAGE,
+		BILLING_MODEL_TIERED,
+	}
+	if b != "" && !lo.Contains(allowed, b) {
+		return ierr.NewError("invalid billing model").
+			WithHint("Invalid billing model").
+			WithReportableDetails(map[string]interface{}{
+				"billing_model": b,
+				"allowed":       allowed,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
+
 func (b BillingCadence) Validate() error {
 	allowed := []BillingCadence{
 		BILLING_CADENCE_RECURRING,

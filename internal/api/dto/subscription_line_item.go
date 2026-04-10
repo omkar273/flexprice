@@ -249,7 +249,7 @@ func (r *CreateSubscriptionLineItemRequest) Validate(price *price.Price, sub *su
 		}
 	}
 
-	// Note: inline price path (r.Price) is nil here; ONETIME cadence is validated
+	// Note: inline price path (r.Price) is nil here; ONETIME billing period is validated
 	// downstream in CreatePriceRequest.Validate() for that path.
 	// ONETIME charges must use ADVANCE invoice cadence
 	if price != nil && price.BillingPeriod == types.BILLING_PERIOD_ONETIME {
