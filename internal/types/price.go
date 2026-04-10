@@ -185,6 +185,7 @@ const (
 	BILLING_PERIOD_ONETIME   BillingPeriod = "ONETIME"
 
 	BILLING_CADENCE_RECURRING BillingCadence = "RECURRING"
+	// BILLING_CADENCE_ONETIME was removed — use BILLING_PERIOD_ONETIME instead
 
 	// BILLING_TIER_VOLUME means all units price based on final tier reached.
 	// Tier boundaries are INCLUSIVE: if up_to is 1000, quantity 1000 belongs to this tier
@@ -265,13 +266,19 @@ func BillingPeriodOrder(b BillingPeriod) int {
 		return 5
 	case BILLING_PERIOD_ANNUAL:
 		return 6
+	case BILLING_PERIOD_ONETIME:
+		return -1
 	default:
 		return 0
 	}
 }
 
 // BillingPeriodGreaterThan returns true when a has a longer cadence than b (Order(a) > Order(b)).
+// Returns false if either period is ONETIME, as it is not on the recurring cadence scale.
 func BillingPeriodGreaterThan(a, b BillingPeriod) bool {
+	if a == BILLING_PERIOD_ONETIME || b == BILLING_PERIOD_ONETIME {
+		return false
+	}
 	return BillingPeriodOrder(a) > BillingPeriodOrder(b)
 }
 
@@ -296,7 +303,11 @@ func BillingPeriodToMonths(b BillingPeriod) int {
 // IsBillingPeriodMultiple returns true when longer is an exact multiple of shorter
 // (e.g. QUARTERLY is 3× MONTHLY). Both periods must be month-based; sub-month
 // periods always return false when compared with month-based periods.
+// Returns false if either period is ONETIME, as it is not on the recurring cadence scale.
 func IsBillingPeriodMultiple(longer, shorter BillingPeriod) bool {
+	if longer == BILLING_PERIOD_ONETIME || shorter == BILLING_PERIOD_ONETIME {
+		return false
+	}
 	lm := BillingPeriodToMonths(longer)
 	sm := BillingPeriodToMonths(shorter)
 	if lm == 0 || sm == 0 {
@@ -322,12 +333,23 @@ func MinBillingPeriod(periods []BillingPeriod) BillingPeriod {
 
 // ValidateBillingPeriodAlignment ensures every period in the list is a valid
 // multiple of the smallest period. Returns nil when len(periods) <= 1.
+// ONETIME periods are excluded from alignment checks as they are not on the
+// recurring cadence scale.
 func ValidateBillingPeriodAlignment(periods []BillingPeriod) error {
-	if len(periods) <= 1 {
+	// Filter out ONETIME periods — they are not part of the recurring cadence scale
+	recurringPeriods := make([]BillingPeriod, 0, len(periods))
+	for _, p := range periods {
+		if p == BILLING_PERIOD_ONETIME {
+			continue
+		}
+		recurringPeriods = append(recurringPeriods, p)
+	}
+
+	if len(recurringPeriods) <= 1 {
 		return nil
 	}
-	min := MinBillingPeriod(periods)
-	for _, p := range periods {
+	min := MinBillingPeriod(recurringPeriods)
+	for _, p := range recurringPeriods {
 		if p == min {
 			continue
 		}
