@@ -250,7 +250,7 @@ feature_flag:
 # Google Gemini (server-side AI pricing parse for dashboard). Set FLEXPRICE_GEMINI_API_KEY in secure environments.
 gemini:
   api_key: ""
-  model: "gemini-2.0-flash"
+  model: "gemini-2.5-flash"
 
 email:
   enabled: false # Set to true to enable email sending (override with FLEXPRICE_EMAIL_ENABLED=true)

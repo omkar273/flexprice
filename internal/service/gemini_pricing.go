@@ -16,7 +16,7 @@ import (
 	"github.com/flexprice/flexprice/internal/logger"
 )
 
-const defaultGeminiModel = "gemini-2.0-flash"
+const defaultGeminiModel = "gemini-2.5-flash"
 const maxGeminiParseAttempts = 2
 
 // GeminiPricingService calls Gemini generateContent and returns canonical JSON for the pricing schema payload.
