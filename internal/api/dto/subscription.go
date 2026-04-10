@@ -296,7 +296,6 @@ func (c *SubscriptionInheritanceConfig) Validate() error {
 	return nil
 }
 
-
 type CreateSubscriptionRequest struct {
 
 	// customer_id is the flexprice customer id
@@ -314,7 +313,7 @@ type CreateSubscriptionRequest struct {
 	EndDate            *time.Time           `json:"end_date,omitempty"`
 	TrialStart         *time.Time           `json:"trial_start,omitempty"`
 	TrialEnd           *time.Time           `json:"trial_end,omitempty"`
-	BillingCadence     types.BillingCadence `json:"billing_cadence" validate:"required"`
+	BillingCadence     types.BillingCadence `json:"-"`
 	BillingPeriod      types.BillingPeriod  `json:"billing_period" validate:"required"`
 	BillingPeriodCount int                  `json:"billing_period_count" default:"1"`
 	Metadata           map[string]string    `json:"metadata,omitempty"`
@@ -610,6 +609,9 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		return err
 	}
 
+	if r.BillingCadence == "" {
+		r.BillingCadence = types.BILLING_CADENCE_RECURRING
+	}
 	if err := r.BillingCadence.Validate(); err != nil {
 		return err
 	}
