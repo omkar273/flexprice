@@ -81,7 +81,7 @@ func (p *SubscriptionPriceCreateRequest) ToCreatePriceRequest(sub *subscription.
 }
 
 // CreateSubscriptionLineItemRequest represents the request to create a subscription line item.
-// For prices with billing_cadence ONETIME, request end_date is ignored: the line item end_date is always start_date + 1 calendar day (UTC), clamped to the subscription end when present.
+// For prices with billing_period ONETIME, request end_date is ignored: the line item end_date is always start_date + 1 calendar day (UTC), clamped to the subscription end when present.
 type CreateSubscriptionLineItemRequest struct {
 	// PriceID references an existing price (plan, addon, or subscription-scoped). Exactly one of price_id or price must be set.
 	PriceID string `json:"price_id,omitempty"`
@@ -182,8 +182,8 @@ func (r *CreateSubscriptionLineItemRequest) Validate(price *price.Price, sub *su
 			Mark(ierr.ErrValidation)
 	}
 
-	onetimeIgnoresRequestEndDate := (price != nil && price.BillingCadence == types.BILLING_CADENCE_ONETIME) ||
-		(r.Price != nil && r.Price.BillingCadence == types.BILLING_CADENCE_ONETIME)
+	onetimeIgnoresRequestEndDate := (price != nil && price.BillingPeriod == types.BILLING_PERIOD_ONETIME) ||
+		(r.Price != nil && r.Price.BillingPeriod == types.BILLING_PERIOD_ONETIME)
 
 	// Validate start date is not after end date if both are provided
 	if !onetimeIgnoresRequestEndDate && r.StartDate != nil && r.EndDate != nil {
@@ -254,7 +254,7 @@ func (r *CreateSubscriptionLineItemRequest) Validate(price *price.Price, sub *su
 	// Note: inline price path (r.Price) is nil here; ONETIME cadence is validated
 	// downstream in CreatePriceRequest.Validate() for that path.
 	// ONETIME charges must use ADVANCE invoice cadence
-	if price != nil && price.BillingCadence == types.BILLING_CADENCE_ONETIME {
+	if price != nil && price.BillingPeriod == types.BILLING_PERIOD_ONETIME {
 		if price.InvoiceCadence != "" && price.InvoiceCadence != types.InvoiceCadenceAdvance {
 			return ierr.NewError("ONETIME charges must have invoice_cadence ADVANCE").
 				WithHint("One-time charges are always billed in advance").
@@ -443,16 +443,12 @@ func (r *CreateSubscriptionLineItemRequest) validateCommitmentFields() error {
 
 // ToSubscriptionLineItem converts the request to a domain subscription line item
 func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.Context, params LineItemParams) *subscription.SubscriptionLineItem {
-	// Resolve BillingCadence and InvoiceCadence from price
-	billingCadence := types.BILLING_CADENCE_RECURRING
+	// Resolve InvoiceCadence from price
 	invoiceCadence := types.InvoiceCadenceAdvance
 	if params.Price != nil {
-		if params.Price.BillingCadence != "" {
-			billingCadence = params.Price.BillingCadence
-		}
 		invoiceCadence = params.Price.InvoiceCadence
 		// ONETIME charges default to ADVANCE invoice cadence if not explicitly set
-		if billingCadence == types.BILLING_CADENCE_ONETIME && invoiceCadence == "" {
+		if params.Price.BillingPeriod == types.BILLING_PERIOD_ONETIME && invoiceCadence == "" {
 			invoiceCadence = types.InvoiceCadenceAdvance
 		}
 	}
@@ -537,7 +533,7 @@ func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 	}
 	lineItem.StartDate = startDate.UTC()
 
-	if params.Price != nil && params.Price.BillingCadence == types.BILLING_CADENCE_ONETIME {
+	if params.Price != nil && params.Price.BillingPeriod == types.BILLING_PERIOD_ONETIME {
 		end := lineItem.StartDate.AddDate(0, 0, 1)
 		if sub := params.Subscription; sub != nil && sub.EndDate != nil {
 			if se := lo.FromPtr(sub.EndDate).UTC(); end.After(se) {
