@@ -47,6 +47,7 @@ type InvoiceService interface {
 	UpdateInvoice(ctx context.Context, id string, req dto.UpdateInvoiceRequest) (*dto.InvoiceResponse, error)
 	DeleteInvoice(ctx context.Context, id string) error
 	ReconcilePaymentStatus(ctx context.Context, invoiceID string, paymentStatus types.PaymentStatus, paymentAmount *decimal.Decimal) error
+	VoidInvoice(ctx context.Context, id string, req dto.InvoiceVoidRequest) error
 }
 
 type PlanService interface {

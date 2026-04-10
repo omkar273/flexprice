@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	quickbookswebhook "github.com/flexprice/flexprice/internal/integration/quickbooks/webhook"
 	razorpaywebhook "github.com/flexprice/flexprice/internal/integration/razorpay/webhook"
 	"github.com/flexprice/flexprice/internal/integration/stripe/webhook"
+	zohowebhook "github.com/flexprice/flexprice/internal/integration/zoho/webhook"
 	"github.com/flexprice/flexprice/internal/interfaces"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/postgres"
@@ -974,6 +976,88 @@ func (h *WebhookHandler) HandleMoyasarWebhook(c *gin.Context) {
 	h.logger.Infow("successfully processed Moyasar webhook",
 		"environment_id", environmentID,
 		"event_type", event.Type)
+}
+
+// HandleZohoBooksWebhook handles POST /v1/webhooks/zoho_books/:tenant_id/:environment_id
+func (h *WebhookHandler) HandleZohoBooksWebhook(c *gin.Context) {
+	tenantID := c.Param("tenant_id")
+	environmentID := c.Param("environment_id")
+	if tenantID == "" || environmentID == "" {
+		h.logger.Errorw("missing tenant_id or environment_id in Zoho webhook URL",
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "tenant_id and environment_id are required",
+		})
+		return
+	}
+
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		h.logger.Errorw("failed to read Zoho webhook body", "error", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
+		return
+	}
+
+	ctx := types.SetTenantID(c.Request.Context(), tenantID)
+	ctx = types.SetEnvironmentID(ctx, environmentID)
+	c.Request = c.Request.WithContext(ctx)
+
+	zohoIntegration, err := h.integrationFactory.GetZohoBooksIntegration(ctx)
+	if err != nil || zohoIntegration == nil {
+		h.logger.Errorw("Zoho Books integration not available for webhook",
+			"error", err,
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Zoho Books is not configured for this environment"})
+		return
+	}
+
+	conn, webhookSecretPlain, err := zohoIntegration.Client.GetZohoBooksWebhookConfig(ctx)
+	if err != nil || conn == nil {
+		h.logger.Errorw("Zoho Books webhook config unavailable",
+			"error", err,
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Zoho Books is not configured for this environment"})
+		return
+	}
+
+	sig := c.GetHeader(zohowebhook.SignatureHeaderName())
+	zh := zohowebhook.NewHandler(h.logger)
+	deps := &zohowebhook.ServiceDeps{
+		PaymentService:                  h.paymentService,
+		InvoiceService:                  h.invoiceService,
+		CustomerService:                 h.customerService,
+		EntityIntegrationMappingService: h.entityIntegrationMappingService,
+	}
+
+	err = zh.Handle(ctx, conn, c.Request.URL, body, sig, webhookSecretPlain, deps)
+	if err != nil {
+		if errors.Is(err, zohowebhook.ErrInvalidWebhookSignature) ||
+			errors.Is(err, zohowebhook.ErrWebhookSecretNotConfigured) {
+			if errors.Is(err, zohowebhook.ErrWebhookSecretNotConfigured) {
+				h.logger.Errorw("Zoho webhook secret not configured",
+					"tenant_id", tenantID,
+					"environment_id", environmentID)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Webhook secret is not configured"})
+				return
+			}
+			h.logger.Errorw("Zoho webhook signature verification failed",
+				"tenant_id", tenantID,
+				"environment_id", environmentID)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid webhook signature"})
+			return
+		}
+		h.logger.Errorw("Zoho webhook processing failed",
+			"error", err,
+			"tenant_id", tenantID,
+			"environment_id", environmentID)
+		c.JSON(http.StatusOK, gin.H{"message": "Webhook received"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Webhook processed successfully"})
 }
 
 // paddleWebhookPayload is a minimal struct to parse event_type from the webhook payload
