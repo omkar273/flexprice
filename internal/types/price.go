@@ -176,16 +176,15 @@ const (
 	// ex 1-100 emails for $100, 101-1000 emails for $90
 	BILLING_MODEL_TIERED BillingModel = "TIERED"
 
-	// For BILLING_CADENCE_RECURRING
 	BILLING_PERIOD_MONTHLY   BillingPeriod = "MONTHLY"
 	BILLING_PERIOD_ANNUAL    BillingPeriod = "ANNUAL"
 	BILLING_PERIOD_WEEKLY    BillingPeriod = "WEEKLY"
 	BILLING_PERIOD_DAILY     BillingPeriod = "DAILY"
 	BILLING_PERIOD_QUARTER   BillingPeriod = "QUARTERLY"
 	BILLING_PERIOD_HALF_YEAR BillingPeriod = "HALF_YEARLY"
+	BILLING_PERIOD_ONETIME   BillingPeriod = "ONETIME"
 
 	BILLING_CADENCE_RECURRING BillingCadence = "RECURRING"
-	BILLING_CADENCE_ONETIME   BillingCadence = "ONETIME"
 
 	// BILLING_TIER_VOLUME means all units price based on final tier reached.
 	// Tier boundaries are INCLUSIVE: if up_to is 1000, quantity 1000 belongs to this tier
@@ -208,11 +207,10 @@ const (
 func (b BillingCadence) Validate() error {
 	allowed := []BillingCadence{
 		BILLING_CADENCE_RECURRING,
-		BILLING_CADENCE_ONETIME,
 	}
 	if b != "" && !lo.Contains(allowed, b) {
 		return ierr.NewError("invalid billing cadence").
-			WithHint("Invalid billing cadence").
+			WithHint("Invalid billing cadence — only RECURRING is supported").
 			WithReportableDetails(map[string]interface{}{
 				"billing_cadence": b,
 				"allowed":         allowed,
@@ -234,6 +232,7 @@ func (b BillingPeriod) Validate() error {
 		BILLING_PERIOD_DAILY,
 		BILLING_PERIOD_QUARTER,
 		BILLING_PERIOD_HALF_YEAR,
+		BILLING_PERIOD_ONETIME,
 	}
 	if !lo.Contains(allowed, b) {
 		return ierr.NewError("invalid billing period").
