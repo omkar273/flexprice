@@ -1352,6 +1352,8 @@ func init() {
 	price.BillingModelValidator = priceDescBillingModel.Validators[0].(func(string) error)
 	// priceDescBillingCadence is the schema descriptor for billing_cadence field.
 	priceDescBillingCadence := priceFields[16].Descriptor()
+	// price.DefaultBillingCadence holds the default value on creation for the billing_cadence field.
+	price.DefaultBillingCadence = types.BillingCadence(priceDescBillingCadence.Default.(string))
 	// price.BillingCadenceValidator is a validator for the "billing_cadence" field. It is called by the builders before save.
 	price.BillingCadenceValidator = priceDescBillingCadence.Validators[0].(func(string) error)
 	// priceDescTrialPeriod is the schema descriptor for trial_period field.

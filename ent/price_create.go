@@ -290,6 +290,14 @@ func (pc *PriceCreate) SetBillingCadence(tc types.BillingCadence) *PriceCreate {
 	return pc
 }
 
+// SetNillableBillingCadence sets the "billing_cadence" field if the given value is not nil.
+func (pc *PriceCreate) SetNillableBillingCadence(tc *types.BillingCadence) *PriceCreate {
+	if tc != nil {
+		pc.SetBillingCadence(*tc)
+	}
+	return pc
+}
+
 // SetInvoiceCadence sets the "invoice_cadence" field.
 func (pc *PriceCreate) SetInvoiceCadence(tc types.InvoiceCadence) *PriceCreate {
 	pc.mutation.SetInvoiceCadence(tc)
@@ -594,6 +602,10 @@ func (pc *PriceCreate) defaults() {
 	if _, ok := pc.mutation.ConversionRate(); !ok {
 		v := price.DefaultConversionRate
 		pc.mutation.SetConversionRate(v)
+	}
+	if _, ok := pc.mutation.BillingCadence(); !ok {
+		v := price.DefaultBillingCadence
+		pc.mutation.SetBillingCadence(v)
 	}
 	if _, ok := pc.mutation.TrialPeriod(); !ok {
 		v := price.DefaultTrialPeriod
