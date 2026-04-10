@@ -415,6 +415,9 @@ func (s *subscriptionModificationService) executeQuantityChange(
 				continue
 			}
 
+			// Capture original end date before mutation (used later for changed_resources).
+			originalEndDate := lineItem.EndDate
+
 			// End the old line item at effective date
 			lineItem.EndDate = effectiveDate
 			if err := sp.SubscriptionLineItemRepo.Update(txCtx, lineItem); err != nil {
@@ -461,13 +464,20 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					Mark(ierr.ErrDatabase)
 			}
 
+			oldStart := lineItem.StartDate
 			endDate := effectiveDate
 			startDate := effectiveDate
+			// New item runs from effectiveDate until the original item's end (or period end if open-ended).
+			newEndDate := sub.CurrentPeriodEnd
+			if !originalEndDate.IsZero() {
+				newEndDate = originalEndDate
+			}
 			changedLineItems = append(changedLineItems,
 				dto.ChangedLineItem{
 					ID:           lineItem.ID,
 					PriceID:      lineItem.PriceID,
 					Quantity:     lineItem.Quantity,
+					StartDate:    &oldStart,
 					EndDate:      &endDate,
 					ChangeAction: "ended",
 				},
@@ -476,15 +486,14 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					PriceID:      newItem.PriceID,
 					Quantity:     newItem.Quantity,
 					StartDate:    &startDate,
+					EndDate:      &newEndDate,
 					ChangeAction: "created",
 				},
 			)
 
 			// Collect pairs that need proration (handled after the transaction commits).
-			// Only ADVANCE items are prorated immediately; ARREAR items settle at period end.
-			// Respect the subscription's proration_behavior setting.
-			if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance &&
-				sub.ProrationBehavior != types.ProrationBehaviorNone {
+			// ADVANCE items are billed upfront, so any mid-cycle quantity change requires a proration.
+			if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance {
 				itemsForProration = append(itemsForProration, prorationPair{old: lineItem, new_: newItem, effectiveDate: effectiveDate})
 			}
 		}
@@ -612,13 +621,20 @@ func (s *subscriptionModificationService) previewQuantityChange(
 			continue
 		}
 
+		oldStart := lineItem.StartDate
 		endDate := effectiveDate
 		startDate := effectiveDate
+		// New item runs from effectiveDate until the old item's end (or period end if open-ended).
+		newEndDate := sub.CurrentPeriodEnd
+		if !lineItem.EndDate.IsZero() {
+			newEndDate = lineItem.EndDate
+		}
 		changedLineItems = append(changedLineItems,
 			dto.ChangedLineItem{
 				ID:           "(preview-ended)",
 				PriceID:      lineItem.PriceID,
 				Quantity:     lineItem.Quantity,
+				StartDate:    &oldStart,
 				EndDate:      &endDate,
 				ChangeAction: "ended",
 			},
@@ -627,13 +643,14 @@ func (s *subscriptionModificationService) previewQuantityChange(
 				PriceID:      lineItem.PriceID,
 				Quantity:     change.Quantity,
 				StartDate:    &startDate,
+				EndDate:      &newEndDate,
 				ChangeAction: "created",
 			},
 		)
 
 		// Preview proration for ADVANCE items — calculate only, do NOT create invoices or wallet credits.
-		if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance &&
-			sub.ProrationBehavior != types.ProrationBehaviorNone {
+		// Always preview for ADVANCE items regardless of proration_behavior (same reasoning as execute).
+		if lineItem.InvoiceCadence == types.InvoiceCadenceAdvance {
 			previewNewItem := &subscription.SubscriptionLineItem{
 				PriceID:  lineItem.PriceID,
 				Quantity: change.Quantity,
