@@ -2090,16 +2090,6 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 			return nil, err
 		}
 
-		// Only fetch usage from ClickHouse if the subscription has usage-based (metered) arrear
-		// line items. FIXED-price-only subscriptions don't need a ClickHouse query.
-		hasUsageArrearItems := false
-		for _, li := range arrearLineItems {
-			if li.MeterID != "" {
-				hasUsageArrearItems = true
-				break
-			}
-		}
-
 		// For current period arrear charges
 		arrearResult, err := s.calculateFeatureUsageCharges(
 			ctx,
@@ -2107,7 +2097,7 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 			arrearLineItems,
 			periodStart,
 			periodEnd,
-			hasUsageArrearItems,
+			true, // Include usage for arrear
 		)
 		if err != nil {
 			return nil, err
