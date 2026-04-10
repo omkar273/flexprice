@@ -81,7 +81,7 @@ func (p *SubscriptionPriceCreateRequest) ToCreatePriceRequest(sub *subscription.
 }
 
 // CreateSubscriptionLineItemRequest represents the request to create a subscription line item.
-// For prices with billing_cadence ONETIME, if end_date is omitted the line item end_date is set to start_date + 1 calendar day (UTC), clamped to the subscription end when present.
+// For prices with billing_cadence ONETIME, request end_date is ignored: the line item end_date is always start_date + 1 calendar day (UTC), clamped to the subscription end when present.
 type CreateSubscriptionLineItemRequest struct {
 	// PriceID references an existing price (plan, addon, or subscription-scoped). Exactly one of price_id or price must be set.
 	PriceID string `json:"price_id,omitempty"`
@@ -182,8 +182,11 @@ func (r *CreateSubscriptionLineItemRequest) Validate(price *price.Price, sub *su
 			Mark(ierr.ErrValidation)
 	}
 
+	onetimeIgnoresRequestEndDate := (price != nil && price.BillingCadence == types.BILLING_CADENCE_ONETIME) ||
+		(r.Price != nil && r.Price.BillingCadence == types.BILLING_CADENCE_ONETIME)
+
 	// Validate start date is not after end date if both are provided
-	if r.StartDate != nil && r.EndDate != nil {
+	if !onetimeIgnoresRequestEndDate && r.StartDate != nil && r.EndDate != nil {
 		if r.StartDate.After(lo.FromPtr(r.EndDate)) {
 			return ierr.NewError("start_date cannot be after end_date").
 				WithHint("Start date cannot be after end date").
@@ -206,7 +209,7 @@ func (r *CreateSubscriptionLineItemRequest) Validate(price *price.Price, sub *su
 					Mark(ierr.ErrValidation)
 			}
 		}
-		if sub.EndDate != nil && r.EndDate != nil {
+		if !onetimeIgnoresRequestEndDate && sub.EndDate != nil && r.EndDate != nil {
 			subEndUTC := lo.FromPtr(sub.EndDate).UTC()
 			endUTC := lo.FromPtr(r.EndDate).UTC()
 			if endUTC.After(subEndUTC) {
@@ -524,39 +527,24 @@ func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 		}
 	}
 
-	// Set dates: recurring = max(subscription start, price start, request start when request bumps start).
-	// ONETIME: explicit request start_date (only) is the exact billing date; otherwise same max rule.
+	// Effective start = latest of subscription start, price start, and request start_date (when provided).
 	startDate := params.Subscription.StartDate
 	if params.Price != nil && params.Price.StartDate != nil && params.Price.StartDate.After(startDate) {
 		startDate = lo.FromPtr(params.Price.StartDate)
 	}
-	if params.Price != nil && params.Price.BillingCadence == types.BILLING_CADENCE_ONETIME && r.StartDate != nil {
-		startDate = r.StartDate.UTC()
-	} else if r.StartDate != nil && r.StartDate.After(startDate) {
+	if r.StartDate != nil && r.StartDate.After(startDate) {
 		startDate = lo.FromPtr(r.StartDate)
 	}
 	lineItem.StartDate = startDate.UTC()
 
 	if params.Price != nil && params.Price.BillingCadence == types.BILLING_CADENCE_ONETIME {
-		if r.EndDate == nil {
-			endDateVal := startDate.UTC().AddDate(0, 0, 1)
-			if params.Subscription != nil && params.Subscription.EndDate != nil {
-				subEnd := lo.FromPtr(params.Subscription.EndDate).UTC()
-				if endDateVal.After(subEnd) {
-					endDateVal = subEnd
-				}
+		end := lineItem.StartDate.AddDate(0, 0, 1)
+		if sub := params.Subscription; sub != nil && sub.EndDate != nil {
+			if se := lo.FromPtr(sub.EndDate).UTC(); end.After(se) {
+				end = se
 			}
-			if endDateVal.Before(lineItem.StartDate) {
-				endDateVal = lineItem.StartDate
-			}
-			lineItem.EndDate = endDateVal
-		} else {
-			endDateVal := r.EndDate.UTC()
-			if startDate.After(endDateVal) {
-				endDateVal = startDate.UTC()
-			}
-			lineItem.EndDate = endDateVal
 		}
+		lineItem.EndDate = end
 	} else if r.EndDate != nil {
 		endDateVal := r.EndDate.UTC()
 		if startDate.After(endDateVal) {
