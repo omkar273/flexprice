@@ -22,6 +22,7 @@ import (
 	"github.com/flexprice/flexprice/internal/integration/quickbooks"
 	"github.com/flexprice/flexprice/internal/integration/razorpay"
 	"github.com/flexprice/flexprice/internal/integration/stripe"
+	"github.com/flexprice/flexprice/internal/integration/zoho"
 	"github.com/flexprice/flexprice/internal/interfaces"
 	"github.com/flexprice/flexprice/internal/s3"
 	"github.com/flexprice/flexprice/internal/types"
@@ -67,6 +68,7 @@ type InvoiceService interface {
 	SyncInvoiceToRazorpayIfEnabled(ctx context.Context, invoiceID string) error
 	SyncInvoiceToChargebeeIfEnabled(ctx context.Context, invoiceID string) error
 	SyncInvoiceToQuickBooksIfEnabled(ctx context.Context, invoiceID string) error
+	SyncInvoiceToZohoBooksIfEnabled(ctx context.Context, invoiceID string) error
 	IsFinalizationDue(ctx context.Context, invoiceID string) (bool, error)
 	ListAllTenantDraftInvoices(ctx context.Context, batchSize, offset int) ([]*invoice.Invoice, error)
 
@@ -1489,6 +1491,49 @@ func (s *invoiceService) SyncInvoiceToQuickBooksIfEnabled(ctx context.Context, i
 		"invoice_id", inv.ID,
 		"quickbooks_invoice_id", syncResponse.QuickBooksInvoiceID)
 
+	return nil
+}
+
+// SyncInvoiceToZohoBooksIfEnabled syncs the invoice to Zoho Books if Zoho Books connection is enabled.
+func (s *invoiceService) SyncInvoiceToZohoBooksIfEnabled(ctx context.Context, invoiceID string) error {
+	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
+	if err != nil {
+		return err
+	}
+
+	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderZohoBooks)
+	if err != nil || conn == nil {
+		if err != nil && !ierr.IsNotFound(err) {
+			s.Logger.ErrorwCtx(ctx, "failed to check Zoho Books connection, skipping invoice sync",
+				"invoice_id", inv.ID,
+				"error", err)
+		}
+		return nil
+	}
+	if !conn.IsInvoiceOutboundEnabled() {
+		s.Logger.DebugwCtx(ctx, "Zoho Books invoice sync disabled, skipping", "invoice_id", inv.ID)
+		return nil
+	}
+
+	zohoIntegration, err := s.IntegrationFactory.GetZohoBooksIntegration(ctx)
+	if err != nil {
+		s.Logger.ErrorwCtx(ctx, "failed to get Zoho Books integration, skipping invoice sync",
+			"invoice_id", inv.ID,
+			"error", err)
+		return nil
+	}
+
+	resp, err := zohoIntegration.InvoiceSvc.SyncInvoiceToZoho(ctx, zoho.ZohoInvoiceSyncRequest{
+		InvoiceID: inv.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.Logger.InfowCtx(ctx, "successfully synced invoice to Zoho Books",
+		"invoice_id", inv.ID,
+		"zoho_invoice_id", resp.ZohoInvoiceID,
+		"zoho_status", resp.Status)
 	return nil
 }
 
