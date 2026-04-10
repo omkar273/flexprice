@@ -143,10 +143,10 @@ func (s *BillingOnetimeSuite) setupSharedFixtures() {
 		EntityType:         types.PRICE_ENTITY_TYPE_PLAN,
 		EntityID:           s.planT.ID,
 		Type:               types.PRICE_TYPE_FIXED,
-		BillingPeriod:      "",
-		BillingPeriodCount: 0,
+		BillingPeriod:      types.BILLING_PERIOD_ONETIME,
+		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_ONETIME,
+		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceAdvance,
 		BaseModel:          types.GetDefaultBaseModel(ctx),
 	}
@@ -164,10 +164,10 @@ func (s *BillingOnetimeSuite) setupSharedFixtures() {
 		EntityType:         types.PRICE_ENTITY_TYPE_PLAN,
 		EntityID:           s.planT.ID,
 		Type:               types.PRICE_TYPE_FIXED,
-		BillingPeriod:      "",
-		BillingPeriodCount: 0,
+		BillingPeriod:      types.BILLING_PERIOD_ONETIME,
+		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_ONETIME,
+		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceAdvance,
 		BaseModel:          types.GetDefaultBaseModel(ctx),
 	}
@@ -202,7 +202,7 @@ func (s *BillingOnetimeSuite) makeOnetimeLineItem(priceID string, cadence types.
 		CustomerID:     s.cust.ID,
 		PriceID:        priceID,
 		PriceType:      types.PRICE_TYPE_FIXED,
-		// BillingPeriod intentionally omitted (zero value "") — IsOneTime() uses PriceType==FIXED && BillingPeriod==""
+		BillingPeriod:  types.BILLING_PERIOD_ONETIME,
 		InvoiceCadence: cadence,
 		Quantity:       decimal.NewFromInt(1),
 		Currency:       "usd",
@@ -371,10 +371,10 @@ func (s *BillingOnetimeSuite) TestOneTimeBillingDate_IsStartDate() {
 }
 
 // TestIsOneTime_ViaMapper verifies that the production Ent→domain mapping path
-// correctly preserves the ONETIME signal (BillingPeriod="") so that IsOneTime()
+// correctly preserves the ONETIME signal (BillingPeriod=ONETIME) so that IsOneTime()
 // returns true without requiring the Price object to be pre-loaded.
-// This prevents mapper regressions that might accidentally set a non-empty
-// BillingPeriod for ONETIME items.
+// This prevents mapper regressions that might accidentally clear BillingPeriod
+// for ONETIME items.
 func (s *BillingOnetimeSuite) TestIsOneTime_ViaMapper() {
 	priceType := types.PRICE_TYPE_FIXED
 	entItem := &entpkg.SubscriptionLineItem{
@@ -383,15 +383,15 @@ func (s *BillingOnetimeSuite) TestIsOneTime_ViaMapper() {
 		CustomerID:     s.cust.ID,
 		PriceID:        s.prices.onetimeFixed.ID,
 		PriceType:      &priceType,
-		BillingPeriod:  "", // ONETIME: intentionally empty
+		BillingPeriod:  types.BILLING_PERIOD_ONETIME, // ONETIME signal
 		Currency:       "usd",
 		Quantity:       decimal.NewFromInt(1),
 		TenantID:       s.GetContext().Value(types.CtxTenantID).(string),
 		Status:         string(types.StatusPublished),
 	}
 	domainItem := subscription.SubscriptionLineItemFromEnt(entItem)
-	s.True(domainItem.IsOneTime(), "mapper must preserve empty BillingPeriod → IsOneTime() == true")
-	s.Equal("", string(domainItem.BillingPeriod), "BillingPeriod must be empty for ONETIME")
+	s.True(domainItem.IsOneTime(), "mapper must preserve BILLING_PERIOD_ONETIME → IsOneTime() == true")
+	s.Equal(types.BILLING_PERIOD_ONETIME, domainItem.BillingPeriod, "BillingPeriod must be ONETIME for one-time items")
 }
 
 // TestIsOneTime_ViaMapper_Recurring verifies that a recurring item coming through
@@ -431,6 +431,7 @@ func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_FullAmountNoProration()
 			CustomerID:     sub.CustomerID,
 			PriceID:        s.prices.onetimeFixed.ID,
 			PriceType:      types.PRICE_TYPE_FIXED,
+			BillingPeriod:  types.BILLING_PERIOD_ONETIME,
 			InvoiceCadence: types.InvoiceCadenceAdvance,
 			Quantity:       decimal.NewFromInt(1),
 			Currency:       "usd",
@@ -456,6 +457,7 @@ func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_LineItemPeriodIsBilling
 			CustomerID:     sub.CustomerID,
 			PriceID:        s.prices.onetimeFixed.ID,
 			PriceType:      types.PRICE_TYPE_FIXED,
+			BillingPeriod:  types.BILLING_PERIOD_ONETIME,
 			InvoiceCadence: types.InvoiceCadenceAdvance,
 			Quantity:       decimal.NewFromInt(1),
 			Currency:       "usd",
@@ -485,6 +487,7 @@ func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_WithQuantity3() {
 			CustomerID:     sub.CustomerID,
 			PriceID:        s.prices.onetimeFixed.ID, // $500 per unit
 			PriceType:      types.PRICE_TYPE_FIXED,
+			BillingPeriod:  types.BILLING_PERIOD_ONETIME,
 			InvoiceCadence: types.InvoiceCadenceAdvance,
 			Quantity:       decimal.NewFromInt(3), // 3 units
 			Currency:       "usd",
@@ -509,6 +512,7 @@ func (s *BillingOnetimeSuite) TestCalculateFixed_OneTime_SkippedIfStartDateAfter
 			CustomerID:     sub.CustomerID,
 			PriceID:        s.prices.onetimeFixed.ID,
 			PriceType:      types.PRICE_TYPE_FIXED,
+			BillingPeriod:  types.BILLING_PERIOD_ONETIME,
 			InvoiceCadence: types.InvoiceCadenceAdvance,
 			Quantity:       decimal.NewFromInt(1),
 			Currency:       "usd",
@@ -578,6 +582,7 @@ func (s *BillingOnetimeSuite) TestOnetime_ZeroDurationLineItemPeriod() {
 			CustomerID:     sub.CustomerID,
 			PriceID:        s.prices.onetimeFixed.ID,
 			PriceType:      types.PRICE_TYPE_FIXED,
+			BillingPeriod:  types.BILLING_PERIOD_ONETIME,
 			InvoiceCadence: types.InvoiceCadenceAdvance,
 			Quantity:       decimal.NewFromInt(1),
 			Currency:       "usd",

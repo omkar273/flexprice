@@ -186,7 +186,13 @@ func (s *billingService) CalculateFixedCharges(
 		if price.BillingPeriod == types.BILLING_PERIOD_ONETIME {
 			amount = priceService.CalculateCost(ctx, price.Price, item.Quantity)
 			linePeriodStart = item.StartDate
-			linePeriodEnd = item.EndDate
+			// For one-time charges the service period collapses to a single point (the billing date).
+			// If EndDate is not explicitly set, use StartDate so PeriodStart == PeriodEnd.
+			if item.EndDate.IsZero() {
+				linePeriodEnd = item.StartDate
+			} else {
+				linePeriodEnd = item.EndDate
+			}
 			// fall through to shared rounding + line item build below
 		} else if types.BillingPeriodGreaterThan(item.BillingPeriod, sub.BillingPeriod) {
 			// Line item has longer cadence than subscription (e.g. quarterly line on monthly sub):

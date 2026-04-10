@@ -76,6 +76,12 @@ func (li *SubscriptionLineItem) IsUsage() bool {
 	return li.PriceType == types.PRICE_TYPE_USAGE && li.MeterID != ""
 }
 
+// IsOneTime returns true when the line item represents a one-time charge
+// (i.e. BillingPeriod == BILLING_PERIOD_ONETIME).
+func (li *SubscriptionLineItem) IsOneTime() bool {
+	return li.BillingPeriod == types.BILLING_PERIOD_ONETIME
+}
+
 // HasCommitment returns true if the line item has commitment configured
 func (li *SubscriptionLineItem) HasCommitment() bool {
 	hasAmountCommitment := li.CommitmentAmount != nil && li.CommitmentAmount.GreaterThan(decimal.Zero)
