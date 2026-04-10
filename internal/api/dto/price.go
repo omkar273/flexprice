@@ -355,16 +355,15 @@ func (r *CreatePriceRequest) Validate() error {
 		}
 	}
 
-	// 9. Validate billing cadence specific requirements
-	switch r.BillingCadence {
-	case types.BILLING_CADENCE_RECURRING:
-		if r.BillingPeriod == "" {
-			return ierr.NewError("billing_period is required when billing_cadence is RECURRING").
-				WithHint("Please select a billing period to set up recurring pricing").
-				Mark(ierr.ErrValidation)
-		}
-	case types.BILLING_CADENCE_ONETIME:
-		if r.InvoiceCadence != types.InvoiceCadenceAdvance {
+	// 9. Validate billing period requirements
+	// billing_cadence is always RECURRING; billing_period drives one-time vs recurring
+	if r.BillingPeriod == "" {
+		return ierr.NewError("billing_period is required").
+			WithHint("Please select a billing period (e.g. MONTHLY, ANNUAL, ONETIME)").
+			Mark(ierr.ErrValidation)
+	}
+	if r.BillingPeriod == types.BILLING_PERIOD_ONETIME {
+		if r.InvoiceCadence != "" && r.InvoiceCadence != types.InvoiceCadenceAdvance {
 			return ierr.NewError("invoice_cadence must be ADVANCE for ONETIME prices").
 				WithHint("One-time charges are always billed in advance").
 				Mark(ierr.ErrValidation)
@@ -378,8 +377,7 @@ func (r *CreatePriceRequest) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 	if r.TrialPeriod > 0 &&
-		r.BillingCadence != types.BILLING_CADENCE_RECURRING &&
-		r.Type != types.PRICE_TYPE_FIXED {
+		(r.BillingPeriod == types.BILLING_PERIOD_ONETIME || r.Type != types.PRICE_TYPE_FIXED) {
 		return ierr.NewError("trial period can only be set for recurring fixed prices").
 			WithHint("Trial period can only be set for recurring fixed prices").
 			Mark(ierr.ErrValidation)
@@ -403,6 +401,11 @@ func (r *CreatePriceRequest) ToPrice(ctx context.Context) (*priceDomain.Price, e
 
 	if r.PriceUnitType == "" {
 		r.PriceUnitType = types.PRICE_UNIT_TYPE_FIAT
+	}
+
+	// billing_cadence is always RECURRING; default it when omitted by the caller
+	if r.BillingCadence == "" {
+		r.BillingCadence = types.BILLING_CADENCE_RECURRING
 	}
 
 	startDate := r.StartDate
