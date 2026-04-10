@@ -176,6 +176,13 @@ seed-db:
 	@docker compose exec -T postgres psql -U flexprice -d flexprice -f /docker-entrypoint-initdb.d/V1__seed.sql
 	@echo "Postgres seed data migration complete"
 
+# Apply the one-time billing period data migration (V3)
+.PHONY: migrate-onetime
+migrate-onetime:
+	@echo "Applying V3 one-time billing period migration..."
+	@docker compose exec -T postgres psql -U flexprice -d flexprice -f /docker-entrypoint-initdb.d/V3_onetime_billing_period.up.sql
+	@echo "V3 migration complete"
+
 # Initialize kafka topics
 .PHONY: init-kafka
 init-kafka:
