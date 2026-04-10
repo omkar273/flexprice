@@ -532,7 +532,7 @@ func (r *CreateSubscriptionLineItemRequest) ToSubscriptionLineItem(ctx context.C
 	lineItem.StartDate = startDate.UTC()
 
 	if params.Price != nil && params.Price.BillingPeriod == types.BILLING_PERIOD_ONETIME {
-		end := lineItem.StartDate.AddDate(0, 0, 1)
+		end := lineItem.StartDate.Add(time.Second)
 		if sub := params.Subscription; sub != nil && sub.EndDate != nil {
 			if se := lo.FromPtr(sub.EndDate).UTC(); end.After(se) {
 				end = se
