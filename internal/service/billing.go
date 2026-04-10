@@ -1932,7 +1932,7 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 	}
 	sub.LineItems = lineItems
 
-	// Attach prices so ClassifyLineItems can use price.BillingCadence for ONETIME detection
+	// Attach prices so cost calculations (CalculateFixedCharges, tiers, etc.) have the full price object.
 	if err := s.attachPricesToLineItems(ctx, sub.LineItems); err != nil {
 		return nil, err
 	}
