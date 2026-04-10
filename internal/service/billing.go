@@ -178,20 +178,15 @@ func (s *billingService) CalculateFixedCharges(
 		if err != nil {
 			return nil, fixedCost, err
 		}
-		// Attach price so IsOneTime() uses price.BillingCadence (authoritative)
-		if item.Price == nil {
-			item.Price = price.Price
-		}
 
 		var amount decimal.Decimal
 		var linePeriodStart, linePeriodEnd time.Time
 
 		// ONETIME charge: full amount, no proration; service period = line item start (billing date).
-		if item.IsOneTime() {
+		if price.BillingCadence == types.BILLING_CADENCE_ONETIME {
 			amount = priceService.CalculateCost(ctx, price.Price, item.Quantity)
-			billingDate := item.StartDate
-			linePeriodStart = billingDate
-			linePeriodEnd = billingDate
+			linePeriodStart = item.StartDate
+			linePeriodEnd = item.EndDate
 			// fall through to shared rounding + line item build below
 		} else if types.BillingPeriodGreaterThan(item.BillingPeriod, sub.BillingPeriod) {
 			// Line item has longer cadence than subscription (e.g. quarterly line on monthly sub):
@@ -2276,7 +2271,7 @@ func (s *billingService) ClassifyLineItems(
 		// ONETIME charges: classified by whether the line item start (billing date) falls in the period.
 		// They are never auto-added to both current and next (unlike RECURRING ADVANCE).
 		// FilterLineItemsToBeInvoiced prevents double-billing if the charge was already invoiced.
-		if item.IsOneTime() {
+		if item.Price.BillingCadence == types.BILLING_CADENCE_ONETIME {
 			billingDate := item.StartDate
 			if item.InvoiceCadence == types.InvoiceCadenceAdvance {
 				// Advance: billing date in [currentPeriodStart, currentPeriodEnd)

@@ -12,37 +12,39 @@ import (
 
 // SubscriptionLineItem represents a line item in a subscription
 type SubscriptionLineItem struct {
-	ID                      string                               `db:"id" json:"id"`
-	SubscriptionID          string                               `db:"subscription_id" json:"subscription_id"`
-	CustomerID              string                               `db:"customer_id" json:"customer_id"`
-	EntityID                string                               `db:"entity_id" json:"entity_id,omitempty"`
-	EntityType              types.SubscriptionLineItemEntityType `db:"entity_type" json:"entity_type,omitempty"`
-	PlanDisplayName         string                               `db:"plan_display_name" json:"plan_display_name,omitempty"`
-	PriceID                 string                               `db:"price_id" json:"price_id"`
-	PriceType               types.PriceType                      `db:"price_type" json:"price_type,omitempty"`
-	MeterID                 string                               `db:"meter_id" json:"meter_id,omitempty"`
-	MeterDisplayName        string                               `db:"meter_display_name" json:"meter_display_name,omitempty"`
-	PriceUnitID             *string                              `db:"price_unit_id" json:"price_unit_id"`
-	PriceUnit               *string                              `db:"price_unit" json:"price_unit"`
-	DisplayName             string                               `db:"display_name" json:"display_name,omitempty"`
-	Quantity                decimal.Decimal                      `db:"quantity" json:"quantity" swaggertype:"string"`
-	Currency                string                               `db:"currency" json:"currency"`
-	BillingPeriod           types.BillingPeriod                  `db:"billing_period" json:"billing_period"`
-	BillingPeriodCount      int                                  `db:"billing_period_count" json:"billing_period_count"` // from price at create; default 1
-	InvoiceCadence          types.InvoiceCadence                 `db:"invoice_cadence" json:"invoice_cadence"`
-	TrialPeriod             int                                  `db:"trial_period" json:"trial_period"`
-	StartDate               time.Time                            `db:"start_date" json:"start_date,omitempty"`
-	EndDate                 time.Time                            `db:"end_date" json:"end_date,omitempty"`
-	SubscriptionPhaseID     *string                              `db:"subscription_phase_id" json:"subscription_phase_id,omitempty"`
-	Metadata                map[string]string                    `db:"metadata" json:"metadata,omitempty"`
-	EnvironmentID           string                               `db:"environment_id" json:"environment_id"`
-	CommitmentAmount        *decimal.Decimal                     `db:"commitment_amount" json:"commitment_amount,omitempty" swaggertype:"string"`
-	CommitmentQuantity      *decimal.Decimal                     `db:"commitment_quantity" json:"commitment_quantity,omitempty" swaggertype:"string"`
-	CommitmentType          types.CommitmentType                 `db:"commitment_type" json:"commitment_type,omitempty"`
-	CommitmentOverageFactor *decimal.Decimal                     `db:"commitment_overage_factor" json:"commitment_overage_factor,omitempty" swaggertype:"string"`
-	CommitmentTrueUpEnabled bool                                 `db:"commitment_true_up_enabled" json:"commitment_true_up_enabled"`
-	CommitmentWindowed      bool                                 `db:"commitment_windowed" json:"commitment_windowed"`
-	CommitmentDuration      *types.BillingPeriod                 `db:"commitment_duration" json:"commitment_duration,omitempty"`
+	ID                  string                               `db:"id" json:"id"`
+	SubscriptionID      string                               `db:"subscription_id" json:"subscription_id"`
+	CustomerID          string                               `db:"customer_id" json:"customer_id"`
+	EntityID            string                               `db:"entity_id" json:"entity_id,omitempty"`
+	EntityType          types.SubscriptionLineItemEntityType `db:"entity_type" json:"entity_type,omitempty"`
+	PlanDisplayName     string                               `db:"plan_display_name" json:"plan_display_name,omitempty"`
+	PriceID             string                               `db:"price_id" json:"price_id"`
+	PriceType           types.PriceType                      `db:"price_type" json:"price_type,omitempty"`
+	MeterID             string                               `db:"meter_id" json:"meter_id,omitempty"`
+	MeterDisplayName    string                               `db:"meter_display_name" json:"meter_display_name,omitempty"`
+	PriceUnitID         *string                              `db:"price_unit_id" json:"price_unit_id"`
+	PriceUnit           *string                              `db:"price_unit" json:"price_unit"`
+	DisplayName         string                               `db:"display_name" json:"display_name,omitempty"`
+	Quantity            decimal.Decimal                      `db:"quantity" json:"quantity" swaggertype:"string"`
+	Currency            string                               `db:"currency" json:"currency"`
+	BillingPeriod       types.BillingPeriod                  `db:"billing_period" json:"billing_period"`
+	BillingPeriodCount  int                                  `db:"billing_period_count" json:"billing_period_count"` // from price at create; default 1
+	InvoiceCadence      types.InvoiceCadence                 `db:"invoice_cadence" json:"invoice_cadence"`
+	TrialPeriod         int                                  `db:"trial_period" json:"trial_period"`
+	StartDate           time.Time                            `db:"start_date" json:"start_date,omitempty"`
+	EndDate             time.Time                            `db:"end_date" json:"end_date,omitempty"`
+	SubscriptionPhaseID *string                              `db:"subscription_phase_id" json:"subscription_phase_id,omitempty"`
+	Metadata            map[string]string                    `db:"metadata" json:"metadata,omitempty"`
+	EnvironmentID       string                               `db:"environment_id" json:"environment_id"`
+
+	// Commitment fields
+	CommitmentAmount        *decimal.Decimal     `db:"commitment_amount" json:"commitment_amount,omitempty" swaggertype:"string"`
+	CommitmentQuantity      *decimal.Decimal     `db:"commitment_quantity" json:"commitment_quantity,omitempty" swaggertype:"string"`
+	CommitmentType          types.CommitmentType `db:"commitment_type" json:"commitment_type,omitempty"`
+	CommitmentOverageFactor *decimal.Decimal     `db:"commitment_overage_factor" json:"commitment_overage_factor,omitempty" swaggertype:"string"`
+	CommitmentTrueUpEnabled bool                 `db:"commitment_true_up_enabled" json:"commitment_true_up_enabled"`
+	CommitmentWindowed      bool                 `db:"commitment_windowed" json:"commitment_windowed"`
+	CommitmentDuration      *types.BillingPeriod `db:"commitment_duration" json:"commitment_duration,omitempty"`
 
 	Price *price.Price `json:"price,omitempty"`
 
@@ -64,14 +66,7 @@ func (li *SubscriptionLineItem) IsActive(t time.Time) bool {
 		return false
 	}
 
-	// For ONETIME items, treat a zero EndDate as closed at StartDate. This prevents
-	// them from appearing "active forever" after their billing instant has passed.
-	effectiveEnd := li.EndDate
-	if li.IsOneTime() && li.EndDate.IsZero() {
-		effectiveEnd = li.StartDate
-	}
-
-	if !effectiveEnd.IsZero() && effectiveEnd.Before(t) {
+	if !li.EndDate.IsZero() && li.EndDate.Before(t) {
 		return false
 	}
 	return true
@@ -79,21 +74,6 @@ func (li *SubscriptionLineItem) IsActive(t time.Time) bool {
 
 func (li *SubscriptionLineItem) IsUsage() bool {
 	return li.PriceType == types.PRICE_TYPE_USAGE && li.MeterID != ""
-}
-
-// IsOneTime returns true if this line item is charged exactly once (not recurring).
-//
-// Detection order:
-//  1. If the price is already loaded (li.Price != nil), use price.BillingCadence — authoritative.
-//  2. Fallback: detect by empty BillingPeriod.  ONETIME line items store "" because
-//     ToSubscriptionLineItem() clears BillingPeriod when the price cadence is ONETIME.
-//     Recurring FIXED lines always carry an explicit period (MONTHLY, ANNUAL, …).
-func (li *SubscriptionLineItem) IsOneTime() bool {
-	if li.Price != nil {
-		return li.Price.BillingCadence == types.BILLING_CADENCE_ONETIME
-	}
-	// Fallback for test fixtures and paths where price is not pre-loaded.
-	return li.PriceType == types.PRICE_TYPE_FIXED && li.BillingPeriod == ""
 }
 
 // HasCommitment returns true if the line item has commitment configured
@@ -163,10 +143,8 @@ func SubscriptionLineItemFromEnt(e *ent.SubscriptionLineItem) *SubscriptionLineI
 		commitmentDuration = &cd
 	}
 
-	// ONETIME line items have BillingPeriod="" and a meaningful BillingPeriodCount of 0.
-	// Only default to 1 for recurring line items (non-empty BillingPeriod) where 0 is invalid.
 	billingPeriodCount := e.BillingPeriodCount
-	if billingPeriodCount <= 0 && e.BillingPeriod != "" {
+	if billingPeriodCount <= 0 {
 		billingPeriodCount = 1
 	}
 	return &SubscriptionLineItem{
@@ -232,13 +210,6 @@ func (li *SubscriptionLineItem) GetPeriodStart(defaultPeriodStart time.Time) tim
 // It clips the line item's EndDate against the period boundary: returns min(EndDate, defaultPeriodEnd).
 // If EndDate is zero (line item is still active), defaultPeriodEnd is returned.
 func (li *SubscriptionLineItem) GetPeriodEnd(defaultPeriodEnd time.Time) time.Time {
-	// For ONETIME items with no explicit EndDate, the effective period is a single
-	// instant (StartDate). Returning StartDate here ensures callers see a
-	// zero-duration period [start, start] rather than the billing period end, which
-	// prevents accidental proration or window mis-bucketing.
-	if li.IsOneTime() && li.EndDate.IsZero() {
-		return li.StartDate
-	}
 	// If line item has an end date before default period end, use line item end date
 	if !li.EndDate.IsZero() && (li.EndDate.Before(defaultPeriodEnd) || li.EndDate.Equal(defaultPeriodEnd)) {
 		return li.EndDate
