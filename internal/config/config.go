@@ -45,6 +45,7 @@ type Configuration struct {
 	FeatureUsageTrackingLazy   FeatureUsageTrackingLazyConfig   `mapstructure:"feature_usage_tracking_lazy" validate:"required"`
 	FeatureUsageTrackingReplay FeatureUsageTrackingReplayConfig `mapstructure:"feature_usage_tracking_replay" validate:"required"`
 	MeterUsageTracking         MeterUsageTrackingConfig         `mapstructure:"meter_usage_tracking" validate:"required"`
+	UsageBenchmark             UsageBenchmarkConfig             `mapstructure:"usage_benchmark" validate:"omitempty"`
 	EnvAccess                  EnvAccessConfig                  `mapstructure:"env_access" json:"env_access" validate:"omitempty"`
 	FeatureFlag                FeatureFlagConfig                `mapstructure:"feature_flag" validate:"required"`
 	Email                      EmailConfig                      `mapstructure:"email" validate:"required"`
@@ -314,6 +315,14 @@ type MeterUsageTrackingConfig struct {
 	RateLimit                int64    `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup            string   `mapstructure:"consumer_group" default:"v1_meter_usage_tracking_service"`
 	PropertiesEnabledTenants []string `mapstructure:"properties_enabled_tenants"`
+}
+
+// UsageBenchmarkConfig configures the usage benchmarking consumer
+type UsageBenchmarkConfig struct {
+	Enabled       bool   `mapstructure:"enabled" default:"false"`
+	Topic         string `mapstructure:"topic" default:"staging_benchmarking"`
+	RateLimit     int64  `mapstructure:"rate_limit" default:"10"`
+	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_usage_benchmark_service"`
 }
 
 type WalletBalanceAlertConfig struct {
