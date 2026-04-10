@@ -1885,24 +1885,16 @@ func (s *billingService) attachPricesToLineItems(ctx context.Context, lineItems 
 	}
 
 	// Collect unique price IDs (skip any line items that already have a price loaded)
-	priceIDSet := make(map[string]struct{}, len(lineItems))
-	for _, li := range lineItems {
-		if li.Price == nil && li.PriceID != "" {
-			priceIDSet[li.PriceID] = struct{}{}
-		}
-	}
-	if len(priceIDSet) == 0 {
+	priceIDs := lo.Uniq(lo.Map(lineItems, func(li *subscription.SubscriptionLineItem, _ int) string {
+		return li.PriceID
+	}))
+	if len(priceIDs) == 0 {
 		return nil
 	}
 
-	priceIDs := make([]string, 0, len(priceIDSet))
-	for id := range priceIDSet {
-		priceIDs = append(priceIDs, id)
-	}
-
-	filter := types.NewNoLimitPriceFilter()
-	filter.PriceIDs = priceIDs
-	prices, err := s.PriceRepo.List(ctx, filter)
+	priceFilter := types.NewNoLimitPriceFilter()
+	priceFilter.PriceIDs = priceIDs
+	prices, err := s.PriceRepo.List(ctx, priceFilter)
 	if err != nil {
 		return err
 	}
@@ -1913,10 +1905,8 @@ func (s *billingService) attachPricesToLineItems(ctx context.Context, lineItems 
 	}
 
 	for _, li := range lineItems {
-		if li.Price == nil {
-			if p, ok := priceMap[li.PriceID]; ok {
-				li.Price = p
-			}
+		if p, ok := priceMap[li.PriceID]; ok {
+			li.Price = p
 		}
 	}
 	return nil
@@ -2230,32 +2220,13 @@ func (s *billingService) checkIfChargeInvoiced(
 		if item.PeriodStart == nil || item.PeriodEnd == nil {
 			continue
 		}
-		lineStart := lo.FromPtr(item.PeriodStart)
-		lineEnd := lo.FromPtr(item.PeriodEnd)
-
-		// ONETIME line items use a zero-duration invoice period (PeriodStart == PeriodEnd == StartDate).
-		// The standard open-interval overlap check (lineEnd > periodStart) would miss boundary
-		// cases where that instant equals periodStart (a point has no duration, so lineEnd > periodStart fails).
-		// Instead, check that the billing instant falls within [periodStart, periodEnd).
-		if lineStart.Equal(lineEnd) {
-			billingInstant := lineStart
-			// Use a closed interval [periodStart, periodEnd] so that arrear one-time
-			// items with billingInstant == periodEnd are correctly detected as already
-			// invoiced.  ClassifyLineItems uses (start, end] for ARREAR, so we must
-			// be at least as inclusive here to avoid duplicate billing at the boundary.
-			if !billingInstant.Before(periodStart) && !billingInstant.After(periodEnd) {
-				return true
-			}
-			continue
-		}
-
 		/*
 			Match when the invoice line's period equals the given window (original behaviour) or overlaps it.
 			Equal: lineStart == periodStart && lineEnd == periodEnd (e.g. monthly line on monthly sub).
 			Overlap: lineStart < periodEnd && lineEnd > periodStart (e.g. quarterly line Jan–Mar vs window Jan 1–31).
 		*/
-		exactMatch := lineStart.Equal(periodStart) && lineEnd.Equal(periodEnd)
-		overlap := lineStart.Before(periodEnd) && lineEnd.After(periodStart)
+		exactMatch := item.PeriodStart.Equal(periodStart) && item.PeriodEnd.Equal(periodEnd)
+		overlap := item.PeriodStart.Before(periodEnd) && item.PeriodEnd.After(periodStart)
 		if !exactMatch && !overlap {
 			continue
 		}
