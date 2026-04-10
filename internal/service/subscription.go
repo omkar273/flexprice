@@ -1183,7 +1183,6 @@ func (s *subscriptionService) ProcessSubscriptionPriceOverrides(
 			BillingPeriod:        originalPrice.BillingPeriod,
 			BillingPeriodCount:   originalPrice.BillingPeriodCount,
 			BillingModel:         targetBillingModel,
-			BillingCadence:       originalPrice.BillingCadence,
 			InvoiceCadence:       originalPrice.InvoiceCadence,
 			TrialPeriod:          originalPrice.TrialPeriod,
 			TierMode:             originalPrice.TierMode,

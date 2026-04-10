@@ -670,6 +670,57 @@ definitions:
       total_credit_amount:
         type: string
     type: object
+  ChangedInvoice:
+    properties:
+      action:
+        description: '"created" | "wallet_credit"'
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+    type: object
+  ChangedLineItem:
+    properties:
+      change_action:
+        description: '"created" | "updated" | "ended"'
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      price_id:
+        type: string
+      quantity:
+        type: string
+      start_date:
+        type: string
+    type: object
+  ChangedResources:
+    properties:
+      invoices:
+        items:
+          $ref: '#/definitions/ChangedInvoice'
+        type: array
+      line_items:
+        items:
+          $ref: '#/definitions/ChangedLineItem'
+        type: array
+      subscriptions:
+        items:
+          $ref: '#/definitions/ChangedSubscription'
+        type: array
+    type: object
+  ChangedSubscription:
+    properties:
+      action:
+        description: '"created" | "updated"'
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/types.SubscriptionStatus'
+    type: object
   ClonePlanRequest:
     properties:
       description:
@@ -1563,10 +1614,6 @@ definitions:
         items:
           $ref: '#/definitions/TaxRateResponse'
         type: array
-      subscription_customer_id:
-        description: subscription_customer_id is the subscription owner's customer
-          ID when it differs from customer_id (invoicing customer)
-        type: string
       subscription_id:
         description: subscription_id is the optional unique identifier of the subscription
           associated with this invoice
@@ -1678,8 +1725,6 @@ definitions:
     properties:
       amount:
         type: string
-      billing_cadence:
-        $ref: '#/definitions/types.BillingCadence'
       billing_model:
         $ref: '#/definitions/types.BillingModel'
       billing_period:
@@ -1740,7 +1785,6 @@ definitions:
       type:
         $ref: '#/definitions/types.PriceType'
     required:
-    - billing_cadence
     - billing_model
     - billing_period
     - currency
@@ -2811,12 +2855,16 @@ definitions:
       requestId:
         type: string
     type: object
-  ExecuteSubscriptionInheritanceRequest:
+  ExecuteSubscriptionModifyRequest:
     properties:
-      external_customer_ids_to_inherit_subscription:
-        items:
-          type: string
-        type: array
+      inheritance_params:
+        $ref: '#/definitions/SubModifyInheritanceRequest'
+      quantity_change_params:
+        $ref: '#/definitions/SubModifyQuantityChangeRequest'
+      type:
+        $ref: '#/definitions/SubscriptionModifyType'
+    required:
+    - type
     type: object
   FeatureResponse:
     properties:
@@ -3696,7 +3744,7 @@ definitions:
       subscription_customer_id:
         description: |-
           subscription_customer_id is the subscription owner's customer ID (Subscription.CustomerID).
-          It may differ from customer_id when the subscription uses an invoicing customer.
+          It may differ from customer_id when the subscription uses an invoicing customer. Set internally; nullable in DB.
         type: string
       subscription_id:
         description: subscription_id is the ID of the subscription this invoice is
@@ -3770,6 +3818,21 @@ definitions:
       overage_factor:
         description: OverageFactor is a multiplier applied to usage beyond the commitment
         type: number
+    type: object
+  LineItemQuantityChange:
+    properties:
+      effective_date:
+        description: |-
+          EffectiveDate is when the quantity change takes effect.
+          If omitted, the change is effective immediately (now).
+        type: string
+      id:
+        type: string
+      quantity:
+        type: string
+    required:
+    - id
+    - quantity
     type: object
   LinkIntegrationMappingRequest:
     properties:
@@ -4000,6 +4063,17 @@ definitions:
           this line item
     required:
     - price_id
+    type: object
+  ParseGeminiPricingRequest:
+    properties:
+      responseSchema:
+        type: object
+      systemPrompt:
+        example: You are a pricing architect...
+        type: string
+      userPrompt:
+        example: Describe pricing for...
+        type: string
     type: object
   PauseSubscriptionRequest:
     description: Request object for pausing an active subscription with various pause
@@ -4561,6 +4635,23 @@ definitions:
           additional context)
         type: string
     type: object
+  SubModifyInheritanceRequest:
+    properties:
+      external_customer_ids_to_inherit_subscription:
+        items:
+          type: string
+        type: array
+    type: object
+  SubModifyQuantityChangeRequest:
+    properties:
+      line_items:
+        items:
+          $ref: '#/definitions/LineItemQuantityChange'
+        minItems: 1
+        type: array
+    required:
+    - line_items
+    type: object
   SubscriptionChangeExecuteResponse:
     description: Response after successfully executing a subscription plan change
     properties:
@@ -4826,6 +4917,25 @@ definitions:
       updated_by:
         type: string
     type: object
+  SubscriptionModifyResponse:
+    properties:
+      changed_resources:
+        allOf:
+        - $ref: '#/definitions/ChangedResources'
+        description: All resources created or mutated as a result of this modification.
+      subscription:
+        allOf:
+        - $ref: '#/definitions/SubscriptionResponse'
+        description: The subscription after the modification.
+    type: object
+  SubscriptionModifyType:
+    enum:
+    - inheritance
+    - quantity_change
+    type: string
+    x-enum-varnames:
+    - SubscriptionModifyTypeInheritance
+    - SubscriptionModifyTypeQuantityChange
   SubscriptionPauseResponse:
     description: Response object containing subscription pause information
     properties:
@@ -4897,6 +5007,13 @@ definitions:
         description: LineItemCoupons represents line item-level coupons (map of line_item_id
           to coupon IDs)
         type: object
+      line_items:
+        description: |-
+          LineItems are extra line items to add during this phase, primarily one-time charges.
+          Each item's start_date defaults to the phase's start_date when not provided.
+        items:
+          $ref: '#/definitions/CreateSubscriptionLineItemRequest'
+        type: array
       metadata:
         additionalProperties:
           type: string
@@ -4952,8 +5069,6 @@ definitions:
     properties:
       amount:
         type: string
-      billing_cadence:
-        $ref: '#/definitions/types.BillingCadence'
       billing_model:
         $ref: '#/definitions/types.BillingModel'
       billing_period:
@@ -5003,7 +5118,6 @@ definitions:
       type:
         $ref: '#/definitions/types.PriceType'
     required:
-    - billing_cadence
     - billing_model
     - billing_period
     - invoice_cadence
@@ -7059,11 +7173,9 @@ definitions:
   types.BillingCadence:
     enum:
     - RECURRING
-    - ONETIME
     type: string
     x-enum-varnames:
     - BILLING_CADENCE_RECURRING
-    - BILLING_CADENCE_ONETIME
   types.BillingCycle:
     enum:
     - anniversary
@@ -7090,6 +7202,7 @@ definitions:
     - DAILY
     - QUARTERLY
     - HALF_YEARLY
+    - ONETIME
     type: string
     x-enum-varnames:
     - BILLING_PERIOD_MONTHLY
@@ -7098,6 +7211,7 @@ definitions:
     - BILLING_PERIOD_DAILY
     - BILLING_PERIOD_QUARTER
     - BILLING_PERIOD_HALF_YEAR
+    - BILLING_PERIOD_ONETIME
   types.BillingTier:
     enum:
     - VOLUME
@@ -7800,7 +7914,9 @@ definitions:
       subscription_customer_id:
         description: subscription_customer_id filters invoices by the subscription
           owner's customer ID
-        type: string
+        items:
+          type: string
+        type: array
       subscription_id:
         description: |-
           subscription_id filters invoices generated for a specific subscription
@@ -8282,6 +8398,7 @@ definitions:
     - razorpay
     - chargebee
     - quickbooks
+    - zoho_books
     - nomod
     - moyasar
     - paddle
@@ -8294,6 +8411,7 @@ definitions:
     - SecretProviderRazorpay
     - SecretProviderChargebee
     - SecretProviderQuickBooks
+    - SecretProviderZohoBooks
     - SecretProviderNomod
     - SecretProviderMoyasar
     - SecretProviderPaddle
@@ -9872,6 +9990,49 @@ paths:
       summary: Query addons
       tags:
       - Addons
+  /ai/pricing/parse-gemini:
+    post:
+      consumes:
+      - application/json
+      description: 'Server-side Gemini call: accepts system prompt, user prompt, and
+        response JSON schema from the client and returns parsed pricing schema JSON.'
+      operationId: parseGeminiPricing
+      parameters:
+      - description: Prompts and Gemini responseSchema
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ParseGeminiPricingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pricing schema JSON (features, plans, ...)
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "429":
+          description: AI provider rate limit
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Server or upstream error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "503":
+          description: AI not configured
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Parse pricing from natural language (Gemini)
+      tags:
+      - AI
   /alerts/search:
     post:
       consumes:
@@ -14179,9 +14340,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Attach additional child customers (by external ID) to an active
-        standalone or parent subscription; creates inherited skeleton subscriptions
-        for each. The subscription must be active.
+      description: Execute a mid-cycle subscription modification (inheritance or quantity
+        change).
       operationId: executeSubscriptionModify
       parameters:
       - description: Subscription ID
@@ -14189,19 +14349,19 @@ paths:
         name: id
         required: true
         type: string
-      - description: External customer IDs to inherit
+      - description: Modification request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/ExecuteSubscriptionInheritanceRequest'
+          $ref: '#/definitions/ExecuteSubscriptionModifyRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SubscriptionResponse'
+            $ref: '#/definitions/SubscriptionModifyResponse'
         "400":
           description: Invalid request
           schema:
@@ -14216,10 +14376,54 @@ paths:
             $ref: '#/definitions/errors.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Add customers to subscription inheritance
+      summary: Execute subscription modification
       tags:
       - Subscriptions
       x-scope: write
+  /subscriptions/{id}/modify/preview:
+    post:
+      consumes:
+      - application/json
+      description: Preview the impact of a mid-cycle subscription modification without
+        committing changes.
+      operationId: previewSubscriptionModify
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Modification preview request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ExecuteSubscriptionModifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubscriptionModifyResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "404":
+          description: Resource not found
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview subscription modification
+      tags:
+      - Subscriptions
+      x-scope: read
   /subscriptions/{id}/pause:
     post:
       consumes:

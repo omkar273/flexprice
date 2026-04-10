@@ -24,7 +24,6 @@ type CreatePriceRequest struct {
 	BillingPeriod      types.BillingPeriod      `json:"billing_period" validate:"required"`
 	BillingPeriodCount int                      `json:"billing_period_count" default:"1"`
 	BillingModel       types.BillingModel       `json:"billing_model" validate:"required"`
-	BillingCadence     types.BillingCadence     `json:"billing_cadence" validate:"required"`
 	MeterID            string                   `json:"meter_id,omitempty"`
 	FilterValues       map[string][]string      `json:"filter_values,omitempty"`
 	LookupKey          string                   `json:"lookup_key,omitempty"`
@@ -217,9 +216,6 @@ func (r *CreatePriceRequest) Validate() error {
 	if err := r.BillingModel.Validate(); err != nil {
 		return err
 	}
-	if err := r.BillingCadence.Validate(); err != nil {
-		return err
-	}
 	if err := r.BillingPeriod.Validate(); err != nil {
 		return err
 	}
@@ -403,11 +399,6 @@ func (r *CreatePriceRequest) ToPrice(ctx context.Context) (*priceDomain.Price, e
 		r.PriceUnitType = types.PRICE_UNIT_TYPE_FIAT
 	}
 
-	// billing_cadence is always RECURRING; default it when omitted by the caller
-	if r.BillingCadence == "" {
-		r.BillingCadence = types.BILLING_CADENCE_RECURRING
-	}
-
 	startDate := r.StartDate
 	if startDate == nil {
 		now := time.Now().UTC()
@@ -446,7 +437,7 @@ func (r *CreatePriceRequest) ToPrice(ctx context.Context) (*priceDomain.Price, e
 		BillingPeriod:      r.BillingPeriod,
 		BillingPeriodCount: r.BillingPeriodCount,
 		BillingModel:       r.BillingModel,
-		BillingCadence:     r.BillingCadence,
+		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     r.InvoiceCadence,
 		TrialPeriod:        r.TrialPeriod,
 		MeterID:            lo.Ternary(r.Type == types.PRICE_TYPE_USAGE, r.MeterID, ""),
@@ -582,7 +573,6 @@ func (r *UpdatePriceRequest) ToCreatePriceRequest(existingPrice *price.Price) Cr
 	createReq.Type = existingPrice.Type
 	createReq.BillingPeriod = existingPrice.BillingPeriod
 	createReq.BillingPeriodCount = existingPrice.BillingPeriodCount
-	createReq.BillingCadence = existingPrice.BillingCadence
 	createReq.InvoiceCadence = existingPrice.InvoiceCadence
 	createReq.TrialPeriod = existingPrice.TrialPeriod
 	createReq.MeterID = lo.Ternary(existingPrice.Type == types.PRICE_TYPE_USAGE, existingPrice.MeterID, "")

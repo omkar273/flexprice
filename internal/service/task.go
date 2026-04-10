@@ -787,8 +787,6 @@ func (p *PricesChunkProcessor) ProcessChunk(ctx context.Context, chunk [][]strin
 				priceReq.BillingPeriodCount = count
 			case "billing_model":
 				priceReq.BillingModel = types.BillingModel(value)
-			case "billing_cadence":
-				priceReq.BillingCadence = types.BillingCadence(value)
 			case "meter_id":
 				priceReq.MeterID = value
 			case "lookup_key":

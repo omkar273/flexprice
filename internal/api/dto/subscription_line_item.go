@@ -19,7 +19,6 @@ type SubscriptionPriceCreateRequest struct {
 	BillingPeriod      types.BillingPeriod      `json:"billing_period" validate:"required"`
 	BillingPeriodCount int                      `json:"billing_period_count"`
 	BillingModel       types.BillingModel       `json:"billing_model" validate:"required"`
-	BillingCadence     types.BillingCadence     `json:"billing_cadence" validate:"required"`
 	InvoiceCadence     types.InvoiceCadence     `json:"invoice_cadence" validate:"required"`
 	Amount             *decimal.Decimal         `json:"amount,omitempty" swaggertype:"string"`
 	MeterID            string                   `json:"meter_id,omitempty"`
@@ -52,7 +51,6 @@ func (p *SubscriptionPriceCreateRequest) ToCreatePriceRequest(sub *subscription.
 		BillingPeriod:        p.BillingPeriod,
 		BillingPeriodCount:   p.BillingPeriodCount,
 		BillingModel:         p.BillingModel,
-		BillingCadence:       p.BillingCadence,
 		InvoiceCadence:       p.InvoiceCadence,
 		Amount:               p.Amount,
 		MeterID:              p.MeterID,
