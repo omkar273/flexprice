@@ -3277,6 +3277,11 @@ func filterValidPricesForSubscription(prices []*dto.PriceResponse, subscription 
 		if !types.IsMatchingCurrency(p.Price.Currency, subscription.Currency) {
 			continue
 		}
+		// ONETIME prices always apply — they are not tied to the subscription billing period
+		if p.Price.BillingPeriod == types.BILLING_PERIOD_ONETIME {
+			validPrices = append(validPrices, p)
+			continue
+		}
 		periodOK := p.Price.BillingPeriod == subscription.BillingPeriod ||
 			types.IsBillingPeriodMultiple(p.Price.BillingPeriod, subscription.BillingPeriod)
 		if periodOK {
