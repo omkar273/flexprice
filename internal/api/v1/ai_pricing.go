@@ -27,21 +27,6 @@ func NewAIPricingHandler(geminiPricing service.GeminiPricingService, log *logger
 	}
 }
 
-// ParseGeminiPricing godoc
-// @Summary Parse pricing from natural language (Gemini)
-// @ID parseGeminiPricing
-// @Description Server-side Gemini call: accepts system prompt, user prompt, and response JSON schema from the client and returns parsed pricing schema JSON.
-// @Tags AI
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @Param body body dto.ParseGeminiPricingRequest true "Prompts and Gemini responseSchema"
-// @Success 200 {object} map[string]interface{} "Pricing schema JSON (features, plans, ...)"
-// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
-// @Failure 429 {object} ierr.ErrorResponse "AI provider rate limit"
-// @Failure 503 {object} ierr.ErrorResponse "AI not configured"
-// @Failure 500 {object} ierr.ErrorResponse "Server or upstream error"
-// @Router /ai/pricing/parse-gemini [post]
 func (h *AIPricingHandler) ParseGeminiPricing(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxParseGeminiBodyBytes)
 
