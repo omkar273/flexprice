@@ -6,7 +6,6 @@ import (
 	"github.com/flexprice/flexprice/internal/service"
 	chargebeeActivities "github.com/flexprice/flexprice/internal/temporal/activities/chargebee"
 	customerActivities "github.com/flexprice/flexprice/internal/temporal/activities/customer"
-	environmentActivities "github.com/flexprice/flexprice/internal/temporal/activities/environment"
 	eventsActivities "github.com/flexprice/flexprice/internal/temporal/activities/events"
 	exportActivities "github.com/flexprice/flexprice/internal/temporal/activities/export"
 	hubspotActivities "github.com/flexprice/flexprice/internal/temporal/activities/hubspot"
@@ -197,10 +196,6 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 		params.Logger,
 	)
 
-	// Environment clone activities
-	featureService := service.NewFeatureService(params)
-	envActivities := environmentActivities.NewEnvironmentActivities(featureService, planService)
-
 	// Reprocess events activities
 	featureUsageTrackingService := service.NewFeatureUsageTrackingService(
 		params,
@@ -215,7 +210,7 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 
 	// Get all task queues and register workflows/activities for each
 	for _, taskQueue := range types.GetAllTaskQueues() {
-		config := buildWorkerConfig(taskQueue, workflowTrackingActivities, planActivities, prepareEventsActivities, taskActivities, taskActivity, scheduledTaskActivity, exportActivity, hubspotDealSyncActivities, hubspotInvoiceSyncActivities, hubspotQuoteSyncActivities, qbPriceSyncActivities, nomodInvoiceSyncActivities, nomodCustomerSyncActivities, moyasarInvoiceSyncActivities, paddleInvoiceSyncActivities, paddleCustomerSyncActivities, stripeInvoiceSyncActivities, stripeCustomerSyncActivities, razorpayInvoiceSyncActivities, razorpayCustomerSyncActivities, chargebeeInvoiceSyncActivities, chargebeeCustomerSyncActivities, qbInvoiceSyncActivities, qbCustomerSyncActivities, zohoInvoiceSyncActivities, customerActivities, scheduleBillingActivities, billingActivities, invoiceActs, reprocessEventsActivities, reprocessRawEventsActivities, envActivities)
+		config := buildWorkerConfig(taskQueue, workflowTrackingActivities, planActivities, prepareEventsActivities, taskActivities, taskActivity, scheduledTaskActivity, exportActivity, hubspotDealSyncActivities, hubspotInvoiceSyncActivities, hubspotQuoteSyncActivities, qbPriceSyncActivities, nomodInvoiceSyncActivities, nomodCustomerSyncActivities, moyasarInvoiceSyncActivities, paddleInvoiceSyncActivities, paddleCustomerSyncActivities, stripeInvoiceSyncActivities, stripeCustomerSyncActivities, razorpayInvoiceSyncActivities, razorpayCustomerSyncActivities, chargebeeInvoiceSyncActivities, chargebeeCustomerSyncActivities, qbInvoiceSyncActivities, qbCustomerSyncActivities, zohoInvoiceSyncActivities, customerActivities, scheduleBillingActivities, billingActivities, invoiceActs, reprocessEventsActivities, reprocessRawEventsActivities)
 		if err := registerWorker(temporalService, config); err != nil {
 			return fmt.Errorf("failed to register worker for task queue %s: %w", taskQueue, err)
 		}
@@ -258,7 +253,6 @@ func buildWorkerConfig(
 	invoiceActs *invoiceActivities.InvoiceActivities,
 	reprocessEventsActivities *eventsActivities.ReprocessEventsActivities,
 	reprocessRawEventsActivities *eventsActivities.ReprocessRawEventsActivities,
-	envActivities *environmentActivities.EnvironmentActivities,
 ) WorkerConfig {
 	workflowsList := []interface{}{}
 	// Add tracking activity to all task queues
@@ -386,7 +380,6 @@ func buildWorkerConfig(
 		workflowsList = append(workflowsList,
 			workflows.CustomerOnboardingWorkflow,
 			workflows.PrepareProcessedEventsWorkflow,
-			workflows.EnvironmentCloneWorkflow,
 		)
 		// Customer activities
 		activitiesList = append(activitiesList,
@@ -396,8 +389,6 @@ func buildWorkerConfig(
 			prepareEventsActivities.CreateFeatureAndPriceActivity,
 			prepareEventsActivities.RolloutToSubscriptionsActivity,
 			planActivities.SyncPlanPrices,
-			envActivities.CloneEnvironmentFeatures,
-			envActivities.CloneEnvironmentPlans,
 		)
 	case types.TemporalTaskQueueReprocessEvents:
 		workflowsList = append(workflowsList,

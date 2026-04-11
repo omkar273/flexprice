@@ -358,10 +358,8 @@ func (h *PlanHandler) QueryPlans(c *gin.Context) {
 }
 
 // @Summary Clone a plan
-// @ID clonePlan
 // @Description Clone an existing plan, copying its active prices, published entitlements, and published credit grants
 // @Tags Plans
-// @x-scope "write"
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
