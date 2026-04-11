@@ -133,6 +133,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			environment.GET("", handlers.Environment.GetEnvironments)
 			environment.GET("/:id", handlers.Environment.GetEnvironment)
 			environment.PUT("/:id", handlers.Environment.UpdateEnvironment)
+			environment.POST("/:id/clone", handlers.Environment.CloneEnvironment)
 		}
 
 		// Events routes
@@ -372,6 +373,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			feature.PUT("/:id", handlers.Feature.UpdateFeature)
 			feature.DELETE("/:id", handlers.Feature.DeleteFeature)
 			feature.POST("/search", handlers.Feature.QueryFeatures)
+			feature.POST("/:id/clone", handlers.Feature.CloneFeature)
 		}
 
 		entitlement := v1Private.Group("/entitlements")
