@@ -48,6 +48,9 @@ const (
 	ReferencePointPreview InvoiceReferencePoint = "preview"
 	// ReferencePointCancel indicates invoice creation at the end of a period (for arrear charges)
 	ReferencePointCancel InvoiceReferencePoint = "cancel"
+	// ReferencePointInternalPreview indicates a preview invoice using the regular usage path
+	// (GetUsageBySubscription) instead of the feature_usage ClickHouse FINAL path.
+	ReferencePointInternalPreview InvoiceReferencePoint = "internal_preview"
 )
 
 func (r InvoiceReferencePoint) String() string {
@@ -60,6 +63,7 @@ func (r InvoiceReferencePoint) Validate() error {
 		ReferencePointPeriodEnd,
 		ReferencePointPreview,
 		ReferencePointCancel,
+		ReferencePointInternalPreview,
 	}
 
 	if !lo.Contains(allowedValues, r) {

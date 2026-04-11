@@ -375,6 +375,71 @@ const docTemplate = `{
                 }
             }
         },
+        "/ai/pricing/parse-gemini": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Server-side Gemini call: accepts system prompt, user prompt, and response JSON schema from the client and returns parsed pricing schema JSON.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "Parse pricing from natural language (Gemini)",
+                "operationId": "parseGeminiPricing",
+                "parameters": [
+                    {
+                        "description": "Prompts and Gemini responseSchema",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ParseGeminiPricingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pricing schema JSON (features, plans, ...)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "AI provider rate limit",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server or upstream error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "AI not configured",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/alerts/search": {
             "post": {
                 "security": [
@@ -7199,6 +7264,138 @@ const docTemplate = `{
                 }
             }
         },
+        "/subscriptions/{id}/modify/execute": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Execute a mid-cycle subscription modification (inheritance or quantity change).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Execute subscription modification",
+                "operationId": "executeSubscriptionModify",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Modification request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteSubscriptionModifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SubscriptionModifyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                },
+                "x-scope": "write"
+            }
+        },
+        "/subscriptions/{id}/modify/preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Preview the impact of a mid-cycle subscription modification without committing changes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Preview subscription modification",
+                "operationId": "previewSubscriptionModify",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Modification preview request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ExecuteSubscriptionModifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SubscriptionModifyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                },
+                "x-scope": "read"
+            }
+        },
         "/subscriptions/{id}/pause": {
             "post": {
                 "security": [
@@ -11473,7 +11670,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coupon": {
-                    "$ref": "#/definitions/DomainCoupon"
+                    "$ref": "#/definitions/Coupon"
                 },
                 "coupon_id": {
                     "type": "string"
@@ -12015,7 +12212,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "cancel_at": {
-                    "description": "CancelAt is the custom date to cancel the subscription.\nRequired when CancellationType is \"scheduled_date\". Must be in the future.",
                     "type": "string"
                 },
                 "cancel_immediately_inovice_policy": {
@@ -12090,6 +12286,83 @@ const docTemplate = `{
                 },
                 "total_credit_amount": {
                     "type": "string"
+                }
+            }
+        },
+        "ChangedInvoice": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "\"created\" | \"wallet_credit\"",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "ChangedLineItem": {
+            "type": "object",
+            "properties": {
+                "change_action": {
+                    "description": "\"created\" | \"updated\" | \"ended\"",
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "price_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "ChangedResources": {
+            "type": "object",
+            "properties": {
+                "invoices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChangedInvoice"
+                    }
+                },
+                "line_items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChangedLineItem"
+                    }
+                },
+                "subscriptions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ChangedSubscription"
+                    }
+                }
+            }
+        },
+        "ChangedSubscription": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "\"created\" | \"updated\"",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/types.SubscriptionStatus"
                 }
             }
         },
@@ -12333,7 +12606,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "coupon": {
-                    "$ref": "#/definitions/DomainCoupon"
+                    "$ref": "#/definitions/Coupon"
                 },
                 "coupon_id": {
                     "type": "string"
@@ -12923,6 +13196,13 @@ const docTemplate = `{
                     "description": "external_id is the unique identifier from your system to reference this customer (required)",
                     "type": "string"
                 },
+                "integration_entity_mapping": {
+                    "description": "integration_entity_mapping contains provider integration mappings for this customer",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CreateEntityIntegrationMappingRequest"
+                    }
+                },
                 "metadata": {
                     "description": "metadata contains additional key-value pairs for storing extra information",
                     "type": "object",
@@ -12932,14 +13212,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "name is the full name or company name of the customer",
-                    "type": "string"
-                },
-                "parent_customer_external_id": {
-                    "description": "Deprecated: See ParentCustomerID.\nparent_customer_external_id is the external ID of the parent customer from your system.\nExactly one of parent_customer_id or parent_customer_external_id may be provided.",
-                    "type": "string"
-                },
-                "parent_customer_id": {
-                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nThis field is accepted for backward compatibility but no hierarchy validations are enforced.\nparent_customer_id is the internal FlexPrice ID of the parent customer.",
                     "type": "string"
                 },
                 "skip_onboarding_workflow": {
@@ -13000,6 +13272,36 @@ const docTemplate = `{
                 },
                 "usage_reset_period": {
                     "$ref": "#/definitions/types.EntitlementUsageResetPeriod"
+                }
+            }
+        },
+        "CreateEntityIntegrationMappingRequest": {
+            "type": "object",
+            "required": [
+                "entity_id",
+                "entity_type",
+                "provider_entity_id",
+                "provider_type"
+            ],
+            "properties": {
+                "entity_id": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "entity_type": {
+                    "$ref": "#/definitions/types.IntegrationEntityType"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "provider_entity_id": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "provider_type": {
+                    "type": "string",
+                    "maxLength": 50
                 }
             }
         },
@@ -13440,7 +13742,6 @@ const docTemplate = `{
         "CreatePriceRequest": {
             "type": "object",
             "required": [
-                "billing_cadence",
                 "billing_model",
                 "billing_period",
                 "currency",
@@ -13453,9 +13754,6 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "type": "string"
-                },
-                "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
                 },
                 "billing_model": {
                     "$ref": "#/definitions/types.BillingModel"
@@ -13832,21 +14130,13 @@ const docTemplate = `{
                 "gateway_payment_method_id": {
                     "type": "string"
                 },
-                "invoice_billing": {
-                    "description": "Deprecated: Use invoicing_customer_id or invoicing_customer_external_id instead.\ninvoice_billing determines which customer should receive invoices for a subscription.\nSupported values: \"invoice_to_parent\" (uses the subscription customer's parent) or \"invoice_to_self\" (default).\nWill be removed in a future version.",
+                "inheritance": {
+                    "description": "Inheritance groups all customer-hierarchy fields.\nWhen provided with at least one child ID, the subscription becomes a PARENT type.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/types.InvoiceBilling"
+                            "$ref": "#/definitions/SubscriptionInheritanceConfig"
                         }
                     ]
-                },
-                "invoicing_customer_external_id": {
-                    "description": "invoicing_customer_external_id is the external ID of the customer to use for invoicing.\nResolved internally to an internal customer ID via external ID lookup.\nMutually exclusive with invoicing_customer_id.",
-                    "type": "string"
-                },
-                "invoicing_customer_id": {
-                    "description": "invoicing_customer_id is the FlexPrice customer ID to use for invoicing.\nThis can differ from the subscription customer (e.g., a billing entity invoicing on behalf of another customer).\nMutually exclusive with invoicing_customer_external_id.",
-                    "type": "string"
                 },
                 "line_item_commitments": {
                     "description": "LineItemCommitments allows setting commitment configuration per line item (keyed by price_id)",
@@ -13897,10 +14187,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/OverrideLineItemRequest"
                     }
-                },
-                "parent_subscription_id": {
-                    "description": "ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)",
-                    "type": "string"
                 },
                 "payment_behavior": {
                     "description": "Payment behavior configuration",
@@ -14395,7 +14681,7 @@ const docTemplate = `{
                     "description": "customer contains the customer information associated with this credit note",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/DomainCustomer"
+                            "$ref": "#/definitions/Customer"
                         }
                     ]
                 },
@@ -14586,7 +14872,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "customer": {
-                    "$ref": "#/definitions/DomainCustomer"
+                    "$ref": "#/definitions/Customer"
                 },
                 "error": {
                     "$ref": "#/definitions/errors.ErrorResponse"
@@ -14681,13 +14967,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "Name is the name of the customer",
-                    "type": "string"
-                },
-                "parent_customer": {
-                    "$ref": "#/definitions/CustomerResponse"
-                },
-                "parent_customer_id": {
-                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer.",
                     "type": "string"
                 },
                 "status": {
@@ -14988,6 +15267,23 @@ const docTemplate = `{
                 },
                 "requestId": {
                     "type": "string"
+                }
+            }
+        },
+        "ExecuteSubscriptionModifyRequest": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "inheritance_params": {
+                    "$ref": "#/definitions/SubModifyInheritanceRequest"
+                },
+                "quantity_change_params": {
+                    "$ref": "#/definitions/SubModifyQuantityChangeRequest"
+                },
+                "type": {
+                    "$ref": "#/definitions/SubscriptionModifyType"
                 }
             }
         },
@@ -15385,9 +15681,6 @@ const docTemplate = `{
         },
         "GetUsageAnalyticsRequest": {
             "type": "object",
-            "required": [
-                "external_customer_id"
-            ],
             "properties": {
                 "end_time": {
                     "type": "string"
@@ -15400,6 +15693,7 @@ const docTemplate = `{
                     }
                 },
                 "external_customer_id": {
+                    "description": "ExternalCustomerID is the single external customer ID.\nOptional when ExternalCustomerIDs is provided; required otherwise.",
                     "type": "string"
                 },
                 "feature_ids": {
@@ -15414,6 +15708,10 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "include_children": {
+                    "description": "IncludeChildren when true folds child customers' usage into the single aggregated total.\nDefault: false.",
+                    "type": "boolean"
                 },
                 "property_filters": {
                     "description": "Property filters to filter the events by the keys in ` + "`" + `properties` + "`" + ` field of the event",
@@ -16143,6 +16441,10 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "subscription_customer_id": {
+                    "description": "subscription_customer_id is the subscription owner's customer ID (Subscription.CustomerID).\nIt may differ from customer_id when the subscription uses an invoicing customer. Set internally; nullable in DB.",
+                    "type": "string"
+                },
                 "subscription_id": {
                     "description": "subscription_id is the ID of the subscription this invoice is associated with (only present for subscription-based invoices)",
                     "type": "string"
@@ -16231,6 +16533,25 @@ const docTemplate = `{
                 "overage_factor": {
                     "description": "OverageFactor is a multiplier applied to usage beyond the commitment",
                     "type": "number"
+                }
+            }
+        },
+        "LineItemQuantityChange": {
+            "type": "object",
+            "required": [
+                "id",
+                "quantity"
+            ],
+            "properties": {
+                "effective_date": {
+                    "description": "EffectiveDate is when the quantity change takes effect.\nIf omitted, the change is effective immediately (now).",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "string"
                 }
             }
         },
@@ -16559,6 +16880,22 @@ const docTemplate = `{
                             "$ref": "#/definitions/price.TransformQuantity"
                         }
                     ]
+                }
+            }
+        },
+        "ParseGeminiPricingRequest": {
+            "type": "object",
+            "properties": {
+                "responseSchema": {
+                    "type": "object"
+                },
+                "systemPrompt": {
+                    "type": "string",
+                    "example": "You are a pricing architect..."
+                },
+                "userPrompt": {
+                    "type": "string",
+                    "example": "Describe pricing for..."
                 }
             }
         },
@@ -17325,6 +17662,32 @@ const docTemplate = `{
                 }
             }
         },
+        "SubModifyInheritanceRequest": {
+            "type": "object",
+            "properties": {
+                "external_customer_ids_to_inherit_subscription": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "SubModifyQuantityChangeRequest": {
+            "type": "object",
+            "required": [
+                "line_items"
+            ],
+            "properties": {
+                "line_items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/LineItemQuantityChange"
+                    }
+                }
+            }
+        },
         "SubscriptionChangeExecuteResponse": {
             "description": "Response after successfully executing a subscription plan change",
             "type": "object",
@@ -17563,6 +17926,23 @@ const docTemplate = `{
                 }
             }
         },
+        "SubscriptionInheritanceConfig": {
+            "type": "object",
+            "properties": {
+                "external_customer_ids_to_inherit_subscription": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "invoicing_customer_external_id": {
+                    "type": "string"
+                },
+                "parent_subscription_id": {
+                    "type": "string"
+                }
+            }
+        },
         "SubscriptionLineItemLookupResult": {
             "type": "object",
             "properties": {
@@ -17704,6 +18084,38 @@ const docTemplate = `{
                 }
             }
         },
+        "SubscriptionModifyResponse": {
+            "type": "object",
+            "properties": {
+                "changed_resources": {
+                    "description": "All resources created or mutated as a result of this modification.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ChangedResources"
+                        }
+                    ]
+                },
+                "subscription": {
+                    "description": "The subscription after the modification.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/SubscriptionResponse"
+                        }
+                    ]
+                }
+            }
+        },
+        "SubscriptionModifyType": {
+            "type": "string",
+            "enum": [
+                "inheritance",
+                "quantity_change"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionModifyTypeInheritance",
+                "SubscriptionModifyTypeQuantityChange"
+            ]
+        },
         "SubscriptionPauseResponse": {
             "description": "Response object containing subscription pause information",
             "type": "object",
@@ -17802,6 +18214,13 @@ const docTemplate = `{
                         }
                     }
                 },
+                "line_items": {
+                    "description": "LineItems are extra line items to add during this phase, primarily one-time charges.\nEach item's start_date defaults to the phase's start_date when not provided.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CreateSubscriptionLineItemRequest"
+                    }
+                },
                 "metadata": {
                     "type": "object",
                     "additionalProperties": {
@@ -17874,7 +18293,6 @@ const docTemplate = `{
         "SubscriptionPriceCreateRequest": {
             "type": "object",
             "required": [
-                "billing_cadence",
                 "billing_model",
                 "billing_period",
                 "invoice_cadence",
@@ -17884,9 +18302,6 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "type": "string"
-                },
-                "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
                 },
                 "billing_model": {
                     "$ref": "#/definitions/types.BillingModel"
@@ -18162,6 +18577,14 @@ const docTemplate = `{
                 "subscription_status": {
                     "$ref": "#/definitions/types.SubscriptionStatus"
                 },
+                "subscription_type": {
+                    "description": "SubscriptionType categorises the subscription within a customer hierarchy (standalone, parent, inherited).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionType"
+                        }
+                    ]
+                },
                 "tenant_id": {
                     "type": "string"
                 },
@@ -18388,6 +18811,14 @@ const docTemplate = `{
                 },
                 "subscription_status": {
                     "$ref": "#/definitions/types.SubscriptionStatus"
+                },
+                "subscription_type": {
+                    "description": "SubscriptionType categorises the subscription within a customer hierarchy (standalone, parent, inherited).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.SubscriptionType"
+                        }
+                    ]
                 },
                 "tenant_id": {
                     "type": "string"
@@ -19166,6 +19597,13 @@ const docTemplate = `{
                     "description": "external_id is the updated external identifier for the customer",
                     "type": "string"
                 },
+                "integration_entity_mapping": {
+                    "description": "integration_entity_mapping contains provider integration mappings for this customer",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CreateEntityIntegrationMappingRequest"
+                    }
+                },
                 "metadata": {
                     "description": "metadata contains updated key-value pairs that will replace existing metadata",
                     "type": "object",
@@ -19175,14 +19613,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "description": "name is the updated name or company name for the customer",
-                    "type": "string"
-                },
-                "parent_customer_external_id": {
-                    "description": "Deprecated: See ParentCustomerID.\nparent_customer_external_id is the external ID of the parent customer from your system.\nExactly one of parent_customer_id or parent_customer_external_id may be provided.\nIf you provide the external ID, the parent customer value will be ignored.",
-                    "type": "string"
-                },
-                "parent_customer_id": {
-                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nThis field is accepted for backward compatibility but no hierarchy validations are enforced.\nparent_customer_id is the internal FlexPrice ID of the parent customer.",
                     "type": "string"
                 }
             }
@@ -19599,7 +20029,7 @@ const docTemplate = `{
                     "description": "Full addon object (only if expand includes \"addon\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/DomainAddon"
+                            "$ref": "#/definitions/Addon"
                         }
                     ]
                 },
@@ -19623,7 +20053,7 @@ const docTemplate = `{
                     "description": "Full feature object (only if expand includes \"feature\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/DomainFeature"
+                            "$ref": "#/definitions/Feature"
                         }
                     ]
                 },
@@ -19657,7 +20087,7 @@ const docTemplate = `{
                     "description": "Full plan object (only if expand includes \"plan\")",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/DomainPlan"
+                            "$ref": "#/definitions/Plan"
                         }
                     ]
                 },
@@ -20156,18 +20586,7 @@ const docTemplate = `{
                 }
             }
         },
-        "errors.ErrorDetail": {
-            "type": "object",
-            "properties": {
-                "internal_error": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "DomainAddon": {
+        "Addon": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -20212,7 +20631,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DomainCoupon": {
+        "Coupon": {
             "type": "object",
             "properties": {
                 "amount_off": {
@@ -20284,7 +20703,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DomainCustomer": {
+        "Customer": {
             "type": "object",
             "properties": {
                 "address_city": {
@@ -20344,10 +20763,6 @@ const docTemplate = `{
                     "description": "Name is the name of the customer",
                     "type": "string"
                 },
-                "parent_customer_id": {
-                    "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer.",
-                    "type": "string"
-                },
                 "status": {
                     "$ref": "#/definitions/types.Status"
                 },
@@ -20362,7 +20777,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DomainFeature": {
+        "Feature": {
             "type": "object",
             "properties": {
                 "alert_settings": {
@@ -20432,7 +20847,7 @@ const docTemplate = `{
                 }
             }
         },
-        "DomainPlan": {
+        "Plan": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -20479,11 +20894,31 @@ const docTemplate = `{
         "errors.ErrorResponse": {
             "type": "object",
             "properties": {
-                "error": {
-                    "$ref": "#/definitions/errors.ErrorDetail"
+                "code": {
+                    "type": "string",
+                    "enum": [
+                        "not_found",
+                        "already_exists",
+                        "version_conflict",
+                        "validation_error",
+                        "invalid_operation",
+                        "permission_denied",
+                        "http_client_error",
+                        "database_error",
+                        "system_error",
+                        "internal_error",
+                        "service_unavailable"
+                    ]
                 },
-                "success": {
-                    "type": "boolean"
+                "details": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "http_status_code": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },
@@ -20801,12 +21236,10 @@ const docTemplate = `{
         "types.BillingCadence": {
             "type": "string",
             "enum": [
-                "RECURRING",
-                "ONETIME"
+                "RECURRING"
             ],
             "x-enum-varnames": [
-                "BILLING_CADENCE_RECURRING",
-                "BILLING_CADENCE_ONETIME"
+                "BILLING_CADENCE_RECURRING"
             ]
         },
         "types.BillingCycle": {
@@ -20841,7 +21274,8 @@ const docTemplate = `{
                 "WEEKLY",
                 "DAILY",
                 "QUARTERLY",
-                "HALF_YEARLY"
+                "HALF_YEARLY",
+                "ONETIME"
             ],
             "x-enum-varnames": [
                 "BILLING_PERIOD_MONTHLY",
@@ -20849,7 +21283,8 @@ const docTemplate = `{
                 "BILLING_PERIOD_WEEKLY",
                 "BILLING_PERIOD_DAILY",
                 "BILLING_PERIOD_QUARTER",
-                "BILLING_PERIOD_HALF_YEAR"
+                "BILLING_PERIOD_HALF_YEAR",
+                "BILLING_PERIOD_ONETIME"
             ]
         },
         "types.BillingTier": {
@@ -21201,12 +21636,6 @@ const docTemplate = `{
                         "asc",
                         "desc"
                     ]
-                },
-                "parent_customer_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "sort": {
                     "type": "array",
@@ -21650,17 +22079,6 @@ const docTemplate = `{
                 "IntegrationEntityTypePrice"
             ]
         },
-        "types.InvoiceBilling": {
-            "type": "string",
-            "enum": [
-                "invoice_to_parent",
-                "invoice_to_self"
-            ],
-            "x-enum-varnames": [
-                "InvoiceBillingInvoiceToParent",
-                "InvoiceBillingInvoiceToSelf"
-            ]
-        },
         "types.InvoiceBillingReason": {
             "type": "string",
             "enum": [
@@ -21796,6 +22214,13 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/types.Status"
+                },
+                "subscription_customer_id": {
+                    "description": "subscription_customer_id filters invoices by the subscription owner's customer ID",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "subscription_id": {
                     "description": "subscription_id filters invoices generated for a specific subscription\nOnly returns invoices that were created as part of the specified subscription's billing",
@@ -22440,6 +22865,7 @@ const docTemplate = `{
                 "razorpay",
                 "chargebee",
                 "quickbooks",
+                "zoho_books",
                 "nomod",
                 "moyasar",
                 "paddle"
@@ -22452,6 +22878,7 @@ const docTemplate = `{
                 "SecretProviderRazorpay",
                 "SecretProviderChargebee",
                 "SecretProviderQuickBooks",
+                "SecretProviderZohoBooks",
                 "SecretProviderNomod",
                 "SecretProviderMoyasar",
                 "SecretProviderPaddle"
@@ -22543,6 +22970,13 @@ const docTemplate = `{
                     "description": "CustomerID filters by customer ID",
                     "type": "string"
                 },
+                "customer_ids": {
+                    "description": "CustomerIDs filters by customer IDs",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "effective_date_for_update": {
                     "description": "EffectiveDateForUpdate selects subscriptions that need a billing-period pass on or before this time:\ncurrent_period_end \u003c= date OR (cancel_at IS NOT NULL AND cancel_at \u003c= date).\nWhen nil, period/cancel cutoff logic is not applied by this field (see TimeRangeFilter for legacy period-end filtering).",
                     "type": "string"
@@ -22622,6 +23056,13 @@ const docTemplate = `{
                         "$ref": "#/definitions/types.SubscriptionStatus"
                     }
                 },
+                "subscription_type": {
+                    "description": "SubscriptionType filters by subscription type",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.SubscriptionType"
+                    }
+                },
                 "with_line_items": {
                     "description": "WithLineItems includes line items in the response",
                     "type": "boolean"
@@ -22669,6 +23110,19 @@ const docTemplate = `{
                 "SubscriptionStatusIncomplete",
                 "SubscriptionStatusTrialing",
                 "SubscriptionStatusDraft"
+            ]
+        },
+        "types.SubscriptionType": {
+            "type": "string",
+            "enum": [
+                "standalone",
+                "parent",
+                "inherited"
+            ],
+            "x-enum-varnames": [
+                "SubscriptionTypeStandalone",
+                "SubscriptionTypeParent",
+                "SubscriptionTypeInherited"
             ]
         },
         "types.TaskStatus": {

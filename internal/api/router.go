@@ -26,7 +26,8 @@ type Handlers struct {
 	Plan                   *v1.PlanHandler
 	Subscription           *v1.SubscriptionHandler
 	SubscriptionPause      *v1.SubscriptionPauseHandler
-	SubscriptionChange     *v1.SubscriptionChangeHandler
+	SubscriptionChange         *v1.SubscriptionChangeHandler
+	SubscriptionModification   *v1.SubscriptionModificationHandler
 	SubscriptionSchedule   *v1.SubscriptionScheduleHandler
 	Wallet                 *v1.WalletHandler
 	Tenant                 *v1.TenantHandler
@@ -57,6 +58,7 @@ type Handlers struct {
 
 	// Portal handlers
 	Onboarding     *v1.OnboardingHandler
+	AIPricing      *v1.AIPricingHandler
 	CustomerPortal *v1.CustomerPortalHandler
 	// Cron jobs : TODO: move crons out of API based architecture
 	CronSubscription       *cron.SubscriptionHandler
@@ -290,7 +292,8 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			// Subscription plan changes (upgrade/downgrade)
 			subscription.POST("/:id/change/preview", handlers.SubscriptionChange.PreviewSubscriptionChange)
 			subscription.POST("/:id/change/execute", handlers.SubscriptionChange.ExecuteSubscriptionChange)
-			subscription.POST("/:id/modify/execute", handlers.Subscription.ExecuteSubscriptionModify)
+			subscription.POST(":id/modify/execute", handlers.SubscriptionModification.Execute)
+			subscription.POST(":id/modify/preview", handlers.SubscriptionModification.Preview)
 
 			// Subscription line item management
 			subscription.POST("/:id/lineitems", handlers.Subscription.AddSubscriptionLineItem)
@@ -351,6 +354,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			invoices.POST("/:id/compute", handlers.Invoice.ComputeInvoice)
 			invoices.POST("/:id/void", handlers.Invoice.VoidInvoice)
 			invoices.POST("/preview", handlers.Invoice.GetPreviewInvoice)
+			invoices.POST("/internal/preview", handlers.Invoice.GetInternalPreviewInvoice)
 			invoices.PUT("/:id/payment", handlers.Invoice.UpdatePaymentStatus)
 			invoices.POST("/:id/payment/attempt", handlers.Invoice.AttemptPayment)
 			invoices.GET("/:id/pdf", handlers.Invoice.GetInvoicePDF)
@@ -519,6 +523,15 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			// All admin routes to go here
 		}
 
+		// AI helpers (authenticated; same middleware as other /v1 private routes)
+		aiRoutes := v1Private.Group("/ai")
+		{
+			aiPricing := aiRoutes.Group("/pricing")
+			{
+				aiPricing.POST("/parse-gemini", handlers.AIPricing.ParseGeminiPricing)
+			}
+		}
+
 		// Portal routes (UI-specific endpoints)
 		portalRoutes := v1Private.Group("/portal")
 		{
@@ -590,6 +603,8 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 		webhooks.POST("/moyasar/:tenant_id/:environment_id", handlers.Webhook.HandleMoyasarWebhook)
 		// Paddle webhook endpoint: POST /v1/webhooks/paddle/{tenant_id}/{environment_id}
 		webhooks.POST("/paddle/:tenant_id/:environment_id", handlers.Webhook.HandlePaddleWebhook)
+		// Zoho Books webhook endpoint: POST /v1/webhooks/zoho_books/{tenant_id}/{environment_id}
+		webhooks.POST("/zoho_books/:tenant_id/:environment_id", handlers.Webhook.HandleZohoBooksWebhook)
 	}
 
 	// Cron routes

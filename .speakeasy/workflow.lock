@@ -1,4 +1,4 @@
-speakeasyVersion: 1.728.0
+speakeasyVersion: 1.761.1
 sources:
     swagger-json:
         sourceNamespace: swagger-json
@@ -14,23 +14,23 @@ targets:
         sourceRevisionDigest: sha256:5f0d53ae87c0c797fd5bb43a4a0e925f2aa226464790694c3fbbcb4c5c238c50
         sourceBlobDigest: sha256:dcd58f9676bb05dade69949a7a1acc747d76f8f073ec9e5649a93b5e693808c1
         codeSamplesNamespace: swagger-json-go-code-samples
-        codeSamplesRevisionDigest: sha256:63fd6ef1f7c9485206c351c4f1e3fbf678913c0d095d0119013fade88b822330
+        codeSamplesRevisionDigest: sha256:da9acc47152fe575c84b1ac4f28029118de794504bddeac4e9ad691cb181e6ce
     flexprice-mcp:
         source: swagger-json-mcp
     flexprice-python:
         source: swagger-json
         sourceNamespace: swagger-json
-        sourceRevisionDigest: sha256:c545604e71f47cce86c7faedfe4d4a366d47a01390a4d3c749867bdf4ec21ce7
-        sourceBlobDigest: sha256:b93a3e8c2747bbfc499ec287f19ad3dd22d4c7f5f497b24371092db0f33a0dc9
+        sourceRevisionDigest: sha256:5f0d53ae87c0c797fd5bb43a4a0e925f2aa226464790694c3fbbcb4c5c238c50
+        sourceBlobDigest: sha256:dcd58f9676bb05dade69949a7a1acc747d76f8f073ec9e5649a93b5e693808c1
         codeSamplesNamespace: swagger-json-python-code-samples
-        codeSamplesRevisionDigest: sha256:564d8504f33bf5ea8da60d68f5de0afc2b6cb7e9672074e0dcd712ca1dd7fc7a
+        codeSamplesRevisionDigest: sha256:c7a65148b10fd4835e617c112cfdb380769f4ea1bcc63652074374b7ee0079bc
     flexprice-typescript:
         source: swagger-json
         sourceNamespace: swagger-json
-        sourceRevisionDigest: sha256:c545604e71f47cce86c7faedfe4d4a366d47a01390a4d3c749867bdf4ec21ce7
-        sourceBlobDigest: sha256:b93a3e8c2747bbfc499ec287f19ad3dd22d4c7f5f497b24371092db0f33a0dc9
+        sourceRevisionDigest: sha256:5f0d53ae87c0c797fd5bb43a4a0e925f2aa226464790694c3fbbcb4c5c238c50
+        sourceBlobDigest: sha256:dcd58f9676bb05dade69949a7a1acc747d76f8f073ec9e5649a93b5e693808c1
         codeSamplesNamespace: swagger-json-typescript-code-samples
-        codeSamplesRevisionDigest: sha256:40f442b00b0bc20f90d13d1a8d29ca5d538ddd62c0ddb4193a3224607ef9991c
+        codeSamplesRevisionDigest: sha256:8c502eda624ec3c0d91e27cec7b69a896af073b626c263f8ad5ab259784cb935
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest

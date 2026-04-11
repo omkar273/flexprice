@@ -22,6 +22,7 @@ import (
 	"github.com/flexprice/flexprice/internal/integration/quickbooks"
 	"github.com/flexprice/flexprice/internal/integration/razorpay"
 	"github.com/flexprice/flexprice/internal/integration/stripe"
+	"github.com/flexprice/flexprice/internal/integration/zoho"
 	"github.com/flexprice/flexprice/internal/interfaces"
 	"github.com/flexprice/flexprice/internal/s3"
 	"github.com/flexprice/flexprice/internal/types"
@@ -44,6 +45,7 @@ type InvoiceService interface {
 	CreateDraftInvoiceForSubscription(ctx context.Context, subscriptionID string, periodStart, periodEnd time.Time, referencePoint types.InvoiceReferencePoint) (*dto.InvoiceResponse, error)
 	ComputeInvoice(ctx context.Context, invoiceID string, req *dto.InvoiceComputeRequest) (skipped bool, err error)
 	GetPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error)
+	GetInternalPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error)
 	GetCustomerInvoiceSummary(ctx context.Context, customerID string, currency string) (*dto.CustomerInvoiceSummary, error)
 	GetUnpaidInvoicesToBePaid(ctx context.Context, req dto.GetUnpaidInvoicesToBePaidRequest) (*dto.GetUnpaidInvoicesToBePaidResponse, error)
 	GetCustomerMultiCurrencyInvoiceSummary(ctx context.Context, customerID string) (*dto.CustomerMultiCurrencyInvoiceSummary, error)
@@ -66,6 +68,7 @@ type InvoiceService interface {
 	SyncInvoiceToRazorpayIfEnabled(ctx context.Context, invoiceID string) error
 	SyncInvoiceToChargebeeIfEnabled(ctx context.Context, invoiceID string) error
 	SyncInvoiceToQuickBooksIfEnabled(ctx context.Context, invoiceID string) error
+	SyncInvoiceToZohoBooksIfEnabled(ctx context.Context, invoiceID string) error
 	IsFinalizationDue(ctx context.Context, invoiceID string) (bool, error)
 	ListAllTenantDraftInvoices(ctx context.Context, batchSize, offset int) ([]*invoice.Invoice, error)
 
@@ -342,6 +345,7 @@ func (s *invoiceService) CreateDraftInvoiceForSubscription(ctx context.Context, 
 	if referencePoint == types.ReferencePointCancel {
 		req.BillingReason = types.InvoiceBillingReasonProration
 	}
+	req.SubscriptionCustomerID = &sub.CustomerID
 	return s.CreateEmptyDraftInvoice(ctx, req)
 }
 
@@ -395,7 +399,10 @@ func (s *invoiceService) ComputeInvoice(ctx context.Context, invoiceID string, r
 			return false, err
 		}
 		refPoint := types.ReferencePointPeriodEnd
-		if inv.BillingReason == string(types.InvoiceBillingReasonProration) {
+		switch types.InvoiceBillingReason(inv.BillingReason) {
+		case types.InvoiceBillingReasonSubscriptionCreate:
+			refPoint = types.ReferencePointPeriodStart
+		case types.InvoiceBillingReasonProration:
 			refPoint = types.ReferencePointCancel
 		}
 		billingService := NewBillingService(s.ServiceParams)
@@ -1487,6 +1494,49 @@ func (s *invoiceService) SyncInvoiceToQuickBooksIfEnabled(ctx context.Context, i
 	return nil
 }
 
+// SyncInvoiceToZohoBooksIfEnabled syncs the invoice to Zoho Books if Zoho Books connection is enabled.
+func (s *invoiceService) SyncInvoiceToZohoBooksIfEnabled(ctx context.Context, invoiceID string) error {
+	inv, err := s.InvoiceRepo.Get(ctx, invoiceID)
+	if err != nil {
+		return err
+	}
+
+	conn, err := s.ConnectionRepo.GetByProvider(ctx, types.SecretProviderZohoBooks)
+	if err != nil || conn == nil {
+		if err != nil && !ierr.IsNotFound(err) {
+			s.Logger.ErrorwCtx(ctx, "failed to check Zoho Books connection, skipping invoice sync",
+				"invoice_id", inv.ID,
+				"error", err)
+		}
+		return nil
+	}
+	if !conn.IsInvoiceOutboundEnabled() {
+		s.Logger.DebugwCtx(ctx, "Zoho Books invoice sync disabled, skipping", "invoice_id", inv.ID)
+		return nil
+	}
+
+	zohoIntegration, err := s.IntegrationFactory.GetZohoBooksIntegration(ctx)
+	if err != nil {
+		s.Logger.ErrorwCtx(ctx, "failed to get Zoho Books integration, skipping invoice sync",
+			"invoice_id", inv.ID,
+			"error", err)
+		return nil
+	}
+
+	resp, err := zohoIntegration.InvoiceSvc.SyncInvoiceToZoho(ctx, zoho.ZohoInvoiceSyncRequest{
+		InvoiceID: inv.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	s.Logger.InfowCtx(ctx, "successfully synced invoice to Zoho Books",
+		"invoice_id", inv.ID,
+		"zoho_invoice_id", resp.ZohoInvoiceID,
+		"zoho_status", resp.Status)
+	return nil
+}
+
 func (s *invoiceService) UpdatePaymentStatus(ctx context.Context, id string, status types.PaymentStatus, amount *decimal.Decimal) error {
 	inv, err := s.InvoiceRepo.Get(ctx, id)
 	if err != nil {
@@ -1760,6 +1810,7 @@ func (s *invoiceService) CreateSubscriptionInvoice(ctx context.Context, req *dto
 	if flowType == types.InvoiceFlowSubscriptionCreation {
 		draftReq.BillingReason = types.InvoiceBillingReasonSubscriptionCreate
 	}
+	draftReq.SubscriptionCustomerID = &subscription.CustomerID
 	draft, err := s.CreateEmptyDraftInvoice(ctx, draftReq)
 	if err != nil {
 		return nil, nil, err
@@ -1812,6 +1863,57 @@ func (s *invoiceService) GetPreviewInvoice(ctx context.Context, req dto.GetPrevi
 	}
 
 	s.Logger.InfowCtx(ctx, "prepared invoice request for preview",
+		"invoice_request", invReq)
+
+	if req.HideZeroChargesLineItems {
+		invReq.LineItems = lo.Filter(invReq.LineItems, func(item dto.CreateInvoiceLineItemRequest, _ int) bool {
+			return !item.Amount.IsZero()
+		})
+	}
+
+	// Create a draft invoice object for preview; ToInvoice applies preview discounts and taxes
+	inv, err := invReq.ToInvoice(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create preview response
+	response := dto.NewInvoiceResponse(inv)
+
+	// Get customer information
+	customer, err := s.CustomerRepo.Get(ctx, inv.CustomerID)
+	if err != nil {
+		return nil, err
+	}
+	response.WithCustomer(&dto.CustomerResponse{Customer: customer})
+
+	return response, nil
+}
+
+func (s *invoiceService) GetInternalPreviewInvoice(ctx context.Context, req dto.GetPreviewInvoiceRequest) (*dto.InvoiceResponse, error) {
+	billingService := NewBillingService(s.ServiceParams)
+
+	sub, _, err := s.SubRepo.GetWithLineItems(ctx, req.SubscriptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.PeriodStart == nil {
+		req.PeriodStart = &sub.CurrentPeriodStart
+	}
+
+	if req.PeriodEnd == nil {
+		req.PeriodEnd = &sub.CurrentPeriodEnd
+	}
+
+	// Prepare invoice request using billing service with the internal preview reference point
+	invReq, err := billingService.PrepareSubscriptionInvoiceRequest(
+		ctx, sub, *req.PeriodStart, *req.PeriodEnd, types.ReferencePointInternalPreview, "")
+	if err != nil {
+		return nil, err
+	}
+
+	s.Logger.InfowCtx(ctx, "prepared invoice request for internal preview",
 		"invoice_request", invReq)
 
 	if req.HideZeroChargesLineItems {

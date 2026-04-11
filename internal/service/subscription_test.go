@@ -91,7 +91,6 @@ func (s *SubscriptionServiceSuite) TestPaymentBehaviorValidation() {
 				Currency:           "usd",
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingCycle:       types.BillingCycleAnniversary,
 				CollectionMethod:   tc.collectionMethod,
 				PaymentBehavior:    tc.paymentBehavior,
@@ -133,8 +132,7 @@ func (s *SubscriptionServiceSuite) TestAddAddonToSubscriptionLineItemCommitments
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
-			InvoiceCadence:     types.InvoiceCadenceAdvance,
+			InvoiceCadence:     types.InvoiceCadenceArrear,
 			MeterID:            meterID,
 			BaseModel:          types.GetDefaultBaseModel(ctx),
 		}
@@ -389,8 +387,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_TIERED,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		TierMode:           types.BILLING_TIER_SLAB,
 		MeterID:            s.testData.meters.apiCalls.ID,
 		Tiers: []price.PriceTier{
@@ -413,8 +410,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		MeterID:            s.testData.meters.storage.ID,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -430,8 +426,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		MeterID:            s.testData.meters.storageArchive.ID,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -449,8 +444,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriod:      types.BILLING_PERIOD_ANNUAL,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_TIERED,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		TierMode:           types.BILLING_TIER_SLAB,
 		MeterID:            s.testData.meters.apiCalls.ID,
 		Tiers: []price.PriceTier{
@@ -472,8 +466,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriod:      types.BILLING_PERIOD_ANNUAL,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		MeterID:            s.testData.meters.storage.ID,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -489,8 +482,7 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriod:      types.BILLING_PERIOD_ANNUAL,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
-		InvoiceCadence:     types.InvoiceCadenceAdvance,
+		InvoiceCadence:     types.InvoiceCadenceArrear,
 		MeterID:            s.testData.meters.storageArchive.ID,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -507,7 +499,6 @@ func (s *SubscriptionServiceSuite) setupTestData() {
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceAdvance,
 		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 	}
@@ -836,7 +827,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -853,7 +843,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -868,7 +857,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -884,7 +872,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -899,7 +886,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -916,7 +902,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -933,7 +918,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -950,7 +934,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(-24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -968,7 +951,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -984,7 +966,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -1000,7 +981,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -1016,7 +996,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscription() {
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -1099,7 +1078,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithInheritanceChildren
 		StartDate:          lo.ToPtr(s.testData.now),
 		EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 		Currency:           "usd",
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingCycle:       types.BillingCycleAnniversary,
@@ -1126,113 +1104,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithInheritanceChildren
 	s.Equal(resp.ID, *inherited[0].ParentSubscriptionID)
 }
 
-func (s *SubscriptionServiceSuite) TestExecuteSubscriptionModify_StandaloneAddsInherited() {
-	ctx := s.GetContext()
-	parent, _, err := s.GetStores().SubscriptionRepo.GetWithLineItems(ctx, s.testData.subscription.ID)
-	s.NoError(err)
-	parent.SubscriptionType = types.SubscriptionTypeStandalone
-	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, parent))
-
-	childExternal := "ext_modify_child"
-	child := &customer.Customer{
-		ID:         types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
-		ExternalID: childExternal,
-		Name:       "Modify Child",
-		Email:      "modify-child@example.com",
-		BaseModel:  types.GetDefaultBaseModel(ctx),
-	}
-	s.NoError(s.GetStores().CustomerRepo.Create(ctx, child))
-
-	resp, err := s.service.ExecuteSubscriptionModify(ctx, parent.ID, dto.ExecuteSubscriptionInheritanceRequest{
-		ExternalCustomerIDsToInheritSubscription: []string{childExternal},
-	})
-	s.NoError(err)
-	s.NotNil(resp)
-	s.Equal(types.SubscriptionTypeParent, resp.SubscriptionType)
-
-	filter := types.NewNoLimitSubscriptionFilter()
-	filter.ParentSubscriptionIDs = []string{parent.ID}
-	filter.SubscriptionTypes = []types.SubscriptionType{types.SubscriptionTypeInherited}
-	inherited, err := s.GetStores().SubscriptionRepo.List(ctx, filter)
-	s.NoError(err)
-	s.Len(inherited, 1)
-	s.Equal(child.ID, inherited[0].CustomerID)
-	s.Equal(types.SubscriptionTypeInherited, inherited[0].SubscriptionType)
-}
-
-func (s *SubscriptionServiceSuite) TestExecuteSubscriptionModify_RejectedDuplicateChild() {
-	ctx := s.GetContext()
-	parent, _, err := s.GetStores().SubscriptionRepo.GetWithLineItems(ctx, s.testData.subscription.ID)
-	s.NoError(err)
-	parent.SubscriptionType = types.SubscriptionTypeStandalone
-	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, parent))
-
-	childExternal := "ext_modify_dup_child"
-	child := &customer.Customer{
-		ID:         types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
-		ExternalID: childExternal,
-		Name:       "Dup Child",
-		Email:      "dup-child@example.com",
-		BaseModel:  types.GetDefaultBaseModel(ctx),
-	}
-	s.NoError(s.GetStores().CustomerRepo.Create(ctx, child))
-
-	_, err = s.service.ExecuteSubscriptionModify(ctx, parent.ID, dto.ExecuteSubscriptionInheritanceRequest{
-		ExternalCustomerIDsToInheritSubscription: []string{childExternal},
-	})
-	s.NoError(err)
-
-	_, err = s.service.ExecuteSubscriptionModify(ctx, parent.ID, dto.ExecuteSubscriptionInheritanceRequest{
-		ExternalCustomerIDsToInheritSubscription: []string{childExternal},
-	})
-	s.Require().Error(err)
-	s.Contains(err.Error(), "already inherits")
-}
-
-func (s *SubscriptionServiceSuite) TestExecuteSubscriptionModify_RejectedForInheritedSubscriptionID() {
-	ctx := s.GetContext()
-	parent := *s.testData.subscription
-	parent.SubscriptionType = types.SubscriptionTypeParent
-	s.NoError(s.GetStores().SubscriptionRepo.Update(ctx, &parent))
-
-	child := &customer.Customer{
-		ID:         types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
-		ExternalID: "ext_inherited_target",
-		Name:       "Child",
-		Email:      "inherited-target@example.com",
-		BaseModel:  types.GetDefaultBaseModel(ctx),
-	}
-	s.NoError(s.GetStores().CustomerRepo.Create(ctx, child))
-
-	inherited := &subscription.Subscription{
-		ID:                     types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
-		CustomerID:             child.ID,
-		PlanID:                 parent.PlanID,
-		Currency:               parent.Currency,
-		SubscriptionStatus:     types.SubscriptionStatusActive,
-		BillingAnchor:          parent.BillingAnchor,
-		BillingCycle:           parent.BillingCycle,
-		StartDate:              parent.StartDate,
-		EndDate:                parent.EndDate,
-		CurrentPeriodStart:     parent.CurrentPeriodStart,
-		CurrentPeriodEnd:       parent.CurrentPeriodEnd,
-		BillingCadence:         types.BILLING_CADENCE_RECURRING,
-		BillingPeriod:          parent.BillingPeriod,
-		BillingPeriodCount:     parent.BillingPeriodCount,
-		Version:                1,
-		EnvironmentID:          parent.EnvironmentID,
-		ParentSubscriptionID:   &parent.ID,
-		SubscriptionType:       types.SubscriptionTypeInherited,
-		BaseModel:              types.GetDefaultBaseModel(ctx),
-	}
-	s.NoError(s.GetStores().SubscriptionRepo.Create(ctx, inherited))
-
-	_, err := s.service.ExecuteSubscriptionModify(ctx, inherited.ID, dto.ExecuteSubscriptionInheritanceRequest{
-		ExternalCustomerIDsToInheritSubscription: []string{"unused_ext_id"},
-	})
-	s.Require().Error(err)
-	s.Contains(err.Error(), "inherited subscription cannot add")
-}
 
 func (s *SubscriptionServiceSuite) TestCancelSubscription_RejectedForInheritedSubscription() {
 	ctx := s.GetContext()
@@ -1262,7 +1133,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription_RejectedForInheritedSu
 		EndDate:                parent.EndDate,
 		CurrentPeriodStart:     parent.CurrentPeriodStart,
 		CurrentPeriodEnd:       parent.CurrentPeriodEnd,
-		BillingCadence:         types.BILLING_CADENCE_RECURRING,
 		BillingPeriod:          parent.BillingPeriod,
 		BillingPeriodCount:     parent.BillingPeriodCount,
 		Version:                1,
@@ -1310,7 +1180,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionSubscriberRejectedWhenC
 		EndDate:              parentSub.EndDate,
 		CurrentPeriodStart:   parentSub.CurrentPeriodStart,
 		CurrentPeriodEnd:     parentSub.CurrentPeriodEnd,
-		BillingCadence:       parentSub.BillingCadence,
 		BillingPeriod:        parentSub.BillingPeriod,
 		BillingPeriodCount:   parentSub.BillingPeriodCount,
 		Version:              1,
@@ -1327,7 +1196,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionSubscriberRejectedWhenC
 		StartDate:          lo.ToPtr(s.testData.now),
 		EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 		Currency:           "usd",
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingCycle:       types.BillingCycleAnniversary,
@@ -1376,7 +1244,6 @@ func (s *SubscriptionServiceSuite) TestGetFeatureUsageBySubscription_ParentAggre
 		EndDate:              parentSub.EndDate,
 		CurrentPeriodStart:   parentSub.CurrentPeriodStart,
 		CurrentPeriodEnd:     parentSub.CurrentPeriodEnd,
-		BillingCadence:       parentSub.BillingCadence,
 		BillingPeriod:        parentSub.BillingPeriod,
 		BillingPeriodCount:   parentSub.BillingPeriodCount,
 		Version:              1,
@@ -1445,7 +1312,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionInheritanceChildEqualsS
 		StartDate:          lo.ToPtr(s.testData.now),
 		EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 		Currency:           "usd",
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingCycle:       types.BillingCycleAnniversary,
@@ -1501,7 +1367,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithCollectionMethod() 
 				StartDate:          lo.ToPtr(s.testData.now),
 				EndDate:            lo.ToPtr(s.testData.now.Add(30 * 24 * time.Hour)),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -1629,7 +1494,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithLineItems() {
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceAdvance,
 		Amount:             &inlineAmount,
 		LookupKey:          inlineLookupKey,
@@ -1641,7 +1505,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithLineItems() {
 		StartDate:          &start,
 		EndDate:            &end,
 		Currency:           "usd",
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingCycle:       types.BillingCycleAnniversary,
@@ -1744,7 +1607,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithLineItems_Validatio
 				StartDate:          &start,
 				EndDate:            &end,
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -1945,8 +1807,7 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
-			InvoiceCadence:     types.InvoiceCadenceAdvance,
+			InvoiceCadence:     types.InvoiceCadenceArrear,
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(ctx),
 		}
@@ -2057,7 +1918,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -2171,7 +2031,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 		}
@@ -2272,7 +2131,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceAdvance, // Advance billing
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 		}
@@ -2358,7 +2216,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -2375,7 +2232,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceAdvance, // Advance billing
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 		}
@@ -2507,7 +2363,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_TIERED,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			TierMode:           types.BILLING_TIER_SLAB,
 			MeterID:            s.testData.meters.apiCalls.ID,
@@ -2598,7 +2453,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.storage.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -2697,7 +2551,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_PACKAGE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.apiCalls.ID,
 			TransformQuantity: price.JSONBTransformQuantity{
@@ -2789,7 +2642,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -2910,7 +2762,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -2928,7 +2779,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 		}
@@ -3017,7 +2867,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -3034,7 +2883,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.storage.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -3167,7 +3015,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_TIERED,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			TierMode:           types.BILLING_TIER_VOLUME,  // Volume-based (all units at the applicable tier rate)
 			MeterID:            s.testData.meters.apiCalls.ID,
@@ -3263,7 +3110,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				InvoiceCadence:     types.InvoiceCadenceArrear,
 				BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 			},
@@ -3278,7 +3124,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				InvoiceCadence:     types.InvoiceCadenceAdvance,
 				BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 			},
@@ -3293,7 +3138,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				InvoiceCadence:     types.InvoiceCadenceArrear,
 				MeterID:            s.testData.meters.apiCalls.ID,
 				BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -3309,7 +3153,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				InvoiceCadence:     types.InvoiceCadenceArrear,
 				MeterID:            s.testData.meters.storage.ID,
 				BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -3526,7 +3369,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            maxMeter.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -3615,7 +3457,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -3632,7 +3473,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
 		}
@@ -3765,7 +3605,6 @@ func (s *SubscriptionServiceSuite) TestCancelSubscription() {
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			InvoiceCadence:     types.InvoiceCadenceArrear, // Arrear billing
 			MeterID:            s.testData.meters.apiCalls.ID,
 			BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -4434,7 +4273,6 @@ func (s *SubscriptionServiceSuite) TestSubscriptionAnchor_CalendarAndAnniversary
 				PlanID:             s.testData.plan.ID,
 				StartDate:          lo.ToPtr(tt.startDate),
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      tt.billingPeriod,
 				BillingPeriodCount: 1,
 				BillingCycle:       tt.billingCycle,
@@ -4627,7 +4465,6 @@ func (s *SubscriptionServiceSuite) TestSubscriptionWithEndDate() {
 				StartDate:          lo.ToPtr(tt.startDate),
 				EndDate:            tt.endDate,
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -4691,7 +4528,6 @@ func (s *SubscriptionServiceSuite) TestGetUsageBySubscriptionWithBucketedMaxAggr
 					BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 					BillingPeriodCount: 1,
 					BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-					BillingCadence:     types.BILLING_CADENCE_RECURRING,
 					InvoiceCadence:     types.InvoiceCadenceArrear,
 					MeterID:            bucketedMaxMeter.ID,
 					BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
@@ -4716,7 +4552,6 @@ func (s *SubscriptionServiceSuite) TestGetUsageBySubscriptionWithBucketedMaxAggr
 					BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 					BillingPeriodCount: 1,
 					BillingModel:       types.BILLING_MODEL_PACKAGE,
-					BillingCadence:     types.BILLING_CADENCE_RECURRING,
 					InvoiceCadence:     types.InvoiceCadenceArrear,
 					MeterID:            bucketedMaxMeter.ID,
 					TransformQuantity: price.JSONBTransformQuantity{
@@ -4746,7 +4581,6 @@ func (s *SubscriptionServiceSuite) TestGetUsageBySubscriptionWithBucketedMaxAggr
 					BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 					BillingPeriodCount: 1,
 					BillingModel:       types.BILLING_MODEL_TIERED,
-					BillingCadence:     types.BILLING_CADENCE_RECURRING,
 					InvoiceCadence:     types.InvoiceCadenceArrear,
 					TierMode:           types.BILLING_TIER_SLAB,
 					MeterID:            bucketedMaxMeter.ID,
@@ -4777,7 +4611,6 @@ func (s *SubscriptionServiceSuite) TestGetUsageBySubscriptionWithBucketedMaxAggr
 					BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 					BillingPeriodCount: 1,
 					BillingModel:       types.BILLING_MODEL_TIERED,
-					BillingCadence:     types.BILLING_CADENCE_RECURRING,
 					InvoiceCadence:     types.InvoiceCadenceArrear,
 					TierMode:           types.BILLING_TIER_VOLUME,
 					MeterID:            bucketedMaxMeter.ID,
@@ -5236,7 +5069,6 @@ func (s *SubscriptionServiceSuite) TestCreateSubscriptionWithPriceOverrides() {
 				CustomerID:         s.testData.customer.ID,
 				PlanID:             s.testData.plan.ID,
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -5757,7 +5589,6 @@ func (s *SubscriptionServiceSuite) TestPriceOverrideIntegration() {
 			CustomerID:         s.testData.customer.ID,
 			PlanID:             s.testData.plan.ID,
 			Currency:           "usd",
-			BillingCadence:     types.BILLING_CADENCE_RECURRING,
 			BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 			BillingPeriodCount: 1,
 			BillingCycle:       types.BillingCycleAnniversary,
@@ -5819,7 +5650,6 @@ func (s *SubscriptionServiceSuite) TestPriceOverrideIntegration() {
 				CustomerID:         s.testData.customer.ID,
 				PlanID:             s.testData.plan.ID,
 				Currency:           "usd",
-				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 				BillingPeriodCount: 1,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -6184,7 +6014,6 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Cre
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceArrear,
 		BaseModel:          types.GetDefaultBaseModel(ctx),
 	}
@@ -6199,7 +6028,6 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Cre
 		BillingPeriod:      types.BILLING_PERIOD_QUARTER,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceArrear,
 		BaseModel:          types.GetDefaultBaseModel(ctx),
 	}
@@ -6211,7 +6039,6 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Cre
 		PlanID:             planMQ.ID,
 		StartDate:          &start,
 		Currency:           "usd",
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingCycle:       types.BillingCycleAnniversary,
@@ -6253,7 +6080,6 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Can
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceArrear,
 		BaseModel:          types.GetDefaultBaseModel(ctx),
 	}
@@ -6268,7 +6094,6 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Can
 		BillingPeriod:      types.BILLING_PERIOD_QUARTER,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceArrear,
 		BaseModel:          types.GetDefaultBaseModel(ctx),
 	}
@@ -6280,7 +6105,6 @@ func (s *SubscriptionServiceSuite) TestMultiCadence_ProrationMutualExclusion_Can
 		PlanID:             planMQ.ID,
 		StartDate:          &start,
 		Currency:           "usd",
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingCycle:       types.BillingCycleAnniversary,

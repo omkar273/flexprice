@@ -258,7 +258,7 @@ definitions:
   coupon_association.CouponAssociation:
     properties:
       coupon:
-        $ref: '#/definitions/DomainCoupon'
+        $ref: '#/definitions/Coupon'
       coupon_id:
         type: string
       created_at:
@@ -621,9 +621,6 @@ definitions:
   CancelSubscriptionRequest:
     properties:
       cancel_at:
-        description: |-
-          CancelAt is the custom date to cancel the subscription.
-          Required when CancellationType is "scheduled_date". Must be in the future.
         type: string
       cancel_immediately_inovice_policy:
         allOf:
@@ -672,6 +669,57 @@ definitions:
         type: string
       total_credit_amount:
         type: string
+    type: object
+  ChangedInvoice:
+    properties:
+      action:
+        description: '"created" | "wallet_credit"'
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+    type: object
+  ChangedLineItem:
+    properties:
+      change_action:
+        description: '"created" | "updated" | "ended"'
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      price_id:
+        type: string
+      quantity:
+        type: string
+      start_date:
+        type: string
+    type: object
+  ChangedResources:
+    properties:
+      invoices:
+        items:
+          $ref: '#/definitions/ChangedInvoice'
+        type: array
+      line_items:
+        items:
+          $ref: '#/definitions/ChangedLineItem'
+        type: array
+      subscriptions:
+        items:
+          $ref: '#/definitions/ChangedSubscription'
+        type: array
+    type: object
+  ChangedSubscription:
+    properties:
+      action:
+        description: '"created" | "updated"'
+        type: string
+      id:
+        type: string
+      status:
+        $ref: '#/definitions/types.SubscriptionStatus'
     type: object
   ClonePlanRequest:
     properties:
@@ -833,7 +881,7 @@ definitions:
   CouponAssociationResponse:
     properties:
       coupon:
-        $ref: '#/definitions/DomainCoupon'
+        $ref: '#/definitions/Coupon'
       coupon_id:
         type: string
       created_at:
@@ -1255,6 +1303,12 @@ definitions:
         description: external_id is the unique identifier from your system to reference
           this customer (required)
         type: string
+      integration_entity_mapping:
+        description: integration_entity_mapping contains provider integration mappings
+          for this customer
+        items:
+          $ref: '#/definitions/CreateEntityIntegrationMappingRequest'
+        type: array
       metadata:
         additionalProperties:
           type: string
@@ -1263,18 +1317,6 @@ definitions:
         type: object
       name:
         description: name is the full name or company name of the customer
-        type: string
-      parent_customer_external_id:
-        description: |-
-          Deprecated: See ParentCustomerID.
-          parent_customer_external_id is the external ID of the parent customer from your system.
-          Exactly one of parent_customer_id or parent_customer_external_id may be provided.
-        type: string
-      parent_customer_id:
-        description: |-
-          Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.
-          This field is accepted for backward compatibility but no hierarchy validations are enforced.
-          parent_customer_id is the internal FlexPrice ID of the parent customer.
         type: string
       skip_onboarding_workflow:
         description: |-
@@ -1322,6 +1364,28 @@ definitions:
     required:
     - feature_id
     - feature_type
+    type: object
+  CreateEntityIntegrationMappingRequest:
+    properties:
+      entity_id:
+        maxLength: 255
+        type: string
+      entity_type:
+        $ref: '#/definitions/types.IntegrationEntityType'
+      metadata:
+        additionalProperties: true
+        type: object
+      provider_entity_id:
+        maxLength: 255
+        type: string
+      provider_type:
+        maxLength: 50
+        type: string
+    required:
+    - entity_id
+    - entity_type
+    - provider_entity_id
+    - provider_type
     type: object
   CreateFeatureRequest:
     properties:
@@ -1661,8 +1725,6 @@ definitions:
     properties:
       amount:
         type: string
-      billing_cadence:
-        $ref: '#/definitions/types.BillingCadence'
       billing_model:
         $ref: '#/definitions/types.BillingModel'
       billing_period:
@@ -1723,7 +1785,6 @@ definitions:
       type:
         $ref: '#/definitions/types.PriceType'
     required:
-    - billing_cadence
     - billing_model
     - billing_period
     - currency
@@ -1958,26 +2019,12 @@ definitions:
         type: string
       gateway_payment_method_id:
         type: string
-      invoice_billing:
+      inheritance:
         allOf:
-        - $ref: '#/definitions/types.InvoiceBilling'
+        - $ref: '#/definitions/SubscriptionInheritanceConfig'
         description: |-
-          Deprecated: Use invoicing_customer_id or invoicing_customer_external_id instead.
-          invoice_billing determines which customer should receive invoices for a subscription.
-          Supported values: "invoice_to_parent" (uses the subscription customer's parent) or "invoice_to_self" (default).
-          Will be removed in a future version.
-      invoicing_customer_external_id:
-        description: |-
-          invoicing_customer_external_id is the external ID of the customer to use for invoicing.
-          Resolved internally to an internal customer ID via external ID lookup.
-          Mutually exclusive with invoicing_customer_id.
-        type: string
-      invoicing_customer_id:
-        description: |-
-          invoicing_customer_id is the FlexPrice customer ID to use for invoicing.
-          This can differ from the subscription customer (e.g., a billing entity invoicing on behalf of another customer).
-          Mutually exclusive with invoicing_customer_external_id.
-        type: string
+          Inheritance groups all customer-hierarchy fields.
+          When provided with at least one child ID, the subscription becomes a PARENT type.
       line_item_commitments:
         additionalProperties:
           $ref: '#/definitions/LineItemCommitmentConfig'
@@ -2018,10 +2065,6 @@ definitions:
         items:
           $ref: '#/definitions/OverrideLineItemRequest'
         type: array
-      parent_subscription_id:
-        description: ParentSubscriptionID is the parent subscription ID for hierarchy
-          (e.g. child subscription under a parent)
-        type: string
       payment_behavior:
         allOf:
         - $ref: '#/definitions/types.PaymentBehavior'
@@ -2395,7 +2438,7 @@ definitions:
         type: string
       customer:
         allOf:
-        - $ref: '#/definitions/DomainCustomer'
+        - $ref: '#/definitions/Customer'
         description: customer contains the customer information associated with this
           credit note
       customer_id:
@@ -2542,7 +2585,7 @@ definitions:
   CustomerLookupResult:
     properties:
       customer:
-        $ref: '#/definitions/DomainCustomer'
+        $ref: '#/definitions/Customer'
       error:
         $ref: '#/definitions/errors.ErrorResponse'
       status:
@@ -2611,14 +2654,6 @@ definitions:
         type: object
       name:
         description: Name is the name of the customer
-        type: string
-      parent_customer:
-        $ref: '#/definitions/CustomerResponse'
-      parent_customer_id:
-        description: |-
-          Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.
-          Retained for backward compatibility; no hierarchy rules are enforced at the service layer.
-          ParentCustomerID is the parent customer identifier for the customer.
         type: string
       status:
         $ref: '#/definitions/types.Status'
@@ -2819,6 +2854,17 @@ definitions:
         type: string
       requestId:
         type: string
+    type: object
+  ExecuteSubscriptionModifyRequest:
+    properties:
+      inheritance_params:
+        $ref: '#/definitions/SubModifyInheritanceRequest'
+      quantity_change_params:
+        $ref: '#/definitions/SubModifyQuantityChangeRequest'
+      type:
+        $ref: '#/definitions/SubscriptionModifyType'
+    required:
+    - type
     type: object
   FeatureResponse:
     properties:
@@ -3109,6 +3155,9 @@ definitions:
           type: string
         type: array
       external_customer_id:
+        description: |-
+          ExternalCustomerID is the single external customer ID.
+          Optional when ExternalCustomerIDs is provided; required otherwise.
         type: string
       feature_ids:
         items:
@@ -3119,6 +3168,11 @@ definitions:
         items:
           type: string
         type: array
+      include_children:
+        description: |-
+          IncludeChildren when true folds child customers' usage into the single aggregated total.
+          Default: false.
+        type: boolean
       property_filters:
         additionalProperties:
           items:
@@ -3135,8 +3189,6 @@ definitions:
         type: string
       window_size:
         $ref: '#/definitions/types.WindowSize'
-    required:
-    - external_customer_id
     type: object
   GetUsageAnalyticsResponse:
     properties:
@@ -3689,6 +3741,11 @@ definitions:
         - $ref: '#/definitions/SubscriptionResponse'
         description: subscription contains the associated subscription information
           if requested
+      subscription_customer_id:
+        description: |-
+          subscription_customer_id is the subscription owner's customer ID (Subscription.CustomerID).
+          It may differ from customer_id when the subscription uses an invoicing customer. Set internally; nullable in DB.
+        type: string
       subscription_id:
         description: subscription_id is the ID of the subscription this invoice is
           associated with (only present for subscription-based invoices)
@@ -3761,6 +3818,21 @@ definitions:
       overage_factor:
         description: OverageFactor is a multiplier applied to usage beyond the commitment
         type: number
+    type: object
+  LineItemQuantityChange:
+    properties:
+      effective_date:
+        description: |-
+          EffectiveDate is when the quantity change takes effect.
+          If omitted, the change is effective immediately (now).
+        type: string
+      id:
+        type: string
+      quantity:
+        type: string
+    required:
+    - id
+    - quantity
     type: object
   LinkIntegrationMappingRequest:
     properties:
@@ -3991,6 +4063,17 @@ definitions:
           this line item
     required:
     - price_id
+    type: object
+  ParseGeminiPricingRequest:
+    properties:
+      responseSchema:
+        type: object
+      systemPrompt:
+        example: You are a pricing architect...
+        type: string
+      userPrompt:
+        example: Describe pricing for...
+        type: string
     type: object
   PauseSubscriptionRequest:
     description: Request object for pausing an active subscription with various pause
@@ -4552,6 +4635,23 @@ definitions:
           additional context)
         type: string
     type: object
+  SubModifyInheritanceRequest:
+    properties:
+      external_customer_ids_to_inherit_subscription:
+        items:
+          type: string
+        type: array
+    type: object
+  SubModifyQuantityChangeRequest:
+    properties:
+      line_items:
+        items:
+          $ref: '#/definitions/LineItemQuantityChange'
+        minItems: 1
+        type: array
+    required:
+    - line_items
+    type: object
   SubscriptionChangeExecuteResponse:
     description: Response after successfully executing a subscription plan change
     properties:
@@ -4712,6 +4812,17 @@ definitions:
       subscription_id:
         type: string
     type: object
+  SubscriptionInheritanceConfig:
+    properties:
+      external_customer_ids_to_inherit_subscription:
+        items:
+          type: string
+        type: array
+      invoicing_customer_external_id:
+        type: string
+      parent_subscription_id:
+        type: string
+    type: object
   SubscriptionLineItemLookupResult:
     properties:
       error:
@@ -4806,6 +4917,25 @@ definitions:
       updated_by:
         type: string
     type: object
+  SubscriptionModifyResponse:
+    properties:
+      changed_resources:
+        allOf:
+        - $ref: '#/definitions/ChangedResources'
+        description: All resources created or mutated as a result of this modification.
+      subscription:
+        allOf:
+        - $ref: '#/definitions/SubscriptionResponse'
+        description: The subscription after the modification.
+    type: object
+  SubscriptionModifyType:
+    enum:
+    - inheritance
+    - quantity_change
+    type: string
+    x-enum-varnames:
+    - SubscriptionModifyTypeInheritance
+    - SubscriptionModifyTypeQuantityChange
   SubscriptionPauseResponse:
     description: Response object containing subscription pause information
     properties:
@@ -4877,6 +5007,13 @@ definitions:
         description: LineItemCoupons represents line item-level coupons (map of line_item_id
           to coupon IDs)
         type: object
+      line_items:
+        description: |-
+          LineItems are extra line items to add during this phase, primarily one-time charges.
+          Each item's start_date defaults to the phase's start_date when not provided.
+        items:
+          $ref: '#/definitions/CreateSubscriptionLineItemRequest'
+        type: array
       metadata:
         additionalProperties:
           type: string
@@ -4932,8 +5069,6 @@ definitions:
     properties:
       amount:
         type: string
-      billing_cadence:
-        $ref: '#/definitions/types.BillingCadence'
       billing_model:
         $ref: '#/definitions/types.BillingModel'
       billing_period:
@@ -4983,7 +5118,6 @@ definitions:
       type:
         $ref: '#/definitions/types.PriceType'
     required:
-    - billing_cadence
     - billing_model
     - billing_period
     - invoice_cadence
@@ -5153,6 +5287,11 @@ definitions:
         $ref: '#/definitions/types.Status'
       subscription_status:
         $ref: '#/definitions/types.SubscriptionStatus'
+      subscription_type:
+        allOf:
+        - $ref: '#/definitions/types.SubscriptionType'
+        description: SubscriptionType categorises the subscription within a customer
+          hierarchy (standalone, parent, inherited).
       tenant_id:
         type: string
       trial_end:
@@ -5337,6 +5476,11 @@ definitions:
         $ref: '#/definitions/types.Status'
       subscription_status:
         $ref: '#/definitions/types.SubscriptionStatus'
+      subscription_type:
+        allOf:
+        - $ref: '#/definitions/types.SubscriptionType'
+        description: SubscriptionType categorises the subscription within a customer
+          hierarchy (standalone, parent, inherited).
       tenant_id:
         type: string
       trial_end:
@@ -5881,6 +6025,12 @@ definitions:
       external_id:
         description: external_id is the updated external identifier for the customer
         type: string
+      integration_entity_mapping:
+        description: integration_entity_mapping contains provider integration mappings
+          for this customer
+        items:
+          $ref: '#/definitions/CreateEntityIntegrationMappingRequest'
+        type: array
       metadata:
         additionalProperties:
           type: string
@@ -5889,19 +6039,6 @@ definitions:
         type: object
       name:
         description: name is the updated name or company name for the customer
-        type: string
-      parent_customer_external_id:
-        description: |-
-          Deprecated: See ParentCustomerID.
-          parent_customer_external_id is the external ID of the parent customer from your system.
-          Exactly one of parent_customer_id or parent_customer_external_id may be provided.
-          If you provide the external ID, the parent customer value will be ignored.
-        type: string
-      parent_customer_id:
-        description: |-
-          Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.
-          This field is accepted for backward compatibility but no hierarchy validations are enforced.
-          parent_customer_id is the internal FlexPrice ID of the parent customer.
         type: string
     type: object
   UpdateEntitlementRequest:
@@ -6189,7 +6326,7 @@ definitions:
         type: string
       addon:
         allOf:
-        - $ref: '#/definitions/DomainAddon'
+        - $ref: '#/definitions/Addon'
         description: Full addon object (only if expand includes "addon")
       aggregation_type:
         $ref: '#/definitions/types.AggregationType'
@@ -6204,7 +6341,7 @@ definitions:
         type: string
       feature:
         allOf:
-        - $ref: '#/definitions/DomainFeature'
+        - $ref: '#/definitions/Feature'
         description: Full feature object (only if expand includes "feature")
       feature_id:
         type: string
@@ -6223,7 +6360,7 @@ definitions:
         type: string
       plan:
         allOf:
-        - $ref: '#/definitions/DomainPlan'
+        - $ref: '#/definitions/Plan'
         description: Full plan object (only if expand includes "plan")
       plan_id:
         type: string
@@ -6578,14 +6715,7 @@ definitions:
       workflow_type:
         type: string
     type: object
-  errors.ErrorDetail:
-    properties:
-      internal_error:
-        type: string
-      message:
-        type: string
-    type: object
-  DomainAddon:
+  Addon:
     properties:
       created_at:
         type: string
@@ -6615,7 +6745,7 @@ definitions:
       updated_by:
         type: string
     type: object
-  DomainCoupon:
+  Coupon:
     properties:
       amount_off:
         type: string
@@ -6663,7 +6793,7 @@ definitions:
       updated_by:
         type: string
     type: object
-  DomainCustomer:
+  Customer:
     properties:
       address_city:
         description: AddressCity is the city of the customer's address
@@ -6708,12 +6838,6 @@ definitions:
       name:
         description: Name is the name of the customer
         type: string
-      parent_customer_id:
-        description: |-
-          Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.
-          Retained for backward compatibility; no hierarchy rules are enforced at the service layer.
-          ParentCustomerID is the parent customer identifier for the customer.
-        type: string
       status:
         $ref: '#/definitions/types.Status'
       tenant_id:
@@ -6723,7 +6847,7 @@ definitions:
       updated_by:
         type: string
     type: object
-  DomainFeature:
+  Feature:
     properties:
       alert_settings:
         $ref: '#/definitions/types.AlertSettings'
@@ -6769,7 +6893,7 @@ definitions:
       updated_by:
         type: string
     type: object
-  DomainPlan:
+  Plan:
     properties:
       created_at:
         type: string
@@ -6800,10 +6924,27 @@ definitions:
     type: object
   errors.ErrorResponse:
     properties:
-      error:
-        $ref: '#/definitions/errors.ErrorDetail'
-      success:
-        type: boolean
+      code:
+        enum:
+        - not_found
+        - already_exists
+        - version_conflict
+        - validation_error
+        - invalid_operation
+        - permission_denied
+        - http_client_error
+        - database_error
+        - system_error
+        - internal_error
+        - service_unavailable
+        type: string
+      details:
+        additionalProperties: {}
+        type: object
+      http_status_code:
+        type: integer
+      message:
+        type: string
     type: object
   types.AddonAssociationEntityType:
     enum:
@@ -7032,11 +7173,9 @@ definitions:
   types.BillingCadence:
     enum:
     - RECURRING
-    - ONETIME
     type: string
     x-enum-varnames:
     - BILLING_CADENCE_RECURRING
-    - BILLING_CADENCE_ONETIME
   types.BillingCycle:
     enum:
     - anniversary
@@ -7063,6 +7202,7 @@ definitions:
     - DAILY
     - QUARTERLY
     - HALF_YEARLY
+    - ONETIME
     type: string
     x-enum-varnames:
     - BILLING_PERIOD_MONTHLY
@@ -7071,6 +7211,7 @@ definitions:
     - BILLING_PERIOD_DAILY
     - BILLING_PERIOD_QUARTER
     - BILLING_PERIOD_HALF_YEAR
+    - BILLING_PERIOD_ONETIME
   types.BillingTier:
     enum:
     - VOLUME
@@ -7329,10 +7470,6 @@ definitions:
         - asc
         - desc
         type: string
-      parent_customer_ids:
-        items:
-          type: string
-        type: array
       sort:
         items:
           $ref: '#/definitions/types.SortCondition'
@@ -7660,14 +7797,6 @@ definitions:
     - IntegrationEntityTypeItem
     - IntegrationEntityTypeItemPrice
     - IntegrationEntityTypePrice
-  types.InvoiceBilling:
-    enum:
-    - invoice_to_parent
-    - invoice_to_self
-    type: string
-    x-enum-varnames:
-    - InvoiceBillingInvoiceToParent
-    - InvoiceBillingInvoiceToSelf
   types.InvoiceBillingReason:
     enum:
     - SUBSCRIPTION_CREATE
@@ -7782,6 +7911,12 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/types.Status'
+      subscription_customer_id:
+        description: subscription_customer_id filters invoices by the subscription
+          owner's customer ID
+        items:
+          type: string
+        type: array
       subscription_id:
         description: |-
           subscription_id filters invoices generated for a specific subscription
@@ -8263,6 +8398,7 @@ definitions:
     - razorpay
     - chargebee
     - quickbooks
+    - zoho_books
     - nomod
     - moyasar
     - paddle
@@ -8275,6 +8411,7 @@ definitions:
     - SecretProviderRazorpay
     - SecretProviderChargebee
     - SecretProviderQuickBooks
+    - SecretProviderZohoBooks
     - SecretProviderNomod
     - SecretProviderMoyasar
     - SecretProviderPaddle
@@ -8341,6 +8478,11 @@ definitions:
       customer_id:
         description: CustomerID filters by customer ID
         type: string
+      customer_ids:
+        description: CustomerIDs filters by customer IDs
+        items:
+          type: string
+        type: array
       effective_date_for_update:
         description: |-
           EffectiveDateForUpdate selects subscriptions that need a billing-period pass on or before this time:
@@ -8400,6 +8542,11 @@ definitions:
         items:
           $ref: '#/definitions/types.SubscriptionStatus'
         type: array
+      subscription_type:
+        description: SubscriptionType filters by subscription type
+        items:
+          $ref: '#/definitions/types.SubscriptionType'
+        type: array
       with_line_items:
         description: WithLineItems includes line items in the response
         type: boolean
@@ -8438,6 +8585,16 @@ definitions:
     - SubscriptionStatusIncomplete
     - SubscriptionStatusTrialing
     - SubscriptionStatusDraft
+  types.SubscriptionType:
+    enum:
+    - standalone
+    - parent
+    - inherited
+    type: string
+    x-enum-varnames:
+    - SubscriptionTypeStandalone
+    - SubscriptionTypeParent
+    - SubscriptionTypeInherited
   types.TaskStatus:
     enum:
     - PENDING
@@ -9833,6 +9990,49 @@ paths:
       summary: Query addons
       tags:
       - Addons
+  /ai/pricing/parse-gemini:
+    post:
+      consumes:
+      - application/json
+      description: 'Server-side Gemini call: accepts system prompt, user prompt, and
+        response JSON schema from the client and returns parsed pricing schema JSON.'
+      operationId: parseGeminiPricing
+      parameters:
+      - description: Prompts and Gemini responseSchema
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ParseGeminiPricingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pricing schema JSON (features, plans, ...)
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "429":
+          description: AI provider rate limit
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Server or upstream error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "503":
+          description: AI not configured
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Parse pricing from natural language (Gemini)
+      tags:
+      - AI
   /alerts/search:
     post:
       consumes:
@@ -14136,6 +14336,94 @@ paths:
       summary: Create subscription line item
       tags:
       - Subscriptions
+  /subscriptions/{id}/modify/execute:
+    post:
+      consumes:
+      - application/json
+      description: Execute a mid-cycle subscription modification (inheritance or quantity
+        change).
+      operationId: executeSubscriptionModify
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Modification request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ExecuteSubscriptionModifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubscriptionModifyResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "404":
+          description: Resource not found
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Execute subscription modification
+      tags:
+      - Subscriptions
+      x-scope: write
+  /subscriptions/{id}/modify/preview:
+    post:
+      consumes:
+      - application/json
+      description: Preview the impact of a mid-cycle subscription modification without
+        committing changes.
+      operationId: previewSubscriptionModify
+      parameters:
+      - description: Subscription ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Modification preview request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ExecuteSubscriptionModifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SubscriptionModifyResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "404":
+          description: Resource not found
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/errors.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Preview subscription modification
+      tags:
+      - Subscriptions
+      x-scope: read
   /subscriptions/{id}/pause:
     post:
       consumes:

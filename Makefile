@@ -2,16 +2,23 @@
 swagger-clean:
 	rm -rf docs/swagger
 
+# Swag v2 pin. Use `go run` for generation so CI never runs a random host `swag` from PATH while
+# expecting $(GOPATH)/bin/swag (install-swag skipped when `which swag` succeeds).
+SWAG_V2_PKG := github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5
+
 .PHONY: install-swag
 install-swag:
-	@which swag > /dev/null || (go install github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc5)
+	go install $(SWAG_V2_PKG)
 
 .PHONY: swagger
 swagger: swagger-2-0 swagger-3-0
 
-.PHONY: swagger-2-0
-swagger-2-0: install-swag
-	$(shell go env GOPATH)/bin/swag init \
+.PHONY: swagger-2-0-generate
+swagger-2-0-generate:
+	@echo "go mod download (warm cache; swag v2 treats go list stderr as fatal)..."
+	go mod download
+	@echo "Running swag via go run $(SWAG_V2_PKG) ..."
+	go run $(SWAG_V2_PKG) init \
 		--generalInfo cmd/server/main.go \
 		--dir . \
 		--parseDependency \
@@ -22,11 +29,16 @@ swagger-2-0: install-swag
 		--instanceName swagger \
 		--parseVendor \
 		--outputTypes go,json,yaml
-	@make swagger-fix-refs
-	@node scripts/fix_swagger_internal_types.mjs
+
+.PHONY: swagger-2-0-node
+swagger-2-0-node:
+	node scripts/fix_swagger_internal_types.mjs
+
+.PHONY: swagger-2-0
+swagger-2-0: swagger-2-0-generate swagger-fix-refs swagger-2-0-node
 
 .PHONY: swagger-3-0
-swagger-3-0: install-swag
+swagger-3-0:
 	@echo "Converting Swagger 2.0 to OpenAPI 3.0..."
 	@curl -X 'POST' \
 		'https://converter.swagger.io/api/convert' \
@@ -520,8 +532,23 @@ test-sdk test-sdks:
 	fi
 	@echo "Running SDK tests (Go, Python, TypeScript)..."
 	@echo "  FLEXPRICE_API_HOST=$$FLEXPRICE_API_HOST"
-	@echo "--- Go (install deps + test) ---"; (cd api/tests/go && go mod tidy && go mod download && go run -tags published test_sdk.go) || true
-	@echo "--- Python (install deps + test) ---"; (cd api/tests/python && ( [ -d .venv ] || python3 -m venv .venv ) && .venv/bin/pip install -q -r requirements.txt && .venv/bin/python test_sdk.py) || true
+	@echo "--- Go (install deps + test) ---"; (cd api/tests/go && GOPRIVATE=github.com/flexprice/* go mod tidy && GOPRIVATE=github.com/flexprice/* go mod download && GOPRIVATE=github.com/flexprice/* go run -tags published test_sdk.go) || true
+	@echo "--- Python (install deps + test) ---"; (cd api/tests/python && \
+		PY=; \
+		for c in python3.13 python3.12 python3.11 python3.10 python3; do \
+			if command -v $$c >/dev/null 2>&1 && $$c -c 'import sys; sys.exit(0 if sys.version_info>=(3,10) else 1)' 2>/dev/null; then PY=$$c; break; fi; \
+		done; \
+		if [ -z "$$PY" ]; then \
+			echo "❌ Python 3.10+ required (PyPI flexprice). macOS: brew install python@3.12  (then re-run; we try python3.12 … python3.10 before python3)"; \
+			exit 1; \
+		fi; \
+		if [ ! -d .venv ] || ! [ -x .venv/bin/python ] || ! .venv/bin/python -c 'import sys; sys.exit(0 if sys.version_info>=(3,10) else 1)' 2>/dev/null || ! .venv/bin/python -m pip --version >/dev/null 2>&1; then \
+			rm -rf .venv && $$PY -m venv .venv; \
+		fi && \
+		echo "  using $$(.venv/bin/python --version)" && \
+		.venv/bin/python -m pip install -q --upgrade pip setuptools wheel && \
+		.venv/bin/python -m pip install -q -r requirements.txt && \
+		.venv/bin/python test_sdk.py) || true
 	@echo "--- TypeScript (install deps + test) ---"; (cd api/tests/ts && npm install && npm test) || true
 	@echo "✓ All SDK tests finished"
 

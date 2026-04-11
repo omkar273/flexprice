@@ -455,6 +455,10 @@ func (s *temporalService) extractWorkflowContextID(workflowType types.TemporalWo
 		if input, ok := params.(models.QuickBooksInvoiceSyncWorkflowInput); ok {
 			return input.InvoiceID
 		}
+	case types.TemporalZohoBooksInvoiceSyncWorkflow:
+		if input, ok := params.(models.ZohoBooksInvoiceSyncWorkflowInput); ok {
+			return input.InvoiceID
+		}
 	case types.TemporalHubSpotInvoiceSyncWorkflow:
 		if input, ok := params.(models.HubSpotInvoiceSyncWorkflowInput); ok {
 			return input.InvoiceID
@@ -620,6 +624,8 @@ func (s *temporalService) buildWorkflowInput(ctx context.Context, workflowType t
 		return s.buildChargebeeInvoiceSyncInput(ctx, tenantID, environmentID, params)
 	case types.TemporalQuickBooksInvoiceSyncWorkflow:
 		return s.buildQuickBooksInvoiceSyncInput(ctx, tenantID, environmentID, params)
+	case types.TemporalZohoBooksInvoiceSyncWorkflow:
+		return s.buildZohoBooksInvoiceSyncInput(ctx, tenantID, environmentID, params)
 	case types.TemporalStripeCustomerSyncWorkflow:
 		return s.buildStripeCustomerSyncInput(ctx, tenantID, environmentID, params)
 	case types.TemporalRazorpayCustomerSyncWorkflow:
@@ -961,6 +967,24 @@ func (s *temporalService) buildQuickBooksInvoiceSyncInput(_ context.Context, ten
 
 	return nil, errors.NewError("invalid input for QuickBooks invoice sync workflow").
 		WithHint("Provide QuickBooksInvoiceSyncWorkflowInput with invoice_id and customer_id").
+		Mark(errors.ErrValidation)
+}
+
+func (s *temporalService) buildZohoBooksInvoiceSyncInput(_ context.Context, tenantID, environmentID string, params interface{}) (interface{}, error) {
+	if input, ok := params.(*models.ZohoBooksInvoiceSyncWorkflowInput); ok {
+		input.TenantID = tenantID
+		input.EnvironmentID = environmentID
+		return *input, nil
+	}
+
+	if input, ok := params.(models.ZohoBooksInvoiceSyncWorkflowInput); ok {
+		input.TenantID = tenantID
+		input.EnvironmentID = environmentID
+		return input, nil
+	}
+
+	return nil, errors.NewError("invalid input for Zoho Books invoice sync workflow").
+		WithHint("Provide ZohoBooksInvoiceSyncWorkflowInput with invoice_id").
 		Mark(errors.ErrValidation)
 }
 

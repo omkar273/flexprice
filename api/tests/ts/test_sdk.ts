@@ -2,8 +2,8 @@
 
 /**
  * Flexprice TypeScript SDK - API tests.
- * Default: local SDK via package.json dependency `file:../../typescript` (repo api/typescript).
- * Against npm latest: npm run test:published
+ * Default: published @flexprice/sdk@2.1.1 (see package.json).
+ * Local monorepo SDK: `npm run test:local` (requires `npm run build` in api/typescript).
  * Run from api/tests/ts: npm install && npm test   (or: npx ts-node test_sdk.ts)
  * Requires: FLEXPRICE_API_KEY, FLEXPRICE_API_HOST (must include /v1, e.g. api.cloud.flexprice.io/v1; no trailing space or slash).
  * Debug: FLEXPRICE_DEBUG=1 logs request/response and full error details on failure.
@@ -82,6 +82,20 @@ let testEventCustomerID = '';
 // ========================================
 
 const DEBUG = process.env.FLEXPRICE_DEBUG === '1' || process.env.FLEXPRICE_DEBUG === 'true';
+
+/**
+ * Paginated SDK page: some versions type the first page as `{ result: { items, pagination } }`,
+ * others as `{ items, pagination }` at the root.
+ */
+function paginatedPageItems(page: {
+    items?: unknown[];
+    result?: { items?: unknown[]; pagination?: unknown };
+    pagination?: unknown;
+}): { items: unknown[]; pagination?: unknown } {
+    const items = page.items ?? page.result?.items ?? [];
+    const pagination = page.pagination ?? page.result?.pagination;
+    return { items, pagination };
+}
 
 function safeStringify(x: unknown, maxLen = 800): string {
     try {
@@ -2046,15 +2060,14 @@ async function testListPayments(client: Flexprice) {
 
     try {
         const pages = await client.payments.listPayments({ limit: 10 });
-        const list = pages.result;
-        const items = list?.items ?? [];
+        const { items, pagination } = paginatedPageItems(pages);
         console.log(`✓ Retrieved ${items.length} payments`);
         if (items.length > 0) {
             const first = items[0] as { id?: string; amount?: string; currency?: string };
             console.log(`  First payment: ${first.id} - ${first.amount} ${first.currency}`);
         }
-        if (list?.pagination) {
-            console.log(`  Total: ${(list.pagination as { total?: number })?.total ?? ''}\n`);
+        if (pagination) {
+            console.log(`  Total: ${(pagination as { total?: number })?.total ?? ''}\n`);
         } else {
             console.log();
         }
@@ -2270,7 +2283,7 @@ async function testGetWalletTransactions(client: Flexprice) {
 
     try {
         const response = await client.wallets.getWalletTransactions({ idPathParameter: testWalletID });
-        const items = response.result?.items ?? [];
+        const { items } = paginatedPageItems(response);
         console.log('✓ Wallet transactions retrieved!');
         console.log(`  Total transactions: ${items.length}\n`);
     } catch (error: any) {

@@ -15,11 +15,13 @@ import (
 	"github.com/flexprice/go-sdk/v2/models/types"
 )
 
-// FlexPrice Go SDK API tests (module github.com/flexprice/go-sdk/v2 via replace => ../../go).
+// FlexPrice Go SDK API tests (published module github.com/flexprice/go-sdk/v2 v2.1.1).
+// List payloads use *Response types (e.g. types.CustomerResponse) from the generated Go SDK.
+// If sum.golang.org has not indexed the tag yet, fetch with: GOPRIVATE=github.com/flexprice/* (see Makefile test-sdk).
 // Run from api/tests/go: go run -tags published test_sdk.go
 // Requires: FLEXPRICE_API_KEY, FLEXPRICE_API_HOST (must include /v1, e.g. api.cloud.flexprice.io/v1; no trailing space or slash).
-// defaultGoSDKRepo is the Go SDK module path (local api/go when using replace in go.mod).
-const defaultGoSDKRepo = "github.com/flexprice/go-sdk/v2 (local api/go)"
+// defaultGoSDKRepo is the Go SDK module path and version used for test output.
+const defaultGoSDKRepo = "github.com/flexprice/go-sdk/v2 v2.1.1"
 
 // strPtr returns a *string for optional SDK fields (SDK models use *string, not types.String).
 func strPtr(s string) *string { return &s }
@@ -370,7 +372,7 @@ func testCreateCustomer(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	customer := resp.GetCustomer()
+	customer := resp.GetCustomerResponse()
 	if customer == nil || customer.GetID() == nil {
 		log.Printf("❌ Create customer returned no body")
 		fmt.Println()
@@ -394,7 +396,7 @@ func testGetCustomer(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	customer := resp.GetCustomer()
+	customer := resp.GetCustomerResponse()
 	if customer == nil {
 		log.Printf("❌ Get customer returned no body")
 		fmt.Println()
@@ -422,12 +424,12 @@ func testListCustomers(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Printf("✓ Retrieved 0 customers\n\n")
 		return
 	}
-	items := []types.Customer{}
+	items := []types.CustomerResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
 	if items == nil {
-		items = []types.Customer{}
+		items = []types.CustomerResponse{}
 	}
 	fmt.Printf("✓ Retrieved %d customers\n", len(items))
 	if len(items) > 0 {
@@ -458,7 +460,7 @@ func testUpdateCustomer(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	customer := resp.GetCustomer()
+	customer := resp.GetCustomerResponse()
 	if customer == nil {
 		log.Printf("❌ Update customer returned no body")
 		fmt.Println()
@@ -480,7 +482,7 @@ func testLookupCustomer(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	customer := resp.GetCustomer()
+	customer := resp.GetCustomerResponse()
 	if customer == nil {
 		log.Printf("❌ Lookup returned no body")
 		fmt.Println()
@@ -504,7 +506,7 @@ func testSearchCustomers(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListCustomersResponse()
-	items := []types.Customer{}
+	items := []types.CustomerResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -631,7 +633,7 @@ func testCreateFeature(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	feature := resp.GetFeature()
+	feature := resp.GetFeatureResponse()
 	if feature == nil || feature.GetID() == nil {
 		log.Printf("❌ Create feature returned no body")
 		fmt.Println()
@@ -682,7 +684,7 @@ func testListFeatures(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListFeaturesResponse()
-	items := []types.Feature{}
+	items := []types.FeatureResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -717,7 +719,7 @@ func testUpdateFeature(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	feature := resp.GetFeature()
+	feature := resp.GetFeatureResponse()
 	if feature == nil {
 		log.Printf("❌ Update feature returned no body")
 		fmt.Println()
@@ -742,7 +744,7 @@ func testSearchFeatures(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListFeaturesResponse()
-	items := []types.Feature{}
+	items := []types.FeatureResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -825,7 +827,7 @@ func testGetAddon(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	addon := resp.GetAddon()
+	addon := resp.GetAddonResponse()
 	if addon == nil {
 		log.Printf("❌ Get addon returned no body")
 		fmt.Println()
@@ -850,7 +852,7 @@ func testListAddons(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListAddonsResponse()
-	items := []types.Addon{}
+	items := []types.AddonResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -885,7 +887,7 @@ func testUpdateAddon(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	addon := resp.GetAddon()
+	addon := resp.GetAddonResponse()
 	if addon == nil {
 		log.Printf("❌ Update addon returned no body")
 		fmt.Println()
@@ -917,7 +919,7 @@ func testLookupAddon(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println("⚠ Skipping lookup test (lookup key may not match)\n")
 		return
 	}
-	addon := resp.GetAddon()
+	addon := resp.GetAddonResponse()
 	if addon == nil {
 		log.Printf("⚠ Warning: Lookup returned no body\n")
 		fmt.Println("⚠ Skipping lookup test\n")
@@ -941,7 +943,7 @@ func testSearchAddons(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListAddonsResponse()
-	items := []types.Addon{}
+	items := []types.AddonResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -1148,7 +1150,7 @@ func testCreatePlan(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	plan := resp.GetPlan()
+	plan := resp.GetPlanResponse()
 	if plan == nil || plan.ID == nil {
 		log.Printf("❌ Create plan returned no body")
 		fmt.Println()
@@ -1171,7 +1173,7 @@ func testGetPlan(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	plan := resp.GetPlan()
+	plan := resp.GetPlanResponse()
 	if plan == nil {
 		log.Printf("❌ Get plan returned no body")
 		fmt.Println()
@@ -1196,7 +1198,7 @@ func testListPlans(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListPlansResponse()
-	items := []types.Plan{}
+	items := []types.PlanResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -1231,7 +1233,7 @@ func testUpdatePlan(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	plan := resp.GetPlan()
+	plan := resp.GetPlanResponse()
 	if plan == nil {
 		log.Printf("❌ Update plan returned no body")
 		fmt.Println()
@@ -1256,7 +1258,7 @@ func testSearchPlans(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListPlansResponse()
-	items := []types.Plan{}
+	items := []types.PlanResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -1353,7 +1355,7 @@ func testCreateSubscription(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	subscription := subResp.GetSubscription()
+	subscription := subResp.GetSubscriptionResponse()
 	if subscription == nil || subscription.ID == nil {
 		log.Printf("❌ Create subscription returned no body")
 		fmt.Println()
@@ -1384,7 +1386,7 @@ func testGetSubscription(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	subscription := resp.GetSubscription()
+	subscription := resp.GetSubscriptionResponse()
 	if subscription == nil {
 		log.Printf("❌ Get subscription returned no body")
 		fmt.Println()
@@ -1416,7 +1418,7 @@ func testListSubscriptions(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListSubscriptionsResponse()
-	items := []types.Subscription{}
+	items := []types.SubscriptionResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -1457,7 +1459,7 @@ func testSearchSubscriptions(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListSubscriptionsResponse()
-	items := []types.Subscription{}
+	items := []types.SubscriptionResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -1498,7 +1500,7 @@ func testActivateSubscription(ctx context.Context, client *flexprice.Flexprice) 
 		fmt.Println("⚠ Skipping activate test\n")
 		return
 	}
-	draftSub := draftResp.GetSubscription()
+	draftSub := draftResp.GetSubscriptionResponse()
 	if draftSub == nil || draftSub.ID == nil {
 		log.Printf("⚠ Warning: Create draft returned no body\n")
 		fmt.Println("⚠ Skipping activate test\n")
@@ -1937,7 +1939,7 @@ func testListInvoices(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListInvoicesResponse()
-	items := []types.Invoice{}
+	items := []types.InvoiceResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -1967,7 +1969,7 @@ func testSearchInvoices(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListInvoicesResponse()
-	items := []types.Invoice{}
+	items := []types.InvoiceResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -2028,7 +2030,7 @@ func testCreateInvoice(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println("⚠ Skipping create invoice test\n")
 		return
 	}
-	invoice := createResp.GetInvoice()
+	invoice := createResp.GetInvoiceResponse()
 	if invoice == nil {
 		log.Printf("⚠ Warning: Create invoice returned no body\n")
 		return
@@ -2055,7 +2057,7 @@ func testGetInvoice(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println("⚠ Skipping get invoice test\n")
 		return
 	}
-	invoice := getResp.GetInvoice()
+	invoice := getResp.GetInvoiceResponse()
 	if invoice == nil {
 		log.Printf("⚠ Warning: Get invoice returned no body\n")
 		return
@@ -2088,7 +2090,7 @@ func testUpdateInvoice(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println("⚠ Skipping update invoice test\n")
 		return
 	}
-	invoice := updateResp.GetInvoice()
+	invoice := updateResp.GetInvoiceResponse()
 	if invoice == nil {
 		log.Printf("⚠ Warning: Update invoice returned no body\n")
 		return
@@ -2123,7 +2125,7 @@ func testPreviewInvoice(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 
-	preview := previewResp.GetInvoice()
+	preview := previewResp.GetInvoiceResponse()
 	fmt.Printf("✓ Invoice preview generated!\n")
 	if preview != nil && preview.Total != nil {
 		fmt.Printf("  Preview Total: %s\n", *preview.Total)
@@ -2160,7 +2162,7 @@ func testFinalizeInvoice(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println("⚠ Skipping finalize invoice test\n")
 		return
 	}
-	invoice := createResp.GetInvoice()
+	invoice := createResp.GetInvoiceResponse()
 	if invoice == nil || invoice.ID == nil {
 		log.Printf("⚠ Warning: Create draft returned no body\n")
 		return
@@ -2249,7 +2251,7 @@ func testAttemptPayment(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println("⚠ Skipping attempt payment test\n")
 		return
 	}
-	inv := createResp.GetInvoice()
+	inv := createResp.GetInvoiceResponse()
 	if inv == nil || inv.ID == nil {
 		log.Printf("⚠ Warning: Create invoice returned no body\n")
 		return
@@ -2405,7 +2407,7 @@ func testCreatePrice(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	price := resp.GetPrice()
+	price := resp.GetPriceResponse()
 	if price == nil || price.ID == nil {
 		log.Printf("❌ Create price returned no body\n")
 		return
@@ -2433,7 +2435,7 @@ func testGetPrice(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	price := resp.GetPrice()
+	price := resp.GetPriceResponse()
 	if price == nil {
 		log.Printf("❌ Get price returned no body\n")
 		return
@@ -2458,7 +2460,7 @@ func testListPrices(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListPricesResponse()
-	items := []types.Price{}
+	items := []types.PriceResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -2497,7 +2499,7 @@ func testUpdatePrice(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	price := updateResp.GetPrice()
+	price := updateResp.GetPriceResponse()
 	if price == nil {
 		log.Printf("❌ Update price returned no body\n")
 		return
@@ -2569,7 +2571,7 @@ func testCreatePayment(ctx context.Context, client *flexprice.Flexprice) {
 		log.Printf("⚠ Warning: Failed to create invoice for payment test: %v\n", err)
 		return
 	}
-	inv := createResp.GetInvoice()
+	inv := createResp.GetInvoiceResponse()
 	if inv == nil || inv.ID == nil {
 		log.Printf("⚠ Warning: Create invoice returned no body\n")
 		return
@@ -2582,7 +2584,7 @@ func testCreatePayment(ctx context.Context, client *flexprice.Flexprice) {
 		log.Printf("⚠ Warning: Failed to get invoice for payment test: %v\n", err)
 		return
 	}
-	currentInvoice := currentInvoiceResp.GetInvoice()
+	currentInvoice := currentInvoiceResp.GetInvoiceResponse()
 	if currentInvoice == nil {
 		log.Printf("⚠ Warning: Get invoice returned no body\n")
 		return
@@ -2639,7 +2641,7 @@ func testCreatePayment(ctx context.Context, client *flexprice.Flexprice) {
 		log.Printf("⚠ Warning: Failed to get final invoice status for payment test: %v\n", err)
 		return
 	}
-	finalInvoice := finalInvoiceResp.GetInvoice()
+	finalInvoice := finalInvoiceResp.GetInvoiceResponse()
 	if finalInvoice == nil {
 		log.Printf("⚠ Warning: Get final invoice returned no body\n")
 		return
@@ -2711,7 +2713,7 @@ func testCreatePayment(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	payment := paymentResp.GetPayment()
+	payment := paymentResp.GetPaymentResponse()
 	if payment == nil || payment.ID == nil {
 		log.Printf("❌ Create payment returned no body\n")
 		return
@@ -2741,7 +2743,7 @@ func testGetPayment(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	payment := resp.GetPayment()
+	payment := resp.GetPaymentResponse()
 	if payment == nil {
 		log.Printf("❌ Get payment returned no body\n")
 		return
@@ -2774,7 +2776,7 @@ func testListPayments(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListPaymentsResponse()
-	items := []types.Payment{}
+	items := []types.PaymentResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -2822,7 +2824,7 @@ func testUpdatePayment(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	payment := updateResp.GetPayment()
+	payment := updateResp.GetPaymentResponse()
 	if payment == nil {
 		return
 	}
@@ -2847,7 +2849,7 @@ func testProcessPayment(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println("⚠ Skipping process payment test (may require payment gateway setup)\n")
 		return
 	}
-	payment := processResp.GetPayment()
+	payment := processResp.GetPaymentResponse()
 	if payment == nil {
 		return
 	}
@@ -2932,7 +2934,7 @@ func testCreateWallet(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	wallet := resp.GetWallet()
+	wallet := resp.GetWalletResponse()
 	if wallet == nil || wallet.ID == nil {
 		log.Printf("❌ Create wallet returned no body\n")
 		return
@@ -2960,7 +2962,7 @@ func testGetWallet(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	wallet := resp.GetWallet()
+	wallet := resp.GetWalletResponse()
 	if wallet == nil {
 		log.Printf("❌ Get wallet returned no body\n")
 		return
@@ -2984,7 +2986,7 @@ func testListWallets(ctx context.Context, client *flexprice.Flexprice) {
 		return
 	}
 	listResp := resp.GetListResponseDtoWalletResponse()
-	items := []types.Wallet{}
+	items := []types.WalletResponse{}
 	if listResp != nil && listResp.GetItems() != nil {
 		items = listResp.GetItems()
 	}
@@ -3021,7 +3023,7 @@ func testUpdateWallet(ctx context.Context, client *flexprice.Flexprice) {
 		fmt.Println()
 		return
 	}
-	wallet := updateResp.GetWallet()
+	wallet := updateResp.GetWalletResponse()
 	if wallet == nil {
 		return
 	}
@@ -3132,7 +3134,7 @@ func testGetWalletTransactions(ctx context.Context, client *flexprice.Flexprice)
 // 		return
 // 	}
 // 	listResp := resp.GetListResponseDtoWalletResponse()
-// 	items := []types.Wallet{}
+// 	items := []types.WalletResponse{}
 // 	if listResp != nil && listResp.GetItems() != nil {
 // 		items = listResp.GetItems()
 // 	}
@@ -3366,12 +3368,12 @@ func testCreateCreditNote(ctx context.Context, client *flexprice.Flexprice) {
 
 	// Get invoice to retrieve line items for credit note
 	invResp, err := client.Invoices.GetInvoice(ctx, testInvoiceID, nil, nil)
-	if err != nil || invResp.GetInvoice() == nil {
+	if err != nil || invResp.GetInvoiceResponse() == nil {
 		log.Printf("⚠ Warning: Could not retrieve invoice: %v\n", err)
 		fmt.Println("⚠ Skipping create credit note test\n")
 		return
 	}
-	invoice := invResp.GetInvoice()
+	invoice := invResp.GetInvoiceResponse()
 
 	log.Printf("Invoice has %d line items\n", len(invoice.LineItems))
 	if len(invoice.LineItems) == 0 {

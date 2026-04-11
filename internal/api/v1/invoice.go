@@ -505,6 +505,24 @@ func (h *InvoiceHandler) GetPreviewInvoice(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+func (h *InvoiceHandler) GetInternalPreviewInvoice(c *gin.Context) {
+	var req dto.GetPreviewInvoiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind request body", "error", err)
+		c.Error(ierr.WithError(err).WithHint("failed to bind request body").Mark(ierr.ErrValidation))
+		return
+	}
+
+	resp, err := h.invoiceService.GetInternalPreviewInvoice(c.Request.Context(), req)
+	if err != nil {
+		h.logger.Error("Failed to get internal preview invoice", "error", err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 // GetCustomerInvoiceSummary godoc
 // @Summary Get customer invoice summary
 // @ID getCustomerInvoiceSummary

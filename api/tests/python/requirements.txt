@@ -1,5 +1,7 @@
-# Local SDK from the monorepo (pre-release testing). Installs api/python in editable mode.
+# Python 3.10+ required (matches PyPI flexprice; make test-sdks picks python3.12 … python3.10 if default python3 is older).
+# Local SDK from the monorepo (matches make test-sdk / CI against generated api/python).
+# Published on PyPI: flexprice==2.1.1 — use requirements-published.txt or: pip install flexprice==2.1.1
 -e ../../python
 
-# Published SDK (optional): pip install -r requirements-published.txt
-# flexprice>=2.0.1
+pydantic>=2
+httpx>=0.28

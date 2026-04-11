@@ -574,7 +574,20 @@ func (p *Price) ValidateTrialPeriod() error {
 
 // ValidateInvoiceCadence checks if invoice cadence is valid
 func (p *Price) ValidateInvoiceCadence() error {
-	return p.InvoiceCadence.Validate()
+	if err := p.InvoiceCadence.Validate(); err != nil {
+		return err
+	}
+	if p.Type == types.PRICE_TYPE_USAGE && p.InvoiceCadence == types.InvoiceCadenceAdvance {
+		return ierr.NewError("ADVANCE invoice cadence is not supported for USAGE price type").
+			WithHint("Please use ARREAR invoice cadence for USAGE price type").
+			WithReportableDetails(map[string]any{
+				"price_type":      p.Type,
+				"invoice_cadence": p.InvoiceCadence,
+				"allowed":         []types.InvoiceCadence{types.InvoiceCadenceArrear},
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	return nil
 }
 
 // ValidateEntityType checks if entity type is valid

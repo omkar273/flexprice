@@ -449,6 +449,86 @@
         ]
       }
     },
+    "/ai/pricing/parse-gemini": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "summary": "Parse pricing from natural language (Gemini)",
+        "description": "Server-side Gemini call: accepts system prompt, user prompt, and response JSON schema from the client and returns parsed pricing schema JSON.",
+        "operationId": "parseGeminiPricing",
+        "requestBody": {
+          "description": "Prompts and Gemini responseSchema",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParseGeminiPricingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Pricing schema JSON (features, plans, ...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "AI provider rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server or upstream error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AI not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-codegen-request-body-name": "body"
+      }
+    },
     "/alerts/search": {
       "post": {
         "tags": [
@@ -8631,6 +8711,168 @@
         "x-codegen-request-body-name": "request"
       }
     },
+    "/subscriptions/{id}/modify/execute": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Execute subscription modification",
+        "description": "Execute a mid-cycle subscription modification (inheritance or quantity change).",
+        "operationId": "executeSubscriptionModify",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Subscription ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Modification request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteSubscriptionModifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionModifyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-scope": "write",
+        "x-codegen-request-body-name": "request"
+      }
+    },
+    "/subscriptions/{id}/modify/preview": {
+      "post": {
+        "tags": [
+          "Subscriptions"
+        ],
+        "summary": "Preview subscription modification",
+        "description": "Preview the impact of a mid-cycle subscription modification without committing changes.",
+        "operationId": "previewSubscriptionModify",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Subscription ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Modification preview request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecuteSubscriptionModifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionModifyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-scope": "read",
+        "x-codegen-request-body-name": "request"
+      }
+    },
     "/subscriptions/{id}/pause": {
       "post": {
         "tags": [
@@ -13420,7 +13662,7 @@
         "type": "object",
         "properties": {
           "coupon": {
-            "$ref": "#/components/schemas/DomainCoupon"
+            "$ref": "#/components/schemas/Coupon"
           },
           "coupon_id": {
             "type": "string"
@@ -13960,7 +14202,6 @@
         "properties": {
           "cancel_at": {
             "type": "string",
-            "description": "CancelAt is the custom date to cancel the subscription.\nRequired when CancellationType is \"scheduled_date\". Must be in the future.",
             "format": "date-time"
           },
           "cancel_immediately_inovice_policy": {
@@ -14017,6 +14258,85 @@
           },
           "total_credit_amount": {
             "type": "string"
+          }
+        }
+      },
+      "ChangedInvoice": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "\"created\" | \"wallet_credit\""
+          },
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "ChangedLineItem": {
+        "type": "object",
+        "properties": {
+          "change_action": {
+            "type": "string",
+            "description": "\"created\" | \"updated\" | \"ended\""
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          },
+          "price_id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChangedResources": {
+        "type": "object",
+        "properties": {
+          "invoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangedInvoice"
+            }
+          },
+          "line_items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangedLineItem"
+            }
+          },
+          "subscriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangedSubscription"
+            }
+          }
+        }
+      },
+      "ChangedSubscription": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "\"created\" | \"updated\""
+          },
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/types.SubscriptionStatus"
           }
         }
       },
@@ -14255,7 +14575,7 @@
         "type": "object",
         "properties": {
           "coupon": {
-            "$ref": "#/components/schemas/DomainCoupon"
+            "$ref": "#/components/schemas/Coupon"
           },
           "coupon_id": {
             "type": "string"
@@ -14823,6 +15143,13 @@
             "type": "string",
             "description": "external_id is the unique identifier from your system to reference this customer (required)"
           },
+          "integration_entity_mapping": {
+            "type": "array",
+            "description": "integration_entity_mapping contains provider integration mappings for this customer",
+            "items": {
+              "$ref": "#/components/schemas/CreateEntityIntegrationMappingRequest"
+            }
+          },
           "metadata": {
             "type": "object",
             "additionalProperties": {
@@ -14833,14 +15160,6 @@
           "name": {
             "type": "string",
             "description": "name is the full name or company name of the customer"
-          },
-          "parent_customer_external_id": {
-            "type": "string",
-            "description": "Deprecated: See ParentCustomerID.\nparent_customer_external_id is the external ID of the parent customer from your system.\nExactly one of parent_customer_id or parent_customer_external_id may be provided."
-          },
-          "parent_customer_id": {
-            "type": "string",
-            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nThis field is accepted for backward compatibility but no hierarchy validations are enforced.\nparent_customer_id is the internal FlexPrice ID of the parent customer."
           },
           "skip_onboarding_workflow": {
             "type": "boolean",
@@ -14903,6 +15222,36 @@
           },
           "usage_reset_period": {
             "$ref": "#/components/schemas/types.EntitlementUsageResetPeriod"
+          }
+        }
+      },
+      "CreateEntityIntegrationMappingRequest": {
+        "required": [
+          "entity_id",
+          "entity_type",
+          "provider_entity_id",
+          "provider_type"
+        ],
+        "type": "object",
+        "properties": {
+          "entity_id": {
+            "maxLength": 255,
+            "type": "string"
+          },
+          "entity_type": {
+            "$ref": "#/components/schemas/types.IntegrationEntityType"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "provider_entity_id": {
+            "maxLength": 255,
+            "type": "string"
+          },
+          "provider_type": {
+            "maxLength": 50,
+            "type": "string"
           }
         }
       },
@@ -15312,7 +15661,6 @@
       },
       "CreatePriceRequest": {
         "required": [
-          "billing_cadence",
           "billing_model",
           "billing_period",
           "currency",
@@ -15326,9 +15674,6 @@
         "properties": {
           "amount": {
             "type": "string"
-          },
-          "billing_cadence": {
-            "$ref": "#/components/schemas/types.BillingCadence"
           },
           "billing_model": {
             "$ref": "#/components/schemas/types.BillingModel"
@@ -15681,16 +16026,8 @@
           "gateway_payment_method_id": {
             "type": "string"
           },
-          "invoice_billing": {
-            "$ref": "#/components/schemas/types.InvoiceBilling"
-          },
-          "invoicing_customer_external_id": {
-            "type": "string",
-            "description": "invoicing_customer_external_id is the external ID of the customer to use for invoicing.\nResolved internally to an internal customer ID via external ID lookup.\nMutually exclusive with invoicing_customer_id."
-          },
-          "invoicing_customer_id": {
-            "type": "string",
-            "description": "invoicing_customer_id is the FlexPrice customer ID to use for invoicing.\nThis can differ from the subscription customer (e.g., a billing entity invoicing on behalf of another customer).\nMutually exclusive with invoicing_customer_external_id."
+          "inheritance": {
+            "$ref": "#/components/schemas/SubscriptionInheritanceConfig"
           },
           "line_item_commitments": {
             "type": "object",
@@ -15741,10 +16078,6 @@
             "items": {
               "$ref": "#/components/schemas/OverrideLineItemRequest"
             }
-          },
-          "parent_subscription_id": {
-            "type": "string",
-            "description": "ParentSubscriptionID is the parent subscription ID for hierarchy (e.g. child subscription under a parent)"
           },
           "payment_behavior": {
             "$ref": "#/components/schemas/types.PaymentBehavior"
@@ -16195,7 +16528,7 @@
             "description": "currency is the three-letter ISO currency code (e.g., USD, EUR) for the credit note"
           },
           "customer": {
-            "$ref": "#/components/schemas/DomainCustomer"
+            "$ref": "#/components/schemas/Customer"
           },
           "customer_id": {
             "type": "string",
@@ -16362,7 +16695,7 @@
         "type": "object",
         "properties": {
           "customer": {
-            "$ref": "#/components/schemas/DomainCustomer"
+            "$ref": "#/components/schemas/Customer"
           },
           "error": {
             "$ref": "#/components/schemas/errors.ErrorResponse"
@@ -16458,13 +16791,6 @@
           "name": {
             "type": "string",
             "description": "Name is the name of the customer"
-          },
-          "parent_customer": {
-            "$ref": "#/components/schemas/CustomerResponse"
-          },
-          "parent_customer_id": {
-            "type": "string",
-            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer."
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
@@ -16774,6 +17100,23 @@
           },
           "requestId": {
             "type": "string"
+          }
+        }
+      },
+      "ExecuteSubscriptionModifyRequest": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "inheritance_params": {
+            "$ref": "#/components/schemas/SubModifyInheritanceRequest"
+          },
+          "quantity_change_params": {
+            "$ref": "#/components/schemas/SubModifyQuantityChangeRequest"
+          },
+          "type": {
+            "$ref": "#/components/schemas/SubscriptionModifyType"
           }
         }
       },
@@ -17177,9 +17520,6 @@
         }
       },
       "GetUsageAnalyticsRequest": {
-        "required": [
-          "external_customer_id"
-        ],
         "type": "object",
         "properties": {
           "end_time": {
@@ -17194,7 +17534,8 @@
             }
           },
           "external_customer_id": {
-            "type": "string"
+            "type": "string",
+            "description": "ExternalCustomerID is the single external customer ID.\nOptional when ExternalCustomerIDs is provided; required otherwise."
           },
           "feature_ids": {
             "type": "array",
@@ -17208,6 +17549,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "include_children": {
+            "type": "boolean",
+            "description": "IncludeChildren when true folds child customers' usage into the single aggregated total.\nDefault: false."
           },
           "property_filters": {
             "type": "object",
@@ -17910,7 +18255,7 @@
           },
           "recalculated_invoice_id": {
             "type": "string",
-            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent→child link from this (voided) invoice to the new replacement invoice."
+            "description": "recalculated_invoice_id is the ID of the replacement invoice created when this invoice was voided and recalculated.\nWhen set, it forms a parent\u2192child link from this (voided) invoice to the new replacement invoice."
           },
           "refunded_amount": {
             "type": "string",
@@ -17921,6 +18266,10 @@
           },
           "subscription": {
             "$ref": "#/components/schemas/SubscriptionResponse"
+          },
+          "subscription_customer_id": {
+            "type": "string",
+            "description": "subscription_customer_id is the subscription owner's customer ID (Subscription.CustomerID).\nIt may differ from customer_id when the subscription uses an invoicing customer. Set internally; nullable in DB."
           },
           "subscription_id": {
             "type": "string",
@@ -18002,6 +18351,26 @@
           "overage_factor": {
             "type": "number",
             "description": "OverageFactor is a multiplier applied to usage beyond the commitment"
+          }
+        }
+      },
+      "LineItemQuantityChange": {
+        "required": [
+          "id",
+          "quantity"
+        ],
+        "type": "object",
+        "properties": {
+          "effective_date": {
+            "type": "string",
+            "description": "EffectiveDate is when the quantity change takes effect.\nIf omitted, the change is effective immediately (now).",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
           }
         }
       },
@@ -18324,6 +18693,23 @@
           },
           "transform_quantity": {
             "$ref": "#/components/schemas/price.TransformQuantity"
+          }
+        }
+      },
+      "ParseGeminiPricingRequest": {
+        "type": "object",
+        "properties": {
+          "responseSchema": {
+            "type": "object",
+            "properties": {}
+          },
+          "systemPrompt": {
+            "type": "string",
+            "example": "You are a pricing architect..."
+          },
+          "userPrompt": {
+            "type": "string",
+            "example": "Describe pricing for..."
           }
         }
       },
@@ -19081,6 +19467,32 @@
           }
         }
       },
+      "SubModifyInheritanceRequest": {
+        "type": "object",
+        "properties": {
+          "external_customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SubModifyQuantityChangeRequest": {
+        "required": [
+          "line_items"
+        ],
+        "type": "object",
+        "properties": {
+          "line_items": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineItemQuantityChange"
+            }
+          }
+        }
+      },
       "SubscriptionChangeExecuteResponse": {
         "type": "object",
         "properties": {
@@ -19241,6 +19653,23 @@
           }
         }
       },
+      "SubscriptionInheritanceConfig": {
+        "type": "object",
+        "properties": {
+          "external_customer_ids_to_inherit_subscription": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "invoicing_customer_external_id": {
+            "type": "string"
+          },
+          "parent_subscription_id": {
+            "type": "string"
+          }
+        }
+      },
       "SubscriptionLineItemLookupResult": {
         "type": "object",
         "properties": {
@@ -19386,6 +19815,28 @@
           }
         }
       },
+      "SubscriptionModifyResponse": {
+        "type": "object",
+        "properties": {
+          "changed_resources": {
+            "$ref": "#/components/schemas/ChangedResources"
+          },
+          "subscription": {
+            "$ref": "#/components/schemas/SubscriptionResponse"
+          }
+        }
+      },
+      "SubscriptionModifyType": {
+        "type": "string",
+        "enum": [
+          "inheritance",
+          "quantity_change"
+        ],
+        "x-enum-varnames": [
+          "SubscriptionModifyTypeInheritance",
+          "SubscriptionModifyTypeQuantityChange"
+        ]
+      },
       "SubscriptionPauseResponse": {
         "type": "object",
         "properties": {
@@ -19492,6 +19943,13 @@
             },
             "description": "LineItemCoupons represents line item-level coupons (map of line_item_id to coupon IDs)"
           },
+          "line_items": {
+            "type": "array",
+            "description": "LineItems are extra line items to add during this phase, primarily one-time charges.\nEach item's start_date defaults to the phase's start_date when not provided.",
+            "items": {
+              "$ref": "#/components/schemas/CreateSubscriptionLineItemRequest"
+            }
+          },
           "metadata": {
             "type": "object",
             "additionalProperties": {
@@ -19563,7 +20021,6 @@
       },
       "SubscriptionPriceCreateRequest": {
         "required": [
-          "billing_cadence",
           "billing_model",
           "billing_period",
           "invoice_cadence",
@@ -19574,9 +20031,6 @@
         "properties": {
           "amount": {
             "type": "string"
-          },
-          "billing_cadence": {
-            "$ref": "#/components/schemas/types.BillingCadence"
           },
           "billing_model": {
             "$ref": "#/components/schemas/types.BillingModel"
@@ -19841,6 +20295,9 @@
           "subscription_status": {
             "$ref": "#/components/schemas/types.SubscriptionStatus"
           },
+          "subscription_type": {
+            "$ref": "#/components/schemas/types.SubscriptionType"
+          },
           "tenant_id": {
             "type": "string"
           },
@@ -20052,6 +20509,9 @@
           },
           "subscription_status": {
             "$ref": "#/components/schemas/types.SubscriptionStatus"
+          },
+          "subscription_type": {
+            "$ref": "#/components/schemas/types.SubscriptionType"
           },
           "tenant_id": {
             "type": "string"
@@ -20827,6 +21287,13 @@
             "type": "string",
             "description": "external_id is the updated external identifier for the customer"
           },
+          "integration_entity_mapping": {
+            "type": "array",
+            "description": "integration_entity_mapping contains provider integration mappings for this customer",
+            "items": {
+              "$ref": "#/components/schemas/CreateEntityIntegrationMappingRequest"
+            }
+          },
           "metadata": {
             "type": "object",
             "additionalProperties": {
@@ -20837,14 +21304,6 @@
           "name": {
             "type": "string",
             "description": "name is the updated name or company name for the customer"
-          },
-          "parent_customer_external_id": {
-            "type": "string",
-            "description": "Deprecated: See ParentCustomerID.\nparent_customer_external_id is the external ID of the parent customer from your system.\nExactly one of parent_customer_id or parent_customer_external_id may be provided.\nIf you provide the external ID, the parent customer value will be ignored."
-          },
-          "parent_customer_id": {
-            "type": "string",
-            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nThis field is accepted for backward compatibility but no hierarchy validations are enforced.\nparent_customer_id is the internal FlexPrice ID of the parent customer."
           }
         },
         "description": "Request object for updating an existing customer. All fields are optional - only provided fields will be updated"
@@ -21227,7 +21686,7 @@
             "type": "string"
           },
           "addon": {
-            "$ref": "#/components/schemas/DomainAddon"
+            "$ref": "#/components/schemas/Addon"
           },
           "aggregation_type": {
             "$ref": "#/components/schemas/types.AggregationType"
@@ -21246,7 +21705,7 @@
             "type": "string"
           },
           "feature": {
-            "$ref": "#/components/schemas/DomainFeature"
+            "$ref": "#/components/schemas/Feature"
           },
           "feature_id": {
             "type": "string"
@@ -21265,7 +21724,7 @@
             "type": "string"
           },
           "plan": {
-            "$ref": "#/components/schemas/DomainPlan"
+            "$ref": "#/components/schemas/Plan"
           },
           "plan_id": {
             "type": "string"
@@ -21752,19 +22211,7 @@
           }
         }
       },
-      "errors.ErrorDetail": {
-        "type": "object",
-        "properties": {
-          "internal_error": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          }
-        },
-        "x-speakeasy-name-override": "ErrorDetail"
-      },
-      "DomainAddon": {
+      "Addon": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -21811,7 +22258,7 @@
           }
         }
       },
-      "DomainCoupon": {
+      "Coupon": {
         "type": "object",
         "properties": {
           "amount_off": {
@@ -21885,7 +22332,7 @@
           }
         }
       },
-      "DomainCustomer": {
+      "Customer": {
         "type": "object",
         "properties": {
           "address_city": {
@@ -21946,10 +22393,6 @@
             "type": "string",
             "description": "Name is the name of the customer"
           },
-          "parent_customer_id": {
-            "type": "string",
-            "description": "Deprecated: Customer parent hierarchy is deprecated in favor of subscription-level hierarchy.\nRetained for backward compatibility; no hierarchy rules are enforced at the service layer.\nParentCustomerID is the parent customer identifier for the customer."
-          },
           "status": {
             "$ref": "#/components/schemas/types.Status"
           },
@@ -21965,7 +22408,7 @@
           }
         }
       },
-      "DomainFeature": {
+      "Feature": {
         "type": "object",
         "properties": {
           "alert_settings": {
@@ -22032,7 +22475,7 @@
           }
         }
       },
-      "DomainPlan": {
+      "Plan": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -22081,11 +22524,33 @@
       "errors.ErrorResponse": {
         "type": "object",
         "properties": {
-          "error": {
-            "$ref": "#/components/schemas/errors.ErrorDetail"
+          "code": {
+            "type": "string",
+            "enum": [
+              "not_found",
+              "already_exists",
+              "version_conflict",
+              "validation_error",
+              "invalid_operation",
+              "permission_denied",
+              "http_client_error",
+              "database_error",
+              "system_error",
+              "internal_error",
+              "service_unavailable"
+            ]
           },
-          "success": {
-            "type": "boolean"
+          "details": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "http_status_code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
           }
         },
         "x-speakeasy-name-override": "ErrorResponse"
@@ -22423,12 +22888,10 @@
       "types.BillingCadence": {
         "type": "string",
         "enum": [
-          "RECURRING",
-          "ONETIME"
+          "RECURRING"
         ],
         "x-enum-varnames": [
-          "BILLING_CADENCE_RECURRING",
-          "BILLING_CADENCE_ONETIME"
+          "BILLING_CADENCE_RECURRING"
         ],
         "x-speakeasy-name-override": "BillingCadence"
       },
@@ -22466,7 +22929,8 @@
           "WEEKLY",
           "DAILY",
           "QUARTERLY",
-          "HALF_YEARLY"
+          "HALF_YEARLY",
+          "ONETIME"
         ],
         "x-enum-varnames": [
           "BILLING_PERIOD_MONTHLY",
@@ -22474,7 +22938,8 @@
           "BILLING_PERIOD_WEEKLY",
           "BILLING_PERIOD_DAILY",
           "BILLING_PERIOD_QUARTER",
-          "BILLING_PERIOD_HALF_YEAR"
+          "BILLING_PERIOD_HALF_YEAR",
+          "BILLING_PERIOD_ONETIME"
         ],
         "x-speakeasy-name-override": "BillingPeriod"
       },
@@ -22847,12 +23312,6 @@
               "asc",
               "desc"
             ]
-          },
-          "parent_customer_ids": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           },
           "sort": {
             "type": "array",
@@ -23321,18 +23780,6 @@
         ],
         "x-speakeasy-name-override": "IntegrationEntityType"
       },
-      "types.InvoiceBilling": {
-        "type": "string",
-        "enum": [
-          "invoice_to_parent",
-          "invoice_to_self"
-        ],
-        "x-enum-varnames": [
-          "InvoiceBillingInvoiceToParent",
-          "InvoiceBillingInvoiceToSelf"
-        ],
-        "x-speakeasy-name-override": "InvoiceBilling"
-      },
       "types.InvoiceBillingReason": {
         "type": "string",
         "enum": [
@@ -23467,6 +23914,13 @@
           },
           "status": {
             "$ref": "#/components/schemas/types.Status"
+          },
+          "subscription_customer_id": {
+            "type": "array",
+            "description": "subscription_customer_id filters invoices by the subscription owner's customer ID",
+            "items": {
+              "type": "string"
+            }
           },
           "subscription_id": {
             "type": "string",
@@ -24138,6 +24592,7 @@
           "razorpay",
           "chargebee",
           "quickbooks",
+          "zoho_books",
           "nomod",
           "moyasar",
           "paddle"
@@ -24150,6 +24605,7 @@
           "SecretProviderRazorpay",
           "SecretProviderChargebee",
           "SecretProviderQuickBooks",
+          "SecretProviderZohoBooks",
           "SecretProviderNomod",
           "SecretProviderMoyasar",
           "SecretProviderPaddle"
@@ -24248,6 +24704,13 @@
             "type": "string",
             "description": "CustomerID filters by customer ID"
           },
+          "customer_ids": {
+            "type": "array",
+            "description": "CustomerIDs filters by customer IDs",
+            "items": {
+              "type": "string"
+            }
+          },
           "effective_date_for_update": {
             "type": "string",
             "description": "EffectiveDateForUpdate selects subscriptions that need a billing-period pass on or before this time:\ncurrent_period_end <= date OR (cancel_at IS NOT NULL AND cancel_at <= date).\nWhen nil, period/cancel cutoff logic is not applied by this field (see TimeRangeFilter for legacy period-end filtering)."
@@ -24329,6 +24792,13 @@
               "$ref": "#/components/schemas/types.SubscriptionStatus"
             }
           },
+          "subscription_type": {
+            "type": "array",
+            "description": "SubscriptionType filters by subscription type",
+            "items": {
+              "$ref": "#/components/schemas/types.SubscriptionType"
+            }
+          },
           "with_line_items": {
             "type": "boolean",
             "description": "WithLineItems includes line items in the response"
@@ -24381,6 +24851,20 @@
           "SubscriptionStatusDraft"
         ],
         "x-speakeasy-name-override": "SubscriptionStatus"
+      },
+      "types.SubscriptionType": {
+        "type": "string",
+        "enum": [
+          "standalone",
+          "parent",
+          "inherited"
+        ],
+        "x-enum-varnames": [
+          "SubscriptionTypeStandalone",
+          "SubscriptionTypeParent",
+          "SubscriptionTypeInherited"
+        ],
+        "x-speakeasy-name-override": "SubscriptionType"
       },
       "types.TaskStatus": {
         "type": "string",

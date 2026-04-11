@@ -9,6 +9,11 @@ import type { SDKOptions } from "../lib/config.js";
 import { Flexprice } from "../index.js";
 import type * as models from "./models/index.js";
 
+/** Return type of {@link Flexprice.customers.getCustomerByExternalId} (typically {@link models.CustomerResponse}). */
+type CustomerFromLookup = Awaited<
+  ReturnType<Flexprice["customers"]["getCustomerByExternalId"]>
+>;
+
 export type DashboardOptions = {
   subscriptionLimit?: number;
   invoiceLimit?: number;
@@ -22,12 +27,12 @@ export type DashboardOptions = {
 };
 
 export interface CustomerDashboardData {
-  customer?: models.Customer;
+  customer?: CustomerFromLookup;
   usage?: models.CustomerUsageSummaryResponse;
   entitlements?: models.CustomerEntitlementsResponse;
-  walletBalance?: models.Wallet;
-  activeSubscriptions?: models.Subscription[];
-  invoices?: models.Invoice[];
+  walletBalance?: models.WalletResponse;
+  activeSubscriptions?: models.SubscriptionResponse[];
+  invoices?: models.InvoiceResponse[];
   summary?: models.CustomerMultiCurrencyInvoiceSummary;
   metadata: {
     fetchedAt: string;
@@ -148,11 +153,11 @@ export class CustomerPortal {
         : undefined,
     ]);
 
-    const activeSubscriptions: models.Subscription[] =
+    const activeSubscriptions: models.SubscriptionResponse[] =
       subsResp && isRecord(subsResp) && "items" in subsResp && Array.isArray(subsResp["items"])
         ? subsResp["items"]
         : [];
-    const invoices: models.Invoice[] =
+    const invoices: models.InvoiceResponse[] =
       invoicesResp && isRecord(invoicesResp) && "items" in invoicesResp && Array.isArray(invoicesResp["items"])
         ? invoicesResp["items"]
         : [];
@@ -171,7 +176,7 @@ export class CustomerPortal {
 
     const result: CustomerDashboardData = { metadata };
 
-    if (opts.includeCustomer && customerData) result.customer = customerData as models.Customer;
+    if (opts.includeCustomer && customerData) result.customer = customerData as CustomerFromLookup;
     if (usage && isSuccess(usage)) result.usage = usage;
     if (entitlements && isSuccess(entitlements)) result.entitlements = entitlements;
     if (walletBalance && isSuccess(walletBalance)) result.walletBalance = walletBalance;

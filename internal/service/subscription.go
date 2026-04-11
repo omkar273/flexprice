@@ -389,6 +389,42 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 			}
 		}
 
+		// Create phase 0 DB record and its extra line items (e.g. ADVANCE one-time charges) BEFORE
+		// invoice generation so they are included in the opening invoice.
+		// Subsequent phases are handled post-transaction in handleSubscriptionPhases.
+		if len(phases) > 0 {
+			if err = s.SubscriptionPhaseRepo.Create(ctx, phases[0]); err != nil {
+				return err
+			}
+			if len(req.Phases) > 0 && len(req.Phases[0].LineItems) > 0 {
+				extraItems, extraErr := s.createPhaseExtraLineItems(ctx, sub, phases[0], req.Phases[0])
+				if extraErr != nil {
+					return extraErr
+				}
+				// Apply phase 0 coupons to the extra line items created above.
+				// handleSubCoupons runs before this block and only covers req.Coupons /
+				// req.LineItemCoupons; phase-level coupons (req.Phases[0].Coupons /
+				// req.Phases[0].LineItemCoupons) need to be resolved here using the
+				// just-created items.
+				phase0Req := req.Phases[0]
+				if len(phase0Req.Coupons) > 0 || len(phase0Req.LineItemCoupons) > 0 {
+					phase0PriceToLIMap := make(map[string]string)
+					for _, li := range extraItems {
+						if li.PriceID != "" && li.ID != "" {
+							phase0PriceToLIMap[li.PriceID] = li.ID
+						}
+					}
+					phase0Coupons := s.normalizePhaseCoupons(phase0Req, phases[0].ID, phase0PriceToLIMap)
+					if len(phase0Coupons) > 0 {
+						couponSvc := NewCouponAssociationService(s.ServiceParams)
+						if err = couponSvc.ApplyCouponsToSubscription(ctx, sub, phase0Coupons); err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+
 		// Create invoice for non-draft subscriptions
 		if req.SubscriptionStatus != types.SubscriptionStatusDraft {
 			paymentParams := dto.NewPaymentParametersFromSubscription(sub.CollectionMethod, sub.PaymentBehavior, sub.GatewayPaymentMethodID).NormalizePaymentParameters()
@@ -889,14 +925,16 @@ func (s *subscriptionService) handleSubscriptionPhases(
 
 	// Process each phase
 	for i, phase := range phases {
+		// Phase 0: record + extra line items were already created inside the subscription transaction
+		// (before invoice generation) so that ADVANCE one-time charges appear in the opening invoice.
+		// Nothing to do here for phase 0.
+		if i == 0 {
+			continue
+		}
+
 		// Create the phase in database
 		if err := s.SubscriptionPhaseRepo.Create(ctx, phase); err != nil {
 			return err
-		}
-
-		// Skip creating line items for the first phase since they're already created with the subscription
-		if i == 0 {
-			continue
 		}
 
 		// Get corresponding phase request for additional data
@@ -969,6 +1007,20 @@ func (s *subscriptionService) handleSubscriptionPhases(
 			}
 		}
 
+		// Handle extra line items (e.g. one-time charges) and merge them into the
+		// phasePriceToLineItemMap so LineItemCoupons can resolve them.
+		if len(phaseReq.LineItems) > 0 {
+			extraItems, err := s.createPhaseExtraLineItems(ctx, sub, phase, phaseReq)
+			if err != nil {
+				return err
+			}
+			for _, item := range extraItems {
+				if item.PriceID != "" && item.ID != "" {
+					phasePriceToLineItemMap[item.PriceID] = item.ID
+				}
+			}
+		}
+
 		// Handle phase coupons - transform simple coupons to SubscriptionCouponRequest format
 		couponAssociationService := NewCouponAssociationService(s.ServiceParams)
 		phaseCoupons := s.normalizePhaseCoupons(phaseReq, phase.ID, phasePriceToLineItemMap)
@@ -1031,6 +1083,54 @@ func (s *subscriptionService) normalizePhaseCoupons(
 	return subscriptionCoupons
 }
 
+// createPhaseExtraLineItems creates extra line items defined in a phase request (e.g. one-time charges).
+// start_date defaults to phase.StartDate when not provided.
+// Returns the created line items so callers can merge them into coupon resolution maps.
+func (s *subscriptionService) createPhaseExtraLineItems(
+	ctx context.Context,
+	sub *subscription.Subscription,
+	phase *subscription.SubscriptionPhase,
+	phaseReq dto.SubscriptionPhaseCreateRequest,
+) ([]*subscription.SubscriptionLineItem, error) {
+	var created []*subscription.SubscriptionLineItem
+	for _, liReq := range phaseReq.LineItems {
+		if liReq.StartDate == nil {
+			liReq.StartDate = &phaseReq.StartDate
+		}
+		effectiveDate := *liReq.StartDate
+		if effectiveDate.Before(phaseReq.StartDate) {
+			return nil, ierr.NewError("line item start_date cannot be before phase start date").
+				WithHint("start_date must be on or after the phase's start date.").
+				WithReportableDetails(map[string]interface{}{
+					"start_date":  effectiveDate,
+					"phase_start": phaseReq.StartDate,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+		if phaseReq.EndDate != nil && effectiveDate.After(lo.FromPtr(phaseReq.EndDate)) {
+			return nil, ierr.NewError("line item start_date cannot be after phase end date").
+				WithHint("start_date must be on or before the phase's end date when the phase has an end date.").
+				WithReportableDetails(map[string]interface{}{
+					"start_date": effectiveDate,
+					"phase_end":  phaseReq.EndDate,
+				}).
+				Mark(ierr.ErrValidation)
+		}
+
+		liReq.SubscriptionPhaseID = lo.ToPtr(phase.ID)
+		liReq.SkipEntitlementCheck = true
+
+		li, err := s.AddSubscriptionLineItem(ctx, sub.ID, liReq)
+		if err != nil {
+			return nil, err
+		}
+		if li != nil && li.SubscriptionLineItem != nil {
+			created = append(created, li.SubscriptionLineItem)
+		}
+	}
+	return created, nil
+}
+
 // processSubscriptionPriceOverrides handles creating subscription-scoped prices for overrides
 func (s *subscriptionService) ProcessSubscriptionPriceOverrides(
 	ctx context.Context,
@@ -1083,7 +1183,6 @@ func (s *subscriptionService) ProcessSubscriptionPriceOverrides(
 			BillingPeriod:        originalPrice.BillingPeriod,
 			BillingPeriodCount:   originalPrice.BillingPeriodCount,
 			BillingModel:         targetBillingModel,
-			BillingCadence:       originalPrice.BillingCadence,
 			InvoiceCadence:       originalPrice.InvoiceCadence,
 			TrialPeriod:          originalPrice.TrialPeriod,
 			TierMode:             originalPrice.TierMode,
@@ -1641,77 +1740,6 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 	return s.GetSubscription(ctx, subscriptionID)
 }
 
-// ExecuteSubscriptionModify adds inherited child subscriptions for external customer IDs on an active standalone or parent subscription.
-func (s *subscriptionService) ExecuteSubscriptionModify(ctx context.Context, subscriptionID string, req dto.ExecuteSubscriptionInheritanceRequest) (*dto.SubscriptionResponse, error) {
-	if err := req.Validate(); err != nil {
-		return nil, err
-	}
-
-	sub, err := s.SubRepo.Get(ctx, subscriptionID)
-	if err != nil {
-		return nil, err
-	}
-
-	if sub.SubscriptionType == types.SubscriptionTypeInherited {
-		return nil, ierr.NewError("inherited subscription cannot add inheritance children").
-			WithHint("Use the parent subscription to add customers to inheritance").
-			WithReportableDetails(map[string]interface{}{"subscription_id": subscriptionID}).
-			Mark(ierr.ErrValidation)
-	}
-
-	if sub.SubscriptionStatus != types.SubscriptionStatusActive {
-		return nil, ierr.NewError("subscription is not active").
-			WithHint("The subscription must be active to add inherited customers").
-			WithReportableDetails(map[string]interface{}{"subscription_id": subscriptionID, "subscription_status": sub.SubscriptionStatus}).
-			Mark(ierr.ErrValidation)
-	}
-
-	childCustomerIDs, err := s.resolveExternalCustomersForInheritance(ctx, sub.CustomerID, req.ExternalCustomerIDsToInheritSubscription)
-	if err != nil {
-		return nil, err
-	}
-
-	existingInherited, err := s.getInheritedSubscriptions(ctx, subscriptionID)
-	if err != nil {
-		return nil, err
-	}
-	existingByCustomer := lo.SliceToMap(existingInherited, func(ch *subscription.Subscription) (string, bool) {
-		return ch.CustomerID, true
-	})
-	for _, cid := range childCustomerIDs {
-		if _, dup := existingByCustomer[cid]; dup {
-			return nil, ierr.NewError("customer already inherits this subscription").
-				WithHint("Each customer may only have one inherited subscription per parent").
-				WithReportableDetails(map[string]interface{}{
-					"subscription_id": subscriptionID,
-					"customer_id":     cid,
-				}).
-				Mark(ierr.ErrValidation)
-		}
-	}
-
-	err = s.DB.WithTx(ctx, func(txCtx context.Context) error {
-		if sub.SubscriptionType == types.SubscriptionTypeStandalone {
-			sub.SubscriptionType = types.SubscriptionTypeParent
-			err := s.SubRepo.Update(txCtx, sub)
-			if err != nil {
-				return err
-			}
-		}
-		for _, childID := range childCustomerIDs {
-			if err := s.createInheritedSubscriptions(txCtx, sub, childID); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	s.publishSystemEvent(ctx, types.WebhookEventSubscriptionUpdated, subscriptionID)
-	return s.GetSubscription(ctx, subscriptionID)
-}
 
 // CancelSubscription provides enhanced cancellation with proration support
 func (s *subscriptionService) CancelSubscription(
@@ -1908,7 +1936,8 @@ func (s *subscriptionService) CancelSubscription(
 		// Step 9: Top up wallet for proration credit (only if there's a credit amount)
 		if totalCreditAmount.GreaterThan(decimal.Zero) {
 			walletService := NewWalletService(s.ServiceParams)
-			err = walletService.TopUpWalletForProratedCharge(ctx, subscription.CustomerID, totalCreditAmount.Abs(), subscription.Currency)
+			cancelKey := s.buildCancellationProrationKey(subscription, req, effectiveDate)
+			err = walletService.TopUpWalletForProratedCharge(ctx, subscription.CustomerID, totalCreditAmount.Abs(), subscription.Currency, cancelKey)
 			if err != nil {
 				return err
 			}
@@ -3245,6 +3274,11 @@ func filterValidPricesForSubscription(prices []*dto.PriceResponse, subscription 
 	var validPrices []*dto.PriceResponse
 	for _, p := range prices {
 		if !types.IsMatchingCurrency(p.Price.Currency, subscription.Currency) {
+			continue
+		}
+		// ONETIME prices always apply — they are not tied to the subscription billing period
+		if p.Price.BillingPeriod == types.BILLING_PERIOD_ONETIME {
+			validPrices = append(validPrices, p)
 			continue
 		}
 		periodOK := p.Price.BillingPeriod == subscription.BillingPeriod ||
@@ -4904,6 +4938,32 @@ func (s *subscriptionService) determineEffectiveDate(
 			WithHintf("Unsupported cancellation type: %s", cancellationType).
 			Mark(ierr.ErrValidation)
 	}
+}
+
+// buildCancellationProrationKey returns a stable idempotency key for wallet proration credits on cancel.
+// For immediate cancellation, effectiveDate is time.Now() and must not be used alone (retries would change it).
+// For other cancellation types, effectiveDate is already deterministic from subscription or request.
+func (s *subscriptionService) buildCancellationProrationKey(
+	sub *subscription.Subscription,
+	req *dto.CancelSubscriptionRequest,
+	effectiveDate time.Time,
+) string {
+	ct := string(req.CancellationType)
+	if req.CancellationType == types.CancellationTypeImmediate {
+		return fmt.Sprintf(
+			"proration_credit_cancel|%s|%s|%s|%s",
+			sub.ID,
+			ct,
+			sub.CurrentPeriodStart.UTC().Format(time.RFC3339Nano),
+			sub.CurrentPeriodEnd.UTC().Format(time.RFC3339Nano),
+		)
+	}
+	return fmt.Sprintf(
+		"proration_credit_cancel|%s|%s|%s",
+		sub.ID,
+		ct,
+		effectiveDate.UTC().Format(time.RFC3339Nano),
+	)
 }
 
 // convertProrationResultToDetails converts SubscriptionProrationResult to response format
