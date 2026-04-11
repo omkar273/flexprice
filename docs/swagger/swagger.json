@@ -371,71 +371,6 @@
                 }
             }
         },
-        "/ai/pricing/parse-gemini": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Server-side Gemini call: accepts system prompt, user prompt, and response JSON schema from the client and returns parsed pricing schema JSON.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AI"
-                ],
-                "summary": "Parse pricing from natural language (Gemini)",
-                "operationId": "parseGeminiPricing",
-                "parameters": [
-                    {
-                        "description": "Prompts and Gemini responseSchema",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/ParseGeminiPricingRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Pricing schema JSON (features, plans, ...)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "429": {
-                        "description": "AI provider rate limit",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Server or upstream error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    },
-                    "503": {
-                        "description": "AI not configured",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/alerts/search": {
             "post": {
                 "security": [
@@ -3661,6 +3596,58 @@
                 }
             }
         },
+        "/invoices/meter-usage-preview": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Preview invoice using the meter_usage table for usage data instead of feature_usage.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "Get invoice preview using meter_usage data",
+                "operationId": "getMeterUsagePreviewInvoice",
+                "parameters": [
+                    {
+                        "description": "Preview Invoice Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/GetPreviewInvoiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/InvoiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/invoices/preview": {
             "post": {
                 "security": [
@@ -4332,6 +4319,110 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/meter-usage/analytics": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Query aggregated usage from meter_usage table for multiple meters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MeterUsage"
+                ],
+                "summary": "Get meter usage analytics",
+                "operationId": "getMeterUsageAnalytics",
+                "parameters": [
+                    {
+                        "description": "Analytics parameters",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/MeterUsageAnalyticsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MeterUsageAnalyticsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/meter-usage/query": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Query aggregated usage from meter_usage table for a single meter with optional time-window bucketing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "MeterUsage"
+                ],
+                "summary": "Query meter usage",
+                "operationId": "queryMeterUsage",
+                "parameters": [
+                    {
+                        "description": "Query parameters",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/MeterUsageQueryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MeterUsageQueryResponse"
                         }
                     },
                     "400": {
@@ -13925,7 +14016,6 @@
         "CreateSubscriptionRequest": {
             "type": "object",
             "required": [
-                "billing_cadence",
                 "billing_period",
                 "currency",
                 "plan_id"
@@ -13937,9 +14027,6 @@
                     "items": {
                         "$ref": "#/definitions/AddAddonToSubscriptionRequest"
                     }
-                },
-                "billing_cadence": {
-                    "$ref": "#/definitions/types.BillingCadence"
                 },
                 "billing_cycle": {
                     "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
@@ -16558,6 +16645,147 @@
                 }
             }
         },
+        "MeterUsageAnalyticsRequest": {
+            "type": "object",
+            "required": [
+                "aggregation_type",
+                "end_time",
+                "external_customer_id",
+                "meter_ids",
+                "start_time"
+            ],
+            "properties": {
+                "aggregation_type": {
+                    "$ref": "#/definitions/types.AggregationType",
+                    "example": "SUM"
+                },
+                "billing_anchor": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string",
+                    "example": "2024-02-01T00:00:00Z"
+                },
+                "external_customer_id": {
+                    "type": "string",
+                    "example": "cust_123"
+                },
+                "meter_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "mtr_abc",
+                        "mtr_def"
+                    ]
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "window_size": {
+                    "$ref": "#/definitions/types.WindowSize",
+                    "example": "DAY"
+                }
+            }
+        },
+        "MeterUsageAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MeterUsageQueryResponse"
+                    }
+                }
+            }
+        },
+        "MeterUsagePoint": {
+            "type": "object",
+            "properties": {
+                "event_count": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "100.0000"
+                }
+            }
+        },
+        "MeterUsageQueryRequest": {
+            "type": "object",
+            "required": [
+                "aggregation_type",
+                "end_time",
+                "external_customer_id",
+                "meter_id",
+                "start_time"
+            ],
+            "properties": {
+                "aggregation_type": {
+                    "$ref": "#/definitions/types.AggregationType",
+                    "example": "SUM"
+                },
+                "billing_anchor": {
+                    "type": "string",
+                    "example": "2024-01-15T00:00:00Z"
+                },
+                "end_time": {
+                    "type": "string",
+                    "example": "2024-02-01T00:00:00Z"
+                },
+                "external_customer_id": {
+                    "type": "string",
+                    "example": "cust_123"
+                },
+                "meter_id": {
+                    "type": "string",
+                    "example": "mtr_abc"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "window_size": {
+                    "$ref": "#/definitions/types.WindowSize",
+                    "example": "DAY"
+                }
+            }
+        },
+        "MeterUsageQueryResponse": {
+            "type": "object",
+            "properties": {
+                "aggregation_type": {
+                    "$ref": "#/definitions/types.AggregationType",
+                    "example": "SUM"
+                },
+                "event_count": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "meter_id": {
+                    "type": "string",
+                    "example": "mtr_abc"
+                },
+                "points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MeterUsagePoint"
+                    }
+                },
+                "total_value": {
+                    "type": "string",
+                    "example": "1234.5678"
+                }
+            }
+        },
         "OverrideEntitlementRequest": {
             "type": "object",
             "required": [
@@ -16628,22 +16856,6 @@
                 "transform_quantity": {
                     "description": "TransformQuantity determines how to transform the quantity for this line item",
                     "$ref": "#/definitions/price.TransformQuantity"
-                }
-            }
-        },
-        "ParseGeminiPricingRequest": {
-            "type": "object",
-            "properties": {
-                "responseSchema": {
-                    "type": "object"
-                },
-                "systemPrompt": {
-                    "type": "string",
-                    "example": "You are a pricing architect..."
-                },
-                "userPrompt": {
-                    "type": "string",
-                    "example": "Describe pricing for..."
                 }
             }
         },

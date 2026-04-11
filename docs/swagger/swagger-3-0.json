@@ -449,86 +449,6 @@
         ]
       }
     },
-    "/ai/pricing/parse-gemini": {
-      "post": {
-        "tags": [
-          "AI"
-        ],
-        "summary": "Parse pricing from natural language (Gemini)",
-        "description": "Server-side Gemini call: accepts system prompt, user prompt, and response JSON schema from the client and returns parsed pricing schema JSON.",
-        "operationId": "parseGeminiPricing",
-        "requestBody": {
-          "description": "Prompts and Gemini responseSchema",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ParseGeminiPricingRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Pricing schema JSON (features, plans, ...)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "AI provider rate limit",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Server or upstream error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "AI not configured",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "x-codegen-request-body-name": "body"
-      }
-    },
     "/alerts/search": {
       "post": {
         "tags": [
@@ -4393,6 +4313,65 @@
         "x-codegen-request-body-name": "invoice"
       }
     },
+    "/invoices/meter-usage-preview": {
+      "post": {
+        "tags": [
+          "Invoices"
+        ],
+        "summary": "Get invoice preview using meter_usage data",
+        "description": "Preview invoice using the meter_usage table for usage data instead of feature_usage.",
+        "operationId": "getMeterUsagePreviewInvoice",
+        "requestBody": {
+          "description": "Preview Invoice Request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetPreviewInvoiceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-codegen-request-body-name": "request"
+      }
+    },
     "/invoices/preview": {
       "post": {
         "tags": [
@@ -5228,6 +5207,124 @@
             "ApiKeyAuth": []
           }
         ]
+      }
+    },
+    "/meter-usage/analytics": {
+      "post": {
+        "tags": [
+          "MeterUsage"
+        ],
+        "summary": "Get meter usage analytics",
+        "description": "Query aggregated usage from meter_usage table for multiple meters",
+        "operationId": "getMeterUsageAnalytics",
+        "requestBody": {
+          "description": "Analytics parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeterUsageAnalyticsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterUsageAnalyticsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-codegen-request-body-name": "request"
+      }
+    },
+    "/meter-usage/query": {
+      "post": {
+        "tags": [
+          "MeterUsage"
+        ],
+        "summary": "Query meter usage",
+        "description": "Query aggregated usage from meter_usage table for a single meter with optional time-window bucketing",
+        "operationId": "queryMeterUsage",
+        "requestBody": {
+          "description": "Query parameters",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeterUsageQueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeterUsageQueryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-codegen-request-body-name": "request"
       }
     },
     "/payments": {
@@ -15951,7 +16048,6 @@
       },
       "CreateSubscriptionRequest": {
         "required": [
-          "billing_cadence",
           "billing_period",
           "currency",
           "plan_id"
@@ -15964,9 +16060,6 @@
             "items": {
               "$ref": "#/components/schemas/AddAddonToSubscriptionRequest"
             }
-          },
-          "billing_cadence": {
-            "$ref": "#/components/schemas/types.BillingCadence"
           },
           "billing_cycle": {
             "$ref": "#/components/schemas/types.BillingCycle"
@@ -18625,6 +18718,148 @@
           }
         }
       },
+      "MeterUsageAnalyticsRequest": {
+        "required": [
+          "aggregation_type",
+          "end_time",
+          "external_customer_id",
+          "meter_ids",
+          "start_time"
+        ],
+        "type": "object",
+        "properties": {
+          "aggregation_type": {
+            "$ref": "#/components/schemas/types.AggregationType"
+          },
+          "billing_anchor": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "example": "2024-02-01T00:00:00Z",
+            "format": "date-time"
+          },
+          "external_customer_id": {
+            "type": "string",
+            "example": "cust_123"
+          },
+          "meter_ids": {
+            "minItems": 1,
+            "type": "array",
+            "example": [
+              "mtr_abc",
+              "mtr_def"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "start_time": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00Z",
+            "format": "date-time"
+          },
+          "window_size": {
+            "$ref": "#/components/schemas/types.WindowSize"
+          }
+        }
+      },
+      "MeterUsageAnalyticsResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeterUsageQueryResponse"
+            }
+          }
+        }
+      },
+      "MeterUsagePoint": {
+        "type": "object",
+        "properties": {
+          "event_count": {
+            "type": "integer",
+            "example": 10
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00Z"
+          },
+          "value": {
+            "type": "string",
+            "example": "100.0000"
+          }
+        }
+      },
+      "MeterUsageQueryRequest": {
+        "required": [
+          "aggregation_type",
+          "end_time",
+          "external_customer_id",
+          "meter_id",
+          "start_time"
+        ],
+        "type": "object",
+        "properties": {
+          "aggregation_type": {
+            "$ref": "#/components/schemas/types.AggregationType"
+          },
+          "billing_anchor": {
+            "type": "string",
+            "example": "2024-01-15T00:00:00Z",
+            "format": "date-time"
+          },
+          "end_time": {
+            "type": "string",
+            "example": "2024-02-01T00:00:00Z",
+            "format": "date-time"
+          },
+          "external_customer_id": {
+            "type": "string",
+            "example": "cust_123"
+          },
+          "meter_id": {
+            "type": "string",
+            "example": "mtr_abc"
+          },
+          "start_time": {
+            "type": "string",
+            "example": "2024-01-01T00:00:00Z",
+            "format": "date-time"
+          },
+          "window_size": {
+            "$ref": "#/components/schemas/types.WindowSize"
+          }
+        }
+      },
+      "MeterUsageQueryResponse": {
+        "type": "object",
+        "properties": {
+          "aggregation_type": {
+            "$ref": "#/components/schemas/types.AggregationType"
+          },
+          "event_count": {
+            "type": "integer",
+            "example": 42
+          },
+          "meter_id": {
+            "type": "string",
+            "example": "mtr_abc"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeterUsagePoint"
+            }
+          },
+          "total_value": {
+            "type": "string",
+            "example": "1234.5678"
+          }
+        }
+      },
       "OverrideEntitlementRequest": {
         "required": [
           "entitlement_id"
@@ -18693,23 +18928,6 @@
           },
           "transform_quantity": {
             "$ref": "#/components/schemas/price.TransformQuantity"
-          }
-        }
-      },
-      "ParseGeminiPricingRequest": {
-        "type": "object",
-        "properties": {
-          "responseSchema": {
-            "type": "object",
-            "properties": {}
-          },
-          "systemPrompt": {
-            "type": "string",
-            "example": "You are a pricing architect..."
-          },
-          "userPrompt": {
-            "type": "string",
-            "example": "Describe pricing for..."
           }
         }
       },
