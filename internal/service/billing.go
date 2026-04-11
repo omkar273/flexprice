@@ -2136,6 +2136,47 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 		description = fmt.Sprintf("Preview invoice for subscription %s", sub.ID)
 		metadata["is_preview"] = "true"
 
+	case types.ReferencePointMeterUsagePreview:
+		// Same as ReferencePointPreview but reads usage from the meter_usage table
+		// instead of the feature_usage ClickHouse FINAL path.
+
+		// For current period arrear charges
+		arrearResult, err := s.calculateMeterUsageCharges(
+			ctx,
+			sub,
+			classification.CurrentPeriodArrear,
+			periodStart,
+			periodEnd,
+			classification.HasUsageCharges, // Include usage for arrear
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// For next period advance charges
+		advanceResult, err := s.calculateMeterUsageCharges(
+			ctx,
+			sub,
+			classification.NextPeriodAdvance,
+			nextPeriodStart,
+			nextPeriodEnd,
+			false, // No usage for advance
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Combine results
+		calculationResult = &BillingCalculationResult{
+			FixedCharges: append(arrearResult.FixedCharges, advanceResult.FixedCharges...),
+			UsageCharges: arrearResult.UsageCharges, // Only arrear has usage
+			TotalAmount:  arrearResult.TotalAmount.Add(advanceResult.TotalAmount),
+			Currency:     sub.Currency,
+		}
+
+		description = fmt.Sprintf("Preview invoice for subscription %s", sub.ID)
+		metadata["is_preview"] = "true"
+
 	case types.ReferencePointCancel:
 		// for cancel, include arrear line items only (feature_usage path for cumulative commitment)
 		arrearLineItems, err := s.FilterLineItemsToBeInvoiced(ctx, sub, periodStart, periodEnd, classification.CurrentPeriodArrear, excludeInvoiceID)
@@ -2502,6 +2543,39 @@ func (s *billingService) CalculateCharges(
 
 	// Calculate charges
 	return s.CalculateAllCharges(ctx, &filteredSub, usage, periodStart, periodEnd)
+}
+
+// calculateMeterUsageCharges fetches usage from the meter_usage table via
+// SubscriptionService.GetMeterUsageBySubscription and delegates to the
+// existing charge calculation pipeline.
+func (s *billingService) calculateMeterUsageCharges(
+	ctx context.Context,
+	sub *subscription.Subscription,
+	lineItems []*subscription.SubscriptionLineItem,
+	periodStart,
+	periodEnd time.Time,
+	includeUsage bool,
+) (*BillingCalculationResult, error) {
+	filteredSub := *sub
+	filteredSub.LineItems = lineItems
+
+	var usage *dto.GetUsageBySubscriptionResponse
+	var err error
+
+	if includeUsage {
+		subscriptionService := NewSubscriptionService(s.ServiceParams)
+		usage, err = subscriptionService.GetMeterUsageBySubscription(ctx, &dto.GetUsageBySubscriptionRequest{
+			SubscriptionID: sub.ID,
+			StartTime:      periodStart,
+			EndTime:        periodEnd,
+			Source:         string(types.UsageSourceInvoiceCreation),
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return s.calculateAllMeterUsageCharges(ctx, &filteredSub, usage, periodStart, periodEnd)
 }
 
 // CreateInvoiceRequestForCharges creates an invoice for the given charges

@@ -55,6 +55,7 @@ type Handlers struct {
 	OAuth                  *v1.OAuthHandler
 	Dashboard              *v1.DashboardHandler
 	Workflow               *v1.WorkflowHandler
+	MeterUsage             *v1.MeterUsageHandler
 
 	// Portal handlers
 	Onboarding     *v1.OnboardingHandler
@@ -158,6 +159,13 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			events.POST("/raw/reprocess/pending", handlers.Events.ReprocessUnprocessedRawEvents)
 			// Internal reprocess events endpoint (no external_customer_id required)
 			events.POST("/reprocess/internal", handlers.Events.ReprocessEventsInternal)
+		}
+
+		// Meter usage query endpoints (reads from meter_usage ClickHouse table)
+		meterUsage := v1Private.Group("/meter-usage")
+		{
+			meterUsage.POST("/query", handlers.MeterUsage.QueryUsage)
+			meterUsage.POST("/analytics", handlers.MeterUsage.GetAnalytics)
 		}
 
 		meters := v1Private.Group("/meters")
@@ -354,6 +362,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			invoices.POST("/:id/void", handlers.Invoice.VoidInvoice)
 			invoices.POST("/preview", handlers.Invoice.GetPreviewInvoice)
 			invoices.POST("/internal/preview", handlers.Invoice.GetInternalPreviewInvoice)
+			invoices.POST("/meter-usage-preview", handlers.Invoice.GetMeterUsagePreviewInvoice)
 			invoices.PUT("/:id/payment", handlers.Invoice.UpdatePaymentStatus)
 			invoices.POST("/:id/payment/attempt", handlers.Invoice.AttemptPayment)
 			invoices.GET("/:id/pdf", handlers.Invoice.GetInvoicePDF)

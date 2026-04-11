@@ -246,6 +246,10 @@ func NewCostSheetUsageRepository(p RepositoryParams) events.CostSheetUsageReposi
 	return clickhouseRepo.NewCostSheetUsageRepository(p.ClickHouseDB, p.Logger)
 }
 
+func NewMeterUsageRepository(p RepositoryParams) events.MeterUsageRepository {
+	return clickhouseRepo.NewMeterUsageRepository(p.ClickHouseDB, p.Logger)
+}
+
 func NewWorkflowExecutionRepository(p RepositoryParams) workflowexecution.Repository {
 	return entRepo.NewWorkflowExecutionRepository(p.EntClient, p.Logger, p.Cache)
 }

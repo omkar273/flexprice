@@ -44,6 +44,7 @@ type Configuration struct {
 	FeatureUsageTracking       FeatureUsageTrackingConfig       `mapstructure:"feature_usage_tracking" validate:"required"`
 	FeatureUsageTrackingLazy   FeatureUsageTrackingLazyConfig   `mapstructure:"feature_usage_tracking_lazy" validate:"required"`
 	FeatureUsageTrackingReplay FeatureUsageTrackingReplayConfig `mapstructure:"feature_usage_tracking_replay" validate:"required"`
+	MeterUsageTracking         MeterUsageTrackingConfig         `mapstructure:"meter_usage_tracking" validate:"required"`
 	EnvAccess                  EnvAccessConfig                  `mapstructure:"env_access" json:"env_access" validate:"omitempty"`
 	FeatureFlag                FeatureFlagConfig                `mapstructure:"feature_flag" validate:"required"`
 	Email                      EmailConfig                      `mapstructure:"email" validate:"required"`
@@ -304,6 +305,15 @@ type FeatureUsageTrackingReplayConfig struct {
 	Topic         string `mapstructure:"topic" default:"v1_feature_tracking_service_replay"`
 	RateLimit     int64  `mapstructure:"rate_limit" default:"1"`
 	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_feature_tracking_service_replay"`
+}
+
+// MeterUsageTrackingConfig configures the meter_usage pipeline consumer
+type MeterUsageTrackingConfig struct {
+	Enabled                  bool     `mapstructure:"enabled" default:"true"`
+	Topic                    string   `mapstructure:"topic" default:"events"`
+	RateLimit                int64    `mapstructure:"rate_limit" default:"1"`
+	ConsumerGroup            string   `mapstructure:"consumer_group" default:"v1_meter_usage_tracking_service"`
+	PropertiesEnabledTenants []string `mapstructure:"properties_enabled_tenants"`
 }
 
 type WalletBalanceAlertConfig struct {
