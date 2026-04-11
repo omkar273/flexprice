@@ -515,10 +515,6 @@ func (s *temporalService) extractWorkflowContextID(workflowType types.TemporalWo
 		if input, ok := params.(invoiceModels.DraftAndComputeSubscriptionInvoiceWorkflowInput); ok {
 			return input.SubscriptionID
 		}
-	case types.TemporalEnvironmentCloneWorkflow:
-		if input, ok := params.(models.EnvironmentCloneWorkflowInput); ok {
-			return input.SourceEnvironmentID + "-" + input.TargetEnvironmentID
-		}
 	case types.TemporalPrepareProcessedEventsWorkflow:
 		// Extract event ID from PrepareProcessedEventsWorkflowInput
 		if input, ok := params.(*models.PrepareProcessedEventsWorkflowInput); ok {
@@ -656,8 +652,6 @@ func (s *temporalService) buildWorkflowInput(ctx context.Context, workflowType t
 		return s.buildReprocessRawEventsInput(ctx, tenantID, environmentID, userID, params)
 	case types.TemporalReprocessEventsForPlanWorkflow:
 		return s.buildReprocessEventsForPlanInput(ctx, tenantID, environmentID, userID, params)
-	case types.TemporalEnvironmentCloneWorkflow:
-		return s.buildEnvironmentCloneInput(ctx, tenantID, environmentID, userID, params)
 	default:
 		return nil, errors.NewError("unsupported workflow type").
 			WithHintf("Workflow type %s is not supported", workflowType.String()).
@@ -1624,20 +1618,4 @@ func (s *temporalService) validateTenantContext(ctx context.Context) error {
 			Mark(errors.ErrValidation)
 	}
 	return nil
-}
-
-// buildEnvironmentCloneInput builds input for the environment clone workflow.
-func (s *temporalService) buildEnvironmentCloneInput(_ context.Context, tenantID, _, userID string, params interface{}) (interface{}, error) {
-	input, ok := params.(models.EnvironmentCloneWorkflowInput)
-	if !ok {
-		return nil, errors.NewError("invalid input for environment clone workflow").
-			WithHint("Provide an EnvironmentCloneWorkflowInput struct").
-			Mark(errors.ErrValidation)
-	}
-	input.TenantID = tenantID
-	input.UserID = userID
-	if err := input.Validate(); err != nil {
-		return nil, err
-	}
-	return input, nil
 }
