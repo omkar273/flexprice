@@ -127,6 +127,7 @@ type ServiceParams struct {
 
 	// PubSubs
 	WalletBalanceAlertPubSub types.WalletBalanceAlertPubSub
+	UsageBenchmarkPubSub     types.UsageBenchmarkPubSub
 	WebhookPubSub            pubsub.PubSub
 }
 
@@ -189,6 +190,7 @@ func NewServiceParams(
 	prorationCalculator proration.Calculator,
 	integrationFactory *integration.Factory,
 	walletBalanceAlertPubSub types.WalletBalanceAlertPubSub,
+	usageBenchmarkPubSub types.UsageBenchmarkPubSub,
 	webhookPubSub pubsub.PubSub,
 	planPriceSyncRepo planpricesync.Repository,
 	workflowExecutionRepo workflowexecution.Repository,
@@ -251,6 +253,7 @@ func NewServiceParams(
 		ProrationCalculator:          prorationCalculator,
 		IntegrationFactory:           integrationFactory,
 		WalletBalanceAlertPubSub:     walletBalanceAlertPubSub,
+		UsageBenchmarkPubSub:         usageBenchmarkPubSub,
 		WebhookPubSub:                webhookPubSub,
 		PlanPriceSyncRepo:            planPriceSyncRepo,
 		WorkflowExecutionRepo:        workflowExecutionRepo,
