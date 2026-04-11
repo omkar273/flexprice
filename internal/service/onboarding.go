@@ -680,7 +680,6 @@ func (s *onboardingService) createDefaultPrices(ctx context.Context, planRespons
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceAdvance,
 		Description:        "Free tier with usage limits",
 		// DisplayName will be automatically extracted by getDisplayName helper
@@ -703,7 +702,6 @@ func (s *onboardingService) createDefaultPrices(ctx context.Context, planRespons
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceAdvance,
 		Description:        "Basic tier with moderate usage",
 		// DisplayName will be automatically extracted by getDisplayName helper
@@ -726,7 +724,6 @@ func (s *onboardingService) createDefaultPrices(ctx context.Context, planRespons
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
 		BillingModel:       types.BILLING_MODEL_FLAT_FEE,
-		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		InvoiceCadence:     types.InvoiceCadenceAdvance,
 		Description:        "Pro tier with high usage limits",
 		// DisplayName will be automatically extracted by getDisplayName helper

@@ -208,6 +208,8 @@ var (
 	BillingPeriodCountValidator func(int) error
 	// BillingModelValidator is a validator for the "billing_model" field. It is called by the builders before save.
 	BillingModelValidator func(string) error
+	// DefaultBillingCadence holds the default value on creation for the "billing_cadence" field.
+	DefaultBillingCadence types.BillingCadence
 	// BillingCadenceValidator is a validator for the "billing_cadence" field. It is called by the builders before save.
 	BillingCadenceValidator func(string) error
 	// DefaultTrialPeriod holds the default value on creation for the "trial_period" field.

@@ -558,7 +558,7 @@ func (s *prorationService) CreateProrationParamsForLineItem(
 		NewPriceID:            item.PriceID,
 		NewQuantity:           item.Quantity,
 		NewPricePerUnit:       price.Amount,
-		ProrationDate:         subscription.StartDate,
+		ProrationDate:         item.GetPeriodStart(periodStart),
 		ProrationBehavior:     behavior,
 		CustomerTimezone:      subscription.CustomerTimezone,
 		OriginalAmountPaid:    decimal.Zero,

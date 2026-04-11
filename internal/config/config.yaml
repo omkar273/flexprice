@@ -34,7 +34,6 @@ kafka:
   client_id: "flexprice-client-local"
   route_tenants_on_lazy_mode: []
 
-
 clickhouse:
   address: 127.0.0.1:9000 # For local mode
   # Will be overridden by FLEXPRICE_CLICKHOUSE_ADDRESS env var in Docker
@@ -87,7 +86,7 @@ logging:
   db_level: "error"
   # Service identity — override via SERVICE_NAME and ENVIRONMENT env vars
   service_name: "" # e.g., "flexprice-api"
-  environment: ""  # e.g., "production", "staging"
+  environment: "" # e.g., "production", "staging"
   # Fluentd configuration for centralized logging
   # When enabled, logs will be sent to Fluentd in addition to stdout
   fluentd_enabled: false # Set to true to enable Fluentd logging
@@ -134,10 +133,10 @@ temporal:
     max_attempts: 3
     backoff_coefficient: 2.0
   worker:
-    max_concurrent_activity_execution_size: 10      # Max activities running concurrently per worker (default: 10)
-    max_concurrent_workflow_task_execution_size: 10  # Max workflow tasks running concurrently per worker (default: 10)
-    worker_activities_per_second: 5                  # Rate limit: activities dispatched per second per worker (default: 5, 0=unlimited)
-    task_queue_activities_per_second: 0              # Rate limit: activities per second across ALL workers for a task queue (default: 0=unlimited)
+    max_concurrent_activity_execution_size: 10 # Max activities running concurrently per worker (default: 10)
+    max_concurrent_workflow_task_execution_size: 10 # Max workflow tasks running concurrently per worker (default: 10)
+    worker_activities_per_second: 5 # Rate limit: activities dispatched per second per worker (default: 5, 0=unlimited)
+    task_queue_activities_per_second: 0 # Rate limit: activities per second across ALL workers for a task queue (default: 0=unlimited)
   connection:
     dial_timeout_seconds: 5
     retry_max_attempts: 5
@@ -166,7 +165,6 @@ flexprice_s3_exports:
   aws_access_key_id: "" # Set via FLEXPRICE_FLEXPRICE_S3_EXPORTS_ACCESS_KEY_ID env var
   aws_secret_access_key: "" # Set via FLEXPRICE_FLEXPRICE_S3_EXPORTS_SECRET_ACCESS_KEY env var
   aws_session_token: "" # Set via FLEXPRICE_FLEXPRICE_S3_EXPORTS_SESSION_TOKEN env var
-  
 
 cache:
   enabled: false
@@ -189,7 +187,6 @@ event_processing_replay:
   topic: "events_backfill"
   rate_limit: 1
   consumer_group: "v1_event_processing_replay"
-
 
 event_post_processing:
   enabled: true
@@ -241,7 +238,7 @@ costsheet_usage_tracking_lazy:
   topic: "events_lazy"
   rate_limit: 1
   consumer_group: "v1_costsheet_usage_tracking_service_lazy"
-  
+
 wallet_balance_alert:
   enabled: true
   topic: "wallet_alert"
@@ -253,6 +250,11 @@ feature_flag:
   enable_feature_usage_for_analytics: true # TODO: cleanup by 15th October 2025
   # Tenant ID to force use v1 analytics service (empty string means no tenant is forced to v1)
   force_v1_for_tenant: ""
+
+# Google Gemini (server-side AI pricing parse for dashboard). Set FLEXPRICE_GEMINI_API_KEY in secure environments.
+gemini:
+  api_key: ""
+  model: "gemini-2.5-flash-lite"
 
 email:
   enabled: false # Set to true to enable email sending (override with FLEXPRICE_EMAIL_ENABLED=true)
@@ -297,11 +299,10 @@ raw_events_reprocessing:
 # Raw event consumption configuration (batch processing from Bento)
 raw_event_consumption:
   enabled: true
-  topic: "staging_events_backfill"      # INPUT: Reads batches from here
-  output_topic: "staging_events"                 # OUTPUT: Publishes transformed events to here
+  topic: "staging_events_backfill" # INPUT: Reads batches from here
+  output_topic: "staging_events" # OUTPUT: Publishes transformed events to here
   rate_limit: 10
   consumer_group: "v1_raw_event_processing_v4"
-
 
 integration_events:
   enabled: true

@@ -31,6 +31,10 @@ type SubscriptionPhaseCreateRequest struct {
 	// If not provided, phase will use the same line items as the subscription (plan prices)
 	OverrideLineItems []OverrideLineItemRequest `json:"override_line_items,omitempty" validate:"omitempty,dive"`
 
+	// LineItems are extra line items to add during this phase, primarily one-time charges.
+	// Each item's start_date defaults to the phase's start_date when not provided.
+	LineItems []CreateSubscriptionLineItemRequest `json:"line_items,omitempty" validate:"omitempty,dive"`
+
 	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
@@ -44,6 +48,17 @@ func (r *SubscriptionPhaseCreateRequest) Validate() error {
 		return ierr.NewError("end_date cannot be before start_date").
 			WithHint("Ensure the phase end date is on or after the start date").
 			Mark(ierr.ErrValidation)
+	}
+
+	// Validate each nested line item (price/price_id presence, date ordering, etc.)
+	// Price and subscription context are not available here; full business-rule
+	// validation is deferred to createPhaseExtraLineItems in the service layer.
+	for i, li := range r.LineItems {
+		if err := li.Validate(nil, nil); err != nil {
+			return ierr.NewErrorf("invalid line_item at index %d: %s", i, err.Error()).
+				WithHint("Check the line item fields at the given index").
+				Mark(ierr.ErrValidation)
+		}
 	}
 
 	return nil
@@ -282,28 +297,6 @@ func (c *SubscriptionInheritanceConfig) Validate() error {
 	return nil
 }
 
-// ExecuteSubscriptionInheritanceRequest is the payload for
-// POST /subscriptions/:id/modify/execute.
-type ExecuteSubscriptionInheritanceRequest struct {
-	ExternalCustomerIDsToInheritSubscription []string `json:"external_customer_ids_to_inherit_subscription,omitempty"`
-}
-
-func (r *ExecuteSubscriptionInheritanceRequest) Validate() error {
-	if len(r.ExternalCustomerIDsToInheritSubscription) == 0 {
-		return ierr.NewError("at least one external customer ID is required").
-			WithHint("Provide external_customer_ids_to_inherit_subscription with at least one non-empty value").
-			Mark(ierr.ErrValidation)
-	}
-	for i, extID := range r.ExternalCustomerIDsToInheritSubscription {
-		if extID == "" {
-			return ierr.NewError("external_customer_ids_to_inherit_subscription cannot contain empty values").
-				WithHint(fmt.Sprintf("External customer ID at index %d is empty", i)).
-				Mark(ierr.ErrValidation)
-		}
-	}
-	return nil
-}
-
 type CreateSubscriptionRequest struct {
 
 	// customer_id is the flexprice customer id
@@ -321,7 +314,7 @@ type CreateSubscriptionRequest struct {
 	EndDate            *time.Time           `json:"end_date,omitempty"`
 	TrialStart         *time.Time           `json:"trial_start,omitempty"`
 	TrialEnd           *time.Time           `json:"trial_end,omitempty"`
-	BillingCadence     types.BillingCadence `json:"billing_cadence" validate:"required"`
+	BillingCadence     types.BillingCadence `json:"-"`
 	BillingPeriod      types.BillingPeriod  `json:"billing_period" validate:"required"`
 	BillingPeriodCount int                  `json:"billing_period_count" default:"1"`
 	Metadata           map[string]string    `json:"metadata,omitempty"`
@@ -617,6 +610,9 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		return err
 	}
 
+	if r.BillingCadence == "" {
+		r.BillingCadence = types.BILLING_CADENCE_RECURRING
+	}
 	if err := r.BillingCadence.Validate(); err != nil {
 		return err
 	}

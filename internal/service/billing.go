@@ -182,10 +182,22 @@ func (s *billingService) CalculateFixedCharges(
 		var amount decimal.Decimal
 		var linePeriodStart, linePeriodEnd time.Time
 
-		// Line item has longer cadence than subscription (e.g. quarterly line on monthly sub):
-		// Advance: include when line-item period start falls in [periodStart, periodEnd).
-		// Arrear: include when line-item period end falls in [periodStart, periodEnd).
-		if types.BillingPeriodGreaterThan(item.BillingPeriod, sub.BillingPeriod) {
+		// ONETIME charge: full amount, no proration; service period = line item start (billing date).
+		if price.BillingPeriod == types.BILLING_PERIOD_ONETIME {
+			amount = priceService.CalculateCost(ctx, price.Price, item.Quantity)
+			linePeriodStart = item.StartDate
+			// For one-time charges the service period collapses to a single point (the billing date).
+			// If EndDate is not explicitly set, use StartDate so PeriodStart == PeriodEnd.
+			if item.EndDate.IsZero() {
+				linePeriodEnd = item.StartDate
+			} else {
+				linePeriodEnd = item.EndDate
+			}
+			// fall through to shared rounding + line item build below
+		} else if types.BillingPeriodGreaterThan(item.BillingPeriod, sub.BillingPeriod) {
+			// Line item has longer cadence than subscription (e.g. quarterly line on monthly sub):
+			// Advance: include when line-item period start falls in [periodStart, periodEnd).
+			// Arrear: include when line-item period end falls in [periodStart, periodEnd).
 			res, err := FindMatchingLineItemPeriodForInvoice(FindMatchingLineItemPeriodInput{
 				Item:           item,
 				PeriodStart:    periodStart,
@@ -211,17 +223,37 @@ func (s *billingService) CalculateFixedCharges(
 		} else {
 			// Same or shorter cadence: proration, invoice period as service period
 			amount = priceService.CalculateCost(ctx, price.Price, item.Quantity)
-			proratedAmount, err := s.applyProrationToLineItem(ctx, sub, item, price.Price, amount, &periodStart, &periodEnd)
-			if err != nil {
-				s.Logger.Warnw("failed to apply proration to line item, using original amount",
-					"error", err,
-					"subscription_id", sub.ID,
+			effectiveStart, effectiveEnd := item.GetPeriod(periodStart, periodEnd)
+			if !effectiveEnd.After(effectiveStart) {
+				s.Logger.Debugw("skipping line item: not active in invoice period",
 					"line_item_id", item.ID,
-					"price_id", item.PriceID)
-				proratedAmount = amount
+					"effective_start", effectiveStart,
+					"effective_end", effectiveEnd)
+				continue
 			}
-			amount = proratedAmount
-			linePeriodStart, linePeriodEnd = periodStart, periodEnd
+
+			totalDuration := periodEnd.Sub(periodStart)
+			effectiveDuration := effectiveEnd.Sub(effectiveStart)
+			if effectiveDuration < totalDuration {
+				// Partial-period line item (versioned mid-cycle): scale by time ratio
+				ratio := decimal.NewFromFloat(effectiveDuration.Seconds()).
+					Div(decimal.NewFromFloat(totalDuration.Seconds()))
+				amount = amount.Mul(ratio)
+				linePeriodStart, linePeriodEnd = effectiveStart, effectiveEnd
+			} else {
+				// Full-period line item: apply existing proration logic (first-period, cancellation, etc.)
+				proratedAmount, err := s.applyProrationToLineItem(ctx, sub, item, price.Price, amount, &periodStart, &periodEnd)
+				if err != nil {
+					s.Logger.Warnw("failed to apply proration to line item, using original amount",
+						"error", err,
+						"subscription_id", sub.ID,
+						"line_item_id", item.ID,
+						"price_id", item.PriceID)
+					proratedAmount = amount
+				}
+				amount = proratedAmount
+				linePeriodStart, linePeriodEnd = effectiveStart, effectiveEnd
+			}
 		}
 
 		// Shared: price unit amount, round, build and append invoice line item
@@ -1845,6 +1877,42 @@ func (s *billingService) calculateAllFeatureUsageCharges(
 	}, nil
 }
 
+// attachPricesToLineItems bulk-fetches prices for a slice of line items and attaches
+// each price to its line item so that price-aware calculations (cost, tiers, etc.) can
+// use the attached price without an additional per-item DB call.
+func (s *billingService) attachPricesToLineItems(ctx context.Context, lineItems []*subscription.SubscriptionLineItem) error {
+	if len(lineItems) == 0 {
+		return nil
+	}
+
+	// Collect unique price IDs (skip any line items that already have a price loaded)
+	priceIDs := lo.Uniq(lo.Map(lineItems, func(li *subscription.SubscriptionLineItem, _ int) string {
+		return li.PriceID
+	}))
+	if len(priceIDs) == 0 {
+		return nil
+	}
+
+	priceFilter := types.NewNoLimitPriceFilter()
+	priceFilter.PriceIDs = priceIDs
+	prices, err := s.PriceRepo.List(ctx, priceFilter)
+	if err != nil {
+		return err
+	}
+
+	priceMap := make(map[string]*priceDomain.Price, len(prices))
+	for _, p := range prices {
+		priceMap[p.ID] = p
+	}
+
+	for _, li := range lineItems {
+		if p, ok := priceMap[li.PriceID]; ok {
+			li.Price = p
+		}
+	}
+	return nil
+}
+
 func (s *billingService) PrepareSubscriptionInvoiceRequest(
 	ctx context.Context,
 	sub *subscription.Subscription,
@@ -1869,6 +1937,11 @@ func (s *billingService) PrepareSubscriptionInvoiceRequest(
 		return nil, err
 	}
 	sub.LineItems = lineItems
+
+	// Attach prices so cost calculations (CalculateFixedCharges, tiers, etc.) have the full price object.
+	if err := s.attachPricesToLineItems(ctx, sub.LineItems); err != nil {
+		return nil, err
+	}
 
 	// nothing to invoice default response 0$ invoice
 	zeroAmountInvoice, err := s.CreateInvoiceRequestForCharges(ctx,
@@ -2242,6 +2315,29 @@ func (s *billingService) ClassifyLineItems(
 			continue
 		}
 
+		// ONETIME charges: classified by whether the line item start (billing date) falls in the period.
+		// They are never auto-added to both current and next (unlike RECURRING ADVANCE).
+		// FilterLineItemsToBeInvoiced prevents double-billing if the charge was already invoiced.
+		if item.BillingPeriod == types.BILLING_PERIOD_ONETIME {
+			billingDate := item.StartDate
+			if item.InvoiceCadence == types.InvoiceCadenceAdvance {
+				// Advance: billing date in [currentPeriodStart, currentPeriodEnd)
+				if !billingDate.Before(currentPeriodStart) && billingDate.Before(currentPeriodEnd) {
+					result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
+				}
+				// Also check if billing date falls in the next period window
+				if !billingDate.Before(nextPeriodStart) && billingDate.Before(nextPeriodEnd) {
+					result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+				}
+			} else {
+				// Arrear: billing date in (currentPeriodStart, currentPeriodEnd]
+				if billingDate.After(currentPeriodStart) && !billingDate.After(currentPeriodEnd) {
+					result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)
+				}
+			}
+			continue
+		}
+
 		/*
 			Fixed, longer billing period than subscription (e.g. quarterly line on monthly sub).
 			Check once whether the line item has a period in the current window, and for advance items once for the next window.
@@ -2288,7 +2384,11 @@ func (s *billingService) ClassifyLineItems(
 		// Fixed, equal billing period: existing behavior (advance → both slices; arrear → CurrentPeriodArrear).
 		if item.InvoiceCadence == types.InvoiceCadenceAdvance {
 			result.CurrentPeriodAdvance = append(result.CurrentPeriodAdvance, item)
-			result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+			// Only include in next period if still active when that period starts.
+			// Ended items were already handled via proration invoices and must not be re-billed.
+			if item.EndDate.IsZero() || !item.EndDate.Before(nextPeriodStart) {
+				result.NextPeriodAdvance = append(result.NextPeriodAdvance, item)
+			}
 		}
 		if item.InvoiceCadence == types.InvoiceCadenceArrear {
 			result.CurrentPeriodArrear = append(result.CurrentPeriodArrear, item)

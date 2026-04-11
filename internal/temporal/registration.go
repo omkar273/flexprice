@@ -21,6 +21,7 @@ import (
 	subscriptionActivities "github.com/flexprice/flexprice/internal/temporal/activities/subscription"
 	taskActivities "github.com/flexprice/flexprice/internal/temporal/activities/task"
 	workflowActivities "github.com/flexprice/flexprice/internal/temporal/activities/workflow"
+	zohoActivities "github.com/flexprice/flexprice/internal/temporal/activities/zoho"
 	temporalService "github.com/flexprice/flexprice/internal/temporal/service"
 	"github.com/flexprice/flexprice/internal/temporal/workflows"
 	eventsWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/events"
@@ -184,6 +185,10 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 		customerService,
 		params.Logger,
 	)
+	zohoInvoiceSyncActivities := zohoActivities.NewInvoiceSyncActivities(
+		params.IntegrationFactory,
+		params.Logger,
+	)
 
 	// Customer activities
 	customerActivities := customerActivities.NewCustomerActivities(
@@ -205,7 +210,7 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 
 	// Get all task queues and register workflows/activities for each
 	for _, taskQueue := range types.GetAllTaskQueues() {
-		config := buildWorkerConfig(taskQueue, workflowTrackingActivities, planActivities, prepareEventsActivities, taskActivities, taskActivity, scheduledTaskActivity, exportActivity, hubspotDealSyncActivities, hubspotInvoiceSyncActivities, hubspotQuoteSyncActivities, qbPriceSyncActivities, nomodInvoiceSyncActivities, nomodCustomerSyncActivities, moyasarInvoiceSyncActivities, paddleInvoiceSyncActivities, paddleCustomerSyncActivities, stripeInvoiceSyncActivities, stripeCustomerSyncActivities, razorpayInvoiceSyncActivities, razorpayCustomerSyncActivities, chargebeeInvoiceSyncActivities, chargebeeCustomerSyncActivities, qbInvoiceSyncActivities, qbCustomerSyncActivities, customerActivities, scheduleBillingActivities, billingActivities, invoiceActs, reprocessEventsActivities, reprocessRawEventsActivities)
+		config := buildWorkerConfig(taskQueue, workflowTrackingActivities, planActivities, prepareEventsActivities, taskActivities, taskActivity, scheduledTaskActivity, exportActivity, hubspotDealSyncActivities, hubspotInvoiceSyncActivities, hubspotQuoteSyncActivities, qbPriceSyncActivities, nomodInvoiceSyncActivities, nomodCustomerSyncActivities, moyasarInvoiceSyncActivities, paddleInvoiceSyncActivities, paddleCustomerSyncActivities, stripeInvoiceSyncActivities, stripeCustomerSyncActivities, razorpayInvoiceSyncActivities, razorpayCustomerSyncActivities, chargebeeInvoiceSyncActivities, chargebeeCustomerSyncActivities, qbInvoiceSyncActivities, qbCustomerSyncActivities, zohoInvoiceSyncActivities, customerActivities, scheduleBillingActivities, billingActivities, invoiceActs, reprocessEventsActivities, reprocessRawEventsActivities)
 		if err := registerWorker(temporalService, config); err != nil {
 			return fmt.Errorf("failed to register worker for task queue %s: %w", taskQueue, err)
 		}
@@ -241,6 +246,7 @@ func buildWorkerConfig(
 	chargebeeCustomerSyncActivities *chargebeeActivities.CustomerSyncActivities,
 	qbInvoiceSyncActivities *qbActivities.QuickBooksInvoiceSyncActivities,
 	qbCustomerSyncActivities *qbActivities.QuickBooksCustomerSyncActivities,
+	zohoInvoiceSyncActivities *zohoActivities.InvoiceSyncActivities,
 	customerActivities *customerActivities.CustomerActivities,
 	scheduleBillingActivities *subscriptionActivities.SubscriptionActivities,
 	billingActivities *subscriptionActivities.BillingActivities,
@@ -269,6 +275,7 @@ func buildWorkerConfig(
 			workflows.RazorpayInvoiceSyncWorkflow,
 			workflows.ChargebeeInvoiceSyncWorkflow,
 			workflows.QuickBooksInvoiceSyncWorkflow,
+			workflows.ZohoBooksInvoiceSyncWorkflow,
 			workflows.StripeCustomerSyncWorkflow,
 			workflows.RazorpayCustomerSyncWorkflow,
 			workflows.ChargebeeCustomerSyncWorkflow,
@@ -290,6 +297,7 @@ func buildWorkerConfig(
 			razorpayInvoiceSyncActivities.SyncInvoiceToRazorpay,
 			chargebeeInvoiceSyncActivities.SyncInvoiceToChargebee,
 			qbInvoiceSyncActivities.SyncInvoiceToQuickBooks,
+			zohoInvoiceSyncActivities.SyncInvoiceToZoho,
 			stripeCustomerSyncActivities.SyncCustomerToStripe,
 			razorpayCustomerSyncActivities.SyncCustomerToRazorpay,
 			chargebeeCustomerSyncActivities.SyncCustomerToChargebee,
