@@ -43,7 +43,14 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --csv)    FORMAT_FLAG="--csv"; shift ;;
     --table)  FORMAT_FLAG=""; shift ;;
-    -f|--file) FILE_FLAG="$2"; shift 2 ;;
+    -f|--file)
+      if [[ ! -f "$2" ]]; then
+        echo "ERROR: File not found: $2" >&2
+        exit 1
+      fi
+      FILE_FLAG="$2"
+      shift 2
+      ;;
     *)        SQL_ARG="$1"; shift ;;
   esac
 done

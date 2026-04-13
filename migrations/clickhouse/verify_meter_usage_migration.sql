@@ -3,6 +3,7 @@
 --
 -- Run these queries after the migration to check correctness.
 -- All counts / sums are computed on deduplicated (FINAL) views.
+-- Each query is bounded to 90 GB memory per CLAUDE.md guidelines.
 -- =============================================================================
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -33,7 +34,8 @@ FULL OUTER JOIN (
     FROM flexprice.meter_usage FINAL
     GROUP BY day
 ) dst USING (day)
-ORDER BY partition_day;
+ORDER BY partition_day
+SETTINGS max_memory_usage = 90000000000;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -62,21 +64,20 @@ JOIN (
     FROM flexprice.meter_usage FINAL
     GROUP BY day
 ) dst USING (day)
-ORDER BY partition_day;
+ORDER BY partition_day
+SETTINGS max_memory_usage = 90000000000;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 3. SPOT-CHECK: rows in destination that have no match in source
 --    (should be 0 for any migrated id)
+--    Uses LEFT JOIN anti-join pattern — avoids expensive NOT EXISTS correlated subquery.
 -- ─────────────────────────────────────────────────────────────────────────────
 SELECT count() AS orphan_count
 FROM flexprice.meter_usage FINAL mu
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM flexprice.feature_usage FINAL fu
-    WHERE fu.id = mu.id
-)
-LIMIT 1;
+LEFT JOIN flexprice.feature_usage FINAL fu ON fu.id = mu.id
+WHERE fu.id = ''
+SETTINGS max_memory_usage = 90000000000;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -88,7 +89,8 @@ SELECT
     countIf(unique_hash IS NULL) AS null_unique_hash,   -- can't happen, but defensive
     countIf(source      IS NULL) AS null_source
 FROM flexprice.meter_usage FINAL
-WHERE toYYYYMMDD(timestamp) >= 20240101;   -- restrict to migrated range
+WHERE toYYYYMMDD(timestamp) >= 20240101   -- restrict to migrated range
+SETTINGS max_memory_usage = 90000000000;
 
 
 -- ─────────────────────────────────────────────────────────────────────────────

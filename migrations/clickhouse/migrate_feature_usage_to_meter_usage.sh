@@ -2,7 +2,7 @@
 # =============================================================================
 # migrate_feature_usage_to_meter_usage.sh
 #
-# Migrates data from flexprice.feature_usage → flexprice.meter_usage
+# Migrates data from ${CH_DB}.feature_usage → ${CH_DB}.meter_usage
 # in day-by-day batches.  Safe to re-run (destination is ReplacingMergeTree).
 #
 # Usage:
@@ -23,12 +23,14 @@ set -euo pipefail
 # ── Connection ────────────────────────────────────────────────────────────────
 CH_HOST="${CH_HOST:-localhost}"
 CH_PORT="${CH_PORT:-9000}"
-CH_USER="${CH_USER:-flexprice}"
-CH_PASS="${CH_PASS:-flexprice123}"
 CH_DB="${CH_DB:-flexprice}"
 
+# CH_USER and CH_PASS must be supplied via env — no insecure defaults
+: "${CH_USER:?CH_USER env var is required}"
+: "${CH_PASS:?CH_PASS env var is required}"
+
 # ── Tuning ────────────────────────────────────────────────────────────────────
-MAX_MEMORY_BYTES="${MAX_MEMORY_BYTES:-12884901888}"   # 12 GiB
+MAX_MEMORY_BYTES=96636764160   # 90 GiB — hardcoded per project guidelines
 MAX_THREADS="${MAX_THREADS:-8}"
 DRY_RUN="${DRY_RUN:-0}"
 
@@ -45,14 +47,12 @@ END_DATE="$2"
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
 ch() {
-    clickhouse-client \
+    clickhouse client \
         --host="$CH_HOST" \
         --port="$CH_PORT" \
         --user="$CH_USER" \
         --password="$CH_PASS" \
         --database="$CH_DB" \
-        --receive_timeout=3600 \
-        --send_timeout=3600 \
         --query="$1"
 }
 
@@ -80,7 +80,7 @@ while [[ "$current" < "$END_DATE" || "$current" == "$END_DATE" ]]; do
     # ── 1. Count eligible rows for the day ───────────────────────────────────
     COUNT=$(ch "
         SELECT count()
-        FROM flexprice.feature_usage FINAL
+        FROM ${CH_DB}.feature_usage FINAL
         WHERE toYYYYMMDD(timestamp) = $key
           AND meter_id IS NOT NULL
           AND sign = 1
@@ -92,7 +92,7 @@ while [[ "$current" < "$END_DATE" || "$current" == "$END_DATE" ]]; do
     if [[ "$COUNT" -gt 0 && "$DRY_RUN" != "1" ]]; then
         # ── 2. INSERT-SELECT for the day ─────────────────────────────────────
         ch "
-            INSERT INTO flexprice.meter_usage
+            INSERT INTO ${CH_DB}.meter_usage
             SELECT
                 id,
                 tenant_id,
@@ -102,6 +102,9 @@ while [[ "$current" < "$END_DATE" || "$current" == "$END_DATE" ]]; do
                 -- meter_id: Nullable → LowCardinality(String) NOT NULL
                 -- (NULLs already excluded by WHERE clause above)
                 meter_id,
+
+                -- event_name: direct mapping
+                event_name,
 
                 -- timestamp: DateTime64(3) → DateTime  (sub-second precision dropped)
                 toDateTime(timestamp)               AS timestamp,
@@ -119,7 +122,7 @@ while [[ "$current" < "$END_DATE" || "$current" == "$END_DATE" ]]; do
 
                 properties
 
-            FROM flexprice.feature_usage FINAL
+            FROM ${CH_DB}.feature_usage FINAL
             WHERE toYYYYMMDD(timestamp) = $key
               AND meter_id IS NOT NULL
               AND sign = 1

@@ -38,18 +38,25 @@ SQL_ARG=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --csv)    FORMAT="CSVWithNames"; shift ;;
-    --tsv)    FORMAT="TabSeparatedWithNames"; shift ;;
-    --json)   FORMAT="JSONEachRow"; shift ;;
-    --pretty) FORMAT="PrettyCompactMonoBlock"; shift ;;
+    --csv)      FORMAT="CSVWithNames"; shift ;;
+    --tsv)      FORMAT="TabSeparatedWithNames"; shift ;;
+    --json)     FORMAT="JSONEachRow"; shift ;;
+    --pretty)   FORMAT="PrettyCompactMonoBlock"; shift ;;
     --vertical) FORMAT="Vertical"; shift ;;
     -f|--file)
+      if [[ ! -f "$2" ]]; then
+        echo "ERROR: File not found: $2" >&2
+        exit 1
+      fi
       FILE_SQL="$(cat "$2")"
       shift 2
       ;;
-    *)        SQL_ARG="$1"; shift ;;
+    *)          SQL_ARG="$1"; shift ;;
   esac
 done
+
+# Use array to avoid word-splitting issues with multi-word command
+CH_BIN=(clickhouse client)
 
 CH_OPTS=(
   --host "$CH_HOST"
@@ -60,13 +67,10 @@ CH_OPTS=(
   --format "$FORMAT"
 )
 
-CH_BIN="clickhouse client"
-
 if [[ -n "$SQL_ARG" ]]; then
-  $CH_BIN "${CH_OPTS[@]}" --query "$SQL_ARG"
+  "${CH_BIN[@]}" "${CH_OPTS[@]}" --query "$SQL_ARG"
 elif [[ -n "$FILE_SQL" ]]; then
-  echo "$FILE_SQL" | $CH_BIN "${CH_OPTS[@]}" --multiquery
+  echo "$FILE_SQL" | "${CH_BIN[@]}" "${CH_OPTS[@]}" --multiquery
 else
-  # stdin
-  $CH_BIN "${CH_OPTS[@]}" --multiquery
+  "${CH_BIN[@]}" "${CH_OPTS[@]}" --multiquery
 fi

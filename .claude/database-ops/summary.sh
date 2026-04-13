@@ -18,9 +18,8 @@ fi
 source "$ENV_FILE"
 
 # ── Date handling ──────────────────────────────────────────────────────────────
-TZ_NAME="${3:-Asia/Kolkata}"
+TZ_NAME="${2:-Asia/Kolkata}"   # second arg (timezone); default IST
 IST_DATE="${1:-}"
-OFFSET_SECS=19800  # IST = UTC+5:30 = 19800s
 
 if [[ -z "$IST_DATE" ]]; then
   # Today in IST
@@ -49,7 +48,12 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 # ── PostgreSQL helpers ─────────────────────────────────────────────────────────
 PSQL_BIN="$(command -v psql 2>/dev/null || echo /opt/homebrew/opt/libpq/bin/psql)"
+if [[ ! -x "$PSQL_BIN" ]]; then
+  echo "ERROR: psql not found. Run: brew install libpq && export PATH=/opt/homebrew/opt/libpq/bin:\$PATH" >&2
+  exit 1
+fi
 PG_URL="postgresql://${FLEXPRICE_POSTGRES_USER}:${FLEXPRICE_POSTGRES_PASSWORD}@${FLEXPRICE_POSTGRES_READER_HOST}:${FLEXPRICE_POSTGRES_PORT:-5432}/${FLEXPRICE_POSTGRES_DBNAME}?sslmode=${FLEXPRICE_POSTGRES_SSLMODE:-require}&connect_timeout=10"
+
 pg() {
   "$PSQL_BIN" "$PG_URL" -v ON_ERROR_STOP=1 -t -A -c "$1"
 }
@@ -59,8 +63,10 @@ CH_HOST="${FLEXPRICE_CLICKHOUSE_ADDRESS%%:*}"
 CH_PORT="${FLEXPRICE_CLICKHOUSE_ADDRESS##*:}"
 [[ "$CH_PORT" == "$FLEXPRICE_CLICKHOUSE_ADDRESS" ]] && CH_PORT="${FLEXPRICE_CLICKHOUSE_PORT:-9000}"
 
+CH_BIN=(clickhouse client)
+
 ch() {
-  clickhouse client \
+  "${CH_BIN[@]}" \
     --host "$CH_HOST" --port "$CH_PORT" \
     --user "$FLEXPRICE_CLICKHOUSE_USERNAME" \
     --password "$FLEXPRICE_CLICKHOUSE_PASSWORD" \
