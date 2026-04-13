@@ -250,6 +250,10 @@ func NewMeterUsageRepository(p RepositoryParams) events.MeterUsageRepository {
 	return clickhouseRepo.NewMeterUsageRepository(p.ClickHouseDB, p.Logger)
 }
 
+func NewUsageBenchmarkRepository(p RepositoryParams) events.UsageBenchmarkRepository {
+	return clickhouseRepo.NewUsageBenchmarkRepository(p.ClickHouseDB, p.Logger)
+}
+
 func NewWorkflowExecutionRepository(p RepositoryParams) workflowexecution.Repository {
 	return entRepo.NewWorkflowExecutionRepository(p.EntClient, p.Logger, p.Cache)
 }

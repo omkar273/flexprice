@@ -136,6 +136,7 @@ func main() {
 			repository.NewFeatureUsageRepository,
 			repository.NewCostSheetUsageRepository,
 			repository.NewMeterUsageRepository,
+			repository.NewUsageBenchmarkRepository,
 			repository.NewMeterRepository,
 			repository.NewUserRepository,
 			repository.NewAuthRepository,
@@ -195,10 +196,11 @@ func main() {
 	// Integration events module — isolated consumer group on system_events topic (webhook-shaped events).
 	opts = append(opts, integrationevents.Module)
 
-	// Provide Wallet Balance Alert PubSub
+	// Provide Wallet Balance Alert PubSub and Usage Benchmark PubSub
 	opts = append(opts,
 		fx.Provide(
 			provideWalletBalanceAlertPubSub,
+			provideUsageBenchmarkPubSub,
 		),
 	)
 
@@ -226,6 +228,7 @@ func main() {
 			service.NewRawEventConsumptionService,
 			service.NewCostSheetUsageTrackingService,
 			service.NewMeterUsageTrackingService,
+			service.NewUsageBenchmarkService,
 			service.NewMeterUsageService,
 			service.NewPriceService,
 			service.NewPriceUnitService,
@@ -497,6 +500,7 @@ func startServer(
 	walletBalanceAlertSvc service.WalletBalanceAlertService,
 	rawEventConsumptionSvc service.RawEventConsumptionService,
 	meterUsageTrackingSvc service.MeterUsageTrackingService,
+	usageBenchmarkSvc service.UsageBenchmarkService,
 	params service.ServiceParams,
 ) {
 	mode := cfg.Deployment.Mode
@@ -512,21 +516,21 @@ func startServer(
 		startAPIServer(lc, r, cfg, log)
 
 		// Register all handlers and start router once
-		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, cfg, true)
+		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, usageBenchmarkSvc, cfg, true)
 		startRouter(lc, router, log)
 		startTemporalWorker(lc, temporalService, params)
 	case types.ModeAPI:
 		startAPIServer(lc, r, cfg, log)
 
 		// Register all handlers and start router once (no event consumption)
-		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, cfg, false)
+		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, usageBenchmarkSvc, cfg, false)
 		startRouter(lc, router, log)
 
 	case types.ModeTemporalWorker:
 		// Register webhook handler and start router so that webhook events
 		// published by temporal activities (e.g. invoice finalization) are
 		// consumed and delivered via Svix/native in the same process.
-		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, cfg, false)
+		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, usageBenchmarkSvc, cfg, false)
 		startRouter(lc, router, log)
 		startTemporalWorker(lc, temporalService, params)
 	case types.ModeConsumer:
@@ -535,7 +539,7 @@ func startServer(
 		}
 
 		// Register all handlers and start router once
-		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, cfg, true)
+		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, usageBenchmarkSvc, cfg, true)
 		startRouter(lc, router, log)
 	default:
 		log.Fatalf("Unknown deployment mode: %s", mode)
@@ -606,6 +610,7 @@ func registerRouterHandlers(
 	walletBalanceAlertSvc service.WalletBalanceAlertService,
 	rawEventConsumptionSvc service.RawEventConsumptionService,
 	meterUsageTrackingSvc service.MeterUsageTrackingService,
+	usageBenchmarkSvc service.UsageBenchmarkService,
 	cfg *config.Configuration,
 	includeProcessingHandlers bool,
 ) {
@@ -625,6 +630,7 @@ func registerRouterHandlers(
 		walletBalanceAlertSvc.RegisterHandler(router, cfg)
 		rawEventConsumptionSvc.RegisterHandler(router, cfg)
 		meterUsageTrackingSvc.RegisterHandler(router, cfg)
+		usageBenchmarkSvc.RegisterHandler(router, cfg)
 	}
 }
 
@@ -664,4 +670,20 @@ func provideWalletBalanceAlertPubSub(
 		return types.WalletBalanceAlertPubSub{}
 	}
 	return types.WalletBalanceAlertPubSub{PubSub: pubSub}
+}
+
+func provideUsageBenchmarkPubSub(
+	cfg *config.Configuration,
+	logger *logger.Logger,
+) types.UsageBenchmarkPubSub {
+	pubSub, err := kafkaPubsub.NewPubSubFromConfig(
+		cfg,
+		logger,
+		cfg.UsageBenchmark.ConsumerGroup,
+	)
+	if err != nil {
+		logger.Fatalw("failed to create pubsub for usage benchmark", "error", err)
+		return types.UsageBenchmarkPubSub{}
+	}
+	return types.UsageBenchmarkPubSub{PubSub: pubSub}
 }
