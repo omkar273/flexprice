@@ -502,14 +502,12 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	}
 	merged["source_feature_id"] = id
 
-	// Within-env clone: keep same MeterID (meter is shared), same GroupID
 	newFeature := &feature.Feature{
 		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_FEATURE),
 		Name:          req.Name,
 		LookupKey:     req.LookupKey,
 		Description:   description,
 		Type:          sourceFeature.Type,
-		MeterID:       sourceFeature.MeterID,
 		Metadata:      merged,
 		UnitSingular:  sourceFeature.UnitSingular,
 		UnitPlural:    sourceFeature.UnitPlural,
@@ -520,7 +518,35 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 		BaseModel:     types.GetDefaultBaseModel(ctx),
 	}
 
-	if err := s.FeatureRepo.Create(ctx, newFeature); err != nil {
+	// For metered features, deep-copy the meter so the clone is fully independent.
+	// Sharing the meter would cause UpdateFeature (mutates filters) or DeleteFeature
+	// (disables the meter) on the clone to silently break the source feature.
+	if err := s.DB.WithTx(ctx, func(txCtx context.Context) error {
+		if sourceFeature.Type == types.FeatureTypeMetered && sourceFeature.MeterID != "" {
+			sourceMeter, err := s.MeterRepo.GetMeter(txCtx, sourceFeature.MeterID)
+			if err != nil {
+				return fmt.Errorf("failed to fetch source meter: %w", err)
+			}
+			filtersCopy := make([]meter.Filter, len(sourceMeter.Filters))
+			copy(filtersCopy, sourceMeter.Filters)
+			newMeter := &meter.Meter{
+				ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_METER),
+				Name:          sourceMeter.Name,
+				EventName:     sourceMeter.EventName,
+				Aggregation:   sourceMeter.Aggregation,
+				Filters:       filtersCopy,
+				ResetUsage:    sourceMeter.ResetUsage,
+				EnvironmentID: sourceFeature.EnvironmentID,
+				BaseModel:     types.GetDefaultBaseModel(txCtx),
+			}
+			newMeter.Status = types.StatusPublished
+			if err := s.MeterRepo.CreateMeter(txCtx, newMeter); err != nil {
+				return fmt.Errorf("failed to create meter copy: %w", err)
+			}
+			newFeature.MeterID = newMeter.ID
+		}
+		return s.FeatureRepo.Create(txCtx, newFeature)
+	}); err != nil {
 		return nil, err
 	}
 
@@ -551,4 +577,3 @@ func (s *featureService) CloneFeature(ctx context.Context, id string, req dto.Cl
 	}
 	return response, nil
 }
-

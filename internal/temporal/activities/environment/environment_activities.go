@@ -164,8 +164,12 @@ func (a *EnvironmentActivities) cloneFeat(
 		if srcFeat.GroupID != "" {
 			resolvedID, err := a.resolveOrCreateGroup(sourceCtx, txCtx, srcFeat.GroupID)
 			if err != nil {
-				// Non-fatal: clear group rather than failing the entire feature
-				newFeature.GroupID = ""
+				if ierr.IsNotFound(err) {
+					// Source group no longer exists — drop the association gracefully
+					newFeature.GroupID = ""
+				} else {
+					return fmt.Errorf("failed to resolve group %s: %w", srcFeat.GroupID, err)
+				}
 			} else {
 				newFeature.GroupID = resolvedID
 			}
@@ -358,78 +362,73 @@ func (a *EnvironmentActivities) clonePlan(
 	scopePlan := types.CreditGrantScopePlan
 	emptyLookupKey := ""
 
-	// Build prices with remapping — validate ALL before committing
-	newPrices := make([]*domainPrice.Price, 0, len(sourcePrices))
-	for _, p := range sourcePrices {
-		overrides := &domainPrice.PriceCloneOverrides{
-			ID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE)),
-			EntityType: &entityTypePlan,
-			EntityID:   &newPlanID,
-			LookupKey:  lo.ToPtr(emptyLookupKey),
-		}
-
-		// Remap meter ID
-		if p.MeterID != "" {
-			newMID, ok := meterIDMap[p.MeterID]
-			if !ok || newMID == "" {
-				return "", fmt.Errorf("price %s references meter %s which has no mapping in target env — feature may not have been cloned", p.ID, p.MeterID)
-			}
-			overrides.MeterID = &newMID
-		}
-
-		// Remap group ID
-		if p.GroupID != "" {
-			if newGID, ok := groupIDMap[p.GroupID]; ok {
-				overrides.GroupID = lo.ToPtr(newGID)
-			} else {
-				// Resolve lazily
-				resolved, err := a.resolveOrCreateGroup(sourceCtx, targetCtx, p.GroupID)
-				if err != nil {
-					overrides.GroupID = lo.ToPtr("") // clear group
-				} else {
-					groupIDMap[p.GroupID] = resolved
-					overrides.GroupID = lo.ToPtr(resolved)
-				}
-			}
-		}
-
-		newPrices = append(newPrices, p.CopyWith(targetCtx, overrides))
-	}
-
-	// Build entitlements with remapping — validate ALL before committing
-	newEntitlements := make([]*domainEntitlement.Entitlement, 0, len(sourceEntitlements))
-	for _, e := range sourceEntitlements {
-		entOverrides := &domainEntitlement.EntitlementCloneOverrides{
-			ID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_ENTITLEMENT)),
-			EntityType: &entEntityTypePlan,
-			EntityID:   &newPlanID,
-		}
-
-		// Remap feature ID
-		if e.FeatureID != "" {
-			newFID, ok := featureIDMap[e.FeatureID]
-			if !ok || newFID == "" {
-				return "", fmt.Errorf("entitlement %s references feature %s which has no mapping in target env — feature may not have been cloned", e.ID, e.FeatureID)
-			}
-			entOverrides.FeatureID = &newFID
-		}
-
-		newEntitlements = append(newEntitlements, e.CopyWith(targetCtx, entOverrides))
-	}
-
-	// Build grants
-	newGrants := make([]*domainCreditGrant.CreditGrant, 0, len(sourceGrants))
-	for _, cg := range sourceGrants {
-		newGrants = append(newGrants, cg.CopyWith(targetCtx, &domainCreditGrant.CreditGrantCloneOverrides{
-			ID:     lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CREDIT_GRANT)),
-			Scope:  &scopePlan,
-			PlanID: &newPlanID,
-		}))
-	}
-
-	// Execute in single transaction
+	// Execute in single transaction — all building (including group resolution) happens
+	// inside so that group inserts are rolled back if any subsequent write fails.
 	const batchSize = 100
 	err = a.params.DB.WithTx(targetCtx, func(txCtx context.Context) error {
+		// Build prices with remapping
+		newPrices := make([]*domainPrice.Price, 0, len(sourcePrices))
+		for _, p := range sourcePrices {
+			overrides := &domainPrice.PriceCloneOverrides{
+				ID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_PRICE)),
+				EntityType: &entityTypePlan,
+				EntityID:   &newPlanID,
+				LookupKey:  lo.ToPtr(emptyLookupKey),
+			}
+
+			if p.MeterID != "" {
+				newMID, ok := meterIDMap[p.MeterID]
+				if !ok || newMID == "" {
+					return fmt.Errorf("price %s references meter %s which has no mapping in target env — feature may not have been cloned", p.ID, p.MeterID)
+				}
+				overrides.MeterID = &newMID
+			}
+
+			if p.GroupID != "" {
+				if newGID, ok := groupIDMap[p.GroupID]; ok {
+					overrides.GroupID = lo.ToPtr(newGID)
+				} else {
+					resolved, err := a.resolveOrCreateGroup(sourceCtx, txCtx, p.GroupID)
+					if err != nil {
+						overrides.GroupID = lo.ToPtr("") // group unreachable — clear
+					} else {
+						groupIDMap[p.GroupID] = resolved
+						overrides.GroupID = lo.ToPtr(resolved)
+					}
+				}
+			}
+
+			newPrices = append(newPrices, p.CopyWith(txCtx, overrides))
+		}
+
+		// Build entitlements with remapping — fail fast if feature mapping is missing
+		newEntitlements := make([]*domainEntitlement.Entitlement, 0, len(sourceEntitlements))
+		for _, e := range sourceEntitlements {
+			entOverrides := &domainEntitlement.EntitlementCloneOverrides{
+				ID:         lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_ENTITLEMENT)),
+				EntityType: &entEntityTypePlan,
+				EntityID:   &newPlanID,
+			}
+			if e.FeatureID != "" {
+				newFID, ok := featureIDMap[e.FeatureID]
+				if !ok || newFID == "" {
+					return fmt.Errorf("entitlement %s references feature %s which has no mapping in target env — feature may not have been cloned", e.ID, e.FeatureID)
+				}
+				entOverrides.FeatureID = &newFID
+			}
+			newEntitlements = append(newEntitlements, e.CopyWith(txCtx, entOverrides))
+		}
+
+		// Build grants
+		newGrants := make([]*domainCreditGrant.CreditGrant, 0, len(sourceGrants))
+		for _, cg := range sourceGrants {
+			newGrants = append(newGrants, cg.CopyWith(txCtx, &domainCreditGrant.CreditGrantCloneOverrides{
+				ID:     lo.ToPtr(types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CREDIT_GRANT)),
+				Scope:  &scopePlan,
+				PlanID: &newPlanID,
+			}))
+		}
+
 		newPlan := &domainPlan.Plan{
 			ID:            newPlanID,
 			Name:          srcPlan.Name,
