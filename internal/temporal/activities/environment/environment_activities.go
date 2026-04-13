@@ -143,6 +143,13 @@ func (a *EnvironmentActivities) cloneFeat(
 	srcFeat *domainFeature.Feature,
 	targetEnvID string,
 ) (string, error) {
+	metadata := make(types.Metadata, len(srcFeat.Metadata)+2)
+	for k, v := range srcFeat.Metadata {
+		metadata[k] = v
+	}
+	metadata["source_environment_feature_id"] = srcFeat.ID
+	metadata["source_environment_id"] = srcFeat.EnvironmentID
+
 	newFeature := &domainFeature.Feature{
 		ID:            types.GenerateUUIDWithPrefix(types.UUID_PREFIX_FEATURE),
 		Name:          srcFeat.Name,
@@ -150,7 +157,7 @@ func (a *EnvironmentActivities) cloneFeat(
 		Description:   srcFeat.Description,
 		Type:          srcFeat.Type,
 		MeterID:       srcFeat.MeterID, // will be overwritten for metered features
-		Metadata:      srcFeat.Metadata,
+		Metadata:      metadata,
 		UnitSingular:  srcFeat.UnitSingular,
 		UnitPlural:    srcFeat.UnitPlural,
 		ReportingUnit: srcFeat.ReportingUnit,
@@ -354,7 +361,7 @@ func (a *EnvironmentActivities) clonePlan(
 	for k, v := range srcPlan.Metadata {
 		metadata[k] = v
 	}
-	metadata["source_plan_id"] = srcPlan.ID
+	metadata["source_environment_plan_id"] = srcPlan.ID
 	metadata["source_environment_id"] = srcPlan.EnvironmentID
 
 	entityTypePlan := types.PRICE_ENTITY_TYPE_PLAN
