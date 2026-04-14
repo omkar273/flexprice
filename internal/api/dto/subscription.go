@@ -384,6 +384,9 @@ type CreateSubscriptionRequest struct {
 	CustomerTimezone string `json:"customer_timezone" validate:"omitempty,timezone"`
 
 	// BillingAnchor overrides the derived billing anchor when billing_cycle is anniversary.
+	// For monthly billing, the day-of-month (and time-of-day) define cycle boundaries: if start_date
+	// is before that day in the month, the first billing period ends on the next occurrence of that
+	// day in the same month (a shorter first period); subsequent periods follow the usual interval.
 	BillingAnchor *time.Time `json:"billing_anchor,omitempty"`
 
 	// Workflow
@@ -587,6 +590,12 @@ type SubscriptionResponseV2 struct {
 }
 
 func (r *CreateSubscriptionRequest) Validate() error {
+
+	err := validator.ValidateRequest(r)
+	if err != nil {
+		return err
+	}
+
 	// Case- Both are absent
 	if r.CustomerID == "" && r.ExternalCustomerID == "" {
 		return ierr.NewError("either customer_id or external_customer_id is required").
@@ -598,11 +607,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		if err := r.Inheritance.Validate(); err != nil {
 			return err
 		}
-	}
-
-	err := validator.ValidateRequest(r)
-	if err != nil {
-		return err
 	}
 
 	// Validate currency
@@ -632,6 +636,18 @@ func (r *CreateSubscriptionRequest) Validate() error {
 				"billing_anchor": r.BillingAnchor,
 			}).
 			Mark(ierr.ErrValidation)
+	}
+
+	if r.BillingAnchor != nil {
+		if r.BillingAnchor.Before(lo.FromPtr(r.StartDate)) {
+			return ierr.NewError("billing_anchor cannot be before start_date").
+				WithHint("billing_anchor must be on or after start_date").
+				WithReportableDetails(map[string]any{
+					"billing_anchor": r.BillingAnchor,
+					"start_date":     r.StartDate,
+				}).
+				Mark(ierr.ErrValidation)
+		}
 	}
 
 	// Handle legacy collection method conversion and validation
