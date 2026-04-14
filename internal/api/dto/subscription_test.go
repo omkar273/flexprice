@@ -10,14 +10,14 @@ import (
 
 func baseCreateSubscriptionRequest() CreateSubscriptionRequest {
 	return CreateSubscriptionRequest{
-		CustomerID:     "cust_test",
-		PlanID:         "plan_test",
-		Currency:       "usd",
-		BillingPeriod:  types.BILLING_PERIOD_MONTHLY,
-		BillingCycle:   types.BillingCycleAnniversary,
-		StartDate:      nil,
-		EndDate:        nil,
-		BillingAnchor:  nil,
+		CustomerID:      "cust_test",
+		PlanID:          "plan_test",
+		Currency:        "usd",
+		BillingPeriod:   types.BILLING_PERIOD_MONTHLY,
+		BillingCycle:    types.BillingCycleAnniversary,
+		StartDate:       nil,
+		EndDate:         nil,
+		BillingAnchor:   nil,
 		PaymentBehavior: nil,
 	}
 }
@@ -43,6 +43,65 @@ func TestCreateSubscriptionRequestValidate_BillingAnchorRequiresAnniversaryBilli
 	t.Run("passes when billing_cycle is anniversary", func(t *testing.T) {
 		req := baseCreateSubscriptionRequest()
 		req.BillingCycle = types.BillingCycleAnniversary
+		req.BillingAnchor = &anchor
+
+		err := req.Validate()
+		if err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+	})
+}
+
+func TestCreateSubscriptionRequestValidate_BillingAnchorOnOrAfterStartDate(t *testing.T) {
+	start := time.Date(2024, 1, 10, 10, 0, 0, 0, time.UTC)
+
+	t.Run("fails when billing_anchor is before start_date", func(t *testing.T) {
+		req := baseCreateSubscriptionRequest()
+		req.StartDate = &start
+		req.BillingCycle = types.BillingCycleAnniversary
+		anchor := time.Date(2024, 1, 9, 23, 0, 0, 0, time.UTC)
+		req.BillingAnchor = &anchor
+
+		err := req.Validate()
+		if err == nil {
+			t.Fatal("expected validation error, got nil")
+		}
+		if !strings.Contains(err.Error(), "billing_anchor") {
+			t.Fatalf("expected error to mention billing_anchor, got: %v", err)
+		}
+	})
+
+	t.Run("fails when billing_anchor is same calendar day but earlier clock time than start_date", func(t *testing.T) {
+		req := baseCreateSubscriptionRequest()
+		req.StartDate = &start
+		req.BillingCycle = types.BillingCycleAnniversary
+		anchor := time.Date(2024, 1, 10, 9, 0, 0, 0, time.UTC)
+		req.BillingAnchor = &anchor
+
+		err := req.Validate()
+		if err == nil {
+			t.Fatal("expected validation error, got nil")
+		}
+	})
+
+	t.Run("passes when billing_anchor equals start_date", func(t *testing.T) {
+		req := baseCreateSubscriptionRequest()
+		req.StartDate = &start
+		req.BillingCycle = types.BillingCycleAnniversary
+		anchor := time.Date(2024, 1, 10, 10, 0, 0, 0, time.UTC)
+		req.BillingAnchor = &anchor
+
+		err := req.Validate()
+		if err != nil {
+			t.Fatalf("expected no error, got: %v", err)
+		}
+	})
+
+	t.Run("passes when billing_anchor is after start_date", func(t *testing.T) {
+		req := baseCreateSubscriptionRequest()
+		req.StartDate = &start
+		req.BillingCycle = types.BillingCycleAnniversary
+		anchor := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
 		req.BillingAnchor = &anchor
 
 		err := req.Validate()
