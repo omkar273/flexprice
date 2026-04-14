@@ -2420,7 +2420,7 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 			if err != nil {
 				return nil, err
 			}
-			go s.publishBenchmarkEvent(ctx, sub.ID, periodStart, periodEnd)
+			s.publishBenchmarkEvent(ctx, sub.ID, periodStart, periodEnd)
 
 			// Calculate usage charges for feature usage data
 			usageCharges, usageTotal, err := billingService.CalculateFeatureUsageCharges(ctx, sub, usage, periodStart, periodEnd, nil)
@@ -2589,7 +2589,7 @@ func (s *walletService) GetWalletBalanceFromCache(ctx context.Context, walletID 
 			if err != nil {
 				return nil, err
 			}
-			go s.publishBenchmarkEvent(ctx, sub.ID, periodStart, periodEnd)
+			s.publishBenchmarkEvent(ctx, sub.ID, periodStart, periodEnd)
 			// Calculate usage charges for feature usage data
 			usageCharges, usageTotal, err := billingService.CalculateFeatureUsageCharges(ctx, sub, usage, periodStart, periodEnd, nil)
 			if err != nil {
