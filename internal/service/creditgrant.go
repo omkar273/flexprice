@@ -283,7 +283,7 @@ func (s *creditGrantService) InitializeCreditGrantWorkflow(ctx context.Context, 
 	if cg.CreditGrantAnchor.Before(time.Now()) || cg.CreditGrantAnchor.Equal(time.Now()) {
 		// Use a background context or a sub-context to avoid blocking the main creation if processing fails
 		// Though for initialization, we might want it to be synchronous if it fails due to validation
-		if _, err := s.processScheduledApplication(ctx, cga); err != nil {
+		if err := s.processCatchUpApplications(ctx, cga); err != nil {
 			s.Logger.ErrorwCtx(ctx, "failed to process initial CGA eagerly", "error", err, "cga_id", cga.ID)
 		}
 	}
@@ -457,8 +457,7 @@ func (s *creditGrantService) ProcessCreditGrantApplication(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	_, err = s.processScheduledApplication(ctx, cga)
-	return err
+	return s.processCatchUpApplications(ctx, cga)
 }
 
 // applyCreditGrantToWallet applies credit grant in a complete transaction
@@ -773,7 +772,7 @@ func (s *creditGrantService) ProcessScheduledCreditGrantApplications(ctx context
 		ctxWithTenant := context.WithValue(ctx, types.CtxTenantID, cga.TenantID)
 		ctxWithEnv := context.WithValue(ctxWithTenant, types.CtxEnvironmentID, cga.EnvironmentID)
 
-		_, err := s.processScheduledApplication(ctxWithEnv, cga)
+		err := s.processCatchUpApplications(ctxWithEnv, cga)
 		if err != nil {
 			s.Logger.ErrorwCtx(ctx, "Failed to process scheduled application",
 				"application_id", cga.ID,
@@ -884,6 +883,55 @@ func (s *creditGrantService) processScheduledApplication(
 	}
 
 	return nil, nil
+}
+
+const maxCatchUpIterations = 100
+
+// processCatchUpApplications processes a CGA and immediately applies any subsequent
+// past-due CGAs for the same grant. Stops when the next period is in the future,
+// the action is Defer/Cancel, or maxCatchUpIterations is reached.
+// Always returns nil — failures are logged and left for cron retry (backward compat).
+func (s *creditGrantService) processCatchUpApplications(
+	ctx context.Context,
+	initialCGA *domainCreditGrantApplication.CreditGrantApplication,
+) error {
+	currentCGA := initialCGA
+	startTime := currentCGA.ScheduledFor
+
+	for i := 0; i < maxCatchUpIterations; i++ {
+		nextCGA, err := s.processScheduledApplication(ctx, currentCGA)
+		if err != nil {
+			// CGA already marked Failed in DB by handleCreditGrantFailure.
+			// Cron will retry on next tick.
+			s.Logger.WarnwCtx(ctx, "catch-up loop stopping due to failure",
+				"cga_id", currentCGA.ID,
+				"grant_id", currentCGA.CreditGrantID,
+				"subscription_id", currentCGA.SubscriptionID,
+				"iterations_completed", i,
+				"error", err)
+			return nil
+		}
+
+		// nil nextCGA: one-time grant, Defer, Cancel, or grant end date reached
+		if nextCGA == nil {
+			break
+		}
+
+		// Next period is future-dated — normal cron territory
+		if nextCGA.ScheduledFor.After(time.Now().UTC()) {
+			break
+		}
+
+		currentCGA = nextCGA
+	}
+
+	s.Logger.InfowCtx(ctx, "credit grant catch-up loop completed",
+		"grant_id", initialCGA.CreditGrantID,
+		"subscription_id", initialCGA.SubscriptionID,
+		"catch_up_from", startTime,
+		"catch_up_to", currentCGA.ScheduledFor)
+
+	return nil
 }
 
 // createNextPeriodApplication creates a new CGA entry with scheduled status for the next period

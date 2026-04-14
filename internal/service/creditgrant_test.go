@@ -2246,3 +2246,120 @@ func (s *CreditGrantServiceTestSuite) TestSubscriptionCancellationCancelsFutureG
 	_, err = s.getWalletTransactionByGrantID(testSub2.CustomerID, nil, &manualFutureApp.ID)
 	s.Error(err, "No wallet transaction should be created for cancelled future applications")
 }
+
+// createBackdatedSubscription creates a subscription with start date in the past.
+func (s *CreditGrantServiceTestSuite) createBackdatedSubscription(id string, startDate time.Time) *subscription.Subscription {
+	sub := &subscription.Subscription{
+		ID:                 id,
+		PlanID:             s.testData.plan.ID,
+		CustomerID:         s.testData.customer.ID,
+		Currency:           "USD",
+		StartDate:          startDate,
+		CurrentPeriodStart: startDate,
+		CurrentPeriodEnd:   startDate.AddDate(0, 1, 0),
+		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
+		BillingPeriodCount: 1,
+		SubscriptionStatus: types.SubscriptionStatusActive,
+		BillingAnchor:      startDate,
+		BaseModel:          types.GetDefaultBaseModel(s.GetContext()),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.CreateWithLineItems(s.GetContext(), sub, nil))
+	return sub
+}
+
+// countCGAStatuses returns (applied, pending) counts for a grant.
+func (s *CreditGrantServiceTestSuite) countCGAStatuses(grantID string) (applied, pending int) {
+	filter := &types.CreditGrantApplicationFilter{
+		CreditGrantIDs: []string{grantID},
+		QueryFilter:    types.NewNoLimitQueryFilter(),
+	}
+	apps, err := s.GetStores().CreditGrantApplicationRepo.List(s.GetContext(), filter)
+	s.NoError(err)
+	for _, a := range apps {
+		switch a.ApplicationStatus {
+		case types.ApplicationStatusApplied:
+			applied++
+		case types.ApplicationStatusPending:
+			pending++
+		}
+	}
+	return
+}
+
+// TestCatchUp_BackdatedOneCycle verifies a grant backdated by 1 cycle applies immediately.
+func (s *CreditGrantServiceTestSuite) TestCatchUp_BackdatedOneCycle() {
+	ctx := s.GetContext()
+	backDate := s.testData.now.AddDate(0, 0, -1)
+
+	sub := s.createBackdatedSubscription("sub_catchup_1cycle", backDate)
+
+	resp, err := s.creditGrantService.CreateCreditGrant(ctx, dto.CreateCreditGrantRequest{
+		Name:           "Catch-up 1 Cycle",
+		Scope:          types.CreditGrantScopeSubscription,
+		Credits:        decimal.NewFromInt(100),
+		Cadence:        types.CreditGrantCadenceRecurring,
+		Period:         lo.ToPtr(types.CREDIT_GRANT_PERIOD_MONTHLY),
+		PeriodCount:    lo.ToPtr(1),
+		ExpirationType: types.CreditGrantExpiryTypeNever,
+		Priority:       lo.ToPtr(1),
+		StartDate:      &backDate,
+		SubscriptionID: &sub.ID,
+	})
+	s.NoError(err)
+
+	applied, pending := s.countCGAStatuses(resp.CreditGrant.ID)
+	s.Equal(1, applied, "expected 1 applied CGA for past cycle")
+	s.Equal(1, pending, "expected 1 pending CGA for upcoming cycle")
+}
+
+// TestCatchUp_BackdatedThreeCycles verifies all 3 past cycles are applied immediately.
+func (s *CreditGrantServiceTestSuite) TestCatchUp_BackdatedThreeCycles() {
+	ctx := s.GetContext()
+	backDate := s.testData.now.AddDate(0, -2, -15)
+
+	sub := s.createBackdatedSubscription("sub_catchup_3cycles", backDate)
+
+	resp, err := s.creditGrantService.CreateCreditGrant(ctx, dto.CreateCreditGrantRequest{
+		Name:           "Catch-up 3 Cycles",
+		Scope:          types.CreditGrantScopeSubscription,
+		Credits:        decimal.NewFromInt(50),
+		Cadence:        types.CreditGrantCadenceRecurring,
+		Period:         lo.ToPtr(types.CREDIT_GRANT_PERIOD_MONTHLY),
+		PeriodCount:    lo.ToPtr(1),
+		ExpirationType: types.CreditGrantExpiryTypeNever,
+		Priority:       lo.ToPtr(1),
+		StartDate:      &backDate,
+		SubscriptionID: &sub.ID,
+	})
+	s.NoError(err)
+
+	applied, pending := s.countCGAStatuses(resp.CreditGrant.ID)
+	s.Equal(3, applied, "expected 3 applied CGAs for 3 past cycles")
+	s.Equal(1, pending, "expected 1 pending CGA for upcoming cycle")
+}
+
+// TestCatchUp_FutureStartDate verifies a future-dated grant does not trigger catch-up.
+func (s *CreditGrantServiceTestSuite) TestCatchUp_FutureStartDate() {
+	ctx := s.GetContext()
+	futureDate := s.testData.now.AddDate(0, 1, 0)
+
+	sub := s.createBackdatedSubscription("sub_catchup_future", s.testData.now.AddDate(0, 0, -1))
+
+	resp, err := s.creditGrantService.CreateCreditGrant(ctx, dto.CreateCreditGrantRequest{
+		Name:           "Future Grant",
+		Scope:          types.CreditGrantScopeSubscription,
+		Credits:        decimal.NewFromInt(100),
+		Cadence:        types.CreditGrantCadenceRecurring,
+		Period:         lo.ToPtr(types.CREDIT_GRANT_PERIOD_MONTHLY),
+		PeriodCount:    lo.ToPtr(1),
+		ExpirationType: types.CreditGrantExpiryTypeNever,
+		Priority:       lo.ToPtr(1),
+		StartDate:      &futureDate,
+		SubscriptionID: &sub.ID,
+	})
+	s.NoError(err)
+
+	applied, pending := s.countCGAStatuses(resp.CreditGrant.ID)
+	s.Equal(0, applied, "expected no applied CGAs for future grant")
+	s.Equal(1, pending, "expected 1 pending CGA waiting for future schedule")
+}
