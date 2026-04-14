@@ -137,7 +137,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 		sub.StartDate = sub.StartDate.UTC().Truncate(time.Millisecond)
 	}
 	if req.BillingAnchor != nil {
-		sub.BillingAnchor = *req.BillingAnchor
+		sub.BillingAnchor = lo.FromPtr(req.BillingAnchor)
 	} else if sub.BillingCycle == types.BillingCycleCalendar {
 		sub.BillingAnchor = types.CalculateCalendarBillingAnchor(sub.StartDate, sub.BillingPeriod)
 	} else {
@@ -1740,7 +1740,6 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 	// Return the updated subscription
 	return s.GetSubscription(ctx, subscriptionID)
 }
-
 
 // CancelSubscription provides enhanced cancellation with proration support
 func (s *subscriptionService) CancelSubscription(
