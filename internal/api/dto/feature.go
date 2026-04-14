@@ -97,6 +97,9 @@ func (r *CreateFeatureRequest) ToFeature(ctx context.Context) (*feature.Feature,
 		}
 		feature.AlertSettings = r.AlertSettings
 	}
+	if feature.LookupKey == "" {
+		feature.LookupKey = types.GenerateLookupKey(r.Name)
+	}
 	return feature, nil
 }
 
@@ -122,3 +125,32 @@ type FeatureResponse struct {
 
 // ListFeaturesResponse represents a paginated list of features
 type ListFeaturesResponse = types.ListResponse[*FeatureResponse] // @name ListFeaturesResponse
+
+// CloneFeatureRequest represents the request to clone a feature
+type CloneFeatureRequest struct {
+	// Name is required and must be different from the source feature's name
+	Name string `json:"name"`
+	// LookupKey is required and must be unique across published features
+	LookupKey string `json:"lookup_key"`
+	// Description overrides the source feature's description when provided
+	Description *string `json:"description,omitempty"`
+	// Metadata overrides the source feature's metadata when provided
+	Metadata types.Metadata `json:"metadata,omitempty"`
+	// TargetEnvironmentID optionally specifies the target environment for cross-env cloning.
+	// When empty, the feature is cloned within the same environment.
+	TargetEnvironmentID string `json:"target_environment_id,omitempty"`
+}
+
+func (r *CloneFeatureRequest) Validate() error {
+	if r.Name == "" {
+		return ierr.NewError("name is required for cloned feature").
+			WithHint("Please provide a unique name for the cloned feature").
+			Mark(ierr.ErrValidation)
+	}
+	if r.LookupKey == "" {
+		return ierr.NewError("lookup_key is required for cloned feature").
+			WithHint("Please provide a unique lookup_key for the cloned feature").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}

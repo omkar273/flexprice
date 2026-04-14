@@ -2011,6 +2011,15 @@ func (s *invoiceService) GetCustomerInvoiceSummary(ctx context.Context, customer
 		return nil, err
 	}
 
+	filter.CustomerID = "" // clear customer id to get all invoices
+	filter.SubscriptionCustomerIDs = []string{customerID}
+	invoicesInvoicedToParent, err := s.ListInvoices(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	mergedInvoices := append(invoicesResp.Items, invoicesInvoicedToParent.Items...)
+
 	summary := &dto.CustomerInvoiceSummary{
 		CustomerID:          customerID,
 		Currency:            currency,
@@ -2027,7 +2036,7 @@ func (s *invoiceService) GetCustomerInvoiceSummary(ctx context.Context, customer
 	now := time.Now().UTC()
 
 	// Process each invoice
-	for _, inv := range invoicesResp.Items {
+	for _, inv := range mergedInvoices {
 		// Skip invoices with different currency
 		if !types.IsMatchingCurrency(inv.Currency, currency) {
 			continue

@@ -119,3 +119,6 @@ api/tests/python/.venv/
 
 vendor/
 .claude/settings.json
+
+# claude superpowers
+docs/superpowers/*

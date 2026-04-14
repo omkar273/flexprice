@@ -9,6 +9,7 @@ import (
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/cache"
+	"github.com/flexprice/flexprice/internal/domain/events"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	"github.com/flexprice/flexprice/internal/domain/wallet"
 	ierr "github.com/flexprice/flexprice/internal/errors"
@@ -2419,6 +2420,7 @@ func (s *walletService) GetWalletBalanceV2(ctx context.Context, walletID string)
 			if err != nil {
 				return nil, err
 			}
+			go s.publishBenchmarkEvent(ctx, sub.ID, periodStart, periodEnd)
 
 			// Calculate usage charges for feature usage data
 			usageCharges, usageTotal, err := billingService.CalculateFeatureUsageCharges(ctx, sub, usage, periodStart, periodEnd, nil)
@@ -2586,7 +2588,9 @@ func (s *walletService) GetWalletBalanceFromCache(ctx context.Context, walletID 
 			})
 			if err != nil {
 				return nil, err
-			} // Calculate usage charges for feature usage data
+			}
+			go s.publishBenchmarkEvent(ctx, sub.ID, periodStart, periodEnd)
+			// Calculate usage charges for feature usage data
 			usageCharges, usageTotal, err := billingService.CalculateFeatureUsageCharges(ctx, sub, usage, periodStart, periodEnd, nil)
 			if err != nil {
 				return nil, err
@@ -3186,4 +3190,23 @@ func (s *walletService) getWalletRealtimeBalanceFromCache(ctx context.Context, w
 	}
 
 	return balance
+}
+
+// publishBenchmarkEvent publishes a usage benchmark event to Kafka.
+// Fire-and-forget: errors are logged but never returned to the caller.
+func (s *walletService) publishBenchmarkEvent(ctx context.Context, subscriptionID string, startTime, endTime time.Time) {
+	benchSvc := NewUsageBenchmarkService(s.ServiceParams, nil)
+	evt := &events.UsageBenchmarkEvent{
+		SubscriptionID: subscriptionID,
+		StartTime:      startTime,
+		EndTime:        endTime,
+		TenantID:       types.GetTenantID(ctx),
+		EnvironmentID:  types.GetEnvironmentID(ctx),
+	}
+	if err := benchSvc.PublishEvent(ctx, evt); err != nil {
+		s.Logger.WarnwCtx(ctx, "usage benchmark: failed to publish event",
+			"subscription_id", subscriptionID,
+			"error", err,
+		)
+	}
 }
