@@ -257,7 +257,7 @@ func (n *FilterNode) validateRecursive(depth int, counter *filterNodeCounter) er
 // Embed *DSLFilter in any entity filter struct instead of declaring these fields individually.
 type DSLFilter struct {
 	Filters    []*FilterCondition `json:"filters,omitempty"     form:"filters"     validate:"omitempty"`
-	FilterNode *FilterNode        `json:"filter_node,omitempty" form:"filter_node"`
+	FilterNode *FilterNode        `json:"filter_node,omitempty" form:"filter_node" validate:"omitempty"`
 	Sort       []*SortCondition   `json:"sort,omitempty"        form:"sort"        validate:"omitempty"`
 }
 
