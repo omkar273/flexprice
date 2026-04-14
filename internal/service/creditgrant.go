@@ -457,7 +457,17 @@ func (s *creditGrantService) ProcessCreditGrantApplication(ctx context.Context, 
 	if err != nil {
 		return err
 	}
-	return s.processCatchUpApplications(ctx, cga)
+	// Process the requested CGA — propagate error to caller (backward compat).
+	nextCGA, err := s.processScheduledApplication(ctx, cga)
+	if err != nil {
+		return err
+	}
+	// If the next period is also past-due (backdated subscription), apply it and any
+	// further past-due periods silently. Failures are logged; cron will retry.
+	if nextCGA != nil && !nextCGA.ScheduledFor.After(time.Now().UTC()) {
+		return s.processCatchUpApplications(ctx, nextCGA)
+	}
+	return nil
 }
 
 // applyCreditGrantToWallet applies credit grant in a complete transaction
@@ -772,6 +782,9 @@ func (s *creditGrantService) ProcessScheduledCreditGrantApplications(ctx context
 		ctxWithTenant := context.WithValue(ctx, types.CtxTenantID, cga.TenantID)
 		ctxWithEnv := context.WithValue(ctxWithTenant, types.CtxEnvironmentID, cga.EnvironmentID)
 
+		// processCatchUpApplications always returns nil; failures are logged internally
+		// and the CGA is marked Failed in the DB for cron retry. FailedApplicationsCount
+		// below will therefore never increment — check logs for individual failures.
 		err := s.processCatchUpApplications(ctxWithEnv, cga)
 		if err != nil {
 			s.Logger.ErrorwCtx(ctx, "Failed to process scheduled application",
