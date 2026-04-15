@@ -909,19 +909,44 @@ func previewProrationQuantityChangeInvoiceResponse(
 	return dto.NewInvoiceResponse(inv)
 }
 
-func previewProrationWalletTransactionResponse(
+func (s *subscriptionModificationService) previewProrationWalletTransactionResponse(
 	ctx context.Context,
 	sub *subscription.Subscription,
-	creditAmount decimal.Decimal,
-) *dto.WalletTransactionResponse {
+	currencyTopUpAmount decimal.Decimal,
+) (*dto.WalletTransactionResponse, error) {
 	billingCustomer := sub.GetInvoicingCustomerID()
+	currency := sub.Currency
+
+	topupRate := decimal.NewFromInt(1)
+	walletSvc := NewWalletService(s.serviceParams)
+	if billingCustomer != "" {
+		existingWallets, err := walletSvc.GetWalletsByCustomerID(ctx, billingCustomer)
+		if err != nil {
+			return nil, err
+		}
+		var selected *dto.WalletResponse
+		for _, w := range existingWallets {
+			if w.WalletStatus == types.WalletStatusActive &&
+				types.IsMatchingCurrency(w.Currency, currency) &&
+				w.WalletType == types.WalletTypePrePaid {
+				selected = w
+				break
+			}
+		}
+		if selected != nil && !selected.TopupConversionRate.IsZero() && selected.TopupConversionRate.GreaterThan(decimal.Zero) {
+			topupRate = selected.TopupConversionRate
+		}
+	}
+
+	creditAmount := walletSvc.GetCreditsFromCurrencyAmount(currencyTopUpAmount, topupRate)
+
 	envID := types.GetEnvironmentID(ctx)
 	bm := types.GetDefaultBaseModel(ctx)
 	tx := &wallet.Transaction{
 		ID:                  "(preview-wallet-credit)",
 		CustomerID:          billingCustomer,
 		Type:                types.TransactionTypeCredit,
-		Amount:              creditAmount,
+		Amount:              currencyTopUpAmount,
 		CreditAmount:        creditAmount,
 		CreditBalanceBefore: decimal.Zero,
 		CreditBalanceAfter:  creditAmount,
@@ -933,8 +958,9 @@ func previewProrationWalletTransactionResponse(
 		Currency:            sub.Currency,
 		EnvironmentID:       envID,
 		BaseModel:           bm,
+		TopupConversionRate: lo.ToPtr(topupRate),
 	}
-	return dto.FromWalletTransaction(tx)
+	return dto.FromWalletTransaction(tx), nil
 }
 
 // previewQuantityChangeProration calculates what proration would occur without creating any
@@ -999,7 +1025,10 @@ func (s *subscriptionModificationService) previewQuantityChangeProration(
 			Invoice: invResp,
 		}, nil
 	}
-	walletTx := previewProrationWalletTransactionResponse(ctx, sub, result.NetAmount.Abs())
+	walletTx, err := s.previewProrationWalletTransactionResponse(ctx, sub, result.NetAmount.Abs())
+	if err != nil {
+		return nil, err
+	}
 	return &dto.ChangedInvoice{
 		ID:                "(preview-wallet-credit)",
 		Action:            dto.ChangedInvoiceActionWalletCredit,
