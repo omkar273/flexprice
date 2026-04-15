@@ -461,6 +461,7 @@ func (s *creditGrantService) processScheduledApplication(ctx context.Context, cg
 	return nil, nil
 }
 
+// Keep in sync with maxCatchUpIterations in internal/service/creditgrant.go
 const maxCatchUpIterations = 100
 
 // processCatchUpApplications processes a CGA and immediately applies any subsequent
@@ -477,7 +478,7 @@ func (s *creditGrantService) processCatchUpApplications(
 	for i := 0; i < maxCatchUpIterations; i++ {
 		nextCGA, err := s.processScheduledApplication(ctx, currentCGA)
 		if err != nil {
-			s.Logger.Errorw("catch-up loop stopping due to failure",
+			s.Logger.WarnwCtx(ctx, "catch-up loop stopping due to failure",
 				"cga_id", currentCGA.ID,
 				"grant_id", currentCGA.CreditGrantID,
 				"subscription_id", currentCGA.SubscriptionID,
@@ -494,7 +495,7 @@ func (s *creditGrantService) processCatchUpApplications(
 		currentCGA = nextCGA
 	}
 
-	s.Logger.Infow("EE credit grant catch-up loop completed",
+	s.Logger.InfowCtx(ctx, "credit grant catch-up loop completed",
 		"grant_id", initialCGA.CreditGrantID,
 		"subscription_id", initialCGA.SubscriptionID,
 		"catch_up_from", startTime,
