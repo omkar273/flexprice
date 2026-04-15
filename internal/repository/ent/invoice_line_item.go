@@ -514,7 +514,7 @@ func (o *InvoiceLineItemQueryOptions) applyEntityQueryOptions(_ context.Context,
 	}
 
 	// DSL-based complex filters
-	if len(f.Filters) > 0 {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		var err error
 		query, err = dsl.ApplyFilters[InvoiceLineItemQuery, predicate.InvoiceLineItem](
 			query,

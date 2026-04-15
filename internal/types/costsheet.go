@@ -37,6 +37,11 @@ func (f *CostSheetFilter) Validate() error {
 			return err
 		}
 	}
+	if f.DSLFilter != nil {
+		if err := f.DSLFilter.Validate(); err != nil {
+			return err
+		}
+	}
 
 	for _, costsheetID := range f.CostSheetIDs {
 		if costsheetID == "" {

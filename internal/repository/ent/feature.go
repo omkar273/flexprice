@@ -554,7 +554,7 @@ func (o FeatureQueryOptions) applyEntityQueryOptions(ctx context.Context, f *typ
 	}
 
 	// Apply filters using the generic function
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[FeatureQuery, predicate.Feature](
 			query,
 			f.Filters,

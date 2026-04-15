@@ -600,7 +600,7 @@ func (o ConnectionQueryOptions) applyEntityQueryOptions(_ context.Context, f *ty
 		query = query.Where(connection.IDIn(f.ConnectionIDs...))
 	}
 
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[ConnectionQuery, predicate.Connection](
 			query,
 			f.Filters,

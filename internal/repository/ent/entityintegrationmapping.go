@@ -480,7 +480,7 @@ func (o EntityIntegrationMappingQueryOptions) applyEntityQueryOptions(_ context.
 		query = query.Where(entityintegrationmapping.ProviderEntityIDIn(f.ProviderEntityIDs...))
 	}
 
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[EntityIntegrationMappingQuery, predicate.EntityIntegrationMapping](
 			query,
 			f.Filters,

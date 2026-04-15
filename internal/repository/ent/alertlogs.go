@@ -475,7 +475,7 @@ func (o AlertLogQueryOptions) applyEntityQueryOptions(_ context.Context, f *type
 		query = query.Where(alertlogs.CustomerID(f.CustomerID))
 	}
 
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[AlertLogQuery, predicate.AlertLogs](
 			query,
 			f.Filters,

@@ -150,7 +150,7 @@ func (o CouponAssociationQueryOptions) applyEntityQueryOptions(_ context.Context
 	}
 
 	// Apply filters using the generic function
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[CouponAssociationQuery, predicate.CouponAssociation](
 			query,
 			f.Filters,

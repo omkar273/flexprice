@@ -641,7 +641,7 @@ func (o EntitlementQueryOptions) applyEntityQueryOptions(_ context.Context, f *t
 		}
 	}
 
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[EntitlementQuery, predicate.Entitlement](
 			query,
 			f.Filters,

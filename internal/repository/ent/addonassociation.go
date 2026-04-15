@@ -461,7 +461,7 @@ func (o AddonAssociationQueryOptions) applyEntityQueryOptions(ctx context.Contex
 	}
 
 	// Apply filters using the generic function
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[AddonAssociationQuery, predicate.AddonAssociation](
 			query,
 			f.Filters,

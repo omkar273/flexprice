@@ -483,7 +483,7 @@ func (o TaxRateQueryOptions) applyEntityQueryOptions(_ context.Context, f *types
 		query = query.Where(taxrate.IDIn(f.TaxRateIDs...))
 	}
 
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[TaxRateQuery, predicate.TaxRate](
 			query,
 			f.Filters,

@@ -238,9 +238,11 @@ func priceUnitFilterFn(ctx context.Context, pu *priceunit.PriceUnit, filter inte
 	}
 
 	// Apply filter conditions
-	for _, condition := range f.Filters {
-		if !applyPriceUnitFilterCondition(pu, condition) {
-			return false
+	if f.DSLFilter != nil {
+		for _, condition := range f.Filters {
+			if !applyPriceUnitFilterCondition(pu, condition) {
+				return false
+			}
 		}
 	}
 

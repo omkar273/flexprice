@@ -462,7 +462,7 @@ func (o PriceUnitQueryOptions) applyEntityQueryOptions(ctx context.Context, f *t
 	}
 
 	// Apply filters using the generic function
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[PriceUnitQuery, predicate.PriceUnit](
 			query,
 			f.Filters,

@@ -418,7 +418,7 @@ func (o WorkflowExecutionQueryOptions) applyEntityQueryOptions(ctx context.Conte
 			query = query.Where(workflowexecution.StartTimeLTE(*f.TimeRangeFilter.EndTime))
 		}
 	}
-	if len(f.Filters) > 0 {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		query, err = dsl.ApplyFilters[WorkflowExecutionQuery, predicate.WorkflowExecution](
 			query,
 			f.Filters,

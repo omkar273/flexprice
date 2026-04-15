@@ -356,7 +356,7 @@ func (o GroupQueryOptions) applyEntityQueryOptions(ctx context.Context, f *types
 	}
 
 	// Apply filters using the generic DSL (filter by lookup_key, name, entity_type, created_at)
-	if f.Filters != nil {
+	if f.DSLFilter != nil && len(f.Filters) > 0 {
 		var err error
 		query, err = dsl.ApplyFilters[GroupQuery, predicate.Group](
 			query,
