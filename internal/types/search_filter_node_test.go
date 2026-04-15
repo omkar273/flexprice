@@ -108,3 +108,37 @@ func TestDSLFilter_Validate_PropagatesFilterNodeError(t *testing.T) {
 	d := &DSLFilter{FilterNode: &FilterNode{}} // invalid: neither leaf nor group
 	assert.Error(t, d.Validate())
 }
+
+func TestFilterNode_Validate_OrGroupValid(t *testing.T) {
+	node := &FilterNode{
+		Operator:   lo.ToPtr(GroupOpOr),
+		Conditions: []*FilterNode{stringLeaf("plan", "free"), stringLeaf("plan", "pro")},
+	}
+	require.NoError(t, node.Validate())
+}
+
+func TestFilterNode_Validate_NilChildInConditions(t *testing.T) {
+	node := &FilterNode{
+		Operator:   lo.ToPtr(GroupOpAnd),
+		Conditions: []*FilterNode{stringLeaf("status", "active"), nil},
+	}
+	assert.Error(t, node.Validate())
+}
+
+func TestDSLFilter_Validate_PropagatesFiltersError(t *testing.T) {
+	d := &DSLFilter{
+		Filters: []*FilterCondition{
+			{}, // invalid: no field/operator/data_type/value
+		},
+	}
+	assert.Error(t, d.Validate())
+}
+
+func TestDSLFilter_Validate_PropagatesSortError(t *testing.T) {
+	d := &DSLFilter{
+		Sort: []*SortCondition{
+			{Field: "", Direction: ""}, // invalid: empty field
+		},
+	}
+	assert.Error(t, d.Validate())
+}

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"time"
 
 	ierr "github.com/flexprice/flexprice/internal/errors"
@@ -186,11 +187,14 @@ type FilterNode struct {
 // IsLeaf returns true when this node is a leaf (wraps a FilterCondition).
 func (n *FilterNode) IsLeaf() bool { return n.Condition != nil }
 
-// IsGroup returns true when this node is a group (has Operator + Conditions).
+// IsGroup returns true when this node has a group operator set (does not validate children).
 func (n *FilterNode) IsGroup() bool { return n.Operator != nil }
 
 // Validate validates the FilterNode tree recursively.
 func (n *FilterNode) Validate() error {
+	if n == nil {
+		return nil
+	}
 	return n.validateRecursive(0, &filterNodeCounter{})
 }
 
@@ -206,7 +210,7 @@ func (n *FilterNode) validateRecursive(depth int, counter *filterNodeCounter) er
 	}
 	if counter.n > MaxFilterNodes {
 		return ierr.NewError("filter tree exceeds maximum node count").
-			WithHint("Reduce total conditions to 100 or fewer").
+			WithHint(fmt.Sprintf("Reduce total conditions to %d or fewer", MaxFilterNodes)).
 			WithReportableDetails(map[string]any{"max_nodes": MaxFilterNodes}).
 			Mark(ierr.ErrValidation)
 	}
@@ -215,12 +219,12 @@ func (n *FilterNode) validateRecursive(depth int, counter *filterNodeCounter) er
 	isGroup := n.Operator != nil
 
 	if isLeaf && isGroup {
-		return ierr.NewError("FilterNode must be either a leaf or a group, not both").
+		return ierr.NewError("a filter node must be either a leaf or a group, not both").
 			WithHint("Set either 'condition' (leaf) or 'operator'+'conditions' (group), not both").
 			Mark(ierr.ErrValidation)
 	}
 	if !isLeaf && !isGroup {
-		return ierr.NewError("FilterNode must be either a leaf or a group").
+		return ierr.NewError("a filter node must be either a leaf or a group").
 			WithHint("Set 'condition' for a leaf node, or 'operator'+'conditions' for a group node").
 			Mark(ierr.ErrValidation)
 	}
