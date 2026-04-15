@@ -145,21 +145,30 @@ func (h *handler) processMessage(msg *message.Message) error {
 		"tenant_id", event.TenantID,
 	)
 
-	// Log inbound — create a bare system_events row (entity info populated on delivery).
-	if err := h.systemEventRepo.OnConsumed(ctx, &event); err != nil {
-		h.logger.Warnw("system_events OnConsumed failed",
-			"error", err,
-			"event_id", event.ID,
-			"event_name", event.EventName,
-		)
-	}
-
 	// After verify: deliver the webhook (Svix or native endpoint)
 	if h.config.Svix.Enabled {
-		return h.processMessageSvix(ctx, &event, msg.UUID)
+		err := h.processMessageSvix(ctx, &event, msg.UUID)
+		if err != nil {
+			h.logger.Errorw("failed to send webhook via Svix",
+				"error", err,
+				"message_uuid", msg.UUID,
+				"tenant_id", event.TenantID,
+				"event", event.EventName,
+			)
+		}
+		return nil
 	}
 
-	return h.processMessageNative(ctx, &event, msg.UUID)
+	err := h.processMessageNative(ctx, &event, msg.UUID)
+	if err != nil {
+		h.logger.Errorw("failed to send webhook via native endpoint",
+			"error", err,
+			"message_uuid", msg.UUID,
+			"tenant_id", event.TenantID,
+			"event", event.EventName,
+		)
+	}
+	return nil
 }
 
 // processMessageSvix processes a webhook message using Svix
