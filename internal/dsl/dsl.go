@@ -169,9 +169,17 @@ func leafSQLPredicate(f *types.FilterCondition, fi string) *sql.Predicate {
 		if num := valueNumber(f); num != nil {
 			return sql.GT(fi, *num)
 		}
+	case types.GREATER_THAN_OR_EQUAL:
+		if num := valueNumber(f); num != nil {
+			return sql.GTE(fi, *num)
+		}
 	case types.LESS_THAN:
 		if num := valueNumber(f); num != nil {
 			return sql.LT(fi, *num)
+		}
+	case types.LESS_THAN_OR_EQUAL:
+		if num := valueNumber(f); num != nil {
+			return sql.LTE(fi, *num)
 		}
 	case types.IN:
 		if arr := valueArray(f); len(arr) > 0 {

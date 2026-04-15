@@ -41,8 +41,10 @@ const (
 	// ENDS_WITH    FilterOperatorType = "ENDS_WITH"
 
 	// number
-	GREATER_THAN FilterOperatorType = "gt"
-	LESS_THAN    FilterOperatorType = "lt"
+	GREATER_THAN           FilterOperatorType = "gt"
+	GREATER_THAN_OR_EQUAL  FilterOperatorType = "gte"
+	LESS_THAN              FilterOperatorType = "lt"
+	LESS_THAN_OR_EQUAL     FilterOperatorType = "lte"
 
 	// array
 	IN     FilterOperatorType = "in"
