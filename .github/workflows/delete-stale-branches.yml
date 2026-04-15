@@ -67,6 +67,18 @@ jobs:
             return 1
           }
 
+          # Derive GitHub username from a noreply email when possible (common for GitHub web commits)
+          github_handle_from_email() {
+            local e="$1"
+            if [[ "$e" =~ ^[0-9]+\+([^@]+)@users\.noreply\.github\.com$ ]]; then
+              printf '@%s' "${BASH_REMATCH[1]}"
+            elif [[ "$e" =~ ^([^@]+)@users\.noreply\.github\.com$ ]]; then
+              printf '@%s' "${BASH_REMATCH[1]}"
+            else
+              printf ''
+            fi
+          }
+
           DELETED=0
           {
             echo "## Stale branch deletion"
@@ -112,15 +124,30 @@ jobs:
           {
             echo "### Deleted branches"
             echo ""
+            echo "| Branch | Tip \`sha\` | Author (last commit) | Email | GitHub user (from noreply) |"
+            echo "| --- | --- | --- | --- | --- |"
           } >> "$GITHUB_STEP_SUMMARY"
 
           BASE_URL="https://github.com/${GITHUB_REPOSITORY}"
 
           for branch in "${TO_DELETE[@]}"; do
-            echo "Deleting origin/${branch}"
+            REF="origin/${branch}"
+            # Must read tip before deleting the remote ref (separate fields: author/email may contain |)
+            SHA=$(git rev-parse --short "$REF" 2>/dev/null || echo "???????")
+            AUTHOR=$(git log -1 --format='%an' "$REF" 2>/dev/null || echo "?")
+            EMAIL=$(git log -1 --format='%ae' "$REF" 2>/dev/null || echo "?")
+            GH_HANDLE="$(github_handle_from_email "$EMAIL")"
+
+            echo "Deleting origin/${branch} (tip ${SHA} by ${AUTHOR})"
             git push origin --delete "$branch"
-            echo "- **\`${branch}\`**" >> "$GITHUB_STEP_SUMMARY"
-            echo "  Removed remote ref \`refs/heads/${branch}\` (previously ${BASE_URL}/tree/${branch})"
+
+            # Markdown table row: escape pipes in text fields
+            AUTH_ESC="${AUTHOR//|/\\|}"
+            EMAIL_ESC="${EMAIL//|/\\|}"
+            echo "| \`${branch}\` | \`${SHA}\` | ${AUTH_ESC} | ${EMAIL_ESC} | ${GH_HANDLE:-—} |" >> "$GITHUB_STEP_SUMMARY"
+
+            echo "  Removed \`refs/heads/${branch}\` — tip ${SHA}, author: ${AUTHOR} <${EMAIL}> ${GH_HANDLE:+(GitHub ${GH_HANDLE})}"
+            echo "  (was ${BASE_URL}/tree/${branch})"
             DELETED=$((DELETED + 1))
           done
 
@@ -133,5 +160,7 @@ jobs:
           {
             echo ""
             echo "### Summary"
-            echo "**${DELETED}** remote branch(es) deleted this run."
+            echo "**${DELETED}** remote branch(es) deleted this run. The table above lists each branch with the **last commit** author and email from the tip before deletion."
+            echo ""
+            echo "When the email is a GitHub \`users.noreply.github.com\` address, the **GitHub user** column shows the inferred handle (e.g. \`@octocat\`). Other emails show — in that column."
           } >> "$GITHUB_STEP_SUMMARY"
