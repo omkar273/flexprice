@@ -203,8 +203,9 @@ func predicateFromFilter(f *types.FilterCondition, fi string) Predicate {
 	return func(sel *sql.Selector) { sel.Where(p) }
 }
 
-// defaultBlockedFields are blocked from filter trees by default.
-var defaultBlockedFields = []string{"tenant_id", "environment_id"}
+// defaultBlockedFields is the set of fields blocked from filter trees by default.
+// Declared as a map to prevent slice-append mutation hazards.
+var defaultBlockedFields = map[string]bool{"tenant_id": true, "environment_id": true}
 
 // buildNodePredicate recursively builds a *sql.Predicate from a FilterNode tree.
 // node.Validate() must be called before this function.
@@ -275,13 +276,14 @@ func ApplyFilterNode[T any, P any](
 		return query, err
 	}
 
-	effective := blockedFields
-	if effective == nil {
-		effective = defaultBlockedFields
-	}
-	blocked := make(map[string]bool, len(effective))
-	for _, f := range effective {
-		blocked[f] = true
+	var blocked map[string]bool
+	if blockedFields == nil {
+		blocked = defaultBlockedFields
+	} else {
+		blocked = make(map[string]bool, len(blockedFields))
+		for _, f := range blockedFields {
+			blocked[f] = true
+		}
 	}
 
 	sqlPred, err := buildNodePredicate(node, resolve, blocked)
@@ -290,6 +292,8 @@ func ApplyFilterNode[T any, P any](
 	}
 
 	entPred := predicateConverter(func(sel *sql.Selector) { sel.Where(sqlPred) })
+	// One composite predicate wraps the entire tree. Ent's Where is variadic AND-ed,
+	// so callers using ApplyFilters + ApplyFilterNode together get implicit AND semantics.
 	result := reflect.ValueOf(query).MethodByName("Where").Call(
 		[]reflect.Value{reflect.ValueOf(entPred)},
 	)

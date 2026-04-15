@@ -136,9 +136,9 @@ func TestBuildNodePredicate_NestedOrInsideAnd(t *testing.T) {
 }
 
 func TestApplyFilterNode_NilNode(t *testing.T) {
-	assert.NotPanics(t, func() {
-		_, _ = ApplyFilterNode[int, int](0, nil, testResolve, func(p Predicate) int { return 0 }, nil)
-	})
+	got, err := ApplyFilterNode[int, int](42, nil, testResolve, func(p Predicate) int { return 0 }, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 42, got)
 }
 
 func TestApplyFilterNode_BlockedFieldReturnsError(t *testing.T) {
