@@ -171,13 +171,15 @@ func (s *InMemoryPriceUnitStore) GetByCode(ctx context.Context, code string) (*p
 	// Create a filter to find by code
 	filter := &types.PriceUnitFilter{
 		QueryFilter: types.NewNoLimitQueryFilter(),
-		Filters: []*types.FilterCondition{
-			{
-				Field:    lo.ToPtr("code"),
-				Operator: lo.ToPtr(types.EQUAL),
-				DataType: lo.ToPtr(types.DataTypeString),
-				Value: &types.Value{
-					String: &code,
+		DSLFilter: &types.DSLFilter{
+			Filters: []*types.FilterCondition{
+				{
+					Field:    lo.ToPtr("code"),
+					Operator: lo.ToPtr(types.EQUAL),
+					DataType: lo.ToPtr(types.DataTypeString),
+					Value: &types.Value{
+						String: &code,
+					},
 				},
 			},
 		},

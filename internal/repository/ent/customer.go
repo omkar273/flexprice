@@ -518,10 +518,10 @@ func (o CustomerQueryOptions) applyEntityQueryOptions(_ context.Context, f *type
 	}
 
 	// Apply sorts using the generic function
-	if f.Sort != nil {
+	if f.DSLFilter != nil && f.DSLFilter.Sort != nil {
 		query, err = dsl.ApplySorts[CustomerQuery, customer.OrderOption](
 			query,
-			f.Sort,
+			f.DSLFilter.Sort,
 			o.GetFieldResolver,
 			func(o dsl.OrderFunc) customer.OrderOption { return customer.OrderOption(o) },
 		)

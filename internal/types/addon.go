@@ -43,9 +43,7 @@ type AddonFilter struct {
 	*QueryFilter
 	*TimeRangeFilter
 
-	// filters allows complex filtering based on multiple fields
-	Filters []*FilterCondition `json:"filters,omitempty" form:"filters" validate:"omitempty"`
-	Sort    []*SortCondition   `json:"sort,omitempty" form:"sort" validate:"omitempty"`
+	*DSLFilter
 
 	AddonIDs   []string  `json:"addon_ids,omitempty" form:"addon_ids" validate:"omitempty"`
 	AddonType  AddonType `json:"addon_type,omitempty" form:"addon_type" validate:"omitempty"`

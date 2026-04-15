@@ -496,10 +496,10 @@ func (o TaxRateQueryOptions) applyEntityQueryOptions(_ context.Context, f *types
 	}
 
 	// Apply sorts using the generic function
-	if f.Sort != nil {
+	if f.DSLFilter != nil && f.DSLFilter.Sort != nil {
 		query, err = dsl.ApplySorts[TaxRateQuery, taxrate.OrderOption](
 			query,
-			f.Sort,
+			f.DSLFilter.Sort,
 			o.GetFieldResolver,
 			func(o dsl.OrderFunc) taxrate.OrderOption { return taxrate.OrderOption(o) },
 		)

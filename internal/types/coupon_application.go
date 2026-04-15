@@ -7,9 +7,7 @@ import (
 // CouponApplicationFilter represents filters for coupon application queries
 type CouponApplicationFilter struct {
 	*QueryFilter
-
-	Filters []*FilterCondition `json:"filters,omitempty" form:"filters" validate:"omitempty"`
-	Sort    []*SortCondition   `json:"sort,omitempty" form:"sort" validate:"omitempty"`
+	*DSLFilter
 
 	// InvoiceIDs filters by invoice IDs (can be a single ID in array)
 	InvoiceIDs []string `json:"invoice_ids,omitempty" form:"invoice_ids"`

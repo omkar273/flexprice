@@ -429,10 +429,10 @@ func (o WorkflowExecutionQueryOptions) applyEntityQueryOptions(ctx context.Conte
 			return nil, err
 		}
 	}
-	if len(f.Sort) > 0 {
+	if f.DSLFilter != nil && len(f.DSLFilter.Sort) > 0 {
 		query, err = dsl.ApplySorts[WorkflowExecutionQuery, workflowexecution.OrderOption](
 			query,
-			f.Sort,
+			f.DSLFilter.Sort,
 			o.GetFieldResolver,
 			func(o dsl.OrderFunc) workflowexecution.OrderOption { return workflowexecution.OrderOption(o) },
 		)

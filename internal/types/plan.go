@@ -7,9 +7,7 @@ type PlanFilter struct {
 	*QueryFilter
 	*TimeRangeFilter
 
-	// filters allows complex filtering based on multiple fields
-	Filters   []*FilterCondition `json:"filters,omitempty" form:"filters" validate:"omitempty"`
-	Sort      []*SortCondition   `json:"sort,omitempty" form:"sort" validate:"omitempty"`
+	*DSLFilter
 	PlanIDs   []string           `json:"plan_ids,omitempty" form:"plan_ids" validate:"omitempty"`
 	LookupKey *string            `json:"lookup_key,omitempty" form:"lookup_key" validate:"omitempty"`
 }

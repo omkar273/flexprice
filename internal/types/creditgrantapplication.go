@@ -103,9 +103,7 @@ func (r CreditGrantApplicationReason) String() string {
 type CreditGrantApplicationFilter struct {
 	*QueryFilter
 	*TimeRangeFilter
-
-	Filters []*FilterCondition `json:"filters,omitempty" form:"filters" validate:"omitempty"`
-	Sort    []*SortCondition   `json:"sort,omitempty" form:"sort" validate:"omitempty"`
+	*DSLFilter
 
 	// filters allows complex filtering based on multiple fields
 	ApplicationIDs      []string            `json:"application_ids,omitempty" form:"application_ids" validate:"omitempty"`

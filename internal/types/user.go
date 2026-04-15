@@ -25,10 +25,7 @@ func (ut UserType) Validate() error {
 type UserFilter struct {
 	*QueryFilter
 	*TimeRangeFilter
-
-	// filters allows complex filtering based on multiple fields
-	Filters []*FilterCondition `json:"filters,omitempty" form:"filters" validate:"omitempty"`
-	Sort    []*SortCondition   `json:"sort,omitempty" form:"sort" validate:"omitempty"`
+	*DSLFilter
 
 	// Specific filters for users
 	UserIDs []string  `json:"user_ids,omitempty" form:"user_ids" validate:"omitempty"`

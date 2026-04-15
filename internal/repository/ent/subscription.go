@@ -672,10 +672,10 @@ func (o *SubscriptionQueryOptions) applyEntityQueryOptions(_ context.Context, f 
 	}
 
 	// Apply sorts using the generic function
-	if f.Sort != nil {
+	if f.DSLFilter != nil && f.DSLFilter.Sort != nil {
 		query, err = dsl.ApplySorts[SubscriptionQuery, subscription.OrderOption](
 			query,
-			f.Sort,
+			f.DSLFilter.Sort,
 			o.GetFieldResolver,
 			func(o dsl.OrderFunc) subscription.OrderOption { return subscription.OrderOption(o) },
 		)

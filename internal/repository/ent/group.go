@@ -370,11 +370,11 @@ func (o GroupQueryOptions) applyEntityQueryOptions(ctx context.Context, f *types
 	}
 
 	// Apply sorts using the generic DSL (sort by updated_at, created_at, etc.)
-	if f.Sort != nil {
+	if f.DSLFilter != nil && f.DSLFilter.Sort != nil {
 		var err error
 		query, err = dsl.ApplySorts[GroupQuery, group.OrderOption](
 			query,
-			f.Sort,
+			f.DSLFilter.Sort,
 			o.GetFieldResolver,
 			func(o dsl.OrderFunc) group.OrderOption { return group.OrderOption(o) },
 		)

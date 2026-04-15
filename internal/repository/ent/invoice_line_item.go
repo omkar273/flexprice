@@ -528,11 +528,11 @@ func (o *InvoiceLineItemQueryOptions) applyEntityQueryOptions(_ context.Context,
 	}
 
 	// DSL-based sorts
-	if len(f.Sort) > 0 {
+	if f.DSLFilter != nil && len(f.DSLFilter.Sort) > 0 {
 		var err error
 		query, err = dsl.ApplySorts[InvoiceLineItemQuery, invoicelineitem.OrderOption](
 			query,
-			f.Sort,
+			f.DSLFilter.Sort,
 			o.GetFieldResolver,
 			func(o dsl.OrderFunc) invoicelineitem.OrderOption { return invoicelineitem.OrderOption(o) },
 		)

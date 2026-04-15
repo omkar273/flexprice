@@ -7,9 +7,7 @@ type CostSheetFilter struct {
 	*QueryFilter
 	*TimeRangeFilter
 
-	// filters allows complex filtering based on multiple fields
-	Filters      []*FilterCondition `json:"filters,omitempty" form:"filters" validate:"omitempty"`
-	Sort         []*SortCondition   `json:"sort,omitempty" form:"sort" validate:"omitempty"`
+	*DSLFilter
 	CostSheetIDs []string           `json:"costsheet_ids,omitempty" form:"costsheet_ids" validate:"omitempty"`
 }
 

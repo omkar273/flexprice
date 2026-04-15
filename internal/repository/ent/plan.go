@@ -471,10 +471,10 @@ func (o PlanQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.Pl
 	}
 
 	// Apply sorts using the generic function
-	if f.Sort != nil {
+	if f.DSLFilter != nil && f.DSLFilter.Sort != nil {
 		query, err = dsl.ApplySorts[PlanQuery, plan.OrderOption](
 			query,
-			f.Sort,
+			f.DSLFilter.Sort,
 			o.GetFieldResolver,
 			func(o dsl.OrderFunc) plan.OrderOption { return plan.OrderOption(o) },
 		)
