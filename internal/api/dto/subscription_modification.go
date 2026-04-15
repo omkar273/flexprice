@@ -23,14 +23,10 @@ func (r *SubModifyInheritanceRequest) Validate() error {
 	return nil
 }
 
-// =============================================
-// Quantity change
-// =============================================
-
 // LineItemQuantityChange describes a quantity change for a single line item.
 type LineItemQuantityChange struct {
-	ID            string          `json:"id" binding:"required"`
-	Quantity      decimal.Decimal `json:"quantity" swaggertype:"string" binding:"required"`
+	ID       string          `json:"id" binding:"required"`
+	Quantity decimal.Decimal `json:"quantity" swaggertype:"string" binding:"required"`
 	// EffectiveDate is when the quantity change takes effect.
 	// If omitted, the change is effective immediately (now).
 	EffectiveDate *time.Time `json:"effective_date,omitempty"`
@@ -61,10 +57,6 @@ func (r *SubModifyQuantityChangeRequest) Validate() error {
 	}
 	return nil
 }
-
-// =============================================
-// Unified execute / preview request
-// =============================================
 
 // SubscriptionModifyType identifies the kind of modification.
 type SubscriptionModifyType string
@@ -104,28 +96,78 @@ func (r *ExecuteSubscriptionModifyRequest) Validate() error {
 	}
 }
 
+// ChangedLineItemAction describes how a subscription line item changed.
+// @Description created | updated | ended
+type ChangedLineItemAction string
+
+const (
+	ChangedLineItemActionCreated ChangedLineItemAction = "created"
+	ChangedLineItemActionUpdated ChangedLineItemAction = "updated"
+	ChangedLineItemActionEnded   ChangedLineItemAction = "ended"
+)
+
+// ChangedSubscriptionAction describes how a subscription row changed.
+// @Description created | updated
+type ChangedSubscriptionAction string
+
+const (
+	ChangedSubscriptionActionCreated ChangedSubscriptionAction = "created"
+	ChangedSubscriptionActionUpdated ChangedSubscriptionAction = "updated"
+)
+
+// ChangedInvoiceAction classifies invoice-side effects from a modification.
+// @Description created (proration invoice) | wallet_credit (downgrade credit)
+type ChangedInvoiceAction string
+
+const (
+	ChangedInvoiceActionCreated      ChangedInvoiceAction = "created"
+	ChangedInvoiceActionWalletCredit ChangedInvoiceAction = "wallet_credit"
+)
+
+// ChangedInvoiceStatus is the high-level status for ChangedInvoice.
+// Values "preview" and "issued" are used for preview payloads and completed wallet credits.
+// Proration invoice results use the same strings as types.PaymentStatus (e.g. SUCCEEDED, PENDING, FAILED).
+// @Description preview | issued | INITIATED | PENDING | PROCESSING | SUCCEEDED | OVERPAID | FAILED | REFUNDED | PARTIALLY_REFUNDED
+type ChangedInvoiceStatus string
+
+const (
+	ChangedInvoiceStatusPreview      ChangedInvoiceStatus = "preview"
+	ChangedInvoiceStatusWalletIssued ChangedInvoiceStatus = "issued"
+)
+
+// ChangedInvoiceStatusFromPaymentStatus maps a persisted invoice payment status for execute responses.
+func ChangedInvoiceStatusFromPaymentStatus(ps types.PaymentStatus) ChangedInvoiceStatus {
+	return ChangedInvoiceStatus(ps)
+}
+
 // ChangedLineItem describes a subscription line item that was created, updated, or ended.
 type ChangedLineItem struct {
-	ID           string          `json:"id"`
-	PriceID      string          `json:"price_id"`
-	Quantity     decimal.Decimal `json:"quantity" swaggertype:"string"`
-	StartDate    *time.Time      `json:"start_date,omitempty"`
-	EndDate      *time.Time      `json:"end_date,omitempty"`
-	ChangeAction string          `json:"change_action"` // "created" | "updated" | "ended"
+	ID           string                `json:"id"`
+	PriceID      string                `json:"price_id"`
+	Quantity     decimal.Decimal       `json:"quantity" swaggertype:"string"`
+	StartDate    *time.Time            `json:"start_date,omitempty"`
+	EndDate      *time.Time            `json:"end_date,omitempty"`
+	ChangeAction ChangedLineItemAction `json:"change_action" enums:"created,updated,ended"`
 }
 
 // ChangedSubscription describes a subscription that was created or updated.
 type ChangedSubscription struct {
-	ID     string                   `json:"id"`
-	Action string                   `json:"action"` // "created" | "updated"
-	Status types.SubscriptionStatus `json:"status"`
+	ID     string                    `json:"id"`
+	Action ChangedSubscriptionAction `json:"action"`
+	Status types.SubscriptionStatus  `json:"status"`
 }
 
-// ChangedInvoice describes a proration invoice that was created.
+// ChangedInvoice describes a proration invoice or wallet credit from a modification.
 type ChangedInvoice struct {
-	ID     string `json:"id"`
-	Action string `json:"action"` // "created" | "wallet_credit"
-	Status string `json:"status"`
+	ID string `json:"id"`
+	// Action is created for a proration charge invoice, wallet_credit for downgrade credit.
+	Action ChangedInvoiceAction `json:"action"`
+	// Status is preview (dry-run), issued (wallet credit applied), or a PaymentStatus string for real invoices.
+	Status ChangedInvoiceStatus `json:"status"`
+	// Invoice is set for proration charges: preview returns a synthetic invoice; execute returns the persisted invoice when created.
+	Invoice *InvoiceResponse `json:"invoice,omitempty"`
+	// WalletTransaction is set for downgrade wallet credits: preview is synthetic; execute returns the transaction from the top-up.
+	WalletTransaction *WalletTransactionResponse `json:"wallet_transaction,omitempty"`
 }
 
 // ChangedResources is the Orb-inspired envelope for all mutation side-effects.

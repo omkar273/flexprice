@@ -9,8 +9,10 @@ import (
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/customer"
+	"github.com/flexprice/flexprice/internal/domain/invoice"
 	"github.com/flexprice/flexprice/internal/domain/proration"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
+	"github.com/flexprice/flexprice/internal/domain/wallet"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/types"
 	webhookDto "github.com/flexprice/flexprice/internal/webhook/dto"
@@ -143,7 +145,7 @@ func (s *subscriptionModificationService) executeInheritance(
 			}
 			changedSubs = append(changedSubs, dto.ChangedSubscription{
 				ID:     sub.ID,
-				Action: "updated",
+				Action: dto.ChangedSubscriptionActionUpdated,
 				Status: sub.SubscriptionStatus,
 			})
 		}
@@ -156,7 +158,7 @@ func (s *subscriptionModificationService) executeInheritance(
 			}
 			changedSubs = append(changedSubs, dto.ChangedSubscription{
 				ID:     inheritedSub.ID,
-				Action: "created",
+				Action: dto.ChangedSubscriptionActionCreated,
 				Status: inheritedSub.SubscriptionStatus,
 			})
 		}
@@ -240,14 +242,14 @@ func (s *subscriptionModificationService) previewInheritance(
 	if sub.SubscriptionType == types.SubscriptionTypeStandalone {
 		changedSubs = append(changedSubs, dto.ChangedSubscription{
 			ID:     sub.ID,
-			Action: "updated",
+			Action: dto.ChangedSubscriptionActionUpdated,
 			Status: sub.SubscriptionStatus,
 		})
 	}
 	for range childCustomerIDs {
 		changedSubs = append(changedSubs, dto.ChangedSubscription{
 			ID:     "(preview-created)",
-			Action: "created",
+			Action: dto.ChangedSubscriptionActionCreated,
 			Status: types.SubscriptionStatusActive,
 		})
 	}
@@ -459,9 +461,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 				BaseModel:               types.GetDefaultBaseModel(txCtx),
 			}
 			if err := sp.SubscriptionLineItemRepo.Create(txCtx, newItem); err != nil {
-				return ierr.WithError(err).
-					WithHint("Failed to create new line item with updated quantity").
-					Mark(ierr.ErrDatabase)
+				return err
 			}
 
 			oldStart := lineItem.StartDate
@@ -479,7 +479,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					Quantity:     lineItem.Quantity,
 					StartDate:    &oldStart,
 					EndDate:      &endDate,
-					ChangeAction: "ended",
+					ChangeAction: dto.ChangedLineItemActionEnded,
 				},
 				dto.ChangedLineItem{
 					ID:           newItem.ID,
@@ -487,7 +487,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 					Quantity:     newItem.Quantity,
 					StartDate:    &startDate,
 					EndDate:      &newEndDate,
-					ChangeAction: "created",
+					ChangeAction: dto.ChangedLineItemActionCreated,
 				},
 			)
 
@@ -636,7 +636,7 @@ func (s *subscriptionModificationService) previewQuantityChange(
 				Quantity:     lineItem.Quantity,
 				StartDate:    &oldStart,
 				EndDate:      &endDate,
-				ChangeAction: "ended",
+				ChangeAction: dto.ChangedLineItemActionEnded,
 			},
 			dto.ChangedLineItem{
 				ID:           "(preview-created)",
@@ -644,7 +644,7 @@ func (s *subscriptionModificationService) previewQuantityChange(
 				Quantity:     change.Quantity,
 				StartDate:    &startDate,
 				EndDate:      &newEndDate,
-				ChangeAction: "created",
+				ChangeAction: dto.ChangedLineItemActionCreated,
 			},
 		)
 
@@ -736,6 +736,7 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		invoiceSvc := NewInvoiceService(sp)
 		periodEnd := sub.CurrentPeriodEnd
 		billingPeriod := string(sub.BillingPeriod)
+		billingCustomer := sub.GetInvoicingCustomerID()
 
 		// Build a descriptive line item for the delta charge.
 		qtyDelta := newItem.Quantity.Sub(oldItem.Quantity)
@@ -768,7 +769,7 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 		// than recomputing from the subscription's (now-updated) line items.
 		// SubscriptionID is set for reference/traceability only.
 		inv, err := invoiceSvc.CreateInvoice(ctx, dto.CreateInvoiceRequest{
-			CustomerID:     sub.CustomerID,
+			CustomerID:     billingCustomer,
 			SubscriptionID: &sub.ID,
 			InvoiceType:    types.InvoiceTypeOneOff,
 			Currency:       sub.Currency,
@@ -796,26 +797,170 @@ func (s *subscriptionModificationService) handleQuantityChangeProration(
 			latest = inv
 		}
 		return &dto.ChangedInvoice{
-			ID:     latest.ID,
-			Action: "created",
-			Status: string(latest.PaymentStatus),
+			ID:      latest.ID,
+			Action:  dto.ChangedInvoiceActionCreated,
+			Status:  dto.ChangedInvoiceStatusFromPaymentStatus(latest.PaymentStatus),
+			Invoice: latest,
 		}, nil
 	}
 
 	// Downgrade: wallet credit
 	walletSvc := NewWalletService(sp)
 	creditAmount := result.NetAmount.Abs()
+	billingCustomer := sub.GetInvoicingCustomerID()
 	// Stable idempotency key: prevents duplicate credits if this call is retried.
 	idempotencyKey := fmt.Sprintf("proration_credit_%s_%s_%s", sub.ID, oldItem.ID, effectiveDate.Format(time.RFC3339))
-	if err := walletSvc.TopUpWalletForProratedCharge(ctx, sub.CustomerID, creditAmount, sub.Currency, idempotencyKey); err != nil {
+	walletTx, err := walletSvc.TopUpWalletForProratedCharge(ctx, billingCustomer, creditAmount, sub.Currency, idempotencyKey)
+	if err != nil {
 		sp.Logger.Errorw("failed to top up wallet for downgrade proration", "error", err)
 		return nil, err
 	}
+	changedID := "(wallet_credit)"
+	if walletTx != nil && walletTx.Transaction != nil && walletTx.ID != "" {
+		changedID = walletTx.ID
+	}
 	return &dto.ChangedInvoice{
-		ID:     "(wallet_credit)",
-		Action: "wallet_credit",
-		Status: "issued",
+		ID:                changedID,
+		Action:            dto.ChangedInvoiceActionWalletCredit,
+		Status:            dto.ChangedInvoiceStatusWalletIssued,
+		WalletTransaction: walletTx,
 	}, nil
+}
+
+// previewProrationQuantityChangeInvoiceResponse builds a non-persisted invoice shaped like the execute-path delta invoice.
+func previewProrationQuantityChangeInvoiceResponse(
+	ctx context.Context,
+	sub *subscription.Subscription,
+	oldItem *subscription.SubscriptionLineItem,
+	newItem *subscription.SubscriptionLineItem,
+	effectiveDate time.Time,
+	priceResp *dto.PriceResponse,
+	netAmount decimal.Decimal,
+) *dto.InvoiceResponse {
+	billingCustomer := sub.GetInvoicingCustomerID()
+	periodEnd := sub.CurrentPeriodEnd
+	qtyDelta := newItem.Quantity.Sub(oldItem.Quantity)
+	displayName := fmt.Sprintf("%s — Quantity Change Proration (%s – %s)",
+		oldItem.PlanDisplayName,
+		effectiveDate.Format("2 Jan 2006"),
+		periodEnd.Format("2 Jan 2006"))
+	priceID := oldItem.PriceID
+	priceType := string(priceResp.Price.Type)
+	planDisplayName := oldItem.PlanDisplayName
+	lineItemDescription := fmt.Sprintf("Proration for quantity change: %s → %s units × %s %s/unit (%s – %s)",
+		oldItem.Quantity.String(), newItem.Quantity.String(),
+		strings.ToUpper(sub.Currency), priceResp.Price.Amount.String(),
+		effectiveDate.Format("2 Jan 2006"), periodEnd.Format("2 Jan 2006"))
+
+	subscriptionID := sub.ID
+	subscriptionCustomerID := sub.CustomerID
+	envID := types.GetEnvironmentID(ctx)
+	bm := types.GetDefaultBaseModel(ctx)
+
+	invLine := &invoice.InvoiceLineItem{
+		ID:                    "(preview-line)",
+		InvoiceID:             "(preview-invoice)",
+		CustomerID:            billingCustomer,
+		SubscriptionID:        &subscriptionID,
+		PlanDisplayName:       &planDisplayName,
+		PriceID:               &priceID,
+		PriceType:             &priceType,
+		DisplayName:           &displayName,
+		Amount:                netAmount,
+		Quantity:              qtyDelta,
+		Currency:              sub.Currency,
+		PeriodStart:           &effectiveDate,
+		PeriodEnd:             &periodEnd,
+		Metadata:              types.Metadata{"description": lineItemDescription},
+		EnvironmentID:         envID,
+		PrepaidCreditsApplied: decimal.Zero,
+		LineItemDiscount:      decimal.Zero,
+		InvoiceLevelDiscount:  decimal.Zero,
+		BaseModel:             bm,
+	}
+
+	inv := &invoice.Invoice{
+		ID:                         "(preview-invoice)",
+		CustomerID:                 billingCustomer,
+		SubscriptionID:             &subscriptionID,
+		SubscriptionCustomerID:     &subscriptionCustomerID,
+		InvoiceType:                types.InvoiceTypeOneOff,
+		InvoiceStatus:              types.InvoiceStatusDraft,
+		PaymentStatus:              types.PaymentStatusPending,
+		Currency:                   sub.Currency,
+		AmountDue:                  netAmount,
+		AmountPaid:                 decimal.Zero,
+		Subtotal:                   netAmount,
+		Total:                      netAmount,
+		TotalDiscount:              decimal.Zero,
+		AmountRemaining:            netAmount,
+		PeriodStart:                &effectiveDate,
+		PeriodEnd:                  &periodEnd,
+		BillingReason:              string(types.InvoiceBillingReasonSubscriptionUpdate),
+		LineItems:                  []*invoice.InvoiceLineItem{invLine},
+		Version:                    1,
+		EnvironmentID:              envID,
+		AdjustmentAmount:           decimal.Zero,
+		RefundedAmount:             decimal.Zero,
+		TotalTax:                   decimal.Zero,
+		TotalPrepaidCreditsApplied: decimal.Zero,
+		BaseModel:                  bm,
+	}
+	return dto.NewInvoiceResponse(inv)
+}
+
+func (s *subscriptionModificationService) previewProrationWalletTransactionResponse(
+	ctx context.Context,
+	sub *subscription.Subscription,
+	currencyTopUpAmount decimal.Decimal,
+) (*dto.WalletTransactionResponse, error) {
+	billingCustomer := sub.GetInvoicingCustomerID()
+	currency := sub.Currency
+
+	topupRate := decimal.NewFromInt(1)
+	walletSvc := NewWalletService(s.serviceParams)
+	if billingCustomer != "" {
+		existingWallets, err := walletSvc.GetWalletsByCustomerID(ctx, billingCustomer)
+		if err != nil {
+			return nil, err
+		}
+		var selected *dto.WalletResponse
+		for _, w := range existingWallets {
+			if w.WalletStatus == types.WalletStatusActive &&
+				types.IsMatchingCurrency(w.Currency, currency) &&
+				w.WalletType == types.WalletTypePrePaid {
+				selected = w
+				break
+			}
+		}
+		if selected != nil && !selected.TopupConversionRate.IsZero() && selected.TopupConversionRate.GreaterThan(decimal.Zero) {
+			topupRate = selected.TopupConversionRate
+		}
+	}
+
+	creditAmount := walletSvc.GetCreditsFromCurrencyAmount(currencyTopUpAmount, topupRate)
+
+	envID := types.GetEnvironmentID(ctx)
+	bm := types.GetDefaultBaseModel(ctx)
+	tx := &wallet.Transaction{
+		ID:                  "(preview-wallet-credit)",
+		CustomerID:          billingCustomer,
+		Type:                types.TransactionTypeCredit,
+		Amount:              currencyTopUpAmount,
+		CreditAmount:        creditAmount,
+		CreditBalanceBefore: decimal.Zero,
+		CreditBalanceAfter:  creditAmount,
+		TxStatus:            types.TransactionStatusCompleted,
+		ReferenceType:       types.WalletTxReferenceTypeExternal,
+		ReferenceID:         "preview",
+		Description:         "Proration credit from subscription change (preview)",
+		TransactionReason:   types.TransactionReasonSubscriptionCredit,
+		Currency:            sub.Currency,
+		EnvironmentID:       envID,
+		BaseModel:           bm,
+		TopupConversionRate: lo.ToPtr(topupRate),
+	}
+	return dto.FromWalletTransaction(tx), nil
 }
 
 // previewQuantityChangeProration calculates what proration would occur without creating any
@@ -872,17 +1017,23 @@ func (s *subscriptionModificationService) previewQuantityChangeProration(
 
 	// Return a preview-only ChangedInvoice — no invoice is created, no payment attempted.
 	if result.NetAmount.GreaterThan(decimal.Zero) {
+		invResp := previewProrationQuantityChangeInvoiceResponse(ctx, sub, oldItem, newItem, effectiveDate, price, result.NetAmount)
 		return &dto.ChangedInvoice{
-			ID:     "(preview-invoice)",
-			Action: "created",
-			Status: "preview",
+			ID:      "(preview-invoice)",
+			Action:  dto.ChangedInvoiceActionCreated,
+			Status:  dto.ChangedInvoiceStatusPreview,
+			Invoice: invResp,
 		}, nil
 	}
-	// Downgrade preview
+	walletTx, err := s.previewProrationWalletTransactionResponse(ctx, sub, result.NetAmount.Abs())
+	if err != nil {
+		return nil, err
+	}
 	return &dto.ChangedInvoice{
-		ID:     "(preview-wallet-credit)",
-		Action: "wallet_credit",
-		Status: "preview",
+		ID:                "(preview-wallet-credit)",
+		Action:            dto.ChangedInvoiceActionWalletCredit,
+		Status:            dto.ChangedInvoiceStatusPreview,
+		WalletTransaction: walletTx,
 	}, nil
 }
 
