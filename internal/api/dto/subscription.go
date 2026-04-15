@@ -383,8 +383,11 @@ type CreateSubscriptionRequest struct {
 	// If not set, the default value is UTC.
 	CustomerTimezone string `json:"customer_timezone" validate:"omitempty,timezone"`
 
-	//Billing Anchor
-	BillingAnchor *time.Time `json:"-"`
+	// BillingAnchor overrides the derived billing anchor when billing_cycle is anniversary.
+	// For monthly billing, the day-of-month (and time-of-day) define cycle boundaries: if start_date
+	// is before that day in the month, the first billing period ends on the next occurrence of that
+	// day in the same month (a shorter first period); subsequent periods follow the usual interval.
+	BillingAnchor *time.Time `json:"billing_anchor,omitempty"`
 
 	// Workflow
 	Workflow *types.TemporalWorkflowType `json:"-"`
@@ -587,6 +590,12 @@ type SubscriptionResponseV2 struct {
 }
 
 func (r *CreateSubscriptionRequest) Validate() error {
+
+	err := validator.ValidateRequest(r)
+	if err != nil {
+		return err
+	}
+
 	// Case- Both are absent
 	if r.CustomerID == "" && r.ExternalCustomerID == "" {
 		return ierr.NewError("either customer_id or external_customer_id is required").
@@ -598,11 +607,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 		if err := r.Inheritance.Validate(); err != nil {
 			return err
 		}
-	}
-
-	err := validator.ValidateRequest(r)
-	if err != nil {
-		return err
 	}
 
 	// Validate currency
@@ -623,6 +627,27 @@ func (r *CreateSubscriptionRequest) Validate() error {
 
 	if err := r.BillingCycle.Validate(); err != nil {
 		return err
+	}
+	if r.BillingAnchor != nil && r.BillingCycle != types.BillingCycleAnniversary {
+		return ierr.NewError("invalid billing_anchor for billing_cycle").
+			WithHint("billing_anchor can only be passed when billing_cycle is anniversary").
+			WithReportableDetails(map[string]any{
+				"billing_cycle":  r.BillingCycle,
+				"billing_anchor": r.BillingAnchor,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	if r.BillingAnchor != nil {
+		if r.BillingAnchor.Before(lo.FromPtr(r.StartDate)) {
+			return ierr.NewError("billing_anchor cannot be before start_date").
+				WithHint("billing_anchor must be on or after start_date").
+				WithReportableDetails(map[string]any{
+					"billing_anchor": r.BillingAnchor,
+					"start_date":     r.StartDate,
+				}).
+				Mark(ierr.ErrValidation)
+		}
 	}
 
 	// Handle legacy collection method conversion and validation
@@ -1083,6 +1108,9 @@ func (r *CreateSubscriptionRequest) ToSubscription(ctx context.Context) *subscri
 			billingAnchor = startDate
 		}
 		endDate = r.EndDate
+	}
+	if r.BillingAnchor != nil {
+		billingAnchor = *r.BillingAnchor
 	}
 
 	subscriptionType := r.SubscriptionType
