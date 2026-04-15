@@ -91,6 +91,10 @@ func (f EntityIntegrationMappingFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	// Validate entity type if provided
 	if f.EntityType != "" {
 		if err := f.EntityType.Validate(); err != nil {

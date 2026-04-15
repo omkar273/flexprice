@@ -71,6 +71,10 @@ func (f *AddonAssociationFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	for _, addonID := range f.AddonIDs {
 		if addonID == "" {
 			return ierr.NewError("addon id can not be empty").

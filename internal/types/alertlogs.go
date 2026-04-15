@@ -112,6 +112,10 @@ func (f *AlertLogFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	if f.AlertType != "" {
 		if err := f.AlertType.Validate(); err != nil {
 			return err

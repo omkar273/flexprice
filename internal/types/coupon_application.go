@@ -43,7 +43,15 @@ func (f *CouponApplicationFilter) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 
-	return f.QueryFilter.Validate()
+	if err := f.QueryFilter.Validate(); err != nil {
+		return err
+	}
+
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // WithExpand sets the expand on the filter

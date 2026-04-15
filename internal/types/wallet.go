@@ -200,6 +200,10 @@ func (f WalletTransactionFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	if f.ExpiryDateBefore != nil && f.ExpiryDateAfter != nil {
 		if f.ExpiryDateBefore.Before(*f.ExpiryDateAfter) {
 			return ierr.NewError("expiry_date_before must be after expiry_date_after").

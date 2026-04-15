@@ -47,6 +47,10 @@ func (f CustomerFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	if f.Email != "" && !IsValidEmail(f.Email) {
 		return ierr.NewError("invalid email").
 			WithHint("Please provide a valid email").

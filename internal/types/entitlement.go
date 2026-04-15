@@ -117,6 +117,10 @@ func (f EntitlementFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

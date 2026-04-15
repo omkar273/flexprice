@@ -32,3 +32,23 @@ type UserFilter struct {
 	Type    *UserType `json:"type,omitempty" form:"type" validate:"omitempty,oneof=user service_account"`
 	Roles   []string  `json:"roles,omitempty" form:"roles" validate:"omitempty"`
 }
+
+func (f *UserFilter) Validate() error {
+	if f.QueryFilter != nil {
+		if err := f.QueryFilter.Validate(); err != nil {
+			return err
+		}
+	}
+
+	if f.TimeRangeFilter != nil {
+		if err := f.TimeRangeFilter.Validate(); err != nil {
+			return err
+		}
+	}
+
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}

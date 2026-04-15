@@ -80,6 +80,10 @@ func (f *InvoiceLineItemFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	if f.PeriodStart != nil && f.PeriodEnd != nil {
 		if f.PeriodStart.After(*f.PeriodEnd) {
 			return ierr.NewError("period_start must be before period_end").Mark(ierr.ErrValidation)

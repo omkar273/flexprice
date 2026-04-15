@@ -473,6 +473,10 @@ func (f ConnectionFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	if f.ProviderType != "" {
 		if err := f.ProviderType.Validate(); err != nil {
 			return err

@@ -40,6 +40,10 @@ func (f *PriceUnitFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	for _, priceUnitID := range f.PriceUnitIDs {
 		if priceUnitID == "" {
 			return ierr.NewError("price unit ID cannot be empty").

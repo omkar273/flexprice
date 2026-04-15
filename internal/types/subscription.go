@@ -354,6 +354,10 @@ func (f SubscriptionFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	// Validate subscription status values
 	for _, status := range f.SubscriptionStatus {
 		if err := status.Validate(); err != nil {

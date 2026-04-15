@@ -436,6 +436,10 @@ func (f PriceFilter) Validate() error {
 		}
 	}
 
+	if err := f.DSLFilter.Validate(); err != nil {
+		return err
+	}
+
 	for _, priceID := range f.PriceIDs {
 		if priceID == "" {
 			return ierr.NewError("price id can not be empty").
