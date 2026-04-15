@@ -1741,7 +1741,6 @@ func (s *subscriptionService) UpdateSubscription(ctx context.Context, subscripti
 	return s.GetSubscription(ctx, subscriptionID)
 }
 
-
 // CancelSubscription provides enhanced cancellation with proration support
 func (s *subscriptionService) CancelSubscription(
 	ctx context.Context,
@@ -1938,7 +1937,7 @@ func (s *subscriptionService) CancelSubscription(
 		if totalCreditAmount.GreaterThan(decimal.Zero) {
 			walletService := NewWalletService(s.ServiceParams)
 			cancelKey := s.buildCancellationProrationKey(subscription, req, effectiveDate)
-			err = walletService.TopUpWalletForProratedCharge(ctx, subscription.CustomerID, totalCreditAmount.Abs(), subscription.Currency, cancelKey)
+			_, err = walletService.TopUpWalletForProratedCharge(ctx, subscription.GetInvoicingCustomerID(), totalCreditAmount.Abs(), subscription.Currency, cancelKey)
 			if err != nil {
 				return err
 			}

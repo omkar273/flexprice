@@ -233,10 +233,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 		name               string
 		oldQty             decimal.Decimal
 		newQty             decimal.Decimal
-		effectiveDayOffset int    // days after periodStart; -1 = special sentinel (periodEnd - 1s)
-		wantLineItems      int    // expected len(ChangedResources.LineItems)
-		wantInvoiceAction  string // "created", "wallet_credit", or "" (no invoice)
-		wantNoOp           bool   // old line item EndDate must remain zero
+		effectiveDayOffset int                      // days after periodStart; -1 = special sentinel (periodEnd - 1s)
+		wantLineItems      int                      // expected len(ChangedResources.LineItems)
+		wantInvoiceAction  dto.ChangedInvoiceAction // "created", "wallet_credit", or "" (no invoice)
+		wantNoOp           bool                     // old line item EndDate must remain zero
 	}
 	cases := []tc{
 		{
@@ -245,7 +245,7 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			newQty:             decimal.NewFromInt(3),
 			effectiveDayOffset: 15,
 			wantLineItems:      2,
-			wantInvoiceAction:  "created",
+			wantInvoiceAction:  dto.ChangedInvoiceActionCreated,
 		},
 		{
 			name:               "downgrade_midperiod",
@@ -253,7 +253,7 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			newQty:             decimal.NewFromInt(1),
 			effectiveDayOffset: 15,
 			wantLineItems:      2,
-			wantInvoiceAction:  "wallet_credit",
+			wantInvoiceAction:  dto.ChangedInvoiceActionWalletCredit,
 		},
 		{
 			name:               "upgrade_at_period_start",
@@ -261,7 +261,7 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			newQty:             decimal.NewFromInt(3),
 			effectiveDayOffset: 0,
 			wantLineItems:      2,
-			wantInvoiceAction:  "created",
+			wantInvoiceAction:  dto.ChangedInvoiceActionCreated,
 		},
 		{
 			name:               "upgrade_near_period_end",
@@ -335,9 +335,9 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 			s.Require().Len(resp.ChangedResources.Invoices, 1)
 			inv := resp.ChangedResources.Invoices[0]
 			s.Equal(tc.wantInvoiceAction, inv.Action)
-			s.NotEqual("failed", inv.Status)
+			s.NotEqual(dto.ChangedInvoiceStatusFromPaymentStatus(types.PaymentStatusFailed), inv.Status)
 
-			if tc.wantInvoiceAction == "created" {
+			if tc.wantInvoiceAction == dto.ChangedInvoiceActionCreated {
 				// Fetch real invoice and verify amount is positive and approximately correct
 				realInv, fetchErr := s.GetStores().InvoiceRepo.Get(ctx, inv.ID)
 				s.Require().NoError(fetchErr)
@@ -359,10 +359,12 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Advance
 				s.True(diff.LessThanOrEqual(tolerance),
 					"invoice amount %s should be ≈ %s (diff=%s)",
 					realInv.AmountDue.String(), expectedAmt.String(), diff.String())
+				s.Require().NotNil(inv.Invoice, "execute upgrade should include full invoice in changed_resources")
 			}
 
-			if tc.wantInvoiceAction == "wallet_credit" {
-				s.Equal("issued", inv.Status)
+			if tc.wantInvoiceAction == dto.ChangedInvoiceActionWalletCredit {
+				s.Equal(dto.ChangedInvoiceStatusWalletIssued, inv.Status)
+				s.Require().NotNil(inv.WalletTransaction, "execute downgrade should include wallet transaction")
 				wallets, err := s.GetStores().WalletRepo.GetWalletsByCustomerID(ctx, cust.ID)
 				s.Require().NoError(err)
 				s.Require().NotEmpty(wallets, "a PRE_PAID wallet must exist after downgrade credit")
@@ -431,7 +433,7 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Arrear(
 				// Verify the new line item exists with updated quantity
 				var newLIID string
 				for _, cli := range resp.ChangedResources.LineItems {
-					if cli.ChangeAction == "created" {
+					if cli.ChangeAction == dto.ChangedLineItemActionCreated {
 						newLIID = cli.ID
 					}
 				}
@@ -558,10 +560,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteInheritance_Success() 
 
 	actions := make(map[string]int)
 	for _, cs := range resp.ChangedResources.Subscriptions {
-		actions[cs.Action]++
+		actions[string(cs.Action)]++
 	}
-	s.Equal(1, actions["updated"], "expected one 'updated' entry")
-	s.Equal(1, actions["created"], "expected one 'created' entry")
+	s.Equal(1, actions[string(dto.ChangedSubscriptionActionUpdated)], "expected one 'updated' entry")
+	s.Equal(1, actions[string(dto.ChangedSubscriptionActionCreated)], "expected one 'created' entry")
 
 	// The parent subscription type should now be "parent"
 	updatedSub, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
@@ -666,10 +668,10 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Version
 
 	actions := make(map[string]int)
 	for _, cli := range resp.ChangedResources.LineItems {
-		actions[cli.ChangeAction]++
+		actions[string(cli.ChangeAction)]++
 	}
-	s.Equal(1, actions["ended"], "expected one 'ended' entry")
-	s.Equal(1, actions["created"], "expected one 'created' entry")
+	s.Equal(1, actions[string(dto.ChangedLineItemActionEnded)], "expected one 'ended' entry")
+	s.Equal(1, actions[string(dto.ChangedLineItemActionCreated)], "expected one 'created' entry")
 
 	// Verify old line item has EndDate set in the store
 	oldLI, err := s.GetStores().SubscriptionLineItemRepo.Get(ctx, li.ID)
@@ -679,7 +681,7 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_Version
 	// Verify new line item exists with updated quantity
 	var newLIID string
 	for _, cli := range resp.ChangedResources.LineItems {
-		if cli.ChangeAction == "created" {
+		if cli.ChangeAction == dto.ChangedLineItemActionCreated {
 			newLIID = cli.ID
 		}
 	}
@@ -904,8 +906,9 @@ func (s *SubscriptionModificationServiceSuite) TestExecuteQuantityChange_MultiLi
 	s.Len(resp.ChangedResources.LineItems, 4)
 
 	s.Require().Len(resp.ChangedResources.Invoices, 1)
-	s.Equal("created", resp.ChangedResources.Invoices[0].Action)
-	s.NotEqual("failed", resp.ChangedResources.Invoices[0].Status)
+	s.Equal(dto.ChangedInvoiceActionCreated, resp.ChangedResources.Invoices[0].Action)
+	s.NotEqual(dto.ChangedInvoiceStatusFromPaymentStatus(types.PaymentStatusFailed), resp.ChangedResources.Invoices[0].Status)
+	s.Require().NotNil(resp.ChangedResources.Invoices[0].Invoice)
 }
 
 // TestExecuteQuantityChange_MultiLineItem_AtomicRollback verifies that a batch aborts
@@ -1046,8 +1049,19 @@ func (s *SubscriptionModificationServiceSuite) TestPreviewQuantityChange() {
 					"expected no invoice entry in response (tc=%s)", tc.name)
 			} else {
 				s.Require().Len(resp.ChangedResources.Invoices, 1)
-				s.Equal(tc.wantInvoiceID, resp.ChangedResources.Invoices[0].ID)
-				s.Equal(tc.wantInvoiceStatus, resp.ChangedResources.Invoices[0].Status)
+				inv := resp.ChangedResources.Invoices[0]
+				s.Equal(tc.wantInvoiceID, inv.ID)
+				s.Equal(dto.ChangedInvoiceStatus(tc.wantInvoiceStatus), inv.Status)
+				switch tc.wantInvoiceID {
+				case "(preview-invoice)":
+					s.Require().NotNil(inv.Invoice, "preview upgrade should include synthetic invoice")
+					s.Require().NotNil(inv.Invoice.SubscriptionID)
+					s.Equal(sub.ID, *inv.Invoice.SubscriptionID)
+					s.Equal(cust.ID, inv.Invoice.CustomerID)
+				case "(preview-wallet-credit)":
+					s.Require().NotNil(inv.WalletTransaction, "preview downgrade should include synthetic wallet tx")
+					s.Equal(cust.ID, inv.WalletTransaction.CustomerID)
+				}
 			}
 		})
 	}
@@ -1134,8 +1148,9 @@ func (s *SubscriptionModificationServiceSuite) TestProrationMath_Upgrade() {
 			s.Require().Len(resp.ChangedResources.Invoices, 1)
 
 			inv := resp.ChangedResources.Invoices[0]
-			s.Equal("created", inv.Action)
-			s.NotEqual("failed", inv.Status)
+			s.Equal(dto.ChangedInvoiceActionCreated, inv.Action)
+			s.NotEqual(dto.ChangedInvoiceStatusFromPaymentStatus(types.PaymentStatusFailed), inv.Status)
+			s.Require().NotNil(inv.Invoice)
 
 			realInv, fetchErr := s.GetStores().InvoiceRepo.Get(ctx, inv.ID)
 			s.Require().NoError(fetchErr)
