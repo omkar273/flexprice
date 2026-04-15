@@ -88,21 +88,31 @@ func Lte(field string, value float64) *types.FilterNode {
 
 // In creates an "in array" leaf node.
 func In(field string, values []string) *types.FilterNode {
+	if len(values) == 0 {
+		panic("dsl.In: values must be non-empty")
+	}
+	cp := make([]string, len(values))
+	copy(cp, values)
 	return Leaf(&types.FilterCondition{
 		Field:    lo.ToPtr(field),
 		Operator: lo.ToPtr(types.IN),
 		DataType: lo.ToPtr(types.DataTypeArray),
-		Value:    &types.Value{Array: values},
+		Value:    &types.Value{Array: cp},
 	})
 }
 
 // NotIn creates a "not in array" leaf node.
 func NotIn(field string, values []string) *types.FilterNode {
+	if len(values) == 0 {
+		panic("dsl.NotIn: values must be non-empty")
+	}
+	cp := make([]string, len(values))
+	copy(cp, values)
 	return Leaf(&types.FilterCondition{
 		Field:    lo.ToPtr(field),
 		Operator: lo.ToPtr(types.NOT_IN),
 		DataType: lo.ToPtr(types.DataTypeArray),
-		Value:    &types.Value{Array: values},
+		Value:    &types.Value{Array: cp},
 	})
 }
 
