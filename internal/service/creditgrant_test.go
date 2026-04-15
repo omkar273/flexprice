@@ -1125,8 +1125,14 @@ func (s *CreditGrantServiceTestSuite) TestMultiplePeriodCountDates() {
 
 // Test Case 17: Test period dates alignment with credit grant creation date
 func (s *CreditGrantServiceTestSuite) TestPeriodDatesAlignmentWithGrantCreationDate() {
-	// Set a specific creation time for deterministic testing
-	specificTime := time.Date(2024, 1, 15, 10, 30, 0, 0, time.UTC) // Jan 15, 2024, 10:30 AM
+	// Anchor to the most recent 15th 10:30 UTC that is not in the future. Recurring grant
+	// catch-up applies every past-due period until the next ScheduledFor is after now; a fixed
+	// 2024 date would create one application per month from 2024 through the test run year.
+	now := time.Now().UTC()
+	specificTime := time.Date(now.Year(), now.Month(), 15, 10, 30, 0, 0, time.UTC)
+	if now.Before(specificTime) {
+		specificTime = specificTime.AddDate(0, -1, 0)
+	}
 
 	// Create a new subscription starting at specific time
 	testSubscription := &subscription.Subscription{
@@ -1135,7 +1141,7 @@ func (s *CreditGrantServiceTestSuite) TestPeriodDatesAlignmentWithGrantCreationD
 		CustomerID:         s.testData.customer.ID,
 		StartDate:          specificTime,
 		CurrentPeriodStart: specificTime,
-		CurrentPeriodEnd:   specificTime.Add(30 * 24 * time.Hour),
+		CurrentPeriodEnd:   specificTime.AddDate(0, 1, 0),
 		Currency:           "usd",
 		BillingPeriod:      types.BILLING_PERIOD_MONTHLY,
 		BillingPeriodCount: 1,
