@@ -8,7 +8,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/config"
+	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/integration"
 	chargebeewebhook "github.com/flexprice/flexprice/internal/integration/chargebee/webhook"
 	moyasarwebhook "github.com/flexprice/flexprice/internal/integration/moyasar/webhook"
@@ -23,6 +25,7 @@ import (
 	"github.com/flexprice/flexprice/internal/postgres"
 	"github.com/flexprice/flexprice/internal/svix"
 	"github.com/flexprice/flexprice/internal/types"
+	flexwebhook "github.com/flexprice/flexprice/internal/webhook"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,6 +42,7 @@ type WebhookHandler struct {
 	subscriptionService             interfaces.SubscriptionService
 	entityIntegrationMappingService interfaces.EntityIntegrationMappingService
 	db                              postgres.IClient
+	webhookService                  *flexwebhook.WebhookService
 }
 
 // NewWebhookHandler creates a new webhook handler
@@ -54,6 +58,7 @@ func NewWebhookHandler(
 	subscriptionService interfaces.SubscriptionService,
 	entityIntegrationMappingService interfaces.EntityIntegrationMappingService,
 	db postgres.IClient,
+	webhookService *flexwebhook.WebhookService,
 ) *WebhookHandler {
 	return &WebhookHandler{
 		config:                          cfg,
@@ -67,6 +72,7 @@ func NewWebhookHandler(
 		subscriptionService:             subscriptionService,
 		entityIntegrationMappingService: entityIntegrationMappingService,
 		db:                              db,
+		webhookService:                  webhookService,
 	}
 }
 
@@ -111,6 +117,43 @@ func (h *WebhookHandler) GetDashboardURL(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"url":          url,
 		"svix_enabled": true,
+	})
+}
+
+// @Summary Retry outbound webhook for a system event
+// @ID retryOutboundWebhook
+// @Description Loads the persisted system_events row by id and synchronously sends the webhook (Svix or native HTTP) using the stored payload. On success, updates webhook_message_id and published_at for that row.
+// @Tags Webhooks
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @x-scope "write"
+// @Param request body dto.RetryOutboundWebhookRequest true "System event id (system_events.id)"
+// @Success 202 {object} dto.RetryOutboundWebhookResponse
+// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
+// @Failure 404 {object} ierr.ErrorResponse "System event not found"
+// @Failure 500 {object} ierr.ErrorResponse "Server error"
+// @Router /webhooks/retry [post]
+func (h *WebhookHandler) RetryOutboundWebhook(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req dto.RetryOutboundWebhookRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(ierr.WithError(err).
+			WithHint("Provide a JSON body with id (system_events.id).").
+			Mark(ierr.ErrValidation))
+		return
+	}
+
+	err := h.webhookService.RetriggerSystemEvent(ctx, types.GetTenantID(ctx), types.GetEnvironmentID(ctx), req.ID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, dto.RetryOutboundWebhookResponse{
+		Success: true,
+		Message: "Webhook delivery completed for the system event",
+		ID:      req.ID,
 	})
 }
 
