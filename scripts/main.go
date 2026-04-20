@@ -66,7 +66,7 @@ var commands = []Command{
 	{
 		Name:        "reprocess-events",
 		Description: "Reprocess events",
-		Run:         internal.ReprocessEventsFromEnv,
+		Run:         internal.ReprocessFeatureUsageTrackingFromEnv,
 	},
 	{
 		Name:        "assign-plan",

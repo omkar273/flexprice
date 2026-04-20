@@ -6,6 +6,7 @@ import (
 	"time"
 
 	flexent "github.com/flexprice/flexprice/ent"
+	"github.com/flexprice/flexprice/ent/systemevent"
 	"github.com/flexprice/flexprice/internal/postgres"
 	"github.com/flexprice/flexprice/internal/types"
 )
@@ -17,6 +18,17 @@ type SystemEventRepository struct {
 
 func NewSystemEventRepository(client postgres.IClient) *SystemEventRepository {
 	return &SystemEventRepository{client: client}
+}
+
+// GetByID returns a system_events row only when id matches tenant and environment.
+func (r *SystemEventRepository) GetByID(ctx context.Context, tenantID, environmentID, id string) (*flexent.SystemEvent, error) {
+	return r.client.Reader(ctx).SystemEvent.Query().
+		Where(
+			systemevent.IDEQ(id),
+			systemevent.TenantIDEQ(tenantID),
+			systemevent.EnvironmentIDEQ(environmentID),
+		).
+		Only(ctx)
 }
 
 // OnConsumed creates a full system_events row when the consumer reads the Kafka message.

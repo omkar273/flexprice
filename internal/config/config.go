@@ -410,7 +410,6 @@ func NewConfig() (*Configuration, error) {
 	// Step 1: Load `.env` then `.env.local` if they exist.
 	// .env.local takes precedence (loaded second so it overrides .env values).
 	_ = godotenv.Load()
-	_ = godotenv.Overload(".env.local")
 
 	// Step 2: Initialize Viper
 	v.SetConfigName("config")
