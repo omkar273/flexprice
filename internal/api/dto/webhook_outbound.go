@@ -2,7 +2,7 @@ package dto
 
 // RetryOutboundWebhookRequest is the body for POST /v1/webhooks/retry.
 type RetryOutboundWebhookRequest struct {
-	ID string `json:"id" binding:"required" example:"sev_abc123"`
+	SystemEventID string `json:"system_event_id" binding:"required" example:"sev_abc123"`
 }
 
 // RetryOutboundWebhookResponse is returned when outbound webhook delivery completes (HTTP 202).

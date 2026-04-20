@@ -144,7 +144,7 @@ func (h *WebhookHandler) RetryOutboundWebhook(c *gin.Context) {
 		return
 	}
 
-	err := h.webhookService.RetriggerSystemEvent(ctx, types.GetTenantID(ctx), types.GetEnvironmentID(ctx), req.ID)
+	err := h.webhookService.RetriggerSystemEvent(ctx, types.GetTenantID(ctx), types.GetEnvironmentID(ctx), req.SystemEventID)
 	if err != nil {
 		c.Error(err)
 		return
@@ -153,7 +153,7 @@ func (h *WebhookHandler) RetryOutboundWebhook(c *gin.Context) {
 	c.JSON(http.StatusAccepted, dto.RetryOutboundWebhookResponse{
 		Success: true,
 		Message: "Webhook delivery completed for the system event",
-		ID:      req.ID,
+		ID:      req.SystemEventID,
 	})
 }
 
