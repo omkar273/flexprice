@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	flexent "github.com/flexprice/flexprice/ent"
@@ -11,6 +12,7 @@ import (
 	"github.com/flexprice/flexprice/internal/logger"
 	pubsubRouter "github.com/flexprice/flexprice/internal/pubsub/router"
 	repoent "github.com/flexprice/flexprice/internal/repository/ent"
+	"github.com/flexprice/flexprice/internal/types"
 	"github.com/flexprice/flexprice/internal/webhook/handler"
 	"github.com/flexprice/flexprice/internal/webhook/payload"
 	"github.com/flexprice/flexprice/internal/webhook/publisher"
@@ -18,13 +20,13 @@ import (
 
 // WebhookService orchestrates webhook operations
 type WebhookService struct {
-	config            *config.Configuration
-	publisher         publisher.WebhookPublisher
-	handler           handler.Handler
-	factory           payload.PayloadBuilderFactory
-	client            httpclient.Client
-	logger            *logger.Logger
-	systemEventRepo   *repoent.SystemEventRepository
+	config          *config.Configuration
+	publisher       publisher.WebhookPublisher
+	handler         handler.Handler
+	factory         payload.PayloadBuilderFactory
+	client          httpclient.Client
+	logger          *logger.Logger
+	systemEventRepo *repoent.SystemEventRepository
 }
 
 // NewWebhookService creates a new webhook service
@@ -104,4 +106,35 @@ func (s *WebhookService) Stop() error {
 
 	s.logger.Info("webhook service stopped successfully")
 	return nil
+}
+
+// SystemEventToWebhookEvent maps a persisted system_events row to the payload used by webhook delivery.
+func SystemEventToWebhookEvent(se *flexent.SystemEvent) (*types.WebhookEvent, error) {
+	if se == nil {
+		return nil, ierr.NewError("system event is nil").
+			Mark(ierr.ErrValidation)
+	}
+
+	var payload json.RawMessage
+	if se.Payload != nil {
+		b, err := json.Marshal(se.Payload)
+		if err != nil {
+			return nil, ierr.WithError(err).
+				WithHint("Stored system event payload could not be serialized").
+				Mark(ierr.ErrInternal)
+		}
+		payload = b
+	}
+
+	return &types.WebhookEvent{
+		ID:            se.ID,
+		EventName:     se.EventName,
+		TenantID:      se.TenantID,
+		EnvironmentID: se.EnvironmentID,
+		UserID:        se.CreatedBy,
+		Timestamp:     se.CreatedAt.UTC(),
+		Payload:       payload,
+		EntityType:    types.SystemEntityType(se.EntityType),
+		EntityID:      se.EntityID,
+	}, nil
 }

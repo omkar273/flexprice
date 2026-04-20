@@ -120,40 +120,26 @@ func (h *WebhookHandler) GetDashboardURL(c *gin.Context) {
 	})
 }
 
-// @Summary Retry outbound webhook for a system event
-// @ID retryOutboundWebhook
-// @Description Loads the persisted system_events row by id and synchronously sends the webhook (Svix or native HTTP) using the stored payload. On success, updates webhook_message_id and published_at for that row.
-// @Tags Webhooks
-// @Accept json
-// @Produce json
-// @Security ApiKeyAuth
-// @x-scope "write"
-// @Param request body dto.RetryOutboundWebhookRequest true "System event id (system_events.id)"
-// @Success 202 {object} dto.RetryOutboundWebhookResponse
-// @Failure 400 {object} ierr.ErrorResponse "Invalid request"
-// @Failure 404 {object} ierr.ErrorResponse "System event not found"
-// @Failure 500 {object} ierr.ErrorResponse "Server error"
-// @Router /webhooks/retry [post]
 func (h *WebhookHandler) RetryOutboundWebhook(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req dto.RetryOutboundWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(ierr.WithError(err).
-			WithHint("Provide a JSON body with id (system_events.id).").
+			WithHint("Provide a JSON body with system_event_id (system_events.id).").
 			Mark(ierr.ErrValidation))
 		return
 	}
 
-	err := h.webhookService.RetriggerSystemEvent(ctx, types.GetTenantID(ctx), types.GetEnvironmentID(ctx), req.ID)
+	err := h.webhookService.RetriggerSystemEvent(ctx, types.GetTenantID(ctx), types.GetEnvironmentID(ctx), req.SystemEventID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
 	c.JSON(http.StatusAccepted, dto.RetryOutboundWebhookResponse{
-		Success: true,
-		Message: "Webhook delivery completed for the system event",
-		ID:      req.ID,
+		Success:       true,
+		Message:       "Webhook delivery completed for the system event",
+		SystemEventID: req.SystemEventID,
 	})
 }
 
