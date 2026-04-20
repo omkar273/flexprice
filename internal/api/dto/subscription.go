@@ -649,7 +649,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 				Mark(ierr.ErrValidation)
 		}
 	}
-
 	// Handle legacy collection method conversion and validation
 	if r.CollectionMethod != nil {
 		// Handle legacy default_incomplete collection method

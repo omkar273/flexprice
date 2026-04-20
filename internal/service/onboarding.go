@@ -436,11 +436,11 @@ func (s *onboardingService) OnboardNewUserWithTenant(ctx context.Context, userID
 			return err
 		}
 
-		if envType == types.EnvironmentDevelopment {
-			if err := s.SetupSandboxEnvironment(ctx, tenantID, userID, env.ID); err != nil {
-				return err
-			}
-		}
+		// if envType == types.EnvironmentDevelopment {
+		// 	if err := s.SetupSandboxEnvironment(ctx, tenantID, userID, env.ID); err != nil {
+		// 		return err
+		// 	}
+		// }
 	}
 
 	// Send Zapier webhook for onboarding (never fails - errors are logged internally)
