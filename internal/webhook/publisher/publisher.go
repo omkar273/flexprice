@@ -90,12 +90,14 @@ func (p *webhookPublisher) PublishWebhook(ctx context.Context, event *types.Webh
 		"payload", string(payload),
 	)
 
-	if err := p.systemEventRepo.OnConsumed(ctx, event); err != nil {
-		p.logger.ErrorwCtx(ctx, "system_events OnConsumed failed",
-			"error", err,
-			"event_id", event.ID,
-			"event_name", event.EventName,
-		)
+	if p.systemEventRepo != nil {
+		if err := p.systemEventRepo.OnConsumed(ctx, event); err != nil {
+			p.logger.ErrorwCtx(ctx, "system_events OnConsumed failed",
+				"error", err,
+				"event_id", event.ID,
+				"event_name", event.EventName,
+			)
+		}
 	}
 
 	if p.producer != nil {
