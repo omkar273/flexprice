@@ -7,7 +7,7 @@ type RetryOutboundWebhookRequest struct {
 
 // RetryOutboundWebhookResponse is returned when outbound webhook delivery completes (HTTP 202).
 type RetryOutboundWebhookResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	ID      string `json:"id"`
+	Success       bool   `json:"success"`
+	Message       string `json:"message"`
+	SystemEventID string `json:"system_event_id"`
 }
