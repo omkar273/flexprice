@@ -11,9 +11,6 @@ import (
 	"github.com/flexprice/flexprice/internal/cache"
 	"github.com/flexprice/flexprice/internal/clickhouse"
 	"github.com/flexprice/flexprice/internal/config"
-	"github.com/flexprice/flexprice/internal/domain/auth"
-	"github.com/flexprice/flexprice/internal/domain/tenant"
-	"github.com/flexprice/flexprice/internal/domain/user"
 	"github.com/flexprice/flexprice/internal/dynamodb"
 	"github.com/flexprice/flexprice/internal/httpclient"
 	integrationevents "github.com/flexprice/flexprice/internal/integration/events"
@@ -219,7 +216,7 @@ func main() {
 			service.NewTenantService,
 			service.NewAuthService,
 			provideSupabaseClient,
-			provideUserService,
+			service.NewUserService,
 			service.NewEnvAccessService,
 			service.NewEnvironmentService,
 			service.NewMeterService,
@@ -430,28 +427,6 @@ func provideSupabaseClient(cfg *config.Configuration) *supabase.Client {
 		return nil
 	}
 	return supabase.CreateClient(cfg.Auth.Supabase.BaseURL, cfg.Auth.Supabase.ServiceKey)
-}
-
-func provideUserService(
-	userRepo user.Repository,
-	tenantRepo tenant.Repository,
-	authRepo auth.Repository,
-	cfg *config.Configuration,
-	rbacService *rbac.RBACService,
-	supabaseClient *supabase.Client,
-	settingsService service.SettingsService,
-	logger *logger.Logger,
-) service.UserService {
-	return service.NewUserService(
-		userRepo,
-		tenantRepo,
-		authRepo,
-		cfg,
-		rbacService,
-		supabaseClient,
-		settingsService,
-		logger,
-	)
 }
 
 func provideTemporalConfig(cfg *config.Configuration) *config.TemporalConfig {
