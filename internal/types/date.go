@@ -611,3 +611,54 @@ func GetNextUsageResetAt(
 			Mark(ierr.ErrValidation)
 	}
 }
+
+// FindPeriodForDate returns the end of the billing period that contains target,
+// starting the search from knownPeriodStart/End and walking forward as needed.
+//
+// Unlike CalculateBillingPeriods, this function passes nil to NextBillingDate so
+// period ends are never capped — giving natural boundaries regardless of target.
+// Capped at 240 forward steps (~20 years of monthly billing).
+func FindPeriodForDate(
+	target time.Time,
+	knownPeriodStart time.Time,
+	knownPeriodEnd time.Time,
+	anchor time.Time,
+	periodCount int,
+	billingPeriod BillingPeriod,
+) (Period, error) {
+	inPeriod := func(t, start, end time.Time) bool {
+		return !t.Before(start) && t.Before(end)
+	}
+
+	periodStart := knownPeriodStart
+	periodEnd := knownPeriodEnd
+
+	// Fast path: target is already within the known period.
+	if inPeriod(target, periodStart, periodEnd) {
+		return Period{Start: periodStart, End: periodEnd}, nil
+	}
+
+	const maxIter = 240
+	for i := 0; i < maxIter; i++ {
+		nextEnd, err := NextBillingDate(periodEnd, anchor, periodCount, billingPeriod, nil)
+		if err != nil {
+			return Period{}, err
+		}
+		if nextEnd.Equal(periodEnd) {
+			break
+		}
+		periodStart, periodEnd = periodEnd, nextEnd
+		if inPeriod(target, periodStart, periodEnd) {
+			return Period{Start: periodStart, End: periodEnd}, nil
+		}
+	}
+
+	return Period{}, ierr.NewError("could not find billing period for date").
+		WithHint("The target date may be too far in the future or past relative to the known billing period").
+		WithReportableDetails(map[string]any{
+			"target":             target,
+			"known_period_start": knownPeriodStart,
+			"known_period_end":   knownPeriodEnd,
+		}).
+		Mark(ierr.ErrValidation)
+}

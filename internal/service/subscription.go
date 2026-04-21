@@ -4143,31 +4143,6 @@ func (s *subscriptionService) addAddonToSubscription(
 			Mark(ierr.ErrValidation)
 	}
 
-	// Check if addon is already active on this subscription (only for onetime addons)
-	// For multiple_instance addons, allow multiple instances of the same addon
-	if a.Addon.Type == types.AddonTypeOnetime {
-		activeAddons, err := addonService.GetActiveAddonAssociation(ctx, dto.GetActiveAddonAssociationRequest{
-			EntityID:   sub.ID,
-			EntityType: types.AddonAssociationEntityTypeSubscription,
-			StartDate:  req.StartDate,
-			AddonIds:   []string{req.AddonID},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		if activeAddons != nil && len(activeAddons.Items) > 0 {
-			return nil, ierr.NewError("addon is already added to subscription").
-				WithHint("Cannot add onetime addon to subscription that already has an active instance").
-				WithReportableDetails(map[string]interface{}{
-					"subscription_id": sub.ID,
-					"addon_id":        req.AddonID,
-					"active_addons":   activeAddons,
-				}).
-				Mark(ierr.ErrValidation)
-		}
-	}
-
 	// Validate entitlement compatibility if check is not skipped
 	if !req.SkipEntityValidation {
 		if err := s.validateEntitlementCompatibility(ctx, sub.ID, req.AddonID); err != nil {
@@ -4188,10 +4163,32 @@ func (s *subscriptionService) addAddonToSubscription(
 		types.AddonAssociationEntityTypeSubscription,
 	)
 
+	// For onetime cadence, determine which period's end to use as the line item end date.
+	// If StartDate falls in a future period we walk forward to find the right boundary.
+	var onetimePeriodEnd time.Time
+	if req.Cadence == types.AddonCadenceOnetime {
+		effectiveStart := time.Now()
+		if req.StartDate != nil {
+			effectiveStart = *req.StartDate
+		}
+		var periodErr error
+		onetimePeriodEnd, periodErr = addonPeriodEndForStartDate(sub, effectiveStart)
+		if periodErr != nil {
+			return nil, periodErr
+		}
+	}
+
 	// Create line items for addon prices
 	lineItems := make([]*subscription.SubscriptionLineItem, 0, len(validPrices))
 	for _, priceResponse := range validPrices {
 		lineItem := s.createLineItemFromPrice(ctx, priceResponse, sub, req.AddonID, a.Addon.Name)
+
+		// Onetime: end at the period boundary containing the start date.
+		// Recurring: no end date (renews each period).
+		if req.Cadence == types.AddonCadenceOnetime {
+			lineItem.EndDate = onetimePeriodEnd
+		}
+
 		if err := s.applyLineItemCommitmentFromMap(ctx, lineItem, req.LineItemCommitments); err != nil {
 			return nil, err
 		}
@@ -4226,6 +4223,15 @@ func (s *subscriptionService) addAddonToSubscription(
 	})
 
 	if err != nil {
+		return nil, err
+	}
+
+	effectiveDate := time.Now()
+	if req.StartDate != nil {
+		effectiveDate = *req.StartDate
+	}
+
+	if err := s.applyAddonAddProration(ctx, sub, lineItems, effectiveDate, req.ProrationBehavior); err != nil {
 		return nil, err
 	}
 
@@ -4437,16 +4443,79 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 			Mark(ierr.ErrValidation)
 	}
 
+	// Fetch line items early — needed both for the onetime-cadence guard and for proration.
+	lineItemFilter := types.NewSubscriptionLineItemFilter()
+	lineItemFilter.SubscriptionIDs = []string{association.EntityID}
+	lineItemFilter.EntityIDs = []string{association.AddonID}
+	lineItemFilter.EntityType = lo.ToPtr(types.SubscriptionLineItemEntityTypeAddon)
+
+	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
+	if err != nil {
+		return err
+	}
+
+	// Onetime addons have EndDate set on ALL their line items — they are already scheduled to end.
+	// We check ALL items: if any item has no EndDate (recurring), the addon is cancellable.
+	// This handles the case where a previous association was cancelled at period-end (EndDate set)
+	// while a new recurring association was added on top (EndDate zero).
+	var onetimeEndDate time.Time
+	allOnetime := len(lineItems) > 0
+	for _, li := range lineItems {
+		if li.EndDate.IsZero() {
+			allOnetime = false
+			break
+		}
+		onetimeEndDate = li.EndDate
+	}
+	if allOnetime {
+		return ierr.NewError("addon is already scheduled to end").
+			WithHintf("This addon is already scheduled to end at %s", onetimeEndDate.Format("2 Jan 2006")).
+			WithReportableDetails(map[string]interface{}{
+				"addon_association_id": association.ID,
+				"expires_at":           onetimeEndDate,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// Keep only line items that are NOT already scheduled to end.
+	// Line items from a previous association cancelled at period-end have EndDate set
+	// and must be excluded — they are already handled and must not be re-processed.
+	var activeLineItems []*subscription.SubscriptionLineItem
+	for _, li := range lineItems {
+		if li.EndDate.IsZero() {
+			activeLineItems = append(activeLineItems, li)
+		}
+	}
+	lineItems = activeLineItems
+
 	// get cancel at date from subscription
 	var effectiveEndDate *time.Time
+	var sub *subscription.Subscription
 
 	if association.EntityType == types.AddonAssociationEntityTypeSubscription {
-		sub, err := s.SubRepo.Get(ctx, association.EntityID)
+		var err error
+		sub, err = s.SubRepo.Get(ctx, association.EntityID)
 		if err != nil {
 			return err
 		}
 
-		effectiveEndDate = lo.ToPtr(sub.CurrentPeriodEnd)
+		if req.EffectiveDate != nil {
+			// Validate that the provided date falls within [CurrentPeriodStart, CurrentPeriodEnd].
+			ed := *req.EffectiveDate
+			if ed.Before(sub.CurrentPeriodStart) || ed.After(sub.CurrentPeriodEnd) {
+				return ierr.NewError("effective_date is outside the current billing period").
+					WithHint("effective_date must be between the subscription's current period start and end").
+					WithReportableDetails(map[string]any{
+						"effective_date":       ed,
+						"current_period_start": sub.CurrentPeriodStart,
+						"current_period_end":   sub.CurrentPeriodEnd,
+					}).
+					Mark(ierr.ErrValidation)
+			}
+			effectiveEndDate = lo.ToPtr(ed)
+		} else {
+			effectiveEndDate = lo.ToPtr(sub.CurrentPeriodEnd)
+		}
 	}
 
 	endReason := "Cancelled by API"
@@ -4459,18 +4528,7 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 	association.CancelledAt = effectiveEndDate
 	association.EndDate = effectiveEndDate
 
-	// Get line items to terminate
-	lineItemFilter := types.NewSubscriptionLineItemFilter()
-	lineItemFilter.SubscriptionIDs = []string{association.EntityID}
-	lineItemFilter.EntityIDs = []string{association.AddonID}
-	lineItemFilter.EntityType = lo.ToPtr(types.SubscriptionLineItemEntityTypeAddon)
-
-	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
-	if err != nil {
-		return err
-	}
-
-	return s.DB.WithTx(ctx, func(ctx context.Context) error {
+	if err := s.DB.WithTx(ctx, func(ctx context.Context) error {
 		if err := s.AddonAssociationRepo.Update(ctx, association); err != nil {
 			return err
 		}
@@ -4483,7 +4541,23 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 		}
 
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	// Issue wallet credit for unused prepaid time if proration is requested.
+	// Onetime addons (EndDate set) are skipped automatically inside LineItemProrationService.
+	if sub != nil && effectiveEndDate != nil {
+		if err := s.applyAddonRemoveProration(
+			ctx, sub, lineItems,
+			association.ID, *effectiveEndDate,
+			req.ProrationBehavior, endReason,
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // createLineItemFromPrice creates a subscription line item from a price for addon additions
@@ -4536,6 +4610,93 @@ func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, price
 	lineItem.PriceUnit = price.PriceUnit
 
 	return lineItem
+}
+
+// addonPeriodEndForStartDate returns the end of the billing period that contains startDate.
+func addonPeriodEndForStartDate(sub *subscription.Subscription, startDate time.Time) (time.Time, error) {
+	p, err := types.FindPeriodForDate(
+		startDate,
+		sub.CurrentPeriodStart,
+		sub.CurrentPeriodEnd,
+		sub.BillingAnchor,
+		sub.BillingPeriodCount,
+		sub.BillingPeriod,
+	)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return p.End, nil
+}
+
+// applyAddonAddProration creates a one-off proration invoice when an addon is added mid-period.
+// It is a no-op when behavior is ProrationBehaviorNone. Usage-type prices are skipped.
+func (s *subscriptionService) applyAddonAddProration(
+	ctx context.Context,
+	sub *subscription.Subscription,
+	lineItems []*subscription.SubscriptionLineItem,
+	effectiveDate time.Time,
+	behavior types.ProrationBehavior,
+) error {
+	priceSvc := NewPriceService(s.ServiceParams)
+
+	var entries []LineItemProrationEntry
+	for _, lineItem := range lineItems {
+		priceResp, err := priceSvc.GetPrice(ctx, lineItem.PriceID)
+		if err != nil {
+			return err
+		}
+		entries = append(entries, LineItemProrationEntry{
+			LineItem: lineItem,
+			Price:    priceResp.Price,
+			Action:   types.ProrationActionAddItem,
+		})
+	}
+
+	return NewLineItemProrationService(s.ServiceParams).Apply(ctx, LineItemProrationRequest{
+		Subscription:  sub,
+		Entries:       entries,
+		EffectiveDate: effectiveDate,
+		Behavior:      behavior,
+	})
+}
+
+// applyAddonRemoveProration issues a wallet credit for unused prepaid time when a recurring addon
+// is removed mid-period. Onetime addons are rejected before reaching this point.
+// Usage-type prices are skipped by LineItemProrationService.
+func (s *subscriptionService) applyAddonRemoveProration(
+	ctx context.Context,
+	sub *subscription.Subscription,
+	lineItems []*subscription.SubscriptionLineItem,
+	associationID string,
+	effectiveDate time.Time,
+	behavior types.ProrationBehavior,
+	reason string,
+) error {
+	priceSvc := NewPriceService(s.ServiceParams)
+
+	var entries []LineItemProrationEntry
+	for _, lineItem := range lineItems {
+		priceResp, err := priceSvc.GetPrice(ctx, lineItem.PriceID)
+		if err != nil {
+			return err
+		}
+		entries = append(entries, LineItemProrationEntry{
+			LineItem: lineItem,
+			Price:    priceResp.Price,
+			Action:   types.ProrationActionRemoveItem,
+		})
+	}
+
+	idempotencyKey := fmt.Sprintf("addon_remove_%s_%d", associationID, effectiveDate.Unix())
+
+	return NewLineItemProrationService(s.ServiceParams).Apply(ctx, LineItemProrationRequest{
+		Subscription:   sub,
+		Entries:        entries,
+		EffectiveDate:  effectiveDate,
+		Behavior:       behavior,
+		Reason:         reason,
+		IdempotencyKey: idempotencyKey,
+	})
 }
 
 // ActivateIncompleteSubscription activates a subscription that is in incomplete status
