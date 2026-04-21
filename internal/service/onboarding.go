@@ -9,6 +9,8 @@ import (
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
+	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/environment"
 	"github.com/flexprice/flexprice/internal/domain/meter"
@@ -22,14 +24,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-const (
-	OnboardingEventsTopic = "onboarding_events"
-)
-
 // OnboardingService handles onboarding-related operations
 type OnboardingService interface {
 	GenerateEvents(ctx context.Context, req *dto.OnboardingEventsRequest) (*dto.OnboardingEventsResponse, error)
-	RegisterHandler(router *pubsubRouter.Router)
+	RegisterHandler(router *pubsubRouter.Router, cfg *config.Configuration)
 	OnboardNewUserWithTenant(ctx context.Context, userID, email, tenantName, tenantID string) error
 	SetupSandboxEnvironment(ctx context.Context, tenantID, userID, envID string) error
 }
@@ -148,7 +146,8 @@ func (s *onboardingService) GenerateEvents(ctx context.Context, req *dto.Onboard
 		"duration", req.Duration,
 	)
 
-	if err := s.pubSub.Publish(ctx, OnboardingEventsTopic, watermillMsg); err != nil {
+	topic := s.Config.OnboardingEvents.Topic
+	if err := s.pubSub.Publish(ctx, topic, watermillMsg); err != nil {
 		return nil, ierr.WithError(err).
 			WithHint("Failed to publish message").
 			Mark(ierr.ErrValidation)
@@ -187,12 +186,30 @@ func createMeterInfoFromMeter(m *dto.MeterResponse) types.MeterInfo {
 }
 
 // RegisterHandler registers a handler for onboarding events
-func (s *onboardingService) RegisterHandler(router *pubsubRouter.Router) {
+func (s *onboardingService) RegisterHandler(router *pubsubRouter.Router, cfg *config.Configuration) {
+	if !cfg.OnboardingEvents.Enabled {
+		s.Logger.Info("onboarding events handler disabled by configuration, skipping registration")
+		return
+	}
+	rateLimit := cfg.OnboardingEvents.RateLimit
+	if rateLimit <= 0 {
+		s.Logger.Errorw("onboarding events rate limit is invalid", "rate_limit", rateLimit)
+		return
+	}
+	throttle := middleware.NewThrottle(rateLimit, time.Second)
+
 	router.AddNoPublishHandler(
 		"onboarding_events_handler",
-		OnboardingEventsTopic,
+		cfg.OnboardingEvents.Topic,
 		s.pubSub,
 		s.processMessage,
+		throttle.Middleware,
+	)
+
+	s.Logger.Debugw("registered onboarding events handler",
+		"topic", cfg.OnboardingEvents.Topic,
+		"consumer_group", cfg.OnboardingEvents.ConsumerGroup,
+		"rate_limit", rateLimit,
 	)
 }
 

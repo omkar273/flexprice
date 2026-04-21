@@ -58,6 +58,7 @@ type Configuration struct {
 	RawEventsReprocessing      RawEventsReprocessingConfig      `mapstructure:"raw_events_reprocessing" validate:"required"`
 	RawEventConsumption        RawEventConsumptionConfig        `mapstructure:"raw_event_consumption" validate:"required"`
 	IntegrationEvents          IntegrationEventsConfig          `mapstructure:"integration_events" validate:"omitempty"`
+	OnboardingEvents           OnboardingEventsConfig           `mapstructure:"onboarding_events" validate:"omitempty"`
 	Gemini                     GeminiConfig                     `mapstructure:"gemini" validate:"omitempty"`
 }
 
@@ -346,6 +347,14 @@ type RawEventConsumptionConfig struct {
 	OutputTopic   string `mapstructure:"output_topic" default:"events"`
 	RateLimit     int64  `mapstructure:"rate_limit" default:"10"`
 	ConsumerGroup string `mapstructure:"consumer_group" default:"v1_raw_event_processing"`
+}
+
+type OnboardingEventsConfig struct {
+	Enabled       bool   `mapstructure:"enabled" default:"true"`
+	Topic         string `mapstructure:"topic" default:"staging_onboarding_events"`
+	RateLimit     int64  `mapstructure:"rate_limit" default:"100"`
+	ConsumerGroup string `mapstructure:"consumer_group" default:"onboarding_events_consumer"`
+	MaxRetries    int    `mapstructure:"max_retries" default:"3"`
 }
 
 type EnvAccessConfig struct {
