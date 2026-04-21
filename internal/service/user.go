@@ -111,131 +111,16 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 	}
 
 	var newUser *user.User
-	var password string
-	var userID string
+	var password *string
 
 	switch req.Type {
 	case types.UserTypeUser:
-		existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
-		if err != nil && !ierr.IsNotFound(err) {
-			return nil, err
-		}
-		if existingUser != nil {
-			return nil, ierr.NewError("email already in use").
-				WithHint("A user with this email already exists in this tenant").
-				WithReportableDetails(map[string]interface{}{"email": req.Email}).
-				Mark(ierr.ErrAlreadyExists)
-		}
-		// Enforce per-tenant user limit from add_user_config (GetSetting returns default when not set)
-		svc, ok := s.settingsService.(*settingsService)
-		if !ok || svc == nil {
-			return nil, ierr.NewError("settings service not configured").
-				WithHint("User creation requires settings service for add_user_config.").
-				Mark(ierr.ErrValidation)
-		}
-		addUserConfig, err := GetSetting[types.TenantConfig](svc, ctx, types.SettingKeyTenantConfig)
+		// invite user to the tenant
+		newUser, password, err = s.InviteUser(ctx, req, currentUserID)
 		if err != nil {
 			return nil, err
 		}
-		// ListByFilter uses tenant from context and repo filters by StatusPublished
-		_, totalActiveUsers, err := s.userRepo.ListByFilter(ctx, &types.UserFilter{
-			QueryFilter: &types.QueryFilter{
-				Limit:  lo.ToPtr(1),
-				Offset: lo.ToPtr(0),
-				Status: lo.ToPtr(types.StatusPublished),
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if totalActiveUsers >= int64(addUserConfig.MaxUsers) {
-			return nil, ierr.NewError("user limit reached: you cannot add any more users").
-				WithHintf("Maximum %d user(s) allowed for this tenant. Limit reached.", addUserConfig.MaxUsers).
-				WithReportableDetails(map[string]interface{}{"max_users": addUserConfig.MaxUsers, "current_active_users": totalActiveUsers}).
-				Mark(ierr.ErrValidation)
-		}
-		plainPassword, err := generateSecurePassword()
-		if err != nil {
-			return nil, ierr.WithError(err).WithHint("Failed to generate password").Mark(ierr.ErrSystem)
-		}
-		password = plainPassword
 
-		if s.cfg != nil && s.cfg.Auth.Provider == types.AuthProviderSupabase {
-			if s.supabaseAuth == nil {
-				return nil, ierr.NewError("supabase auth not configured").
-					WithHint("Supabase auth provider is selected but Supabase client is nil").
-					Mark(ierr.ErrValidation)
-			}
-			// Create in Supabase first; only on success create in DB. We cannot rollback either side
-			// This ordering ensures we never persist in DB without auth; if DB create fails after Supabase succeeds, caller sees the error.
-			supabaseUser, err := s.supabaseAuth.Admin.CreateUser(ctx, supabase.AdminUserParams{
-				Email:        req.Email,
-				Password:     lo.ToPtr(plainPassword),
-				EmailConfirm: true,
-				AppMetadata: map[string]interface{}{
-					"tenant_id": tenantID,
-				},
-			})
-			if err != nil {
-				return nil, ierr.WithError(err).WithHint("Failed to create user in auth provider").Mark(ierr.ErrSystem)
-			}
-			userID = supabaseUser.ID
-		}
-
-		// If configured for Supabase, create the auth user in Supabase
-		// Otherwise, create the auth user via Flexprice auth provider
-		if s.cfg.Auth.Provider != types.AuthProviderSupabase {
-			s.logger.InfowCtx(ctx,
-				"supabase auth not configured, using flexprice auth provider",
-				"email", req.Email,
-				"tenant_id", tenantID,
-			)
-			if s.cfg == nil || s.authRepo == nil {
-				return nil, ierr.NewError("flexprice auth provider not configured").
-					WithHint("Provide configuration and auth repository to create users without Supabase").
-					Mark(ierr.ErrValidation)
-			}
-
-			flexpriceProvider := authProvider.NewFlexpriceAuth(s.cfg)
-			authResp, err := flexpriceProvider.SignUp(ctx, authProvider.AuthRequest{
-				Email:    req.Email,
-				Password: plainPassword,
-				TenantID: tenantID,
-			})
-			if err != nil {
-				return nil, ierr.WithError(err).
-					WithHint("Failed to create user in flexprice auth provider").
-					Mark(ierr.ErrSystem)
-			}
-			userID = authResp.ID
-			if err := s.authRepo.CreateAuth(ctx, domainAuth.NewAuth(authResp.ID, types.AuthProviderFlexprice, authResp.ProviderToken)); err != nil {
-				return nil, ierr.WithError(err).
-					WithHint("Failed to create authentication record").
-					WithReportableDetails(map[string]interface{}{"user_id": userID}).
-					Mark(ierr.ErrDatabase)
-			}
-		}
-
-		newUser = &user.User{
-			ID:    userID,
-			Email: req.Email,
-			Type:  types.UserTypeUser,
-			Roles: []string{},
-			BaseModel: types.BaseModel{
-				TenantID:  tenantID,
-				Status:    types.StatusPublished,
-				CreatedBy: currentUserID,
-				UpdatedBy: currentUserID,
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
-		}
-		if err := newUser.Validate(); err != nil {
-			return nil, err
-		}
-		if err := s.userRepo.Create(ctx, newUser); err != nil {
-			return nil, err
-		}
 	case types.UserTypeServiceAccount:
 		if s.rbacService == nil {
 			return nil, ierr.NewError("RBAC not configured").
@@ -276,7 +161,7 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 
 	return &dto.CreateUserResponse{
 		UserResponse: dto.NewUserResponse(newUser, tenant),
-		Password:     password,
+		Password:     *password,
 	}, nil
 }
 
@@ -317,4 +202,138 @@ func (s *userService) ListUsersByFilter(ctx context.Context, filter *types.UserF
 		Items:      userResponses,
 		Pagination: types.NewPaginationResponse(int(total), filter.GetLimit(), filter.GetOffset()),
 	}, nil
+}
+
+// InviteUser invites a user to the tenant
+func (s *userService) InviteUser(ctx context.Context, req *dto.CreateUserRequest, currentUserID string) (*user.User, *string, error) {
+
+	var userID string
+	tenantID := types.GetTenantID(ctx)
+
+	// Check if user by email already exists
+	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
+	if err != nil && !ierr.IsNotFound(err) {
+		return nil, nil, err
+	}
+	if existingUser != nil {
+		return nil, nil, ierr.NewError("email already in use").
+			WithHint("A user with this email already exists in this tenant").
+			WithReportableDetails(map[string]interface{}{"email": req.Email}).
+			Mark(ierr.ErrAlreadyExists)
+	}
+	// Enforce per-tenant user limit from add_user_config (GetSetting returns default when not set)
+	svc, ok := s.settingsService.(*settingsService)
+	if !ok || svc == nil {
+		return nil, nil, ierr.NewError("settings service not configured").
+			WithHint("User creation requires settings service for add_user_config.").
+			Mark(ierr.ErrValidation)
+	}
+	addUserConfig, err := GetSetting[types.TenantConfig](svc, ctx, types.SettingKeyTenantConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	// ListByFilter uses tenant from context and repo filters by StatusPublished
+	_, totalActiveUsers, err := s.userRepo.ListByFilter(ctx, &types.UserFilter{
+		QueryFilter: &types.QueryFilter{
+			Limit:  lo.ToPtr(1),
+			Offset: lo.ToPtr(0),
+			Status: lo.ToPtr(types.StatusPublished),
+		},
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	if totalActiveUsers >= int64(addUserConfig.MaxUsers) {
+		return nil, nil, ierr.NewError("user limit reached: you cannot add any more users").
+			WithHintf("Maximum %d user(s) allowed for this tenant. Limit reached.", addUserConfig.MaxUsers).
+			WithReportableDetails(map[string]interface{}{"max_users": addUserConfig.MaxUsers, "current_active_users": totalActiveUsers}).
+			Mark(ierr.ErrValidation)
+	}
+	password, err := generateSecurePassword()
+	if err != nil {
+		return nil, nil, ierr.WithError(err).WithHint("Failed to generate password").
+			Mark(ierr.ErrSystem)
+	}
+
+	switch s.cfg.Auth.Provider {
+	case types.AuthProviderSupabase:
+		if s.supabaseAuth == nil {
+			return nil, nil, ierr.NewError("supabase auth not configured").
+				WithHint("Supabase auth provider is selected but Supabase client is nil").
+				Mark(ierr.ErrValidation)
+		}
+		// Create in Supabase first; only on success create in DB. We cannot rollback either side
+		// This ordering ensures we never persist in DB without auth; if DB create fails after Supabase succeeds, caller sees the error.
+		supabaseUser, err := s.supabaseAuth.Admin.CreateUser(ctx, supabase.AdminUserParams{
+			Email:        req.Email,
+			Password:     lo.ToPtr(password),
+			EmailConfirm: true,
+			AppMetadata: map[string]interface{}{
+				"tenant_id": tenantID,
+			},
+		})
+		if err != nil {
+			return nil, nil, ierr.WithError(err).WithHint("Failed to create user in auth provider").
+				Mark(ierr.ErrSystem)
+		}
+		userID = supabaseUser.ID
+
+	case types.AuthProviderFlexprice:
+		s.logger.InfowCtx(ctx,
+			"supabase auth not configured, using flexprice auth provider",
+			"email", req.Email,
+			"tenant_id", tenantID,
+		)
+		if s.cfg == nil || s.authRepo == nil {
+			return nil, nil, ierr.NewError("flexprice auth provider not configured").
+				WithHint("Provide configuration and auth repository to create users without Supabase").
+				Mark(ierr.ErrValidation)
+		}
+
+		flexpriceProvider := authProvider.NewFlexpriceAuth(s.cfg)
+		authResp, err := flexpriceProvider.SignUp(ctx, authProvider.AuthRequest{
+			Email:    req.Email,
+			Password: password,
+			TenantID: tenantID,
+		})
+		if err != nil {
+			return nil, nil, ierr.WithError(err).
+				WithHint("Failed to create user in flexprice auth provider").
+				Mark(ierr.ErrSystem)
+		}
+		userID = authResp.ID
+		if err := s.authRepo.CreateAuth(ctx, domainAuth.NewAuth(authResp.ID, types.AuthProviderFlexprice, authResp.ProviderToken)); err != nil {
+			return nil, nil, ierr.WithError(err).
+				WithHint("Failed to create authentication record").
+				WithReportableDetails(map[string]interface{}{"user_id": userID}).
+				Mark(ierr.ErrDatabase)
+		}
+	default:
+		return nil, nil, ierr.NewError("auth provider not configured").
+			WithHint("Auth provider not configured").
+			Mark(ierr.ErrValidation)
+	}
+
+	newUser := &user.User{
+		ID:    userID,
+		Email: req.Email,
+		Type:  types.UserTypeUser,
+		Roles: []string{},
+		BaseModel: types.BaseModel{
+			TenantID:  tenantID,
+			Status:    types.StatusPublished,
+			CreatedBy: currentUserID,
+			UpdatedBy: currentUserID,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+
+	if err := newUser.Validate(); err != nil {
+		return nil, nil, err
+	}
+	if err := s.userRepo.Create(ctx, newUser); err != nil {
+		return nil, nil, err
+	}
+	return newUser, &password, nil
 }
