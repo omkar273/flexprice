@@ -255,6 +255,12 @@ func (s *userService) InviteUser(ctx context.Context, req *dto.CreateUserRequest
 			Mark(ierr.ErrSystem)
 	}
 
+	if s.cfg == nil {
+		return nil, nil, ierr.NewError("auth configuration missing").
+			WithHint("User creation requires auth provider configuration").
+			Mark(ierr.ErrValidation)
+	}
+
 	switch s.cfg.Auth.Provider {
 	case types.AuthProviderSupabase:
 		if s.supabaseAuth == nil {
