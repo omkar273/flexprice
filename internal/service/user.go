@@ -16,7 +16,6 @@ import (
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/nedpals/supabase-go"
 	"github.com/samber/lo"
-	"github.com/sethvargo/go-password/password"
 )
 
 type UserService interface {
@@ -165,12 +164,6 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 	}, nil
 }
 
-// generateSecurePassword returns a cryptographically secure random password via sethvargo/go-password (crypto/rand).
-func generateSecurePassword() (string, error) {
-	// 16 chars, 4 digits, 2 symbols, allow upper, no repeat (strong, copyable)
-	return password.Generate(16, 4, 2, false, false)
-}
-
 func (s *userService) ListUsersByFilter(ctx context.Context, filter *types.UserFilter) (*dto.ListUsersResponse, error) {
 	// Get tenant ID from context
 	tenantID := types.GetTenantID(ctx)
@@ -249,11 +242,6 @@ func (s *userService) InviteUser(ctx context.Context, req *dto.CreateUserRequest
 			WithReportableDetails(map[string]interface{}{"max_users": addUserConfig.MaxUsers, "current_active_users": totalActiveUsers}).
 			Mark(ierr.ErrValidation)
 	}
-	password, err := generateSecurePassword()
-	if err != nil {
-		return nil, nil, ierr.WithError(err).WithHint("Failed to generate password").
-			Mark(ierr.ErrSystem)
-	}
 
 	if s.cfg == nil {
 		return nil, nil, ierr.NewError("auth configuration missing").
@@ -261,63 +249,29 @@ func (s *userService) InviteUser(ctx context.Context, req *dto.CreateUserRequest
 			Mark(ierr.ErrValidation)
 	}
 
-	switch s.cfg.Auth.Provider {
-	case types.AuthProviderSupabase:
-		if s.supabaseAuth == nil {
-			return nil, nil, ierr.NewError("supabase auth not configured").
-				WithHint("Supabase auth provider is selected but Supabase client is nil").
+	provider := authProvider.NewProvider(s.cfg)
+	inviteResp, err := provider.UserInvite(ctx, authProvider.UserInviteRequest{
+		Email: req.Email,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	userID = inviteResp.ID
+	password := inviteResp.Password
+
+	// Persist provider-specific auth material for later login (e.g. Flexprice bcrypt hash).
+	if inviteResp.AuthRecord != nil {
+		if s.authRepo == nil {
+			return nil, nil, ierr.NewError("auth repository not configured").
+				WithHint("Auth provider returned an auth record but auth repository is nil").
 				Mark(ierr.ErrValidation)
 		}
-		// Create in Supabase first; only on success create in DB. We cannot rollback either side
-		// This ordering ensures we never persist in DB without auth; if DB create fails after Supabase succeeds, caller sees the error.
-		supabaseUser, err := s.supabaseAuth.Admin.CreateUser(ctx, supabase.AdminUserParams{
-			Email:        req.Email,
-			Password:     lo.ToPtr(password),
-			EmailConfirm: true,
-			AppMetadata: map[string]interface{}{
-				"tenant_id": tenantID,
-			},
-		})
-		if err != nil {
-			return nil, nil, ierr.WithError(err).WithHint("Failed to create user in auth provider").
-				Mark(ierr.ErrSystem)
-		}
-		userID = supabaseUser.ID
-
-	case types.AuthProviderFlexprice:
-		s.logger.InfowCtx(ctx,
-			"supabase auth not configured, using flexprice auth provider",
-			"email", req.Email,
-			"tenant_id", tenantID,
-		)
-		if s.cfg == nil || s.authRepo == nil {
-			return nil, nil, ierr.NewError("flexprice auth provider not configured").
-				WithHint("Provide configuration and auth repository to create users without Supabase").
-				Mark(ierr.ErrValidation)
-		}
-
-		flexpriceProvider := authProvider.NewFlexpriceAuth(s.cfg)
-		authResp, err := flexpriceProvider.SignUp(ctx, authProvider.AuthRequest{
-			Email:    req.Email,
-			Password: password,
-			TenantID: tenantID,
-		})
-		if err != nil {
-			return nil, nil, ierr.WithError(err).
-				WithHint("Failed to create user in flexprice auth provider").
-				Mark(ierr.ErrSystem)
-		}
-		userID = authResp.ID
-		if err := s.authRepo.CreateAuth(ctx, domainAuth.NewAuth(authResp.ID, types.AuthProviderFlexprice, authResp.ProviderToken)); err != nil {
+		if err := s.authRepo.CreateAuth(ctx, inviteResp.AuthRecord); err != nil {
 			return nil, nil, ierr.WithError(err).
 				WithHint("Failed to create authentication record").
 				WithReportableDetails(map[string]interface{}{"user_id": userID}).
 				Mark(ierr.ErrDatabase)
 		}
-	default:
-		return nil, nil, ierr.NewError("auth provider not configured").
-			WithHint("Auth provider not configured").
-			Mark(ierr.ErrValidation)
 	}
 
 	newUser := &user.User{
