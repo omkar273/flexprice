@@ -2659,6 +2659,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/environments/{id}/clone": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Clone all published features and plans from the source environment into a target environment. If target_environment_id is provided, entities are cloned into that existing environment. Otherwise a new environment is created from name and type first.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Environments"
+                ],
+                "summary": "Clone an environment",
+                "operationId": "cloneEnvironment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source Environment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Clone configuration",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CloneEnvironmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/models.TemporalWorkflowResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                },
+                "x-scope": "write"
+            }
+        },
         "/events": {
             "post": {
                 "security": [
@@ -3283,6 +3349,78 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/features/{id}/clone": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Clone an existing feature",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Features"
+                ],
+                "summary": "Clone a feature",
+                "operationId": "cloneFeature",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source Feature ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Clone configuration",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CloneFeatureRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/FeatureResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrorResponse"
+                        }
+                    }
+                },
+                "x-scope": "write"
             }
         },
         "/groups": {
@@ -5159,6 +5297,7 @@ const docTemplate = `{
                     "Plans"
                 ],
                 "summary": "Clone a plan",
+                "operationId": "clonePlan",
                 "parameters": [
                     {
                         "type": "string",
@@ -5208,7 +5347,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/errors.ErrorResponse"
                         }
                     }
-                }
+                },
+                "x-scope": "write"
             }
         },
         "/plans/{id}/creditgrants": {
@@ -11880,11 +12020,15 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "addon_id",
+                "cadence",
                 "subscription_id"
             ],
             "properties": {
                 "addon_id": {
                     "type": "string"
+                },
+                "cadence": {
+                    "$ref": "#/definitions/types.AddonCadence"
                 },
                 "line_item_commitments": {
                     "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
@@ -11896,6 +12040,9 @@ const docTemplate = `{
                 "metadata": {
                     "type": "object",
                     "additionalProperties": true
+                },
+                "proration_behavior": {
+                    "$ref": "#/definitions/types.ProrationBehavior"
                 },
                 "start_date": {
                     "type": "string"
@@ -11908,11 +12055,15 @@ const docTemplate = `{
         "AddAddonToSubscriptionRequest": {
             "type": "object",
             "required": [
-                "addon_id"
+                "addon_id",
+                "cadence"
             ],
             "properties": {
                 "addon_id": {
                     "type": "string"
+                },
+                "cadence": {
+                    "$ref": "#/definitions/types.AddonCadence"
                 },
                 "line_item_commitments": {
                     "description": "LineItemCommitments allows setting commitment configuration per addon line item (keyed by price_id)",
@@ -11924,6 +12075,9 @@ const docTemplate = `{
                 "metadata": {
                     "type": "object",
                     "additionalProperties": true
+                },
+                "proration_behavior": {
+                    "$ref": "#/definitions/types.ProrationBehavior"
                 },
                 "start_date": {
                     "type": "string"
@@ -12039,9 +12193,6 @@ const docTemplate = `{
                 },
                 "tenant_id": {
                     "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.AddonType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -12384,23 +12535,80 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "action": {
-                    "description": "\"created\" | \"wallet_credit\"",
-                    "type": "string"
+                    "description": "Action is created for a proration charge invoice, wallet_credit for downgrade credit.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ChangedInvoiceAction"
+                        }
+                    ]
                 },
                 "id": {
                     "type": "string"
                 },
+                "invoice": {
+                    "description": "Invoice is set for proration charges: preview returns a synthetic invoice; execute returns the persisted invoice when created.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/InvoiceResponse"
+                        }
+                    ]
+                },
                 "status": {
-                    "type": "string"
+                    "description": "Status is preview (dry-run), issued (wallet credit applied), or a PaymentStatus string for real invoices.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ChangedInvoiceStatus"
+                        }
+                    ]
+                },
+                "wallet_transaction": {
+                    "description": "WalletTransaction is set for downgrade wallet credits: preview is synthetic; execute returns the transaction from the top-up.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/WalletTransactionResponse"
+                        }
+                    ]
                 }
             }
+        },
+        "ChangedInvoiceAction": {
+            "description": "created (proration invoice) | wallet_credit (downgrade credit)",
+            "type": "string",
+            "enum": [
+                "created",
+                "wallet_credit"
+            ],
+            "x-enum-varnames": [
+                "ChangedInvoiceActionCreated",
+                "ChangedInvoiceActionWalletCredit"
+            ]
+        },
+        "ChangedInvoiceStatus": {
+            "description": "preview | issued | INITIATED | PENDING | PROCESSING | SUCCEEDED | OVERPAID | FAILED | REFUNDED | PARTIALLY_REFUNDED",
+            "type": "string",
+            "enum": [
+                "preview",
+                "issued"
+            ],
+            "x-enum-varnames": [
+                "ChangedInvoiceStatusPreview",
+                "ChangedInvoiceStatusWalletIssued"
+            ]
         },
         "ChangedLineItem": {
             "type": "object",
             "properties": {
                 "change_action": {
-                    "description": "\"created\" | \"updated\" | \"ended\"",
-                    "type": "string"
+                    "enum": [
+                        "created",
+                        "updated",
+                        "ended"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ChangedLineItemAction"
+                        }
+                    ]
                 },
                 "end_date": {
                     "type": "string"
@@ -12418,6 +12626,20 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "ChangedLineItemAction": {
+            "description": "created | updated | ended",
+            "type": "string",
+            "enum": [
+                "created",
+                "updated",
+                "ended"
+            ],
+            "x-enum-varnames": [
+                "ChangedLineItemActionCreated",
+                "ChangedLineItemActionUpdated",
+                "ChangedLineItemActionEnded"
+            ]
         },
         "ChangedResources": {
             "type": "object",
@@ -12446,14 +12668,71 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "action": {
-                    "description": "\"created\" | \"updated\"",
-                    "type": "string"
+                    "$ref": "#/definitions/ChangedSubscriptionAction"
                 },
                 "id": {
                     "type": "string"
                 },
                 "status": {
                     "$ref": "#/definitions/types.SubscriptionStatus"
+                }
+            }
+        },
+        "ChangedSubscriptionAction": {
+            "description": "created | updated",
+            "type": "string",
+            "enum": [
+                "created",
+                "updated"
+            ],
+            "x-enum-varnames": [
+                "ChangedSubscriptionActionCreated",
+                "ChangedSubscriptionActionUpdated"
+            ]
+        },
+        "CloneEnvironmentRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Name of the new environment (required when target_environment_id is not provided)",
+                    "type": "string"
+                },
+                "target_environment_id": {
+                    "description": "TargetEnvironmentID is the ID of an existing environment to clone into (optional).\nWhen provided, Name and Type are ignored. When omitted, Name and Type are required.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type of the new environment, e.g. \"production\" or \"development\" (required when target_environment_id is not provided)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.EnvironmentType"
+                        }
+                    ]
+                }
+            }
+        },
+        "CloneFeatureRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "Description overrides the source feature's description when provided",
+                    "type": "string"
+                },
+                "lookup_key": {
+                    "description": "LookupKey is required and must be unique across published features",
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "Metadata overrides the source feature's metadata when provided",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.Metadata"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "Name is required and must be different from the source feature's name",
+                    "type": "string"
                 }
             }
         },
@@ -12861,8 +13140,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "lookup_key",
-                "name",
-                "type"
+                "name"
             ],
             "properties": {
                 "description": {
@@ -12877,9 +13155,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.AddonType"
                 }
             }
         },
@@ -12929,9 +13204,6 @@ const docTemplate = `{
                 },
                 "tenant_id": {
                     "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/types.AddonType"
                 },
                 "updated_at": {
                     "type": "string"
@@ -14143,6 +14415,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/AddAddonToSubscriptionRequest"
                     }
+                },
+                "billing_anchor": {
+                    "description": "BillingAnchor overrides the derived billing anchor when billing_cycle is anniversary.\nFor monthly billing, the day-of-month (and time-of-day) define cycle boundaries: if start_date\nis before that day in the month, the first billing period ends on the next occurrence of that\nday in the same month (a shorter first period); subsequent periods follow the usual interval.",
+                    "type": "string"
                 },
                 "billing_cycle": {
                     "description": "BillingCycle is the cycle of the billing anchor.\nThis is used to determine the billing date for the subscription (i.e set the billing anchor)\nIf not set, the default value is anniversary. Possible values are anniversary and calendar.\nAnniversary billing means the billing anchor will be the start date of the subscription.\nCalendar billing means the billing anchor will be the appropriate date based on the billing period.\nFor example, if the billing period is month and the start date is 2025-04-15 then in case of\ncalendar billing the billing anchor will be 2025-05-01 vs 2025-04-15 for anniversary billing.",
@@ -17739,6 +18015,9 @@ const docTemplate = `{
                 "addon_association_id": {
                     "type": "string"
                 },
+                "proration_behavior": {
+                    "$ref": "#/definitions/types.ProrationBehavior"
+                },
                 "reason": {
                     "type": "string"
                 }
@@ -20852,9 +21131,6 @@ const docTemplate = `{
                 "tenant_id": {
                     "type": "string"
                 },
-                "type": {
-                    "$ref": "#/definitions/types.AddonType"
-                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -21176,9 +21452,6 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "addon_type": {
-                    "$ref": "#/definitions/types.AddonType"
-                },
                 "end_time": {
                     "type": "string"
                 },
@@ -21239,17 +21512,6 @@ const docTemplate = `{
                 "AddonStatusActive",
                 "AddonStatusCancelled",
                 "AddonStatusPaused"
-            ]
-        },
-        "types.AddonType": {
-            "type": "string",
-            "enum": [
-                "onetime",
-                "multiple_instance"
-            ],
-            "x-enum-varnames": [
-                "AddonTypeOnetime",
-                "AddonTypeMultipleInstance"
             ]
         },
         "types.AggregationType": {
@@ -24720,6 +24982,28 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "types.AddonCadence": {
+            "type": "string",
+            "enum": [
+                "onetime",
+                "recurring"
+            ],
+            "x-enum-varnames": [
+                "AddonCadenceOnetime",
+                "AddonCadenceRecurring"
+            ]
+        },
+        "types.EnvironmentType": {
+            "type": "string",
+            "enum": [
+                "development",
+                "production"
+            ],
+            "x-enum-varnames": [
+                "EnvironmentDevelopment",
+                "EnvironmentProduction"
+            ]
         },
         "types.ListResponse-dto_WalletResponse": {
             "type": "object",
