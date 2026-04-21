@@ -138,7 +138,6 @@ type AddonMutation struct {
 	lookup_key          *string
 	name                *string
 	description         *string
-	_type               *string
 	metadata            *map[string]interface{}
 	clearedFields       map[string]struct{}
 	entitlements        map[string]struct{}
@@ -665,42 +664,6 @@ func (m *AddonMutation) ResetDescription() {
 	delete(m.clearedFields, addon.FieldDescription)
 }
 
-// SetType sets the "type" field.
-func (m *AddonMutation) SetType(s string) {
-	m._type = &s
-}
-
-// GetType returns the value of the "type" field in the mutation.
-func (m *AddonMutation) GetType() (r string, exists bool) {
-	v := m._type
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldType returns the old "type" field's value of the Addon entity.
-// If the Addon object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AddonMutation) OldType(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldType is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldType: %w", err)
-	}
-	return oldValue.Type, nil
-}
-
-// ResetType resets all changes to the "type" field.
-func (m *AddonMutation) ResetType() {
-	m._type = nil
-}
-
 // SetMetadata sets the "metadata" field.
 func (m *AddonMutation) SetMetadata(value map[string]interface{}) {
 	m.metadata = &value
@@ -838,7 +801,7 @@ func (m *AddonMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AddonMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 11)
 	if m.tenant_id != nil {
 		fields = append(fields, addon.FieldTenantID)
 	}
@@ -868,9 +831,6 @@ func (m *AddonMutation) Fields() []string {
 	}
 	if m.description != nil {
 		fields = append(fields, addon.FieldDescription)
-	}
-	if m._type != nil {
-		fields = append(fields, addon.FieldType)
 	}
 	if m.metadata != nil {
 		fields = append(fields, addon.FieldMetadata)
@@ -903,8 +863,6 @@ func (m *AddonMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case addon.FieldDescription:
 		return m.Description()
-	case addon.FieldType:
-		return m.GetType()
 	case addon.FieldMetadata:
 		return m.Metadata()
 	}
@@ -936,8 +894,6 @@ func (m *AddonMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldName(ctx)
 	case addon.FieldDescription:
 		return m.OldDescription(ctx)
-	case addon.FieldType:
-		return m.OldType(ctx)
 	case addon.FieldMetadata:
 		return m.OldMetadata(ctx)
 	}
@@ -1018,13 +974,6 @@ func (m *AddonMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDescription(v)
-		return nil
-	case addon.FieldType:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetType(v)
 		return nil
 	case addon.FieldMetadata:
 		v, ok := value.(map[string]interface{})
@@ -1144,9 +1093,6 @@ func (m *AddonMutation) ResetField(name string) error {
 		return nil
 	case addon.FieldDescription:
 		m.ResetDescription()
-		return nil
-	case addon.FieldType:
-		m.ResetType()
 		return nil
 	case addon.FieldMetadata:
 		m.ResetMetadata()

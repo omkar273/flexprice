@@ -98,10 +98,6 @@ func init() {
 	addonDescName := addonFields[2].Descriptor()
 	// addon.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	addon.NameValidator = addonDescName.Validators[0].(func(string) error)
-	// addonDescType is the schema descriptor for type field.
-	addonDescType := addonFields[4].Descriptor()
-	// addon.TypeValidator is a validator for the "type" field. It is called by the builders before save.
-	addon.TypeValidator = addonDescType.Validators[0].(func(string) error)
 	addonassociationMixin := schema.AddonAssociation{}.Mixin()
 	addonassociationMixinFields0 := addonassociationMixin[0].Fields()
 	_ = addonassociationMixinFields0
