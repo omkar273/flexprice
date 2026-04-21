@@ -5,9 +5,13 @@ import (
 	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
+	authProvider "github.com/flexprice/flexprice/internal/auth"
+	"github.com/flexprice/flexprice/internal/config"
+	domainAuth "github.com/flexprice/flexprice/internal/domain/auth"
 	"github.com/flexprice/flexprice/internal/domain/tenant"
 	"github.com/flexprice/flexprice/internal/domain/user"
 	ierr "github.com/flexprice/flexprice/internal/errors"
+	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/rbac"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/nedpals/supabase-go"
@@ -24,24 +28,33 @@ type UserService interface {
 type userService struct {
 	userRepo        user.Repository
 	tenantRepo      tenant.Repository
+	authRepo        domainAuth.Repository
+	cfg             *config.Configuration
 	rbacService     *rbac.RBACService
 	supabaseAuth    *supabase.Client
 	settingsService SettingsService
+	logger          *logger.Logger
 }
 
 func NewUserService(
 	userRepo user.Repository,
 	tenantRepo tenant.Repository,
+	authRepo domainAuth.Repository,
+	cfg *config.Configuration,
 	rbacService *rbac.RBACService,
 	supabaseAuth *supabase.Client,
 	settingsService SettingsService,
+	logger *logger.Logger,
 ) UserService {
 	return &userService{
 		userRepo:        userRepo,
 		tenantRepo:      tenantRepo,
+		authRepo:        authRepo,
+		cfg:             cfg,
 		rbacService:     rbacService,
 		supabaseAuth:    supabaseAuth,
 		settingsService: settingsService,
+		logger:          logger,
 	}
 }
 
@@ -99,6 +112,7 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 
 	var newUser *user.User
 	var password string
+	var userID string
 
 	switch req.Type {
 	case types.UserTypeUser:
@@ -140,32 +154,70 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 				WithReportableDetails(map[string]interface{}{"max_users": addUserConfig.MaxUsers, "current_active_users": totalActiveUsers}).
 				Mark(ierr.ErrValidation)
 		}
-		if s.supabaseAuth == nil {
-			return nil, ierr.NewError("auth provider not configured").
-				WithHint("User accounts require Supabase auth to be configured; create user (type=user) only when Supabase is available.").
-				Mark(ierr.ErrValidation)
-		}
 		plainPassword, err := generateSecurePassword()
 		if err != nil {
 			return nil, ierr.WithError(err).WithHint("Failed to generate password").Mark(ierr.ErrSystem)
 		}
 		password = plainPassword
 
-		// Create in Supabase first; only on success create in DB. We cannot rollback either side
-		// This ordering ensures we never persist in DB without auth; if DB create fails after Supabase succeeds, caller sees the error.
-		supabaseUser, err := s.supabaseAuth.Admin.CreateUser(ctx, supabase.AdminUserParams{
-			Email:        req.Email,
-			Password:     lo.ToPtr(plainPassword),
-			EmailConfirm: true,
-			AppMetadata: map[string]interface{}{
-				"tenant_id": tenantID,
-			},
-		})
-		if err != nil {
-			return nil, ierr.WithError(err).WithHint("Failed to create user in auth provider").Mark(ierr.ErrSystem)
+		if s.cfg != nil && s.cfg.Auth.Provider == types.AuthProviderSupabase {
+			if s.supabaseAuth == nil {
+				return nil, ierr.NewError("supabase auth not configured").
+					WithHint("Supabase auth provider is selected but Supabase client is nil").
+					Mark(ierr.ErrValidation)
+			}
+			// Create in Supabase first; only on success create in DB. We cannot rollback either side
+			// This ordering ensures we never persist in DB without auth; if DB create fails after Supabase succeeds, caller sees the error.
+			supabaseUser, err := s.supabaseAuth.Admin.CreateUser(ctx, supabase.AdminUserParams{
+				Email:        req.Email,
+				Password:     lo.ToPtr(plainPassword),
+				EmailConfirm: true,
+				AppMetadata: map[string]interface{}{
+					"tenant_id": tenantID,
+				},
+			})
+			if err != nil {
+				return nil, ierr.WithError(err).WithHint("Failed to create user in auth provider").Mark(ierr.ErrSystem)
+			}
+			userID = supabaseUser.ID
 		}
+
+		// If configured for Supabase, create the auth user in Supabase
+		// Otherwise, create the auth user via Flexprice auth provider
+		if s.cfg.Auth.Provider != types.AuthProviderSupabase {
+			s.logger.InfowCtx(ctx,
+				"supabase auth not configured, using flexprice auth provider",
+				"email", req.Email,
+				"tenant_id", tenantID,
+			)
+			if s.cfg == nil || s.authRepo == nil {
+				return nil, ierr.NewError("flexprice auth provider not configured").
+					WithHint("Provide configuration and auth repository to create users without Supabase").
+					Mark(ierr.ErrValidation)
+			}
+
+			flexpriceProvider := authProvider.NewFlexpriceAuth(s.cfg)
+			authResp, err := flexpriceProvider.SignUp(ctx, authProvider.AuthRequest{
+				Email:    req.Email,
+				Password: plainPassword,
+				TenantID: tenantID,
+			})
+			if err != nil {
+				return nil, ierr.WithError(err).
+					WithHint("Failed to create user in flexprice auth provider").
+					Mark(ierr.ErrSystem)
+			}
+			userID = authResp.ID
+			if err := s.authRepo.CreateAuth(ctx, domainAuth.NewAuth(authResp.ID, types.AuthProviderFlexprice, authResp.ProviderToken)); err != nil {
+				return nil, ierr.WithError(err).
+					WithHint("Failed to create authentication record").
+					WithReportableDetails(map[string]interface{}{"user_id": userID}).
+					Mark(ierr.ErrDatabase)
+			}
+		}
+
 		newUser = &user.User{
-			ID:    supabaseUser.ID,
+			ID:    userID,
 			Email: req.Email,
 			Type:  types.UserTypeUser,
 			Roles: []string{},
