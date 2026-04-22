@@ -204,9 +204,7 @@ func (s *supabaseAuth) UserInvite(ctx context.Context, req UserInviteRequest) (*
 	// Generate an initial password (no auth token issuance here).
 	createdPassword, err := password.Generate(16, 4, 2, false, false)
 	if err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("Failed to generate password").
-			Mark(ierr.ErrSystem)
+		return nil, err
 	}
 
 	// Create in Supabase first. We intentionally do NOT return any auth token here.
@@ -219,9 +217,7 @@ func (s *supabaseAuth) UserInvite(ctx context.Context, req UserInviteRequest) (*
 		},
 	})
 	if err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("Failed to create user in Supabase auth provider").
-			Mark(ierr.ErrSystem)
+		return nil, err
 	}
 
 	return &UserInviteResponse{ID: supabaseUser.ID, Password: createdPassword, AuthRecord: nil}, nil
