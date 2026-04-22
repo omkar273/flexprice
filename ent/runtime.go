@@ -1352,10 +1352,10 @@ func init() {
 	price.DefaultBillingCadence = types.BillingCadence(priceDescBillingCadence.Default.(string))
 	// price.BillingCadenceValidator is a validator for the "billing_cadence" field. It is called by the builders before save.
 	price.BillingCadenceValidator = priceDescBillingCadence.Validators[0].(func(string) error)
-	// priceDescTrialPeriod is the schema descriptor for trial_period field.
-	priceDescTrialPeriod := priceFields[18].Descriptor()
-	// price.DefaultTrialPeriod holds the default value on creation for the trial_period field.
-	price.DefaultTrialPeriod = priceDescTrialPeriod.Default.(int)
+	// priceDescTrialPeriodDays is the schema descriptor for trial_period_days field.
+	priceDescTrialPeriodDays := priceFields[18].Descriptor()
+	// price.DefaultTrialPeriodDays holds the default value on creation for the trial_period_days field.
+	price.DefaultTrialPeriodDays = priceDescTrialPeriodDays.Default.(int)
 	// priceDescEntityType is the schema descriptor for entity_type field.
 	priceDescEntityType := priceFields[28].Descriptor()
 	// price.DefaultEntityType holds the default value on creation for the entity_type field.
@@ -1732,10 +1732,10 @@ func init() {
 	subscriptionlineitemDescBillingPeriodCount := subscriptionlineitemFields[16].Descriptor()
 	// subscriptionlineitem.DefaultBillingPeriodCount holds the default value on creation for the billing_period_count field.
 	subscriptionlineitem.DefaultBillingPeriodCount = subscriptionlineitemDescBillingPeriodCount.Default.(int)
-	// subscriptionlineitemDescTrialPeriod is the schema descriptor for trial_period field.
-	subscriptionlineitemDescTrialPeriod := subscriptionlineitemFields[18].Descriptor()
-	// subscriptionlineitem.DefaultTrialPeriod holds the default value on creation for the trial_period field.
-	subscriptionlineitem.DefaultTrialPeriod = subscriptionlineitemDescTrialPeriod.Default.(int)
+	// subscriptionlineitemDescTrialPeriodDays is the schema descriptor for trial_period_days field.
+	subscriptionlineitemDescTrialPeriodDays := subscriptionlineitemFields[18].Descriptor()
+	// subscriptionlineitem.DefaultTrialPeriodDays holds the default value on creation for the trial_period_days field.
+	subscriptionlineitem.DefaultTrialPeriodDays = subscriptionlineitemDescTrialPeriodDays.Default.(int)
 	// subscriptionlineitemDescCommitmentTrueUpEnabled is the schema descriptor for commitment_true_up_enabled field.
 	subscriptionlineitemDescCommitmentTrueUpEnabled := subscriptionlineitemFields[28].Descriptor()
 	// subscriptionlineitem.DefaultCommitmentTrueUpEnabled holds the default value on creation for the commitment_true_up_enabled field.

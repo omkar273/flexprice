@@ -178,7 +178,7 @@ func (Price) Fields() []ent.Field {
 			Immutable().
 			GoType(types.InvoiceCadence("")),
 
-		field.Int("trial_period").
+		field.Int("trial_period_days").
 			Default(0).
 			Immutable(),
 

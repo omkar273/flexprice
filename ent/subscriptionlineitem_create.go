@@ -312,16 +312,16 @@ func (slic *SubscriptionLineItemCreate) SetNillableInvoiceCadence(tc *types.Invo
 	return slic
 }
 
-// SetTrialPeriod sets the "trial_period" field.
-func (slic *SubscriptionLineItemCreate) SetTrialPeriod(i int) *SubscriptionLineItemCreate {
-	slic.mutation.SetTrialPeriod(i)
+// SetTrialPeriodDays sets the "trial_period_days" field.
+func (slic *SubscriptionLineItemCreate) SetTrialPeriodDays(i int) *SubscriptionLineItemCreate {
+	slic.mutation.SetTrialPeriodDays(i)
 	return slic
 }
 
-// SetNillableTrialPeriod sets the "trial_period" field if the given value is not nil.
-func (slic *SubscriptionLineItemCreate) SetNillableTrialPeriod(i *int) *SubscriptionLineItemCreate {
+// SetNillableTrialPeriodDays sets the "trial_period_days" field if the given value is not nil.
+func (slic *SubscriptionLineItemCreate) SetNillableTrialPeriodDays(i *int) *SubscriptionLineItemCreate {
 	if i != nil {
-		slic.SetTrialPeriod(*i)
+		slic.SetTrialPeriodDays(*i)
 	}
 	return slic
 }
@@ -575,9 +575,9 @@ func (slic *SubscriptionLineItemCreate) defaults() {
 		v := subscriptionlineitem.DefaultBillingPeriodCount
 		slic.mutation.SetBillingPeriodCount(v)
 	}
-	if _, ok := slic.mutation.TrialPeriod(); !ok {
-		v := subscriptionlineitem.DefaultTrialPeriod
-		slic.mutation.SetTrialPeriod(v)
+	if _, ok := slic.mutation.TrialPeriodDays(); !ok {
+		v := subscriptionlineitem.DefaultTrialPeriodDays
+		slic.mutation.SetTrialPeriodDays(v)
 	}
 	if _, ok := slic.mutation.CommitmentTrueUpEnabled(); !ok {
 		v := subscriptionlineitem.DefaultCommitmentTrueUpEnabled
@@ -667,8 +667,8 @@ func (slic *SubscriptionLineItemCreate) check() error {
 			return &ValidationError{Name: "invoice_cadence", err: fmt.Errorf(`ent: validator failed for field "SubscriptionLineItem.invoice_cadence": %w`, err)}
 		}
 	}
-	if _, ok := slic.mutation.TrialPeriod(); !ok {
-		return &ValidationError{Name: "trial_period", err: errors.New(`ent: missing required field "SubscriptionLineItem.trial_period"`)}
+	if _, ok := slic.mutation.TrialPeriodDays(); !ok {
+		return &ValidationError{Name: "trial_period_days", err: errors.New(`ent: missing required field "SubscriptionLineItem.trial_period_days"`)}
 	}
 	if _, ok := slic.mutation.CommitmentTrueUpEnabled(); !ok {
 		return &ValidationError{Name: "commitment_true_up_enabled", err: errors.New(`ent: missing required field "SubscriptionLineItem.commitment_true_up_enabled"`)}
@@ -811,9 +811,9 @@ func (slic *SubscriptionLineItemCreate) createSpec() (*SubscriptionLineItem, *sq
 		_spec.SetField(subscriptionlineitem.FieldInvoiceCadence, field.TypeString, value)
 		_node.InvoiceCadence = value
 	}
-	if value, ok := slic.mutation.TrialPeriod(); ok {
-		_spec.SetField(subscriptionlineitem.FieldTrialPeriod, field.TypeInt, value)
-		_node.TrialPeriod = value
+	if value, ok := slic.mutation.TrialPeriodDays(); ok {
+		_spec.SetField(subscriptionlineitem.FieldTrialPeriodDays, field.TypeInt, value)
+		_node.TrialPeriodDays = value
 	}
 	if value, ok := slic.mutation.StartDate(); ok {
 		_spec.SetField(subscriptionlineitem.FieldStartDate, field.TypeTime, value)
