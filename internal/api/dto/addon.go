@@ -75,7 +75,7 @@ type ListAddonsResponse = types.ListResponse[*AddonResponse] // @name ListAddons
 // AddAddonToSubscriptionRequest represents the request to add an addon to a subscription
 type AddAddonToSubscriptionRequest struct {
 	AddonID           string                  `json:"addon_id" validate:"required"`
-	Cadence           types.AddonCadence      `json:"cadence" validate:"required"`
+	Cadence           types.AddonCadence      `json:"cadence"`
 	ProrationBehavior types.ProrationBehavior `json:"proration_behavior,omitempty"`
 	StartDate         *time.Time              `json:"start_date,omitempty"`
 	Metadata          map[string]interface{}  `json:"metadata"`
@@ -113,6 +113,11 @@ func (a *AddAddonToSubscriptionRequest) ToAddonAssociation(ctx context.Context, 
 func (r *AddAddonToSubscriptionRequest) Validate() error {
 	if err := validator.ValidateRequest(r); err != nil {
 		return err
+	}
+
+	// Default to recurring when not provided for backward compatibility.
+	if r.Cadence == "" {
+		r.Cadence = types.AddonCadenceRecurring
 	}
 
 	if err := r.Cadence.Validate(); err != nil {
