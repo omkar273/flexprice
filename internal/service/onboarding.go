@@ -253,6 +253,8 @@ func (s *onboardingService) processMessage(msg *message.Message) error {
 		"subscription_id", eventMsg.SubscriptionID,
 		"duration", eventMsg.Duration,
 		"meters_count", len(eventMsg.Meters),
+		"tenant_id", eventMsg.TenantID,
+		"environment_id", eventMsg.EnvironmentID,
 	)
 
 	// Create a new background context instead of using the message context
