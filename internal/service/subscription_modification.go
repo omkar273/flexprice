@@ -448,7 +448,7 @@ func (s *subscriptionModificationService) executeQuantityChange(
 				BillingPeriod:           lineItem.BillingPeriod,
 				BillingPeriodCount:      lineItem.BillingPeriodCount,
 				InvoiceCadence:          lineItem.InvoiceCadence,
-				TrialPeriod:             lineItem.TrialPeriod,
+				TrialPeriodDays:         lineItem.TrialPeriodDays,
 				StartDate:               effectiveDate,
 				CommitmentAmount:        lineItem.CommitmentAmount,
 				CommitmentQuantity:      lineItem.CommitmentQuantity,

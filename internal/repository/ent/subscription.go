@@ -744,7 +744,7 @@ func (r *subscriptionRepository) CreateWithLineItems(ctx context.Context, sub *d
 				SetNillableEndDate(types.ToNillableTime(item.EndDate)).
 				SetNillableSubscriptionPhaseID(item.SubscriptionPhaseID).
 				SetInvoiceCadence(item.InvoiceCadence).
-				SetTrialPeriod(item.TrialPeriod).
+				SetTrialPeriodDays(item.TrialPeriodDays).
 				SetNillableCommitmentAmount(item.CommitmentAmount).
 				SetNillableCommitmentQuantity(item.CommitmentQuantity).
 				SetNillableCommitmentType(types.ToNillableString(string(item.CommitmentType))).

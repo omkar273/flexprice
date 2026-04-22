@@ -110,7 +110,7 @@ func (r *subscriptionLineItemRepository) Create(ctx context.Context, item *subsc
 		SetNillableSubscriptionPhaseID(item.SubscriptionPhaseID).
 		SetNillableAddonAssociationID(item.AddonAssociationID).
 		SetInvoiceCadence(item.InvoiceCadence).
-		SetTrialPeriod(item.TrialPeriod).
+		SetTrialPeriodDays(item.TrialPeriodDays).
 		SetMetadata(item.Metadata).
 		// Commitment fields
 		SetNillableCommitmentAmount(item.CommitmentAmount).
@@ -370,7 +370,7 @@ func (r *subscriptionLineItemRepository) CreateBulk(ctx context.Context, items [
 			SetCurrency(item.Currency).
 			SetBillingPeriod(item.BillingPeriod).
 			SetInvoiceCadence(item.InvoiceCadence).
-			SetTrialPeriod(item.TrialPeriod).
+			SetTrialPeriodDays(item.TrialPeriodDays).
 			SetNillableStartDate(types.ToNillableTime(item.StartDate)).
 			SetNillableEndDate(types.ToNillableTime(item.EndDate)).
 			SetNillableSubscriptionPhaseID(item.SubscriptionPhaseID).
@@ -379,7 +379,7 @@ func (r *subscriptionLineItemRepository) CreateBulk(ctx context.Context, items [
 			SetCurrency(item.Currency).
 			SetBillingPeriod(item.BillingPeriod).
 			SetInvoiceCadence(item.InvoiceCadence).
-			SetTrialPeriod(item.TrialPeriod).
+			SetTrialPeriodDays(item.TrialPeriodDays).
 			SetNillableStartDate(types.ToNillableTime(item.StartDate)).
 			SetNillableEndDate(types.ToNillableTime(item.EndDate)).
 			SetNillableSubscriptionPhaseID(item.SubscriptionPhaseID).

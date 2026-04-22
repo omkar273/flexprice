@@ -209,7 +209,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 			item.BillingPeriod = price.BillingPeriod
 			item.BillingPeriodCount = price.BillingPeriodCount
 			item.InvoiceCadence = price.InvoiceCadence
-			item.TrialPeriod = price.TrialPeriod
+			item.TrialPeriodDays = price.TrialPeriodDays
 			// Set phase ID if phases exist
 		}
 		if firstPhaseID != "" {
@@ -1185,7 +1185,7 @@ func (s *subscriptionService) ProcessSubscriptionPriceOverrides(
 			BillingPeriodCount:   originalPrice.BillingPeriodCount,
 			BillingModel:         targetBillingModel,
 			InvoiceCadence:       originalPrice.InvoiceCadence,
-			TrialPeriod:          originalPrice.TrialPeriod,
+			TrialPeriodDays:      originalPrice.TrialPeriodDays,
 			TierMode:             originalPrice.TierMode,
 			MeterID:              originalPrice.MeterID,
 			Description:          originalPrice.Description,
@@ -4601,9 +4601,9 @@ func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, price
 		Currency:       sub.Currency,
 		BillingPeriod:  price.BillingPeriod,
 		InvoiceCadence: price.InvoiceCadence,
-		TrialPeriod:    0,
-		StartDate:      lineItemStart,
-		EndDate:        time.Time{},
+		TrialPeriodDays: 0,
+		StartDate:       lineItemStart,
+		EndDate:         time.Time{},
 		Metadata: map[string]string{
 			"addon_id":        addonID,
 			"subscription_id": sub.ID,
