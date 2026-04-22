@@ -137,6 +137,15 @@ func (SubscriptionLineItem) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Immutable(),
+		// addon_association_id links this line item to the AddonAssociation that created it.
+		// Set once on creation (immutable); nil for line items not originating from an addon add.
+		field.String("addon_association_id").
+			SchemaType(map[string]string{
+				"postgres": "varchar(50)",
+			}).
+			Optional().
+			Nillable().
+			Immutable(),
 		field.JSON("metadata", map[string]string{}).
 			Optional().
 			SchemaType(map[string]string{
@@ -205,5 +214,6 @@ func (SubscriptionLineItem) Indexes() []ent.Index {
 		index.Fields("tenant_id", "environment_id", "meter_id", "status"),
 		index.Fields("start_date", "end_date"),
 		index.Fields("subscription_id", "status"),
+		index.Fields("tenant_id", "environment_id", "addon_association_id", "status"),
 	}
 }

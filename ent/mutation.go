@@ -49177,6 +49177,7 @@ type SubscriptionLineItemMutation struct {
 	start_date                 *time.Time
 	end_date                   *time.Time
 	subscription_phase_id      *string
+	addon_association_id       *string
 	metadata                   *map[string]string
 	commitment_amount          *decimal.Decimal
 	commitment_quantity        *decimal.Decimal
@@ -50543,6 +50544,55 @@ func (m *SubscriptionLineItemMutation) ResetSubscriptionPhaseID() {
 	delete(m.clearedFields, subscriptionlineitem.FieldSubscriptionPhaseID)
 }
 
+// SetAddonAssociationID sets the "addon_association_id" field.
+func (m *SubscriptionLineItemMutation) SetAddonAssociationID(s string) {
+	m.addon_association_id = &s
+}
+
+// AddonAssociationID returns the value of the "addon_association_id" field in the mutation.
+func (m *SubscriptionLineItemMutation) AddonAssociationID() (r string, exists bool) {
+	v := m.addon_association_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddonAssociationID returns the old "addon_association_id" field's value of the SubscriptionLineItem entity.
+// If the SubscriptionLineItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SubscriptionLineItemMutation) OldAddonAssociationID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAddonAssociationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAddonAssociationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddonAssociationID: %w", err)
+	}
+	return oldValue.AddonAssociationID, nil
+}
+
+// ClearAddonAssociationID clears the value of the "addon_association_id" field.
+func (m *SubscriptionLineItemMutation) ClearAddonAssociationID() {
+	m.addon_association_id = nil
+	m.clearedFields[subscriptionlineitem.FieldAddonAssociationID] = struct{}{}
+}
+
+// AddonAssociationIDCleared returns if the "addon_association_id" field was cleared in this mutation.
+func (m *SubscriptionLineItemMutation) AddonAssociationIDCleared() bool {
+	_, ok := m.clearedFields[subscriptionlineitem.FieldAddonAssociationID]
+	return ok
+}
+
+// ResetAddonAssociationID resets all changes to the "addon_association_id" field.
+func (m *SubscriptionLineItemMutation) ResetAddonAssociationID() {
+	m.addon_association_id = nil
+	delete(m.clearedFields, subscriptionlineitem.FieldAddonAssociationID)
+}
+
 // SetMetadata sets the "metadata" field.
 func (m *SubscriptionLineItemMutation) SetMetadata(value map[string]string) {
 	m.metadata = &value
@@ -51024,7 +51074,7 @@ func (m *SubscriptionLineItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SubscriptionLineItemMutation) Fields() []string {
-	fields := make([]string, 0, 36)
+	fields := make([]string, 0, 37)
 	if m.tenant_id != nil {
 		fields = append(fields, subscriptionlineitem.FieldTenantID)
 	}
@@ -51108,6 +51158,9 @@ func (m *SubscriptionLineItemMutation) Fields() []string {
 	}
 	if m.subscription_phase_id != nil {
 		fields = append(fields, subscriptionlineitem.FieldSubscriptionPhaseID)
+	}
+	if m.addon_association_id != nil {
+		fields = append(fields, subscriptionlineitem.FieldAddonAssociationID)
 	}
 	if m.metadata != nil {
 		fields = append(fields, subscriptionlineitem.FieldMetadata)
@@ -51197,6 +51250,8 @@ func (m *SubscriptionLineItemMutation) Field(name string) (ent.Value, bool) {
 		return m.EndDate()
 	case subscriptionlineitem.FieldSubscriptionPhaseID:
 		return m.SubscriptionPhaseID()
+	case subscriptionlineitem.FieldAddonAssociationID:
+		return m.AddonAssociationID()
 	case subscriptionlineitem.FieldMetadata:
 		return m.Metadata()
 	case subscriptionlineitem.FieldCommitmentAmount:
@@ -51278,6 +51333,8 @@ func (m *SubscriptionLineItemMutation) OldField(ctx context.Context, name string
 		return m.OldEndDate(ctx)
 	case subscriptionlineitem.FieldSubscriptionPhaseID:
 		return m.OldSubscriptionPhaseID(ctx)
+	case subscriptionlineitem.FieldAddonAssociationID:
+		return m.OldAddonAssociationID(ctx)
 	case subscriptionlineitem.FieldMetadata:
 		return m.OldMetadata(ctx)
 	case subscriptionlineitem.FieldCommitmentAmount:
@@ -51499,6 +51556,13 @@ func (m *SubscriptionLineItemMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetSubscriptionPhaseID(v)
 		return nil
+	case subscriptionlineitem.FieldAddonAssociationID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddonAssociationID(v)
+		return nil
 	case subscriptionlineitem.FieldMetadata:
 		v, ok := value.(map[string]string)
 		if !ok {
@@ -51657,6 +51721,9 @@ func (m *SubscriptionLineItemMutation) ClearedFields() []string {
 	if m.FieldCleared(subscriptionlineitem.FieldSubscriptionPhaseID) {
 		fields = append(fields, subscriptionlineitem.FieldSubscriptionPhaseID)
 	}
+	if m.FieldCleared(subscriptionlineitem.FieldAddonAssociationID) {
+		fields = append(fields, subscriptionlineitem.FieldAddonAssociationID)
+	}
 	if m.FieldCleared(subscriptionlineitem.FieldMetadata) {
 		fields = append(fields, subscriptionlineitem.FieldMetadata)
 	}
@@ -51733,6 +51800,9 @@ func (m *SubscriptionLineItemMutation) ClearField(name string) error {
 		return nil
 	case subscriptionlineitem.FieldSubscriptionPhaseID:
 		m.ClearSubscriptionPhaseID()
+		return nil
+	case subscriptionlineitem.FieldAddonAssociationID:
+		m.ClearAddonAssociationID()
 		return nil
 	case subscriptionlineitem.FieldMetadata:
 		m.ClearMetadata()
@@ -51843,6 +51913,9 @@ func (m *SubscriptionLineItemMutation) ResetField(name string) error {
 		return nil
 	case subscriptionlineitem.FieldSubscriptionPhaseID:
 		m.ResetSubscriptionPhaseID()
+		return nil
+	case subscriptionlineitem.FieldAddonAssociationID:
+		m.ResetAddonAssociationID()
 		return nil
 	case subscriptionlineitem.FieldMetadata:
 		m.ResetMetadata()
