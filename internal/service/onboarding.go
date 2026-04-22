@@ -159,6 +159,9 @@ func (s *onboardingService) GenerateEvents(ctx context.Context, req *dto.Onboard
 	)
 
 	topic := s.Config.OnboardingEvents.Topic
+	if s.pubSub == nil {
+		s.Logger.Infow("onboarding events pubsub unavailable, skipping message publication")
+	}
 	if err := s.pubSub.Publish(ctx, topic, watermillMsg); err != nil {
 		return nil, ierr.WithError(err).
 			WithHint("Failed to publish message").
@@ -202,6 +205,9 @@ func (s *onboardingService) RegisterHandler(router *pubsubRouter.Router, cfg *co
 	if !cfg.OnboardingEvents.Enabled {
 		s.Logger.Info("onboarding events handler disabled by configuration, skipping registration")
 		return
+	}
+	if s.pubSub == nil {
+		s.Logger.Errorw("onboarding events pubsub is nil, skipping handler registration — check Kafka connectivity at startup")
 	}
 	rateLimit := cfg.OnboardingEvents.RateLimit
 	if rateLimit <= 0 {
