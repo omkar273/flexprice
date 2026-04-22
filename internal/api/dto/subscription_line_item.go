@@ -93,6 +93,9 @@ type CreateSubscriptionLineItemRequest struct {
 	SubscriptionPhaseID  *string                         `json:"subscription_phase_id,omitempty"`
 	SkipEntitlementCheck bool                            `json:"-"` // This is used to skip entitlement check when creating a subscription line item
 
+	// ProrationBehavior controls mid-period charge creation. Defaults to none.
+	ProrationBehavior types.ProrationBehavior `json:"proration_behavior,omitempty"`
+
 	// Commitment fields
 	CommitmentAmount        *decimal.Decimal     `json:"commitment_amount,omitempty"`
 	CommitmentQuantity      *decimal.Decimal     `json:"commitment_quantity,omitempty"`
@@ -106,6 +109,9 @@ type CreateSubscriptionLineItemRequest struct {
 // DeleteSubscriptionLineItemRequest represents the request to delete a subscription line item
 type DeleteSubscriptionLineItemRequest struct {
 	EffectiveFrom *time.Time `json:"effective_from,omitempty"`
+
+	// ProrationBehavior controls mid-period credit issuance. Defaults to none.
+	ProrationBehavior types.ProrationBehavior `json:"proration_behavior,omitempty"`
 }
 
 type UpdateSubscriptionLineItemRequest struct {

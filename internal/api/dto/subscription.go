@@ -418,13 +418,24 @@ type AddAddonRequest struct {
 
 // RemoveAddonRequest is used by body-based endpoint /subscriptions/addon (DELETE)
 type RemoveAddonRequest struct {
-	AddonAssociationID string `json:"addon_association_id" validate:"required"`
-	Reason             string `json:"reason,omitempty"`
+	AddonAssociationID string                  `json:"addon_association_id" validate:"required"`
+	Reason             string                  `json:"reason,omitempty"`
+	ProrationBehavior  types.ProrationBehavior `json:"proration_behavior,omitempty"`
+	// EffectiveDate is the date the cancellation takes effect.
+	// When nil the addon is cancelled at the end of the current period.
+	// When provided it must fall within [CurrentPeriodStart, CurrentPeriodEnd]; mid-period
+	// values combined with create_prorations will issue a wallet credit for unused time.
+	EffectiveDate *time.Time `json:"effective_date,omitempty"`
 }
 
 func (r *RemoveAddonRequest) Validate() error {
 	if err := validator.ValidateRequest(r); err != nil {
 		return err
+	}
+	if r.ProrationBehavior != "" {
+		if err := r.ProrationBehavior.Validate(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

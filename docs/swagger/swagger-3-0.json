@@ -3220,6 +3220,87 @@
         ]
       }
     },
+    "/environments/{id}/clone": {
+      "post": {
+        "tags": [
+          "Environments"
+        ],
+        "summary": "Clone an environment",
+        "description": "Clone all published features and plans from the source environment into a target environment. If target_environment_id is provided, entities are cloned into that existing environment. Otherwise a new environment is created from name and type first.",
+        "operationId": "cloneEnvironment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Source Environment ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Clone configuration",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloneEnvironmentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/models.TemporalWorkflowResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-scope": "write",
+        "x-codegen-request-body-name": "request"
+      }
+    },
     "/events": {
       "post": {
         "tags": [
@@ -3947,6 +4028,97 @@
             "ApiKeyAuth": []
           }
         ]
+      }
+    },
+    "/features/{id}/clone": {
+      "post": {
+        "tags": [
+          "Features"
+        ],
+        "summary": "Clone a feature",
+        "description": "Clone an existing feature",
+        "operationId": "cloneFeature",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Source Feature ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Clone configuration",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloneFeatureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "x-scope": "write",
+        "x-codegen-request-body-name": "request"
       }
     },
     "/groups": {
@@ -6187,6 +6359,7 @@
         ],
         "summary": "Clone a plan",
         "description": "Clone an existing plan, copying its active prices, published entitlements, and published credit grants",
+        "operationId": "clonePlan",
         "parameters": [
           {
             "name": "id",
@@ -6266,6 +6439,7 @@
             "ApiKeyAuth": []
           }
         ],
+        "x-scope": "write",
         "x-codegen-request-body-name": "request"
       }
     },
@@ -13891,6 +14065,9 @@
           "addon_id": {
             "type": "string"
           },
+          "cadence": {
+            "$ref": "#/components/schemas/types.AddonCadence"
+          },
           "line_item_commitments": {
             "type": "object",
             "additionalProperties": {
@@ -13901,6 +14078,9 @@
           "metadata": {
             "type": "object",
             "additionalProperties": true
+          },
+          "proration_behavior": {
+            "$ref": "#/components/schemas/types.ProrationBehavior"
           },
           "start_date": {
             "type": "string",
@@ -13920,6 +14100,9 @@
           "addon_id": {
             "type": "string"
           },
+          "cadence": {
+            "$ref": "#/components/schemas/types.AddonCadence"
+          },
           "line_item_commitments": {
             "type": "object",
             "additionalProperties": {
@@ -13930,6 +14113,9 @@
           "metadata": {
             "type": "object",
             "additionalProperties": true
+          },
+          "proration_behavior": {
+            "$ref": "#/components/schemas/types.ProrationBehavior"
           },
           "start_date": {
             "type": "string",
@@ -14052,9 +14238,6 @@
           },
           "tenant_id": {
             "type": "string"
-          },
-          "type": {
-            "$ref": "#/components/schemas/types.AddonType"
           },
           "updated_at": {
             "type": "string",
@@ -14362,23 +14545,51 @@
         "type": "object",
         "properties": {
           "action": {
-            "type": "string",
-            "description": "\"created\" | \"wallet_credit\""
+            "$ref": "#/components/schemas/ChangedInvoiceAction"
           },
           "id": {
             "type": "string"
           },
+          "invoice": {
+            "$ref": "#/components/schemas/InvoiceResponse"
+          },
           "status": {
-            "type": "string"
+            "$ref": "#/components/schemas/ChangedInvoiceStatus"
+          },
+          "wallet_transaction": {
+            "$ref": "#/components/schemas/WalletTransactionResponse"
           }
         }
+      },
+      "ChangedInvoiceAction": {
+        "type": "string",
+        "description": "created (proration invoice) | wallet_credit (downgrade credit)",
+        "enum": [
+          "created",
+          "wallet_credit"
+        ],
+        "x-enum-varnames": [
+          "ChangedInvoiceActionCreated",
+          "ChangedInvoiceActionWalletCredit"
+        ]
+      },
+      "ChangedInvoiceStatus": {
+        "type": "string",
+        "description": "preview | issued | INITIATED | PENDING | PROCESSING | SUCCEEDED | OVERPAID | FAILED | REFUNDED | PARTIALLY_REFUNDED",
+        "enum": [
+          "preview",
+          "issued"
+        ],
+        "x-enum-varnames": [
+          "ChangedInvoiceStatusPreview",
+          "ChangedInvoiceStatusWalletIssued"
+        ]
       },
       "ChangedLineItem": {
         "type": "object",
         "properties": {
           "change_action": {
-            "type": "string",
-            "description": "\"created\" | \"updated\" | \"ended\""
+            "$ref": "#/components/schemas/ChangedLineItemAction"
           },
           "end_date": {
             "type": "string",
@@ -14398,6 +14609,20 @@
             "format": "date-time"
           }
         }
+      },
+      "ChangedLineItemAction": {
+        "type": "string",
+        "description": "created | updated | ended",
+        "enum": [
+          "created",
+          "updated",
+          "ended"
+        ],
+        "x-enum-varnames": [
+          "ChangedLineItemActionCreated",
+          "ChangedLineItemActionUpdated",
+          "ChangedLineItemActionEnded"
+        ]
       },
       "ChangedResources": {
         "type": "object",
@@ -14426,14 +14651,61 @@
         "type": "object",
         "properties": {
           "action": {
-            "type": "string",
-            "description": "\"created\" | \"updated\""
+            "$ref": "#/components/schemas/ChangedSubscriptionAction"
           },
           "id": {
             "type": "string"
           },
           "status": {
             "$ref": "#/components/schemas/types.SubscriptionStatus"
+          }
+        }
+      },
+      "ChangedSubscriptionAction": {
+        "type": "string",
+        "description": "created | updated",
+        "enum": [
+          "created",
+          "updated"
+        ],
+        "x-enum-varnames": [
+          "ChangedSubscriptionActionCreated",
+          "ChangedSubscriptionActionUpdated"
+        ]
+      },
+      "CloneEnvironmentRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the new environment (required when target_environment_id is not provided)"
+          },
+          "target_environment_id": {
+            "type": "string",
+            "description": "TargetEnvironmentID is the ID of an existing environment to clone into (optional).\nWhen provided, Name and Type are ignored. When omitted, Name and Type are required."
+          },
+          "type": {
+            "$ref": "#/components/schemas/types.EnvironmentType"
+          }
+        }
+      },
+      "CloneFeatureRequest": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Description overrides the source feature's description when provided"
+          },
+          "lookup_key": {
+            "type": "string",
+            "description": "LookupKey is required and must be unique across published features"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/types.Metadata"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name is required and must be different from the source feature's name"
           }
         }
       },
@@ -14842,8 +15114,7 @@
       "CreateAddonRequest": {
         "required": [
           "lookup_key",
-          "name",
-          "type"
+          "name"
         ],
         "type": "object",
         "properties": {
@@ -14859,9 +15130,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "type": {
-            "$ref": "#/components/schemas/types.AddonType"
           }
         }
       },
@@ -14912,9 +15180,6 @@
           },
           "tenant_id": {
             "type": "string"
-          },
-          "type": {
-            "$ref": "#/components/schemas/types.AddonType"
           },
           "updated_at": {
             "type": "string",
@@ -16034,6 +16299,9 @@
             "type": "string",
             "description": "PriceID references an existing price (plan, addon, or subscription-scoped). Exactly one of price_id or price must be set."
           },
+          "proration_behavior": {
+            "$ref": "#/components/schemas/types.ProrationBehavior"
+          },
           "quantity": {
             "type": "number"
           },
@@ -16060,6 +16328,11 @@
             "items": {
               "$ref": "#/components/schemas/AddAddonToSubscriptionRequest"
             }
+          },
+          "billing_anchor": {
+            "type": "string",
+            "description": "BillingAnchor overrides the derived billing anchor when billing_cycle is anniversary.\nFor monthly billing, the day-of-month (and time-of-day) define cycle boundaries: if start_date\nis before that day in the month, the first billing period ends on the next occurrence of that\nday in the same month (a shorter first period); subsequent periods follow the usual interval.",
+            "format": "date-time"
           },
           "billing_cycle": {
             "$ref": "#/components/schemas/types.BillingCycle"
@@ -16976,6 +17249,9 @@
         "properties": {
           "effective_from": {
             "type": "string"
+          },
+          "proration_behavior": {
+            "$ref": "#/components/schemas/types.ProrationBehavior"
           }
         }
       },
@@ -19543,6 +19819,14 @@
           "addon_association_id": {
             "type": "string"
           },
+          "effective_date": {
+            "type": "string",
+            "description": "EffectiveDate is the date the cancellation takes effect.\nWhen nil the addon is cancelled at the end of the current period.\nWhen provided it must fall within [CurrentPeriodStart, CurrentPeriodEnd]; mid-period\nvalues combined with create_prorations will issue a wallet credit for unused time.",
+            "format": "date-time"
+          },
+          "proration_behavior": {
+            "$ref": "#/components/schemas/types.ProrationBehavior"
+          },
           "reason": {
             "type": "string"
           }
@@ -19908,6 +20192,9 @@
       "SubscriptionLineItemResponse": {
         "type": "object",
         "properties": {
+          "addon_association_id": {
+            "type": "string"
+          },
           "billing_period": {
             "$ref": "#/components/schemas/types.BillingPeriod"
           },
@@ -22464,9 +22751,6 @@
           "tenant_id": {
             "type": "string"
           },
-          "type": {
-            "$ref": "#/components/schemas/types.AddonType"
-          },
           "updated_at": {
             "type": "string",
             "format": "date-time"
@@ -22796,9 +23080,6 @@
               "type": "string"
             }
           },
-          "addon_type": {
-            "$ref": "#/components/schemas/types.AddonType"
-          },
           "end_time": {
             "type": "string",
             "format": "date-time"
@@ -22856,26 +23137,14 @@
         "enum": [
           "active",
           "cancelled",
-          "paused"
+          "pending"
         ],
         "x-enum-varnames": [
           "AddonStatusActive",
           "AddonStatusCancelled",
-          "AddonStatusPaused"
+          "AddonStatusPending"
         ],
         "x-speakeasy-name-override": "AddonStatus"
-      },
-      "types.AddonType": {
-        "type": "string",
-        "enum": [
-          "onetime",
-          "multiple_instance"
-        ],
-        "x-enum-varnames": [
-          "AddonTypeOnetime",
-          "AddonTypeMultipleInstance"
-        ],
-        "x-speakeasy-name-override": "AddonType"
       },
       "types.AggregationType": {
         "type": "string",
@@ -25623,6 +25892,7 @@
       "types.WindowSize": {
         "type": "string",
         "enum": [
+          "MONTH",
           "MINUTE",
           "15MIN",
           "30MIN",
@@ -25632,10 +25902,10 @@
           "12HOUR",
           "DAY",
           "WEEK",
-          "MONTH",
           "MONTH"
         ],
         "x-enum-varnames": [
+          "DefaultWindowSize",
           "WindowSizeMinute",
           "WindowSize15Min",
           "WindowSize30Min",
@@ -25645,8 +25915,7 @@
           "WindowSize12Hour",
           "WindowSizeDay",
           "WindowSizeWeek",
-          "WindowSizeMonth",
-          "DefaultWindowSize"
+          "WindowSizeMonth"
         ],
         "x-speakeasy-name-override": "WindowSize"
       },
@@ -26204,6 +26473,9 @@
       "subscription.SubscriptionLineItem": {
         "type": "object",
         "properties": {
+          "addon_association_id": {
+            "type": "string"
+          },
           "billing_period": {
             "$ref": "#/components/schemas/types.BillingPeriod"
           },
@@ -26456,6 +26728,30 @@
             "type": "string"
           }
         }
+      },
+      "types.AddonCadence": {
+        "type": "string",
+        "enum": [
+          "onetime",
+          "recurring"
+        ],
+        "x-enum-varnames": [
+          "AddonCadenceOnetime",
+          "AddonCadenceRecurring"
+        ],
+        "x-speakeasy-name-override": "AddonCadence"
+      },
+      "types.EnvironmentType": {
+        "type": "string",
+        "enum": [
+          "development",
+          "production"
+        ],
+        "x-enum-varnames": [
+          "EnvironmentDevelopment",
+          "EnvironmentProduction"
+        ],
+        "x-speakeasy-name-override": "EnvironmentType"
       },
       "types.ListResponse-dto_WalletResponse": {
         "type": "object",
