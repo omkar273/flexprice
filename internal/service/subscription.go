@@ -153,6 +153,11 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 	sub.CurrentPeriodStart = sub.StartDate
 	sub.CurrentPeriodEnd = nextBillingDate
 
+	effectiveTrialDays, err := applyTrialWindowToSubscription(&req, sub, validPrices)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create line items using DTO method
 	subscriptionResponse := &dto.SubscriptionResponse{Subscription: sub}
 	planResponse := &dto.PlanResponse{Plan: plan}
@@ -209,7 +214,11 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 			item.BillingPeriod = price.BillingPeriod
 			item.BillingPeriodCount = price.BillingPeriodCount
 			item.InvoiceCadence = price.InvoiceCadence
-			item.TrialPeriodDays = price.TrialPeriodDays
+			if price.BillingCadence == types.BILLING_CADENCE_RECURRING && price.Type == types.PRICE_TYPE_FIXED {
+				item.TrialPeriodDays = effectiveTrialDays
+			} else {
+				item.TrialPeriodDays = price.TrialPeriodDays
+			}
 			// Set phase ID if phases exist
 		}
 		if firstPhaseID != "" {
