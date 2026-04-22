@@ -4176,6 +4176,10 @@ func (s *subscriptionService) addAddonToSubscription(
 		if periodErr != nil {
 			return nil, periodErr
 		}
+		// Mirror the same boundary on the association so it is self-consistent
+		// with its line items and so the remove-addon flow can identify the
+		// association as already-terminated without inspecting its line items.
+		addonAssociation.EndDate = &onetimePeriodEnd
 	}
 
 	// Create line items for addon prices
