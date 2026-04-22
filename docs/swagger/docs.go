@@ -12020,7 +12020,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "addon_id",
-                "cadence",
                 "subscription_id"
             ],
             "properties": {
@@ -12055,8 +12054,7 @@ const docTemplate = `{
         "AddAddonToSubscriptionRequest": {
             "type": "object",
             "required": [
-                "addon_id",
-                "cadence"
+                "addon_id"
             ],
             "properties": {
                 "addon_id": {
@@ -14390,6 +14388,14 @@ const docTemplate = `{
                     "description": "PriceID references an existing price (plan, addon, or subscription-scoped). Exactly one of price_id or price must be set.",
                     "type": "string"
                 },
+                "proration_behavior": {
+                    "description": "ProrationBehavior controls mid-period charge creation. Defaults to none.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ProrationBehavior"
+                        }
+                    ]
+                },
                 "quantity": {
                     "type": "number"
                 },
@@ -15419,6 +15425,14 @@ const docTemplate = `{
             "properties": {
                 "effective_from": {
                     "type": "string"
+                },
+                "proration_behavior": {
+                    "description": "ProrationBehavior controls mid-period credit issuance. Defaults to none.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.ProrationBehavior"
+                        }
+                    ]
                 }
             }
         },
@@ -18015,6 +18029,10 @@ const docTemplate = `{
                 "addon_association_id": {
                     "type": "string"
                 },
+                "effective_date": {
+                    "description": "EffectiveDate is the date the cancellation takes effect.\nWhen nil the addon is cancelled at the end of the current period.\nWhen provided it must fall within [CurrentPeriodStart, CurrentPeriodEnd]; mid-period\nvalues combined with create_prorations will issue a wallet credit for unused time.",
+                    "type": "string"
+                },
                 "proration_behavior": {
                     "$ref": "#/definitions/types.ProrationBehavior"
                 },
@@ -18474,6 +18492,9 @@ const docTemplate = `{
         "SubscriptionLineItemResponse": {
             "type": "object",
             "properties": {
+                "addon_association_id": {
+                    "type": "string"
+                },
                 "billing_period": {
                     "$ref": "#/definitions/types.BillingPeriod"
                 },
@@ -21506,12 +21527,12 @@ const docTemplate = `{
             "enum": [
                 "active",
                 "cancelled",
-                "paused"
+                "pending"
             ],
             "x-enum-varnames": [
                 "AddonStatusActive",
                 "AddonStatusCancelled",
-                "AddonStatusPaused"
+                "AddonStatusPending"
             ]
         },
         "types.AggregationType": {
@@ -24139,6 +24160,7 @@ const docTemplate = `{
         "types.WindowSize": {
             "type": "string",
             "enum": [
+                "MONTH",
                 "MINUTE",
                 "15MIN",
                 "30MIN",
@@ -24148,10 +24170,10 @@ const docTemplate = `{
                 "12HOUR",
                 "DAY",
                 "WEEK",
-                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
+                "DefaultWindowSize",
                 "WindowSizeMinute",
                 "WindowSize15Min",
                 "WindowSize30Min",
@@ -24161,8 +24183,7 @@ const docTemplate = `{
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth",
-                "DefaultWindowSize"
+                "WindowSizeMonth"
             ]
         },
         "types.WorkflowExecutionFilter": {
@@ -24740,6 +24761,9 @@ const docTemplate = `{
         "subscription.SubscriptionLineItem": {
             "type": "object",
             "properties": {
+                "addon_association_id": {
+                    "type": "string"
+                },
                 "billing_period": {
                     "$ref": "#/definitions/types.BillingPeriod"
                 },

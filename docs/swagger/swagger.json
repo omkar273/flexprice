@@ -12004,7 +12004,6 @@
             "type": "object",
             "required": [
                 "addon_id",
-                "cadence",
                 "subscription_id"
             ],
             "properties": {
@@ -12039,8 +12038,7 @@
         "AddAddonToSubscriptionRequest": {
             "type": "object",
             "required": [
-                "addon_id",
-                "cadence"
+                "addon_id"
             ],
             "properties": {
                 "addon_id": {
@@ -14246,6 +14244,10 @@
                     "description": "PriceID references an existing price (plan, addon, or subscription-scoped). Exactly one of price_id or price must be set.",
                     "type": "string"
                 },
+                "proration_behavior": {
+                    "description": "ProrationBehavior controls mid-period charge creation. Defaults to none.",
+                    "$ref": "#/definitions/types.ProrationBehavior"
+                },
                 "quantity": {
                     "type": "number"
                 },
@@ -15191,6 +15193,10 @@
             "properties": {
                 "effective_from": {
                     "type": "string"
+                },
+                "proration_behavior": {
+                    "description": "ProrationBehavior controls mid-period credit issuance. Defaults to none.",
+                    "$ref": "#/definitions/types.ProrationBehavior"
                 }
             }
         },
@@ -17703,6 +17709,10 @@
                 "addon_association_id": {
                     "type": "string"
                 },
+                "effective_date": {
+                    "description": "EffectiveDate is the date the cancellation takes effect.\nWhen nil the addon is cancelled at the end of the current period.\nWhen provided it must fall within [CurrentPeriodStart, CurrentPeriodEnd]; mid-period\nvalues combined with create_prorations will issue a wallet credit for unused time.",
+                    "type": "string"
+                },
                 "proration_behavior": {
                     "$ref": "#/definitions/types.ProrationBehavior"
                 },
@@ -18086,6 +18096,9 @@
         "SubscriptionLineItemResponse": {
             "type": "object",
             "properties": {
+                "addon_association_id": {
+                    "type": "string"
+                },
                 "billing_period": {
                     "$ref": "#/definitions/types.BillingPeriod"
                 },
@@ -20966,12 +20979,12 @@
             "enum": [
                 "active",
                 "cancelled",
-                "paused"
+                "pending"
             ],
             "x-enum-varnames": [
                 "AddonStatusActive",
                 "AddonStatusCancelled",
-                "AddonStatusPaused"
+                "AddonStatusPending"
             ]
         },
         "types.AggregationType": {
@@ -23583,6 +23596,7 @@
         "types.WindowSize": {
             "type": "string",
             "enum": [
+                "MONTH",
                 "MINUTE",
                 "15MIN",
                 "30MIN",
@@ -23592,10 +23606,10 @@
                 "12HOUR",
                 "DAY",
                 "WEEK",
-                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
+                "DefaultWindowSize",
                 "WindowSizeMinute",
                 "WindowSize15Min",
                 "WindowSize30Min",
@@ -23605,8 +23619,7 @@
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth",
-                "DefaultWindowSize"
+                "WindowSizeMonth"
             ]
         },
         "types.WorkflowExecutionFilter": {
@@ -24156,6 +24169,9 @@
         "subscription.SubscriptionLineItem": {
             "type": "object",
             "properties": {
+                "addon_association_id": {
+                    "type": "string"
+                },
                 "billing_period": {
                     "$ref": "#/definitions/types.BillingPeriod"
                 },

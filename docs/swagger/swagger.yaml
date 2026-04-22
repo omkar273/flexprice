@@ -358,7 +358,6 @@ definitions:
         type: string
     required:
     - addon_id
-    - cadence
     - subscription_id
     type: object
   AddAddonToSubscriptionRequest:
@@ -382,7 +381,6 @@ definitions:
         type: string
     required:
     - addon_id
-    - cadence
     type: object
   AddonAssociationResponse:
     properties:
@@ -2031,6 +2029,11 @@ definitions:
         description: PriceID references an existing price (plan, addon, or subscription-scoped).
           Exactly one of price_id or price must be set.
         type: string
+      proration_behavior:
+        allOf:
+        - $ref: '#/definitions/types.ProrationBehavior'
+        description: ProrationBehavior controls mid-period charge creation. Defaults
+          to none.
       quantity:
         type: number
       start_date:
@@ -2811,6 +2814,11 @@ definitions:
     properties:
       effective_from:
         type: string
+      proration_behavior:
+        allOf:
+        - $ref: '#/definitions/types.ProrationBehavior'
+        description: ProrationBehavior controls mid-period credit issuance. Defaults
+          to none.
     type: object
   EntitlementResponse:
     properties:
@@ -4715,6 +4723,13 @@ definitions:
     properties:
       addon_association_id:
         type: string
+      effective_date:
+        description: |-
+          EffectiveDate is the date the cancellation takes effect.
+          When nil the addon is cancelled at the end of the current period.
+          When provided it must fall within [CurrentPeriodStart, CurrentPeriodEnd]; mid-period
+          values combined with create_prorations will issue a wallet credit for unused time.
+        type: string
       proration_behavior:
         $ref: '#/definitions/types.ProrationBehavior'
       reason:
@@ -5032,6 +5047,8 @@ definitions:
     type: object
   SubscriptionLineItemResponse:
     properties:
+      addon_association_id:
+        type: string
       billing_period:
         $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
@@ -7194,12 +7211,12 @@ definitions:
     enum:
     - active
     - cancelled
-    - paused
+    - pending
     type: string
     x-enum-varnames:
     - AddonStatusActive
     - AddonStatusCancelled
-    - AddonStatusPaused
+    - AddonStatusPending
   types.AggregationType:
     enum:
     - COUNT
@@ -9179,6 +9196,7 @@ definitions:
     - WebhookEventCreditNoteUpdated
   types.WindowSize:
     enum:
+    - MONTH
     - MINUTE
     - 15MIN
     - 30MIN
@@ -9189,9 +9207,9 @@ definitions:
     - DAY
     - WEEK
     - MONTH
-    - MONTH
     type: string
     x-enum-varnames:
+    - DefaultWindowSize
     - WindowSizeMinute
     - WindowSize15Min
     - WindowSize30Min
@@ -9202,7 +9220,6 @@ definitions:
     - WindowSizeDay
     - WindowSizeWeek
     - WindowSizeMonth
-    - DefaultWindowSize
   types.WorkflowExecutionFilter:
     properties:
       end_time:
@@ -9640,6 +9657,8 @@ definitions:
     type: object
   subscription.SubscriptionLineItem:
     properties:
+      addon_association_id:
+        type: string
       billing_period:
         $ref: '#/definitions/types.BillingPeriod'
       billing_period_count:
