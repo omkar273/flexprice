@@ -307,22 +307,21 @@ type CreateSubscriptionRequest struct {
 	// and must be same as what you provided as external_id while creating the customer in flexprice.
 	ExternalCustomerID string `json:"external_customer_id"`
 
-	PlanID             string               `json:"plan_id" validate:"required"`
-	Currency           string               `json:"currency" validate:"required,len=3"`
-	LookupKey          string               `json:"lookup_key"`
-	StartDate          *time.Time           `json:"start_date,omitempty"`
-	EndDate            *time.Time           `json:"end_date,omitempty"`
+	PlanID    string     `json:"plan_id" validate:"required"`
+	Currency  string     `json:"currency" validate:"required,len=3"`
+	LookupKey string     `json:"lookup_key"`
+	StartDate *time.Time `json:"start_date,omitempty"`
+	EndDate   *time.Time `json:"end_date,omitempty"`
 
 	// TrialPeriodDays: nil = inherit trial length from plan recurring-fixed prices (must be uniform).
 	// 0 = explicitly no trial (overrides catalog). >0 = override duration in days.
-	// Resolved to trial_start/trial_end in the subscription service after dates and prices are known.
 	TrialPeriodDays *int `json:"trial_period_days,omitempty"`
 
 	// TrialStart/TrialEnd are for internal integrations only (e.g. Stripe sync); not accepted from public JSON.
 	TrialStart *time.Time `json:"-"`
 	TrialEnd   *time.Time `json:"-"`
 
-	BillingCadence types.BillingCadence `json:"-"`
+	BillingCadence     types.BillingCadence `json:"-"`
 	BillingPeriod      types.BillingPeriod  `json:"billing_period" validate:"required"`
 	BillingPeriodCount int                  `json:"billing_period_count" default:"1"`
 	Metadata           map[string]string    `json:"metadata,omitempty"`
