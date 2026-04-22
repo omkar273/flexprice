@@ -281,16 +281,12 @@ func (f *flexpriceAuth) UserInvite(ctx context.Context, req UserInviteRequest) (
 	// Generate an initial password (no auth token issuance here).
 	password, err := password.Generate(16, 4, 2, false, false)
 	if err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("Failed to generate password").
-			Mark(ierr.ErrSystem)
+		return nil, err
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, ierr.WithError(err).
-			WithHint("Failed to hash password").
-			Mark(ierr.ErrSystem)
+		return nil, err
 	}
 
 	// Flexprice auth provisioning here is about allocating a user ID and returning

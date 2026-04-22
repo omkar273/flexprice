@@ -10,14 +10,15 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware"
-	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/api/dto"
+	"github.com/flexprice/flexprice/internal/config"
 	"github.com/flexprice/flexprice/internal/domain/environment"
 	"github.com/flexprice/flexprice/internal/domain/meter"
 	"github.com/flexprice/flexprice/internal/domain/user"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/httpclient"
 	"github.com/flexprice/flexprice/internal/pubsub"
+	"github.com/flexprice/flexprice/internal/pubsub/kafka"
 	pubsubRouter "github.com/flexprice/flexprice/internal/pubsub/router"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/samber/lo"
@@ -40,12 +41,23 @@ type onboardingService struct {
 // NewOnboardingService creates a new onboarding service
 func NewOnboardingService(
 	params ServiceParams,
-	pubSub pubsub.PubSub,
 ) OnboardingService {
-	return &onboardingService{
+	svc := &onboardingService{
 		ServiceParams: params,
-		pubSub:        pubSub,
 	}
+
+	pubSub, err := kafka.NewPubSubFromConfig(
+		params.Config,
+		params.Logger,
+		params.Config.OnboardingEvents.ConsumerGroup,
+	)
+	if err != nil {
+		params.Logger.Warnw("failed to create pubsub for onboarding events, event generation will be unavailable", "error", err)
+	} else {
+		svc.pubSub = pubSub
+	}
+
+	return svc
 }
 
 // GenerateEvents generates events for a specific customer and feature or subscription

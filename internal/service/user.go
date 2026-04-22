@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	authProvider "github.com/flexprice/flexprice/internal/auth"
@@ -139,15 +138,11 @@ func (s *userService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 			Email: "",
 			Type:  types.UserTypeServiceAccount,
 			Roles: req.Roles,
-			BaseModel: types.BaseModel{
-				TenantID:  tenantID,
-				Status:    types.StatusPublished,
-				CreatedBy: currentUserID,
-				UpdatedBy: currentUserID,
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
 		}
+		newUser.BaseModel = types.GetDefaultBaseModel(ctx)
+		newUser.BaseModel.CreatedBy = currentUserID
+		newUser.BaseModel.UpdatedBy = currentUserID
+
 		if err := newUser.Validate(); err != nil {
 			return nil, err
 		}
@@ -201,7 +196,6 @@ func (s *userService) ListUsersByFilter(ctx context.Context, filter *types.UserF
 func (s *userService) InviteUser(ctx context.Context, req *dto.CreateUserRequest, currentUserID string) (*user.User, *string, error) {
 
 	var userID string
-	tenantID := types.GetTenantID(ctx)
 
 	// Check if user by email already exists
 	existingUser, err := s.userRepo.GetByEmail(ctx, req.Email)
@@ -267,10 +261,7 @@ func (s *userService) InviteUser(ctx context.Context, req *dto.CreateUserRequest
 				Mark(ierr.ErrValidation)
 		}
 		if err := s.authRepo.CreateAuth(ctx, inviteResp.AuthRecord); err != nil {
-			return nil, nil, ierr.WithError(err).
-				WithHint("Failed to create authentication record").
-				WithReportableDetails(map[string]interface{}{"user_id": userID}).
-				Mark(ierr.ErrDatabase)
+			return nil, nil, err
 		}
 	}
 
@@ -279,15 +270,10 @@ func (s *userService) InviteUser(ctx context.Context, req *dto.CreateUserRequest
 		Email: req.Email,
 		Type:  types.UserTypeUser,
 		Roles: []string{},
-		BaseModel: types.BaseModel{
-			TenantID:  tenantID,
-			Status:    types.StatusPublished,
-			CreatedBy: currentUserID,
-			UpdatedBy: currentUserID,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
 	}
+	newUser.BaseModel = types.GetDefaultBaseModel(ctx)
+	newUser.BaseModel.CreatedBy = currentUserID
+	newUser.BaseModel.UpdatedBy = currentUserID
 
 	if err := newUser.Validate(); err != nil {
 		return nil, nil, err
