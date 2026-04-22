@@ -31,8 +31,22 @@ type AddonStatus string
 const (
 	AddonStatusActive    AddonStatus = "active"
 	AddonStatusCancelled AddonStatus = "cancelled"
-	AddonStatusPaused    AddonStatus = "paused"
+	AddonStatusPending   AddonStatus = "pending"
 )
+
+func (s AddonStatus) Validate() error {
+	allowed := []AddonStatus{
+		AddonStatusActive,
+		AddonStatusCancelled,
+		AddonStatusPending,
+	}
+	if !lo.Contains(allowed, s) {
+		return ierr.NewError("invalid addon status").
+			WithHint("Addon status must be active, cancelled or pending").
+			Mark(ierr.ErrValidation)
+	}
+	return nil
+}
 
 // AddonFilter represents the filter options for addons
 type AddonFilter struct {

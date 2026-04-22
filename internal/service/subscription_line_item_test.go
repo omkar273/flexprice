@@ -478,8 +478,10 @@ func (s *SubscriptionLineItemServiceSuite) TestAddSubscriptionLineItem_UsagePric
 // for the unused portion of the billing period.
 func (s *SubscriptionLineItemServiceSuite) TestDeleteSubscriptionLineItem_WithCreateProrations_CreatesWalletCredit() {
 	ctx := s.GetContext()
-	// Use an effective_from that is valid (on or after line item start).
-	effectiveFrom := s.testData.lineItem.StartDate.Add(24 * time.Hour)
+	// effectiveFrom must be (a) >= lineItem.StartDate and (b) within the subscription's current
+	// billing period so that FindPeriodForDate can locate it by walking forward.
+	// CurrentPeriodStart + 1 hour satisfies both constraints.
+	effectiveFrom := s.testData.subscription.CurrentPeriodStart.Add(time.Hour)
 
 	req := dto.DeleteSubscriptionLineItemRequest{
 		EffectiveFrom:     &effectiveFrom,

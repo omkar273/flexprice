@@ -4181,7 +4181,7 @@ func (s *subscriptionService) addAddonToSubscription(
 	// Create line items for addon prices
 	lineItems := make([]*subscription.SubscriptionLineItem, 0, len(validPrices))
 	for _, priceResponse := range validPrices {
-		lineItem := s.createLineItemFromPrice(ctx, priceResponse, sub, req.AddonID, a.Addon.Name)
+		lineItem := s.createLineItemFromPrice(ctx, priceResponse, sub, req.AddonID, a.Addon.Name, addonAssociation.ID)
 
 		// Onetime: end at the period boundary containing the start date.
 		// Recurring: no end date (renews each period).
@@ -4448,6 +4448,7 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 	lineItemFilter.SubscriptionIDs = []string{association.EntityID}
 	lineItemFilter.EntityIDs = []string{association.AddonID}
 	lineItemFilter.EntityType = lo.ToPtr(types.SubscriptionLineItemEntityTypeAddon)
+	lineItemFilter.AddonAssociationIDs = []string{association.ID}
 
 	lineItems, err := s.SubscriptionLineItemRepo.List(ctx, lineItemFilter)
 	if err != nil {
@@ -4560,8 +4561,8 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 	return nil
 }
 
-// createLineItemFromPrice creates a subscription line item from a price for addon additions
-func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, priceResponse *dto.PriceResponse, sub *subscription.Subscription, addonID, addonName string) *subscription.SubscriptionLineItem {
+// createLineItemFromPrice creates a subscription line item from a price for addon additions.
+func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, priceResponse *dto.PriceResponse, sub *subscription.Subscription, addonID, addonName, addonAssociationID string) *subscription.SubscriptionLineItem {
 	price := priceResponse.Price
 
 	lineItem := &subscription.SubscriptionLineItem{
@@ -4584,8 +4585,9 @@ func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, price
 			"addon_quantity":  "1",
 			"addon_status":    string(types.AddonStatusActive),
 		},
-		EnvironmentID: sub.EnvironmentID,
-		BaseModel:     types.GetDefaultBaseModel(ctx),
+		AddonAssociationID: lo.ToPtr(addonAssociationID),
+		EnvironmentID:      sub.EnvironmentID,
+		BaseModel:          types.GetDefaultBaseModel(ctx),
 	}
 
 	// Set display name from price (always use price display name)

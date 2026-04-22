@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/flexprice/flexprice/internal/domain/customer"
 	"github.com/flexprice/flexprice/internal/domain/price"
 	"github.com/flexprice/flexprice/internal/domain/subscription"
 	"github.com/flexprice/flexprice/internal/testutil"
@@ -125,10 +126,20 @@ func (s *LineItemProrationServiceSuite) setupTestData() {
 	}
 	s.NoError(s.GetStores().PriceRepo.Create(ctx, s.td.usagePrice))
 
+	// Customer (needed by wallet service's TopUpWalletForProratedCharge)
+	customerID := types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER)
+	cust := &customer.Customer{
+		ID:        customerID,
+		Name:      "Test Customer",
+		Email:     "test@example.com",
+		BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CustomerRepo.Create(ctx, cust))
+
 	// Subscription anchored to Apr 1, current period Apr 1–May 1
 	s.td.sub = &subscription.Subscription{
 		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
-		CustomerID:         types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
+		CustomerID:         customerID,
 		StartDate:          s.td.periodStart,
 		CurrentPeriodStart: s.td.periodStart,
 		CurrentPeriodEnd:   s.td.periodEnd,
