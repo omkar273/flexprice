@@ -4231,8 +4231,14 @@ func (s *subscriptionService) addAddonToSubscription(
 		effectiveDate = *req.StartDate
 	}
 
-	if err := s.applyAddonAddProration(ctx, sub, lineItems, effectiveDate, req.ProrationBehavior); err != nil {
-		return nil, err
+	addProrationKey := fmt.Sprintf("addon_add_%s_%d", addonAssociation.ID, effectiveDate.Unix())
+	if err := s.applyAddonAddProration(ctx, sub, lineItems, effectiveDate, req.ProrationBehavior, addProrationKey); err != nil {
+		s.Logger.WarnwCtx(ctx, "failed to create proration invoice for addon add; addon was persisted successfully",
+			"error", err,
+			"association_id", addonAssociation.ID,
+			"subscription_id", sub.ID,
+			"idempotency_key", addProrationKey,
+		)
 	}
 
 	return addonAssociation, nil
@@ -4554,7 +4560,11 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 			association.ID, *effectiveEndDate,
 			req.ProrationBehavior, endReason,
 		); err != nil {
-			return err
+			s.Logger.WarnwCtx(ctx, "failed to issue proration credit for addon remove; removal was persisted successfully",
+				"error", err,
+				"association_id", association.ID,
+				"subscription_id", sub.ID,
+			)
 		}
 	}
 
@@ -4632,13 +4642,19 @@ func addonPeriodEndForStartDate(sub *subscription.Subscription, startDate time.T
 
 // applyAddonAddProration creates a one-off proration invoice when an addon is added mid-period.
 // It is a no-op when behavior is ProrationBehaviorNone. Usage-type prices are skipped.
+// idempotencyKey must be stable across retries so duplicate charges cannot be created.
 func (s *subscriptionService) applyAddonAddProration(
 	ctx context.Context,
 	sub *subscription.Subscription,
 	lineItems []*subscription.SubscriptionLineItem,
 	effectiveDate time.Time,
 	behavior types.ProrationBehavior,
+	idempotencyKey string,
 ) error {
+	if behavior == types.ProrationBehaviorNone {
+		return nil
+	}
+
 	priceSvc := NewPriceService(s.ServiceParams)
 
 	var entries []LineItemProrationEntry
@@ -4655,10 +4671,11 @@ func (s *subscriptionService) applyAddonAddProration(
 	}
 
 	return NewLineItemProrationService(s.ServiceParams).Apply(ctx, LineItemProrationRequest{
-		Subscription:  sub,
-		Entries:       entries,
-		EffectiveDate: effectiveDate,
-		Behavior:      behavior,
+		Subscription:   sub,
+		Entries:        entries,
+		EffectiveDate:  effectiveDate,
+		Behavior:       behavior,
+		IdempotencyKey: idempotencyKey,
 	})
 }
 
@@ -4674,6 +4691,10 @@ func (s *subscriptionService) applyAddonRemoveProration(
 	behavior types.ProrationBehavior,
 	reason string,
 ) error {
+	if behavior == types.ProrationBehaviorNone {
+		return nil
+	}
+
 	priceSvc := NewPriceService(s.ServiceParams)
 
 	var entries []LineItemProrationEntry
