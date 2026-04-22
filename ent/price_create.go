@@ -712,6 +712,11 @@ func (pc *PriceCreate) check() error {
 	if _, ok := pc.mutation.TrialPeriodDays(); !ok {
 		return &ValidationError{Name: "trial_period_days", err: errors.New(`ent: missing required field "Price.trial_period_days"`)}
 	}
+	if v, ok := pc.mutation.TrialPeriodDays(); ok {
+		if err := price.TrialPeriodDaysValidator(v); err != nil {
+			return &ValidationError{Name: "trial_period_days", err: fmt.Errorf(`ent: validator failed for field "Price.trial_period_days": %w`, err)}
+		}
+	}
 	if v, ok := pc.mutation.TierMode(); ok {
 		if err := v.Validate(); err != nil {
 			return &ValidationError{Name: "tier_mode", err: fmt.Errorf(`ent: validator failed for field "Price.tier_mode": %w`, err)}

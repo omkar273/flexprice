@@ -180,6 +180,7 @@ func (Price) Fields() []ent.Field {
 
 		field.Int("trial_period_days").
 			Default(0).
+			NonNegative().
 			Immutable(),
 
 		field.String("meter_id").

@@ -214,6 +214,8 @@ var (
 	BillingCadenceValidator func(string) error
 	// DefaultTrialPeriodDays holds the default value on creation for the "trial_period_days" field.
 	DefaultTrialPeriodDays int
+	// TrialPeriodDaysValidator is a validator for the "trial_period_days" field. It is called by the builders before save.
+	TrialPeriodDaysValidator func(int) error
 	// DefaultEntityType holds the default value on creation for the "entity_type" field.
 	DefaultEntityType types.PriceEntityType
 	// EntityTypeValidator is a validator for the "entity_type" field. It is called by the builders before save.

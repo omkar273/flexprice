@@ -1356,6 +1356,8 @@ func init() {
 	priceDescTrialPeriodDays := priceFields[18].Descriptor()
 	// price.DefaultTrialPeriodDays holds the default value on creation for the trial_period_days field.
 	price.DefaultTrialPeriodDays = priceDescTrialPeriodDays.Default.(int)
+	// price.TrialPeriodDaysValidator is a validator for the "trial_period_days" field. It is called by the builders before save.
+	price.TrialPeriodDaysValidator = priceDescTrialPeriodDays.Validators[0].(func(int) error)
 	// priceDescEntityType is the schema descriptor for entity_type field.
 	priceDescEntityType := priceFields[28].Descriptor()
 	// price.DefaultEntityType holds the default value on creation for the entity_type field.
