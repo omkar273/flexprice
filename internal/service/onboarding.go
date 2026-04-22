@@ -52,10 +52,10 @@ func NewOnboardingService(
 		params.Config.OnboardingEvents.ConsumerGroup,
 	)
 	if err != nil {
-		params.Logger.Fatalw("failed to create pubsub for onboarding events", "error", err)
-		return nil
+		params.Logger.Infow("failed to create pubsub for onboarding events, event generation will be unavailable", "error", err)
+	} else {
+		svc.pubSub = pubSub
 	}
-	svc.pubSub = pubSub
 
 	return svc
 }
