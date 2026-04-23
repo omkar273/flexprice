@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/domain/addon"
@@ -480,14 +479,6 @@ func (s *addonService) GetActiveAddonAssociation(ctx context.Context, req dto.Ge
 		if periodEnd == nil {
 			t := sub.CurrentPeriodEnd
 			periodEnd = &t
-		}
-	} else {
-		if periodStart == nil {
-			now := time.Now()
-			periodStart = &now
-		}
-		if periodEnd == nil {
-			periodEnd = periodStart
 		}
 	}
 
