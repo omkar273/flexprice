@@ -271,6 +271,12 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 	// Insert events into ClickHouse
 	s.Logger.Debugw("inserting events into ClickHouse",
 		"event_id", event.ID,
+		"event_name", event.EventName,
+		"tenant_id", event.TenantID,
+		"environment_id", event.EnvironmentID,
+		"external_customer_id", event.ExternalCustomerID,
+		"source", event.Source,
+		"timestamp", event.Timestamp,
 		"events_to_insert_count", len(eventsToInsert),
 	)
 
@@ -279,6 +285,8 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 			"error", err,
 			"event_id", event.ID,
 			"event_name", event.EventName,
+			"tenant_id", event.TenantID,
+			"environment_id", event.EnvironmentID,
 		)
 
 		// Return error for retry
@@ -307,6 +315,9 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 	s.Logger.Debugw("successfully processed event",
 		"event_id", event.ID,
 		"event_name", event.EventName,
+		"tenant_id", event.TenantID,
+		"environment_id", event.EnvironmentID,
+		"external_customer_id", event.ExternalCustomerID,
 		"lag_ms", time.Since(event.Timestamp).Milliseconds(),
 	)
 
