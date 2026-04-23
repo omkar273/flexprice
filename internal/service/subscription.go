@@ -278,6 +278,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 	if req.SubscriptionStatus != "" {
 		sub.SubscriptionStatus = req.SubscriptionStatus
 	}
+	applyTrialingStateAndPeriods(&req, sub)
 
 	s.Logger.InfowCtx(ctx, "creating subscription",
 		"customer_id", sub.CustomerID, "plan_id", sub.PlanID, "start_date", sub.StartDate,
@@ -435,8 +436,8 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 			}
 		}
 
-		// Create invoice for non-draft subscriptions
-		if req.SubscriptionStatus != types.SubscriptionStatusDraft {
+		// Create invoice for non-draft, non-trialing subscriptions (trial conversion invoice is created at trial end).
+		if sub.SubscriptionStatus != types.SubscriptionStatusDraft && sub.SubscriptionStatus != types.SubscriptionStatusTrialing {
 			paymentParams := dto.NewPaymentParametersFromSubscription(sub.CollectionMethod, sub.PaymentBehavior, sub.GatewayPaymentMethodID).NormalizePaymentParameters()
 			invoice, updatedSub, err = invoiceService.CreateSubscriptionInvoice(ctx, &dto.CreateSubscriptionInvoiceRequest{
 				SubscriptionID: sub.ID,
@@ -4801,6 +4802,102 @@ func (s *subscriptionService) ActivateIncompleteSubscription(ctx context.Context
 	}
 
 	// Publish webhook event for subscription activation
+	s.publishSystemEvent(ctx, types.WebhookEventSubscriptionActivated, subscriptionID)
+
+	return nil
+}
+
+// HandleSubscriptionActivatingInvoicePaid completes subscription lifecycle when an activating invoice
+// (subscription create or trial-end conversion) is fully paid.
+func (s *subscriptionService) HandleSubscriptionActivatingInvoicePaid(ctx context.Context, inv *invoice.Invoice) error {
+	if inv == nil || inv.SubscriptionID == nil {
+		return nil
+	}
+	reason := types.InvoiceBillingReason(inv.BillingReason)
+	if !reason.TriggersSubscriptionActivationOnFullPayment() {
+		return nil
+	}
+	switch reason {
+	case types.InvoiceBillingReasonSubscriptionCreate:
+		return s.ActivateIncompleteSubscription(ctx, *inv.SubscriptionID)
+	case types.InvoiceBillingReasonSubscriptionTrialEnd:
+		return s.completeTrialConversionFromPaidInvoice(ctx, inv)
+	default:
+		return nil
+	}
+}
+
+func (s *subscriptionService) completeTrialConversionFromPaidInvoice(ctx context.Context, inv *invoice.Invoice) error {
+	if inv.SubscriptionID == nil {
+		return nil
+	}
+	subscriptionID := *inv.SubscriptionID
+
+	sub, err := s.SubRepo.Get(ctx, subscriptionID)
+	if err != nil {
+		return ierr.WithError(err).
+			WithHint("Failed to get subscription").
+			WithReportableDetails(map[string]interface{}{
+				"subscription_id": subscriptionID,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+
+	if sub.SubscriptionStatus != types.SubscriptionStatusTrialing && sub.SubscriptionStatus != types.SubscriptionStatusIncomplete {
+		return nil
+	}
+
+	// First paid period starts at the end of the prior (trial) period, not at payment time.
+	periodStart := sub.CurrentPeriodEnd.UTC()
+	if periodStart.IsZero() && sub.TrialEnd != nil {
+		periodStart = sub.TrialEnd.UTC()
+	}
+	if periodStart.IsZero() {
+		if inv.PaidAt != nil {
+			periodStart = inv.PaidAt.UTC()
+		} else {
+			periodStart = time.Now().UTC()
+		}
+	}
+
+	nextEnd, err := types.NextBillingDate(periodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
+	if err != nil {
+		return ierr.WithError(err).
+			WithHint("Failed to compute next billing period after trial conversion").
+			WithReportableDetails(map[string]interface{}{
+				"subscription_id": subscriptionID,
+			}).
+			Mark(ierr.ErrInvalidOperation)
+	}
+
+	prevStatus := sub.SubscriptionStatus
+	sub.CurrentPeriodStart = periodStart
+	sub.CurrentPeriodEnd = nextEnd
+	sub.SubscriptionStatus = types.SubscriptionStatusActive
+
+	if err := s.SubRepo.Update(ctx, sub); err != nil {
+		return ierr.WithError(err).
+			WithHint("Failed to update subscription after trial conversion").
+			WithReportableDetails(map[string]interface{}{
+				"subscription_id": subscriptionID,
+			}).
+			Mark(ierr.ErrDatabase)
+	}
+
+	s.Logger.InfowCtx(ctx, "completed trial conversion from paid invoice",
+		"subscription_id", subscriptionID,
+		"invoice_id", inv.ID,
+		"previous_status", prevStatus,
+		"period_start", sub.CurrentPeriodStart,
+		"period_end", sub.CurrentPeriodEnd)
+
+	if err := s.processPendingCreditGrantsForSubscription(ctx, sub); err != nil {
+		s.Logger.ErrorwCtx(ctx, "failed to process pending credit grants after trial conversion",
+			"subscription_id", subscriptionID,
+			"error", err,
+			"note", "cron job will process these as backup")
+	}
+
 	s.publishSystemEvent(ctx, types.WebhookEventSubscriptionActivated, subscriptionID)
 
 	return nil

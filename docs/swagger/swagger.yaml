@@ -1872,7 +1872,7 @@ definitions:
         type: array
       transform_quantity:
         $ref: '#/definitions/price.TransformQuantity'
-      trial_period:
+      trial_period_days:
         type: integer
       type:
         $ref: '#/definitions/types.PriceType'
@@ -2207,10 +2207,11 @@ definitions:
         items:
           $ref: '#/definitions/TaxRateOverride'
         type: array
-      trial_end:
-        type: string
-      trial_start:
-        type: string
+      trial_period_days:
+        description: |-
+          TrialPeriodDays: nil = inherit trial length from plan recurring-fixed prices (must be uniform).
+          0 = explicitly no trial (overrides catalog). >0 = override duration in days.
+        type: integer
     required:
     - billing_period
     - currency
@@ -4607,9 +4608,9 @@ definitions:
         type: array
       transform_quantity:
         $ref: '#/definitions/price.JSONBTransformQuantity'
-      trial_period:
+      trial_period_days:
         description: |-
-          TrialPeriod is the number of days for the trial period
+          TrialPeriodDays is the number of days for the trial period
           Note: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)
         type: integer
       type:
@@ -5123,7 +5124,7 @@ definitions:
         type: string
       tenant_id:
         type: string
-      trial_period:
+      trial_period_days:
         type: integer
       updated_at:
         type: string
@@ -5326,7 +5327,7 @@ definitions:
         type: array
       transform_quantity:
         $ref: '#/definitions/price.TransformQuantity'
-      trial_period:
+      trial_period_days:
         type: integer
       type:
         $ref: '#/definitions/types.PriceType'
@@ -8003,6 +8004,7 @@ definitions:
     - SUBSCRIPTION_CREATE
     - SUBSCRIPTION_CYCLE
     - SUBSCRIPTION_UPDATE
+    - SUBSCRIPTION_TRIAL_END
     - PRORATION
     - MANUAL
     type: string
@@ -8010,6 +8012,7 @@ definitions:
     - InvoiceBillingReasonSubscriptionCreate
     - InvoiceBillingReasonSubscriptionCycle
     - InvoiceBillingReasonSubscriptionUpdate
+    - InvoiceBillingReasonSubscriptionTrialEnd
     - InvoiceBillingReasonProration
     - InvoiceBillingReasonManual
   types.InvoiceCadence:
@@ -8748,6 +8751,11 @@ definitions:
         items:
           $ref: '#/definitions/types.SubscriptionType'
         type: array
+      trial_end_due_by:
+        description: |-
+          TrialEndDueBy, when set, restricts to subscriptions with trial_end not nil and trial_end <= *TrialEndDueBy.
+          Use with subscription_status trialing for trial-end cron processing.
+        type: string
       with_line_items:
         description: WithLineItems includes line items in the response
         type: boolean
@@ -9196,7 +9204,6 @@ definitions:
     - WebhookEventCreditNoteUpdated
   types.WindowSize:
     enum:
-    - MONTH
     - MINUTE
     - 15MIN
     - 30MIN
@@ -9207,9 +9214,9 @@ definitions:
     - DAY
     - WEEK
     - MONTH
+    - MONTH
     type: string
     x-enum-varnames:
-    - DefaultWindowSize
     - WindowSizeMinute
     - WindowSize15Min
     - WindowSize30Min
@@ -9220,6 +9227,7 @@ definitions:
     - WindowSizeDay
     - WindowSizeWeek
     - WindowSizeMonth
+    - DefaultWindowSize
   types.WorkflowExecutionFilter:
     properties:
       end_time:
@@ -9615,9 +9623,9 @@ definitions:
         type: array
       transform_quantity:
         $ref: '#/definitions/price.JSONBTransformQuantity'
-      trial_period:
+      trial_period_days:
         description: |-
-          TrialPeriod is the number of days for the trial period
+          TrialPeriodDays is the number of days for the trial period
           Note: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)
         type: integer
       type:
@@ -9733,7 +9741,7 @@ definitions:
         type: string
       tenant_id:
         type: string
-      trial_period:
+      trial_period_days:
         type: integer
       updated_at:
         type: string

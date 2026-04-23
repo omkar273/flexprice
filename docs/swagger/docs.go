@@ -14197,7 +14197,7 @@ const docTemplate = `{
                 "transform_quantity": {
                     "$ref": "#/definitions/price.TransformQuantity"
                 },
-                "trial_period": {
+                "trial_period_days": {
                     "type": "integer"
                 },
                 "type": {
@@ -14609,11 +14609,9 @@ const docTemplate = `{
                         "$ref": "#/definitions/TaxRateOverride"
                     }
                 },
-                "trial_end": {
-                    "type": "string"
-                },
-                "trial_start": {
-                    "type": "string"
+                "trial_period_days": {
+                    "description": "TrialPeriodDays: nil = inherit trial length from plan recurring-fixed prices (must be uniform).\n0 = explicitly no trial (overrides catalog). \u003e0 = override duration in days.",
+                    "type": "integer"
                 }
             }
         },
@@ -17860,8 +17858,8 @@ const docTemplate = `{
                 "transform_quantity": {
                     "$ref": "#/definitions/price.JSONBTransformQuantity"
                 },
-                "trial_period": {
-                    "description": "TrialPeriod is the number of days for the trial period\nNote: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)",
+                "trial_period_days": {
+                    "description": "TrialPeriodDays is the number of days for the trial period\nNote: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)",
                     "type": "integer"
                 },
                 "type": {
@@ -18605,7 +18603,7 @@ const docTemplate = `{
                 "tenant_id": {
                     "type": "string"
                 },
-                "trial_period": {
+                "trial_period_days": {
                     "type": "integer"
                 },
                 "updated_at": {
@@ -18901,7 +18899,7 @@ const docTemplate = `{
                 "transform_quantity": {
                     "$ref": "#/definitions/price.TransformQuantity"
                 },
-                "trial_period": {
+                "trial_period_days": {
                     "type": "integer"
                 },
                 "type": {
@@ -22600,6 +22598,7 @@ const docTemplate = `{
                 "SUBSCRIPTION_CREATE",
                 "SUBSCRIPTION_CYCLE",
                 "SUBSCRIPTION_UPDATE",
+                "SUBSCRIPTION_TRIAL_END",
                 "PRORATION",
                 "MANUAL"
             ],
@@ -22607,6 +22606,7 @@ const docTemplate = `{
                 "InvoiceBillingReasonSubscriptionCreate",
                 "InvoiceBillingReasonSubscriptionCycle",
                 "InvoiceBillingReasonSubscriptionUpdate",
+                "InvoiceBillingReasonSubscriptionTrialEnd",
                 "InvoiceBillingReasonProration",
                 "InvoiceBillingReasonManual"
             ]
@@ -23578,6 +23578,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/types.SubscriptionType"
                     }
                 },
+                "trial_end_due_by": {
+                    "description": "TrialEndDueBy, when set, restricts to subscriptions with trial_end not nil and trial_end \u003c= *TrialEndDueBy.\nUse with subscription_status trialing for trial-end cron processing.",
+                    "type": "string"
+                },
                 "with_line_items": {
                     "description": "WithLineItems includes line items in the response",
                     "type": "boolean"
@@ -24160,7 +24164,6 @@ const docTemplate = `{
         "types.WindowSize": {
             "type": "string",
             "enum": [
-                "MONTH",
                 "MINUTE",
                 "15MIN",
                 "30MIN",
@@ -24170,10 +24173,10 @@ const docTemplate = `{
                 "12HOUR",
                 "DAY",
                 "WEEK",
+                "MONTH",
                 "MONTH"
             ],
             "x-enum-varnames": [
-                "DefaultWindowSize",
                 "WindowSizeMinute",
                 "WindowSize15Min",
                 "WindowSize30Min",
@@ -24183,7 +24186,8 @@ const docTemplate = `{
                 "WindowSize12Hour",
                 "WindowSizeDay",
                 "WindowSizeWeek",
-                "WindowSizeMonth"
+                "WindowSizeMonth",
+                "DefaultWindowSize"
             ]
         },
         "types.WorkflowExecutionFilter": {
@@ -24709,8 +24713,8 @@ const docTemplate = `{
                 "transform_quantity": {
                     "$ref": "#/definitions/price.JSONBTransformQuantity"
                 },
-                "trial_period": {
-                    "description": "TrialPeriod is the number of days for the trial period\nNote: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)",
+                "trial_period_days": {
+                    "description": "TrialPeriodDays is the number of days for the trial period\nNote: This is only applicable for recurring prices (BILLING_CADENCE_RECURRING)",
                     "type": "integer"
                 },
                 "type": {
@@ -24874,7 +24878,7 @@ const docTemplate = `{
                 "tenant_id": {
                     "type": "string"
                 },
-                "trial_period": {
+                "trial_period_days": {
                     "type": "integer"
                 },
                 "updated_at": {

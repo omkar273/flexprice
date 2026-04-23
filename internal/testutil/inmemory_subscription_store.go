@@ -95,7 +95,16 @@ func subscriptionFilterFn(ctx context.Context, sub *subscription.Subscription, f
 		if !periodEnded && !cancelEffective {
 			return false
 		}
-	} else if f.TimeRangeFilter != nil {
+	}
+
+	if f.TrialEndDueBy != nil {
+		d := *f.TrialEndDueBy
+		if sub.TrialEnd == nil || sub.TrialEnd.After(d) {
+			return false
+		}
+	}
+
+	if f.EffectiveDateForUpdate == nil && f.TimeRangeFilter != nil {
 		if f.StartTime != nil && sub.CreatedAt.Before(*f.StartTime) {
 			return false
 		}
@@ -306,6 +315,7 @@ func (s *InMemorySubscriptionStore) ListAll(ctx context.Context, filter *types.S
 		SubscriptionStatusNotIn: filter.SubscriptionStatusNotIn,
 		ActiveAt:                filter.ActiveAt,
 		EffectiveDateForUpdate:  filter.EffectiveDateForUpdate,
+		TrialEndDueBy:           filter.TrialEndDueBy,
 	}
 
 	return s.List(ctx, unlimitedFilter)

@@ -659,6 +659,16 @@ func (o *SubscriptionQueryOptions) applyEntityQueryOptions(_ context.Context, f 
 		)
 	}
 
+	if f.TrialEndDueBy != nil {
+		d := *f.TrialEndDueBy
+		query = query.Where(
+			subscription.And(
+				subscription.TrialEndNotNil(),
+				subscription.TrialEndLTE(d),
+			),
+		)
+	}
+
 	if f.Filters != nil {
 		query, err = dsl.ApplyFilters[SubscriptionQuery, predicate.Subscription](
 			query,
