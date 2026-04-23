@@ -18,9 +18,9 @@ func TestScheduleID_Validate(t *testing.T) {
 
 	t.Run("known id", func(t *testing.T) {
 		t.Parallel()
-		for _, reg := range AllScheduleRegistrations() {
-			err := reg.ID.Validate()
-			require.NoError(t, err, "id=%q", reg.ID)
+		for _, id := range AllTemporalServerScheduleIDs() {
+			err := id.Validate()
+			require.NoError(t, err, "id=%q", id)
 		}
 	})
 
@@ -31,17 +31,22 @@ func TestScheduleID_Validate(t *testing.T) {
 	})
 }
 
-func TestAllTemporalServerScheduleIDs_matches_registrations(t *testing.T) {
+func TestAllTemporalServerScheduleIDs_covers_all_consts(t *testing.T) {
 	t.Parallel()
 	ids := AllTemporalServerScheduleIDs()
-	reg := AllScheduleRegistrations()
-	require.Equal(t, len(reg), len(ids), "AllTemporalServerScheduleIDs and AllScheduleRegistrations must stay aligned")
-	seen := make(map[ScheduleID]struct{}, len(reg))
+	seen := make(map[ScheduleID]struct{}, len(ids))
 	for _, id := range ids {
 		seen[id] = struct{}{}
 	}
-	for _, r := range reg {
-		_, ok := seen[r.ID]
-		require.True(t, ok, "registration %q missing from AllTemporalServerScheduleIDs", r.ID)
+	for _, c := range []ScheduleID{
+		ScheduleIDCreditGrantProcessing,
+		ScheduleIDSubscriptionAutoCancellation,
+		ScheduleIDWalletCreditExpiry,
+		ScheduleIDSubscriptionBillingPeriods,
+		ScheduleIDSubscriptionRenewalAlerts,
+	} {
+		_, ok := seen[c]
+		require.True(t, ok, "const %q must appear in AllTemporalServerScheduleIDs", c)
 	}
+	require.Equal(t, 5, len(ids), "expected five managed server schedule ids")
 }

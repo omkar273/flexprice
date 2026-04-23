@@ -46,7 +46,6 @@ type cronActivityBundle struct {
 	creditGrant        *cronActivities.CreditGrantActivities
 	subscription       *cronActivities.SubscriptionCronActivities
 	walletCreditExpiry *cronActivities.WalletCreditExpiryActivities
-	kafka              *cronActivities.KafkaLagMonitoringActivities
 }
 
 // RegisterWorkflowsAndActivities registers all workflows and activities with the temporal service
@@ -228,12 +227,10 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 	envAccessService := service.NewEnvAccessService(params.Config)
 	settingsService := service.NewSettingsService(params)
 	environmentService := service.NewEnvironmentService(params.EnvironmentRepo, envAccessService, settingsService, params)
-	eventService := service.NewEventService(params.EventRepo, params.MeterRepo, params.EventPublisher, params.Logger, params.Config)
 	cronBundle := &cronActivityBundle{
 		creditGrant:        cronActivities.NewCreditGrantActivities(creditGrantService),
 		subscription:       cronActivities.NewSubscriptionCronActivities(subscriptionService, params.Logger),
 		walletCreditExpiry: cronActivities.NewWalletCreditExpiryActivities(walletService, tenantService, environmentService, params.Logger),
-		kafka:              cronActivities.NewKafkaLagMonitoringActivities(eventService, params.Logger),
 	}
 
 	// Get all task queues and register workflows/activities for each
@@ -442,7 +439,6 @@ func buildWorkerConfig(
 			cronWorkflows.WalletCreditExpiryWorkflow,
 			cronWorkflows.SubscriptionBillingPeriodsWorkflow,
 			cronWorkflows.SubscriptionRenewalDueAlertsWorkflow,
-			cronWorkflows.EventsKafkaLagMonitoringWorkflow,
 		)
 		activitiesList = append(activitiesList,
 			cron.creditGrant.ProcessScheduledCreditGrantApplicationsActivity,
@@ -450,7 +446,6 @@ func buildWorkerConfig(
 			cron.walletCreditExpiry.ExpireCreditsActivity,
 			cron.subscription.UpdateBillingPeriodsActivity,
 			cron.subscription.ProcessRenewalDueAlertsActivity,
-			cron.kafka.MonitorKafkaLagActivity,
 		)
 	}
 	return WorkerConfig{

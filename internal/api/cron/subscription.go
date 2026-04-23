@@ -10,7 +10,7 @@ import (
 
 // SubscriptionHandler handles subscription related cron jobs.
 //
-// Deprecated: use Temporal schedules and /v1/temporal for recurring subscription cron work.
+// Deprecated: for automation, use Temporal server schedules (worker creates them on startup).
 type SubscriptionHandler struct {
 	subscriptionService service.SubscriptionService
 	logger              *logger.Logger
@@ -18,7 +18,7 @@ type SubscriptionHandler struct {
 
 // NewSubscriptionHandler creates a new subscription handler.
 //
-// Deprecated: use Temporal and /v1/temporal instead of HTTP cron for automation.
+// Deprecated: for automation, use Temporal server schedules instead of HTTP cron.
 func NewSubscriptionHandler(
 	subscriptionService service.SubscriptionService,
 	logger *logger.Logger,
@@ -31,7 +31,7 @@ func NewSubscriptionHandler(
 
 // UpdateBillingPeriods is bound to POST /v1/cron/subscriptions/update-periods.
 //
-// Deprecated: the same work is run by the Temporal server schedule; prefer /v1/temporal.
+// Deprecated: the same work is run by the Temporal server schedule.
 func (h *SubscriptionHandler) UpdateBillingPeriods(c *gin.Context) {
 	ctx := c.Request.Context()
 	response, err := h.subscriptionService.UpdateBillingPeriods(ctx)
@@ -49,7 +49,7 @@ func (h *SubscriptionHandler) UpdateBillingPeriods(c *gin.Context) {
 // ProcessAutoCancellationSubscriptions processes subscriptions that are eligible for auto-cancellation
 // We need to get all unpaid invoices and check if the grace period has expired.
 //
-// Deprecated: use the Temporal server schedule; prefer /v1/temporal over POST /v1/cron/.../process-auto-cancellation.
+// Deprecated: use the Temporal server schedule instead of this HTTP trigger.
 func (h *SubscriptionHandler) ProcessAutoCancellationSubscriptions(c *gin.Context) {
 	h.logger.Infow("starting auto-cancellation processing cron job")
 
@@ -67,7 +67,7 @@ func (h *SubscriptionHandler) ProcessAutoCancellationSubscriptions(c *gin.Contex
 // ProcessSubscriptionRenewalDueAlerts processes subscriptions that are due for renewal in 24 hours
 // and sends webhook notifications.
 //
-// Deprecated: use the Temporal server schedule; prefer /v1/temporal over POST /v1/cron/.../renewal-due-alerts.
+// Deprecated: use the Temporal server schedule instead of this HTTP trigger.
 func (h *SubscriptionHandler) ProcessSubscriptionRenewalDueAlerts(c *gin.Context) {
 	h.logger.Infow("starting subscription renewal due alerts cron job")
 

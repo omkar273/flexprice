@@ -7,20 +7,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAllTemporalScheduleConfigsMatchRegistrations keeps schedule worker configs and
-// the public catalog in sync (one source for EnsureSchedule and GET /v1/temporal/schedules).
-func TestAllTemporalScheduleConfigsMatchRegistrations(t *testing.T) {
+// TestAllTemporalScheduleConfigsMatchServerScheduleIDs keeps schedule config ids aligned
+// with types.AllTemporalServerScheduleIDs (used for schedule_id validation).
+func TestAllTemporalScheduleConfigsMatchServerScheduleIDs(t *testing.T) {
 	t.Parallel()
 	configs := AllTemporalScheduleConfigs()
-	reg := types.AllScheduleRegistrations()
-	require.Equal(t, len(reg), len(configs), "each registered schedule must have a config entry")
+	ids := types.AllTemporalServerScheduleIDs()
+	require.Equal(t, len(ids), len(configs), "each managed schedule must have a config entry")
 
-	byID := make(map[types.ScheduleID]types.ScheduleRegistration, len(reg))
-	for _, r := range reg {
-		byID[r.ID] = r
+	seen := make(map[types.ScheduleID]struct{}, len(ids))
+	for _, id := range ids {
+		seen[id] = struct{}{}
 	}
 	for _, cfg := range configs {
-		_, ok := byID[cfg.ID]
-		require.True(t, ok, "config id %q not in AllScheduleRegistrations", cfg.ID)
+		_, ok := seen[cfg.ID]
+		require.True(t, ok, "config id %q not in AllTemporalServerScheduleIDs", cfg.ID)
 	}
 }

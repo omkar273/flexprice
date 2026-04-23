@@ -58,7 +58,6 @@ const (
 	TemporalWalletCreditExpiryWorkflow                 TemporalWorkflowType = "WalletCreditExpiryWorkflow"
 	TemporalSubscriptionBillingPeriodsWorkflow         TemporalWorkflowType = "SubscriptionBillingPeriodsWorkflow"
 	TemporalSubscriptionRenewalDueAlertsWorkflow       TemporalWorkflowType = "SubscriptionRenewalDueAlertsWorkflow"
-	TemporalEventsKafkaLagMonitoringWorkflow           TemporalWorkflowType = "EventsKafkaLagMonitoringWorkflow"
 	TemporalChargebeeCustomerSyncWorkflow              TemporalWorkflowType = "ChargebeeCustomerSyncWorkflow"
 	TemporalChargebeeInvoiceSyncWorkflow               TemporalWorkflowType = "ChargebeeInvoiceSyncWorkflow"
 	TemporalComputeInvoiceWorkflow                     TemporalWorkflowType = "ComputeInvoiceWorkflow"
@@ -107,7 +106,6 @@ var temporalCronWorkflowTypes = []TemporalWorkflowType{
 	TemporalWalletCreditExpiryWorkflow,
 	TemporalSubscriptionBillingPeriodsWorkflow,
 	TemporalSubscriptionRenewalDueAlertsWorkflow,
-	TemporalEventsKafkaLagMonitoringWorkflow,
 }
 
 var workflowTypesExcludedFromTrackingCore = []TemporalWorkflowType{

@@ -57,14 +57,11 @@ type Handlers struct {
 	Workflow                 *v1.WorkflowHandler
 	MeterUsage               *v1.MeterUsageHandler
 
-	// Temporal infrastructure
-	Temporal *v1.TemporalHandler
-
 	// Portal handlers
 	Onboarding     *v1.OnboardingHandler
 	AIPricing      *v1.AIPricingHandler
 	CustomerPortal *v1.CustomerPortalHandler
-	// Cron jobs: optional HTTP /v1/cron/... manual triggers; deprecated. Prefer Temporal (see package cron, /v1/temporal).
+	// Cron jobs: optional HTTP /v1/cron/... manual triggers; same work is automated via Temporal server schedules (worker creates them on startup).
 	CronSubscription       *cron.SubscriptionHandler
 	CronWallet             *cron.WalletCronHandler
 	CronCreditGrant        *cron.CreditGrantCronHandler
@@ -620,7 +617,7 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 		webhooks.POST("/zoho_books/:tenant_id/:environment_id", handlers.Webhook.HandleZohoBooksWebhook)
 	}
 
-	// HTTP cron: optional manual/legacy triggers (deprecated for automation; use POST /v1/temporal/setup and server schedules).
+	// HTTP cron: optional manual/legacy triggers (deprecated for automation; Temporal workers ensure server schedules on startup).
 	cron := v1Private.Group("/cron")
 	subscriptionGroup := cron.Group("/subscriptions")
 	{
@@ -643,16 +640,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 	kafkaLagMonitoringGroup := cron.Group("/events")
 	{
 		kafkaLagMonitoringGroup.POST("/monitoring", handlers.CronKafkaLagMonitoring.HandleKafkaLagMonitoring)
-	}
-
-	// Temporal: recurring schedules and schedule management. Prefer this over the deprecated /v1/cron/ group above.
-	temporalGroup := v1Private.Group("/temporal")
-	{
-		temporalGroup.POST("/setup", handlers.Temporal.SetupSchedules)
-		temporalGroup.GET("/schedules", handlers.Temporal.ListSchedules)
-		temporalGroup.POST("/schedules/:schedule_id/pause", handlers.Temporal.PauseSchedule)
-		temporalGroup.POST("/schedules/:schedule_id/unpause", handlers.Temporal.UnpauseSchedule)
-		temporalGroup.DELETE("/schedules/:schedule_id", handlers.Temporal.DeleteSchedule)
 	}
 
 	// Settings routes
