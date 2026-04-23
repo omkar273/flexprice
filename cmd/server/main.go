@@ -362,7 +362,6 @@ func provideHandlers(
 	meterUsageService service.MeterUsageService,
 	geminiPricingService service.GeminiPricingService,
 	webhookService *webhook.WebhookService,
-	temporalClient client.TemporalClient,
 ) api.Handlers {
 	return api.Handlers{
 		Events:                   v1.NewEventsHandler(eventService, eventPostProcessingService, featureUsageTrackingService, rawEventsReprocessingService, rawEventConsumptionService, cfg, logger),
@@ -416,7 +415,6 @@ func provideHandlers(
 		Dashboard:                v1.NewDashboardHandler(dashboardService, logger),
 		Workflow:                 v1.NewWorkflowHandler(workflowService, logger),
 		MeterUsage:               v1.NewMeterUsageHandler(meterUsageService, logger),
-		Temporal:                 v1.NewTemporalHandler(temporalClient, logger),
 	}
 }
 
@@ -521,7 +519,7 @@ func startServer(
 		// Register all handlers and start router once
 		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, usageBenchmarkSvc, cfg, true)
 		startRouter(lc, router, log)
-		startTemporalWorker(lc, temporalService, params)
+		startTemporalWorker(lc, cfg, log, temporalClient, temporalService, params)
 	case types.ModeAPI:
 		startAPIServer(lc, r, cfg, log)
 
@@ -535,7 +533,7 @@ func startServer(
 		// consumed and delivered via Svix/native in the same process.
 		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, usageBenchmarkSvc, cfg, false)
 		startRouter(lc, router, log)
-		startTemporalWorker(lc, temporalService, params)
+		startTemporalWorker(lc, cfg, log, temporalClient, temporalService, params)
 	case types.ModeConsumer:
 		if consumer == nil {
 			log.Fatal("Kafka consumer required for consumer mode")
@@ -551,11 +549,18 @@ func startServer(
 
 func startTemporalWorker(
 	lc fx.Lifecycle,
+	cfg *config.Configuration,
+	log *logger.Logger,
+	temporalClient client.TemporalClient,
 	temporalService temporalservice.TemporalService,
 	params service.ServiceParams,
 ) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
+			if err := temporalservice.EnsureSchedules(ctx, temporalClient, log); err != nil {
+				return fmt.Errorf("ensure temporal server schedules: %w", err)
+			}
+
 			// Register workflows and activities first (this creates the workers)
 			if err := temporal.RegisterWorkflowsAndActivities(temporalService, params); err != nil {
 				return fmt.Errorf("failed to register workflows and activities: %w", err)

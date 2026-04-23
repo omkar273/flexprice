@@ -18,7 +18,7 @@ import (
 
 // InvoiceHandler handles invoice related cron jobs.
 //
-// Deprecated: use Temporal schedules and /v1/temporal.
+// Deprecated: for automation, use Temporal server schedules (worker creates them on startup).
 type InvoiceHandler struct {
 	invoiceService      service.InvoiceService
 	subscriptionService service.SubscriptionService
@@ -31,7 +31,7 @@ type InvoiceHandler struct {
 
 // NewInvoiceHandler creates a new invoice handler.
 //
-// Deprecated: use Temporal and /v1/temporal.
+// Deprecated: for automation, use Temporal server schedules (worker creates them on startup).
 func NewInvoiceHandler(
 	invoiceService service.InvoiceService,
 	subscriptionService service.SubscriptionService,
@@ -71,7 +71,7 @@ type VoidOldPendingInvoicesRequest struct {
 // VoidOldPendingInvoices processes incomplete subscriptions and voids their old pending invoices.
 // It is bound to POST /v1/cron/invoices/void-old-pending.
 //
-// Deprecated: use the Temporal server schedule where applicable; prefer /v1/temporal.
+// Deprecated: use the Temporal server schedule where applicable.
 func (h *InvoiceHandler) VoidOldPendingInvoices(c *gin.Context) {
 	h.logger.Infow("starting void old pending invoices cron job", "time", time.Now().UTC().Format(time.RFC3339))
 

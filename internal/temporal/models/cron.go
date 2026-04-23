@@ -47,9 +47,3 @@ type SubscriptionRenewalDueAlertsWorkflowInput struct{}
 
 // SubscriptionRenewalDueAlertsWorkflowResult is a placeholder.
 type SubscriptionRenewalDueAlertsWorkflowResult struct{}
-
-// EventsKafkaLagMonitoringWorkflowInput is the input for EventsKafkaLagMonitoringWorkflow.
-type EventsKafkaLagMonitoringWorkflowInput struct{}
-
-// EventsKafkaLagMonitoringWorkflowResult is a placeholder.
-type EventsKafkaLagMonitoringWorkflowResult struct{}
