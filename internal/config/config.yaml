@@ -314,3 +314,10 @@ integration_events:
   enabled: true
   consumer_group: "integration-events-consumer"
   rate_limit: 10
+
+onboarding_events:
+  enabled: true
+  topic: "onboarding_events"
+  rate_limit: 10
+  consumer_group: "onboarding_events_consumer"
+  max_retries: 3

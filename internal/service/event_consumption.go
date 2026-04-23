@@ -238,6 +238,8 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 		"event_id", event.ID,
 		"event_name", event.EventName,
 		"tenant_id", event.TenantID,
+		"environment_id", event.EnvironmentID,
+		"external_customer_id", event.ExternalCustomerID,
 		"timestamp", event.Timestamp,
 	)
 
@@ -267,6 +269,11 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 	}
 
 	// Insert events into ClickHouse
+	s.Logger.Debugw("inserting events into ClickHouse",
+		"event_id", event.ID,
+		"events_to_insert_count", len(eventsToInsert),
+	)
+
 	if err := s.eventRepo.BulkInsertEvents(ctx, eventsToInsert); err != nil {
 		s.Logger.Errorw("failed to insert events",
 			"error", err,

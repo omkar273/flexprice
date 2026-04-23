@@ -34,6 +34,7 @@ type SubscriptionLineItem struct {
 	StartDate           time.Time                            `db:"start_date" json:"start_date,omitempty"`
 	EndDate             time.Time                            `db:"end_date" json:"end_date,omitempty"`
 	SubscriptionPhaseID *string                              `db:"subscription_phase_id" json:"subscription_phase_id,omitempty"`
+	AddonAssociationID  *string                              `db:"addon_association_id" json:"addon_association_id,omitempty"`
 	Metadata            map[string]string                    `db:"metadata" json:"metadata,omitempty"`
 	EnvironmentID       string                               `db:"environment_id" json:"environment_id"`
 
@@ -115,6 +116,7 @@ func SubscriptionLineItemFromEnt(e *ent.SubscriptionLineItem) *SubscriptionLineI
 	var meterID, meterDisplayName, displayName string
 	var startDate, endDate time.Time
 	var subscriptionPhaseID *string
+	var addonAssociationID *string
 
 	priceType := lo.FromPtr(e.PriceType)
 	if e.MeterID != nil {
@@ -135,6 +137,9 @@ func SubscriptionLineItemFromEnt(e *ent.SubscriptionLineItem) *SubscriptionLineI
 	}
 	if e.SubscriptionPhaseID != nil {
 		subscriptionPhaseID = e.SubscriptionPhaseID
+	}
+	if e.AddonAssociationID != nil {
+		addonAssociationID = e.AddonAssociationID
 	}
 
 	// Handle commitment fields
@@ -176,6 +181,7 @@ func SubscriptionLineItemFromEnt(e *ent.SubscriptionLineItem) *SubscriptionLineI
 		StartDate:               startDate,
 		EndDate:                 endDate,
 		SubscriptionPhaseID:     subscriptionPhaseID,
+		AddonAssociationID:      addonAssociationID,
 		Metadata:                e.Metadata,
 		EnvironmentID:           e.EnvironmentID,
 		CommitmentAmount:        e.CommitmentAmount,

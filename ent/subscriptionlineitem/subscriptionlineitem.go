@@ -72,6 +72,8 @@ const (
 	FieldEndDate = "end_date"
 	// FieldSubscriptionPhaseID holds the string denoting the subscription_phase_id field in the database.
 	FieldSubscriptionPhaseID = "subscription_phase_id"
+	// FieldAddonAssociationID holds the string denoting the addon_association_id field in the database.
+	FieldAddonAssociationID = "addon_association_id"
 	// FieldMetadata holds the string denoting the metadata field in the database.
 	FieldMetadata = "metadata"
 	// FieldCommitmentAmount holds the string denoting the commitment_amount field in the database.
@@ -141,6 +143,7 @@ var Columns = []string{
 	FieldStartDate,
 	FieldEndDate,
 	FieldSubscriptionPhaseID,
+	FieldAddonAssociationID,
 	FieldMetadata,
 	FieldCommitmentAmount,
 	FieldCommitmentQuantity,
@@ -344,6 +347,11 @@ func ByEndDate(opts ...sql.OrderTermOption) OrderOption {
 // BySubscriptionPhaseID orders the results by the subscription_phase_id field.
 func BySubscriptionPhaseID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscriptionPhaseID, opts...).ToFunc()
+}
+
+// ByAddonAssociationID orders the results by the addon_association_id field.
+func ByAddonAssociationID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAddonAssociationID, opts...).ToFunc()
 }
 
 // ByCommitmentAmount orders the results by the commitment_amount field.

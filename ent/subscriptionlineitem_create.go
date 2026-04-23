@@ -368,6 +368,20 @@ func (slic *SubscriptionLineItemCreate) SetNillableSubscriptionPhaseID(s *string
 	return slic
 }
 
+// SetAddonAssociationID sets the "addon_association_id" field.
+func (slic *SubscriptionLineItemCreate) SetAddonAssociationID(s string) *SubscriptionLineItemCreate {
+	slic.mutation.SetAddonAssociationID(s)
+	return slic
+}
+
+// SetNillableAddonAssociationID sets the "addon_association_id" field if the given value is not nil.
+func (slic *SubscriptionLineItemCreate) SetNillableAddonAssociationID(s *string) *SubscriptionLineItemCreate {
+	if s != nil {
+		slic.SetAddonAssociationID(*s)
+	}
+	return slic
+}
+
 // SetMetadata sets the "metadata" field.
 func (slic *SubscriptionLineItemCreate) SetMetadata(m map[string]string) *SubscriptionLineItemCreate {
 	slic.mutation.SetMetadata(m)
@@ -812,6 +826,10 @@ func (slic *SubscriptionLineItemCreate) createSpec() (*SubscriptionLineItem, *sq
 	if value, ok := slic.mutation.SubscriptionPhaseID(); ok {
 		_spec.SetField(subscriptionlineitem.FieldSubscriptionPhaseID, field.TypeString, value)
 		_node.SubscriptionPhaseID = &value
+	}
+	if value, ok := slic.mutation.AddonAssociationID(); ok {
+		_spec.SetField(subscriptionlineitem.FieldAddonAssociationID, field.TypeString, value)
+		_node.AddonAssociationID = &value
 	}
 	if value, ok := slic.mutation.Metadata(); ok {
 		_spec.SetField(subscriptionlineitem.FieldMetadata, field.TypeJSON, value)

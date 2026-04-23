@@ -739,6 +739,9 @@ func (sliu *SubscriptionLineItemUpdate) sqlSave(ctx context.Context) (n int, err
 	if sliu.mutation.SubscriptionPhaseIDCleared() {
 		_spec.ClearField(subscriptionlineitem.FieldSubscriptionPhaseID, field.TypeString)
 	}
+	if sliu.mutation.AddonAssociationIDCleared() {
+		_spec.ClearField(subscriptionlineitem.FieldAddonAssociationID, field.TypeString)
+	}
 	if value, ok := sliu.mutation.Metadata(); ok {
 		_spec.SetField(subscriptionlineitem.FieldMetadata, field.TypeJSON, value)
 	}
@@ -1583,6 +1586,9 @@ func (sliuo *SubscriptionLineItemUpdateOne) sqlSave(ctx context.Context) (_node 
 	}
 	if sliuo.mutation.SubscriptionPhaseIDCleared() {
 		_spec.ClearField(subscriptionlineitem.FieldSubscriptionPhaseID, field.TypeString)
+	}
+	if sliuo.mutation.AddonAssociationIDCleared() {
+		_spec.ClearField(subscriptionlineitem.FieldAddonAssociationID, field.TypeString)
 	}
 	if value, ok := sliuo.mutation.Metadata(); ok {
 		_spec.SetField(subscriptionlineitem.FieldMetadata, field.TypeJSON, value)
