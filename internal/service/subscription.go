@@ -4163,16 +4163,17 @@ func (s *subscriptionService) addAddonToSubscription(
 		types.AddonAssociationEntityTypeSubscription,
 	)
 
+	addonRequestedStart := time.Now()
+	if req.StartDate != nil {
+		addonRequestedStart = lo.FromPtr(req.StartDate)
+	}
+
 	// For onetime cadence, determine which period's end to use as the line item end date.
 	// If StartDate falls in a future period we walk forward to find the right boundary.
 	var onetimePeriodEnd time.Time
 	if req.Cadence == types.AddonCadenceOnetime {
-		effectiveStart := time.Now()
-		if req.StartDate != nil {
-			effectiveStart = *req.StartDate
-		}
 		var periodErr error
-		onetimePeriodEnd, periodErr = addonPeriodEndForStartDate(sub, effectiveStart)
+		onetimePeriodEnd, periodErr = addonPeriodEndForStartDate(sub, addonRequestedStart)
 		if periodErr != nil {
 			return nil, periodErr
 		}
@@ -4185,7 +4186,7 @@ func (s *subscriptionService) addAddonToSubscription(
 	// Create line items for addon prices
 	lineItems := make([]*subscription.SubscriptionLineItem, 0, len(validPrices))
 	for _, priceResponse := range validPrices {
-		lineItem := s.createLineItemFromPrice(ctx, priceResponse, sub, req.AddonID, a.Addon.Name, addonAssociation.ID)
+		lineItem := s.createLineItemFromPrice(ctx, priceResponse, sub, req.AddonID, a.Addon.Name, addonAssociation.ID, addonRequestedStart)
 
 		// Onetime: end at the period boundary containing the start date.
 		// Recurring: no end date (renews each period).
@@ -4230,9 +4231,11 @@ func (s *subscriptionService) addAddonToSubscription(
 		return nil, err
 	}
 
-	effectiveDate := time.Now()
-	if req.StartDate != nil {
-		effectiveDate = *req.StartDate
+	effectiveDate := addonRequestedStart
+	for _, li := range lineItems {
+		if li.StartDate.After(effectiveDate) {
+			effectiveDate = li.StartDate
+		}
 	}
 
 	addProrationKey := fmt.Sprintf("addon_add_%s_%d", addonAssociation.ID, effectiveDate.Unix())
@@ -4576,8 +4579,16 @@ func (s *subscriptionService) RemoveAddonFromSubscription(ctx context.Context, r
 }
 
 // createLineItemFromPrice creates a subscription line item from a price for addon additions.
-func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, priceResponse *dto.PriceResponse, sub *subscription.Subscription, addonID, addonName, addonAssociationID string) *subscription.SubscriptionLineItem {
+func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, priceResponse *dto.PriceResponse, sub *subscription.Subscription, addonID, addonName, addonAssociationID string, addonRequestedStart time.Time) *subscription.SubscriptionLineItem {
 	price := priceResponse.Price
+
+	lineItemStart := addonRequestedStart
+	if sub.StartDate.After(lineItemStart) {
+		lineItemStart = sub.StartDate
+	}
+	if price.StartDate != nil && price.StartDate.After(lineItemStart) {
+		lineItemStart = *price.StartDate
+	}
 
 	lineItem := &subscription.SubscriptionLineItem{
 		ID:             types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
@@ -4591,7 +4602,7 @@ func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, price
 		BillingPeriod:  price.BillingPeriod,
 		InvoiceCadence: price.InvoiceCadence,
 		TrialPeriod:    0,
-		StartDate:      time.Now(),
+		StartDate:      lineItemStart,
 		EndDate:        time.Time{},
 		Metadata: map[string]string{
 			"addon_id":        addonID,
