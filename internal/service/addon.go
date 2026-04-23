@@ -465,17 +465,30 @@ func (s *addonService) GetActiveAddonAssociation(ctx context.Context, req dto.Ge
 		return nil, err
 	}
 
-	// Use the start date from request, or default to current time
 	periodStart := req.StartDate
-	if periodStart == nil {
-		now := time.Now()
-		periodStart = &now
-	}
-
-	// Use end date if provided; if nil we treat it as point-in-time at start
 	periodEnd := req.EndDate
-	if periodEnd == nil {
-		periodEnd = periodStart
+
+	if req.EntityType == types.AddonAssociationEntityTypeSubscription && (periodStart == nil || periodEnd == nil) {
+		sub, err := s.SubRepo.Get(ctx, req.EntityID)
+		if err != nil {
+			return nil, err
+		}
+		if periodStart == nil {
+			t := sub.CurrentPeriodStart
+			periodStart = &t
+		}
+		if periodEnd == nil {
+			t := sub.CurrentPeriodEnd
+			periodEnd = &t
+		}
+	} else {
+		if periodStart == nil {
+			now := time.Now()
+			periodStart = &now
+		}
+		if periodEnd == nil {
+			periodEnd = periodStart
+		}
 	}
 
 	// Build filter to fetch active addon associations using the generic list method
