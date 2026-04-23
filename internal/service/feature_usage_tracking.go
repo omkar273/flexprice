@@ -355,6 +355,8 @@ func (s *featureUsageTrackingService) processMessage(msg *message.Message) error
 		environmentID = event.EnvironmentID
 	}
 
+	event.EventName = strings.TrimSpace(event.EventName)
+
 	// Create a background context with tenant ID
 	ctx := context.Background()
 	if tenantID != "" {

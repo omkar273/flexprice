@@ -64,23 +64,10 @@ func NewEventService(
 
 func (s *eventService) CreateEvent(ctx context.Context, createEventRequest *dto.IngestEventRequest) error {
 	if err := createEventRequest.Validate(); err != nil {
-		s.logger.Debugw("event validation failed",
-			"error", err,
-			"event_id", createEventRequest.EventID,
-			"event_name", createEventRequest.EventName,
-			"external_customer_id", createEventRequest.ExternalCustomerID,
-		)
 		return err
 	}
 
 	event := createEventRequest.ToEvent(ctx)
-	s.logger.Debugw("publishing event",
-		"event_id", event.ID,
-		"event_name", event.EventName,
-		"external_customer_id", event.ExternalCustomerID,
-		"tenant_id", event.TenantID,
-		"environment_id", event.EnvironmentID,
-	)
 
 	if err := s.publisher.Publish(ctx, event); err != nil {
 		// Log the error but don't fail the request
@@ -89,14 +76,6 @@ func (s *eventService) CreateEvent(ctx context.Context, createEventRequest *dto.
 			"error", err,
 		).Error("failed to publish event")
 	}
-
-	s.logger.Debugw("event published",
-		"event_id", event.ID,
-		"event_name", event.EventName,
-		"external_customer_id", event.ExternalCustomerID,
-		"tenant_id", event.TenantID,
-		"environment_id", event.EnvironmentID,
-	)
 
 	createEventRequest.EventID = event.ID
 	return nil
