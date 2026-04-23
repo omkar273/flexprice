@@ -362,6 +362,7 @@ func provideHandlers(
 	meterUsageService service.MeterUsageService,
 	geminiPricingService service.GeminiPricingService,
 	webhookService *webhook.WebhookService,
+	temporalClient client.TemporalClient,
 ) api.Handlers {
 	return api.Handlers{
 		Events:                   v1.NewEventsHandler(eventService, eventPostProcessingService, featureUsageTrackingService, rawEventsReprocessingService, rawEventConsumptionService, cfg, logger),
@@ -415,6 +416,7 @@ func provideHandlers(
 		Dashboard:                v1.NewDashboardHandler(dashboardService, logger),
 		Workflow:                 v1.NewWorkflowHandler(workflowService, logger),
 		MeterUsage:               v1.NewMeterUsageHandler(meterUsageService, logger),
+		Temporal:                 v1.NewTemporalHandler(temporalClient, logger),
 	}
 }
 

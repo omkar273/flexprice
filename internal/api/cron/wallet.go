@@ -14,6 +14,9 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// WalletCronHandler is the HTTP entrypoint for wallet-related cron work (e.g. credit expiry).
+//
+// Deprecated: use Temporal schedules and /v1/temporal.
 type WalletCronHandler struct {
 	logger             *logger.Logger
 	walletService      service.WalletService
@@ -23,6 +26,9 @@ type WalletCronHandler struct {
 	alertLogsService   service.AlertLogsService
 }
 
+// NewWalletCronHandler creates a WalletCronHandler.
+//
+// Deprecated: use Temporal and /v1/temporal.
 func NewWalletCronHandler(logger *logger.Logger,
 	walletService service.WalletService,
 	tenantService service.TenantService,
@@ -40,7 +46,10 @@ func NewWalletCronHandler(logger *logger.Logger,
 	}
 }
 
-// ExpireCredits finds and expires credits that have passed their expiry date
+// ExpireCredits finds and expires credits that have passed their expiry date. It is bound to
+// POST /v1/cron/wallets/expire-credits.
+//
+// Deprecated: use the Temporal server schedule; prefer /v1/temporal.
 func (h *WalletCronHandler) ExpireCredits(c *gin.Context) {
 	h.logger.Infow("starting credit expiry cron job - %s", time.Now().UTC().Format(time.RFC3339))
 

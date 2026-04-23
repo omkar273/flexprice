@@ -57,11 +57,14 @@ type Handlers struct {
 	Workflow                 *v1.WorkflowHandler
 	MeterUsage               *v1.MeterUsageHandler
 
+	// Temporal infrastructure
+	Temporal *v1.TemporalHandler
+
 	// Portal handlers
 	Onboarding     *v1.OnboardingHandler
 	AIPricing      *v1.AIPricingHandler
 	CustomerPortal *v1.CustomerPortalHandler
-	// Cron jobs : TODO: move crons out of API based architecture
+	// Cron jobs: optional HTTP /v1/cron/... manual triggers; deprecated. Prefer Temporal (see package cron, /v1/temporal).
 	CronSubscription       *cron.SubscriptionHandler
 	CronWallet             *cron.WalletCronHandler
 	CronCreditGrant        *cron.CreditGrantCronHandler
@@ -617,38 +620,39 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 		webhooks.POST("/zoho_books/:tenant_id/:environment_id", handlers.Webhook.HandleZohoBooksWebhook)
 	}
 
-	// Cron routes
-	// TODO: move crons out of API based architecture
+	// HTTP cron: optional manual/legacy triggers (deprecated for automation; use POST /v1/temporal/setup and server schedules).
 	cron := v1Private.Group("/cron")
-	// Subscription related cron jobs
 	subscriptionGroup := cron.Group("/subscriptions")
 	{
 		subscriptionGroup.POST("/update-periods", handlers.CronSubscription.UpdateBillingPeriods)
 		subscriptionGroup.POST("/process-auto-cancellation", handlers.CronSubscription.ProcessAutoCancellationSubscriptions)
 		subscriptionGroup.POST("/renewal-due-alerts", handlers.CronSubscription.ProcessSubscriptionRenewalDueAlerts)
 	}
-
-	// Wallet related cron jobs
 	walletGroup := cron.Group("/wallets")
 	{
 		walletGroup.POST("/expire-credits", handlers.CronWallet.ExpireCredits)
 	}
-
-	// Credit grant related cron jobs
 	creditGrantGroup := cron.Group("/creditgrants")
 	{
 		creditGrantGroup.POST("/process-scheduled-applications", handlers.CronCreditGrant.ProcessScheduledCreditGrantApplications)
 	}
-
-	// Invoice related cron jobs
 	invoiceGroup := cron.Group("/invoices")
 	{
 		invoiceGroup.POST("/void-old-pending", handlers.CronInvoice.VoidOldPendingInvoices)
 	}
-	// Kafka lag monitoring related cron jobs
 	kafkaLagMonitoringGroup := cron.Group("/events")
 	{
 		kafkaLagMonitoringGroup.POST("/monitoring", handlers.CronKafkaLagMonitoring.HandleKafkaLagMonitoring)
+	}
+
+	// Temporal: recurring schedules and schedule management. Prefer this over the deprecated /v1/cron/ group above.
+	temporalGroup := v1Private.Group("/temporal")
+	{
+		temporalGroup.POST("/setup", handlers.Temporal.SetupSchedules)
+		temporalGroup.GET("/schedules", handlers.Temporal.ListSchedules)
+		temporalGroup.POST("/schedules/:schedule_id/pause", handlers.Temporal.PauseSchedule)
+		temporalGroup.POST("/schedules/:schedule_id/unpause", handlers.Temporal.UnpauseSchedule)
+		temporalGroup.DELETE("/schedules/:schedule_id", handlers.Temporal.DeleteSchedule)
 	}
 
 	// Settings routes
