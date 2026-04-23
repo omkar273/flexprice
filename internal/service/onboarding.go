@@ -160,8 +160,22 @@ func (s *onboardingService) GenerateEvents(ctx context.Context, req *dto.Onboard
 
 	topic := s.Config.OnboardingEvents.Topic
 	if s.pubSub == nil {
-		s.Logger.Infow("onboarding events pubsub unavailable, skipping message publication")
+		s.Logger.Errorw("onboarding events pubsub unavailable, cannot publish message — check Kafka connectivity at startup",
+			"topic", topic,
+			"customer_id", customerID,
+			"feature_id", selectedFeature.ID,
+		)
 	}
+
+	s.Logger.InfowCtx(ctx, "publishing to onboarding events topic",
+		"topic", topic,
+		"message_id", messageID,
+		"tenant_id", types.GetTenantID(ctx),
+		"environment_id", types.GetEnvironmentID(ctx),
+		"customer_id", customerID,
+		"feature_id", selectedFeature.ID,
+	)
+
 	if err := s.pubSub.Publish(ctx, topic, watermillMsg); err != nil {
 		return nil, ierr.WithError(err).
 			WithHint("Failed to publish message").
@@ -331,6 +345,7 @@ func (s *onboardingService) generateEvents(ctx context.Context, eventMsg *types.
 			"events_to_generate", eventsForThisMeter,
 			"tenant_id", eventMsg.TenantID,
 			"environment_id", eventMsg.EnvironmentID,
+			"external_customer_id", eventMsg.CustomerExtID,
 		)
 
 		// Generate the allocated events for this meter
@@ -339,6 +354,18 @@ func (s *onboardingService) generateEvents(ctx context.Context, eventMsg *types.
 			case <-ticker.C:
 				// Create event request
 				eventReq := s.createEventRequest(eventMsg, &meter)
+
+				s.Logger.DebugwCtx(ctx, "about to create event",
+					"event_id", eventReq.EventID,
+					"event_name", eventReq.EventName,
+					"external_customer_id", eventReq.ExternalCustomerID,
+					"source", eventReq.Source,
+					"properties", eventReq.Properties,
+					"ctx_tenant_id", types.GetTenantID(ctx),
+					"ctx_environment_id", types.GetEnvironmentID(ctx),
+					"msg_tenant_id", eventMsg.TenantID,
+					"msg_environment_id", eventMsg.EnvironmentID,
+				)
 
 				// Ingest the event
 				if err := eventService.CreateEvent(ctx, &eventReq); err != nil {
