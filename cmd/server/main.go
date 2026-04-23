@@ -519,7 +519,7 @@ func startServer(
 		// Register all handlers and start router once
 		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, usageBenchmarkSvc, cfg, true)
 		startRouter(lc, router, log)
-		startTemporalWorker(lc, cfg, log, temporalClient, temporalService, params)
+		startTemporalWorker(lc, log, temporalClient, temporalService, params)
 	case types.ModeAPI:
 		startAPIServer(lc, r, cfg, log)
 
@@ -533,7 +533,7 @@ func startServer(
 		// consumed and delivered via Svix/native in the same process.
 		registerRouterHandlers(router, webhookService, integrationEventService, onboardingService, eventPostProcessingSvc, eventConsumptionSvc, featureUsageSvc, costSheetUsageSvc, walletBalanceAlertSvc, rawEventConsumptionSvc, meterUsageTrackingSvc, usageBenchmarkSvc, cfg, false)
 		startRouter(lc, router, log)
-		startTemporalWorker(lc, cfg, log, temporalClient, temporalService, params)
+		startTemporalWorker(lc, log, temporalClient, temporalService, params)
 	case types.ModeConsumer:
 		if consumer == nil {
 			log.Fatal("Kafka consumer required for consumer mode")
@@ -549,7 +549,6 @@ func startServer(
 
 func startTemporalWorker(
 	lc fx.Lifecycle,
-	cfg *config.Configuration,
 	log *logger.Logger,
 	temporalClient client.TemporalClient,
 	temporalService temporalservice.TemporalService,
