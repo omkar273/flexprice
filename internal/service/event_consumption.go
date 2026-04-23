@@ -246,7 +246,7 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 	// Prepare events to insert
 	eventsToInsert := []*events.Event{&event}
 
-	s.Logger.Debugw("creating and appending billing event",
+	s.Logger.Debugw("creating billing event",
 		"tenant_id", s.Config.Billing.TenantID,
 		"environment_id", s.Config.Billing.EnvironmentID,
 		"external_customer_id", event.ExternalCustomerID,
@@ -271,6 +271,12 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 			"system",
 			s.Config.Billing.EnvironmentID,
 		)
+		s.Logger.Debugw("appending billing event",
+			"tenant_id", s.Config.Billing.TenantID,
+			"environment_id", s.Config.Billing.EnvironmentID,
+			"external_customer_id", event.ExternalCustomerID,
+		)
+
 		eventsToInsert = append(eventsToInsert, billingEvent)
 	}
 
