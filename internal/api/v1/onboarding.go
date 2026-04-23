@@ -55,8 +55,6 @@ func (h *OnboardingHandler) GenerateEvents(c *gin.Context) {
 		h.log.Infow("generating events using subscription ID",
 			"subscription_id", req.SubscriptionID,
 			"duration", req.Duration,
-			"environment_id", types.GetEnvironmentID(ctx),
-			"tenant_id", types.GetTenantID(ctx),
 		)
 
 		// If both subscription ID and customer/feature IDs are provided, log a warning
@@ -72,8 +70,6 @@ func (h *OnboardingHandler) GenerateEvents(c *gin.Context) {
 			"customer_id", req.CustomerID,
 			"feature_id", req.FeatureID,
 			"duration", req.Duration,
-			"environment_id", types.GetEnvironmentID(ctx),
-			"tenant_id", types.GetTenantID(ctx),
 		)
 	}
 
