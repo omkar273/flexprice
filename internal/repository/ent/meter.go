@@ -2,11 +2,9 @@ package ent
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
-	"entgo.io/ent/dialect/sql"
 	"github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/ent/meter"
 	"github.com/flexprice/flexprice/internal/cache"
@@ -372,16 +370,7 @@ func (o MeterQueryOptions) applyEntityQueryOptions(_ context.Context, f *types.M
 
 	if f.EventName != "" {
 		trimmed := strings.TrimSpace(f.EventName)
-		if trimmed == "" {
-			// Preserve exact match for whitespace-only (edge case).
-			query = query.Where(meter.EventName(string(f.EventName)))
-		} else {
-			// Event names are compared in SQL after BTRIM so stored meters/events with
-			// accidental leading/trailing spaces still match.
-			query = query.Where(func(s *sql.Selector) {
-				s.Where(sql.ExprP(fmt.Sprintf("BTRIM(%s) = ?", s.C(meter.FieldEventName)), trimmed))
-			})
-		}
+		query = query.Where(meter.EventName(trimmed))
 	}
 
 	if len(f.MeterIDs) > 0 {

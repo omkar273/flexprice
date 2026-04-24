@@ -246,6 +246,12 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 	// Prepare events to insert
 	eventsToInsert := []*events.Event{&event}
 
+	s.Logger.Debugw("creating billing event",
+		"tenant_id", s.Config.Billing.TenantID,
+		"environment_id", s.Config.Billing.EnvironmentID,
+		"external_customer_id", event.ExternalCustomerID,
+	)
+
 	// Create billing event if configured
 	if s.Config.Billing.TenantID != "" {
 		billingEvent := events.NewEvent(
@@ -260,11 +266,17 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 				"source":              event.Source,
 			},
 			time.Now(),
-			"", // Customer ID will be looked up by external ID
 			"", // Generate new ID
+			"", // Customer ID will be looked up by external ID
 			"system",
 			s.Config.Billing.EnvironmentID,
 		)
+		s.Logger.Debugw("appending billing event",
+			"tenant_id", s.Config.Billing.TenantID,
+			"environment_id", s.Config.Billing.EnvironmentID,
+			"external_customer_id", event.ExternalCustomerID,
+		)
+
 		eventsToInsert = append(eventsToInsert, billingEvent)
 	}
 
