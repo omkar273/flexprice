@@ -25,7 +25,6 @@ type Handlers struct {
 	Connection               *v1.ConnectionHandler
 	Plan                     *v1.PlanHandler
 	Subscription             *v1.SubscriptionHandler
-	SubscriptionPause        *v1.SubscriptionPauseHandler
 	SubscriptionChange       *v1.SubscriptionChangeHandler
 	SubscriptionModification *v1.SubscriptionModificationHandler
 	SubscriptionSchedule     *v1.SubscriptionScheduleHandler
@@ -286,9 +285,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			subscription.POST("/:id/cancel", handlers.Subscription.CancelSubscription)
 			subscription.POST("/usage", handlers.Subscription.GetUsageBySubscription)
 
-			subscription.POST("/:id/pause", handlers.SubscriptionPause.PauseSubscription)
-			subscription.POST("/:id/resume", handlers.SubscriptionPause.ResumeSubscription)
-			subscription.GET("/:id/pauses", handlers.SubscriptionPause.ListPauses)
 			subscription.GET("/:id/entitlements", handlers.Subscription.GetSubscriptionEntitlements)
 			subscription.GET("/:id/grants/upcoming", handlers.Subscription.GetUpcomingCreditGrantApplications)
 

@@ -192,7 +192,7 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 	tenantID := msg.Metadata.Get("tenant_id")
 	environmentID := msg.Metadata.Get("environment_id")
 
-	s.Logger.Debugw("processing event from message queue",
+	s.Logger.Debugw("processing event from message queue in event consumption service",
 		"message_uuid", msg.UUID,
 		"partition_key", partitionKey,
 		"tenant_id", tenantID,
@@ -234,7 +234,7 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 		ctx = context.WithValue(ctx, types.CtxEnvironmentID, environmentID)
 	}
 
-	s.Logger.Debugw("processing event",
+	s.Logger.Debugw("processing event in event consumption service",
 		"event_id", event.ID,
 		"event_name", event.EventName,
 		"tenant_id", event.TenantID,

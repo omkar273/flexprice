@@ -375,7 +375,6 @@ func provideHandlers(
 		Customer:                 v1.NewCustomerHandler(customerService, billingService, entityIntegrationMappingService, logger),
 		Plan:                     v1.NewPlanHandler(planService, entitlementService, creditGrantService, temporalService, logger),
 		Subscription:             v1.NewSubscriptionHandler(subscriptionService, logger),
-		SubscriptionPause:        v1.NewSubscriptionPauseHandler(subscriptionService, logger),
 		SubscriptionChange:       v1.NewSubscriptionChangeHandler(subscriptionChangeService, logger),
 		SubscriptionModification: v1.NewSubscriptionModificationHandler(subscriptionModificationService, logger),
 		SubscriptionSchedule:     v1.NewSubscriptionScheduleHandler(subscriptionScheduleService),
