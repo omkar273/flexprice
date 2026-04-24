@@ -213,11 +213,25 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		return nil
 	}
 
+	subWithItems, _, err := s.SubRepo.GetWithLineItems(ctx, sub.ID)
+	if err != nil {
+		return err
+	}
+	sub = subWithItems
+
+	// The trial-end invoice is the first REAL billing period charge [TrialEnd, TrialEnd+BillingPeriod],
+	// not the trial period itself.
+	firstPeriodStart := lo.FromPtr(sub.TrialEnd)
+	firstPeriodEnd, err := types.NextBillingDate(firstPeriodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
+	if err != nil {
+		return err
+	}
+
 	existing, err := s.InvoiceRepo.GetForPeriod(
 		ctx,
 		sub.ID,
-		lo.FromPtr(sub.TrialStart),
-		lo.FromPtr(sub.TrialEnd),
+		firstPeriodStart,
+		firstPeriodEnd,
 		string(types.InvoiceBillingReasonSubscriptionTrialEnd),
 	)
 	if err != nil && !ierr.IsNotFound(err) {
@@ -232,19 +246,13 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		return nil
 	}
 
-	subWithItems, _, err := s.SubRepo.GetWithLineItems(ctx, sub.ID)
-	if err != nil {
-		return err
-	}
-	sub = subWithItems
-
 	paymentParams := dto.NewPaymentParametersFromSubscription(sub.CollectionMethod, sub.PaymentBehavior, sub.GatewayPaymentMethodID)
 	paymentParams = paymentParams.NormalizePaymentParameters()
 
 	inv, _, err := invoiceService.CreateSubscriptionInvoice(ctx, &dto.CreateSubscriptionInvoiceRequest{
 		SubscriptionID: sub.ID,
-		PeriodStart:    lo.FromPtr(sub.TrialStart),
-		PeriodEnd:      lo.FromPtr(sub.TrialEnd),
+		PeriodStart:    firstPeriodStart,
+		PeriodEnd:      firstPeriodEnd,
 		ReferencePoint: types.ReferencePointPeriodStart,
 		BillingReason:  types.InvoiceBillingReasonSubscriptionTrialEnd,
 	}, paymentParams, types.InvoiceFlowRenewal, false)
@@ -252,7 +260,10 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		return err
 	}
 	if inv == nil {
-		s.Logger.InfowCtx(ctx, "no invoice created for trial end (skipped zero amount or inherited)",
+		if err := s.completeTrialConversionToActive(ctx, sub); err != nil {
+			return err
+		}
+		s.Logger.InfowCtx(ctx, "subscription activated after zero-amount trial end (no invoice)",
 			"subscription_id", sub.ID)
 	}
 	return nil

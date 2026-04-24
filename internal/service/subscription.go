@@ -4803,44 +4803,40 @@ func (s *subscriptionService) HandleSubscriptionActivatingInvoicePaid(ctx contex
 	}
 }
 
-func (s *subscriptionService) completeTrialConversionFromPaidInvoice(ctx context.Context, inv *invoice.Invoice) error {
-	if inv.SubscriptionID == nil {
-		return nil
-	}
-	subscriptionID := *inv.SubscriptionID
-
-	sub, err := s.SubRepo.Get(ctx, subscriptionID)
-	if err != nil {
-		return err
-	}
-
+// completeTrialConversionToActive ends the trial period and starts the first paid billing period (used on
+// paid trial-end invoice or when that invoice is skipped as zero-amount, so no payment webhook fires).
+func (s *subscriptionService) completeTrialConversionToActive(ctx context.Context, sub *subscription.Subscription) error {
 	if sub.SubscriptionStatus != types.SubscriptionStatusTrialing && sub.SubscriptionStatus != types.SubscriptionStatusIncomplete {
 		return nil
 	}
-
 	// First paid period starts at the end of the prior (trial) period, not at payment time.
 	nextPeriodStart := sub.CurrentPeriodEnd.UTC()
-
 	nextEnd, err := types.NextBillingDate(nextPeriodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
 	if err != nil {
 		return err
 	}
-
 	sub.CurrentPeriodStart = nextPeriodStart
 	sub.CurrentPeriodEnd = nextEnd
 	sub.SubscriptionStatus = types.SubscriptionStatusActive
-
 	if err := s.SubRepo.Update(ctx, sub); err != nil {
 		return err
 	}
-
 	if err := s.processPendingCreditGrantsForSubscription(ctx, sub); err != nil {
 		return err
 	}
-
-	s.publishSystemEvent(ctx, types.WebhookEventSubscriptionActivated, subscriptionID)
-
+	s.publishSystemEvent(ctx, types.WebhookEventSubscriptionActivated, sub.ID)
 	return nil
+}
+
+func (s *subscriptionService) completeTrialConversionFromPaidInvoice(ctx context.Context, inv *invoice.Invoice) error {
+	if inv.SubscriptionID == nil {
+		return nil
+	}
+	sub, err := s.SubRepo.Get(ctx, *inv.SubscriptionID)
+	if err != nil {
+		return err
+	}
+	return s.completeTrialConversionToActive(ctx, sub)
 }
 
 // processPendingCreditGrantsForSubscription finds and processes pending CGAs for a subscription
@@ -6792,9 +6788,13 @@ func (s *subscriptionService) GetUpcomingCreditGrantApplications(ctx context.Con
 		return nil, err
 	}
 
-	// Verify each subscription exists
+	// Verify each subscription exists — include trialing so in-trial subs are not 404'd
 	subFilter := types.NewNoLimitSubscriptionFilter()
 	subFilter.SubscriptionIDs = req.SubscriptionIDs
+	subFilter.SubscriptionStatus = []types.SubscriptionStatus{
+		types.SubscriptionStatusActive,
+		types.SubscriptionStatusTrialing,
+	}
 	subscriptions, err := s.SubRepo.List(ctx, subFilter)
 	if err != nil {
 		return nil, err
