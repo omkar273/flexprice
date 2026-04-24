@@ -64,6 +64,21 @@ func applyTrialWindowToSubscription(req *dto.CreateSubscriptionRequest, sub *sub
 		return trialDaysFromBounds(*req.TrialStart, *req.TrialEnd), nil
 	}
 
+	planHasRecurringFixedTrial := false
+	for _, pr := range planPrices {
+		if pr == nil || pr.Price == nil {
+			continue
+		}
+		p := pr.Price
+		if p.BillingCadence == types.BILLING_CADENCE_RECURRING && p.Type == types.PRICE_TYPE_FIXED && p.TrialPeriodDays > 0 {
+			planHasRecurringFixedTrial = true
+			break
+		}
+	}
+	if req.TrialPeriodDays == nil && !planHasRecurringFixedTrial {
+		return 0, nil
+	}
+
 	days, err := resolveEffectiveTrialPeriodDays(req, planPrices)
 	if err != nil {
 		return 0, err
