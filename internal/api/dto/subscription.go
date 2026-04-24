@@ -649,17 +649,6 @@ func (r *CreateSubscriptionRequest) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 
-	if r.BillingAnchor != nil {
-		if r.BillingAnchor.Before(lo.FromPtr(r.StartDate)) {
-			return ierr.NewError("billing_anchor cannot be before start_date").
-				WithHint("billing_anchor must be on or after start_date").
-				WithReportableDetails(map[string]any{
-					"billing_anchor": r.BillingAnchor,
-					"start_date":     r.StartDate,
-				}).
-				Mark(ierr.ErrValidation)
-		}
-	}
 	// Handle legacy collection method conversion and validation
 	if r.CollectionMethod != nil {
 		// Handle legacy default_incomplete collection method
