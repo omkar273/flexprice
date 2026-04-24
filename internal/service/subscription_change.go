@@ -735,6 +735,15 @@ func (s *subscriptionChangeService) createNewSubscription(
 		}
 	}
 
+	// For anniversary billing, anchor the new subscription to the effective (upgrade) date,
+	// not the old sub's anchor. Inheriting the old anchor would create a short first billing
+	// period (old-anchor-day vs effective-day), causing prorated advance charges instead of
+	// a full-period invoice.
+	var newBillingAnchor *time.Time
+	if req.BillingCycle == types.BillingCycleAnniversary {
+		newBillingAnchor = &effectiveDate
+	}
+
 	// Create new subscription request
 	createSubReq := dto.CreateSubscriptionRequest{
 		CustomerID:         currentSub.CustomerID,
@@ -745,7 +754,7 @@ func (s *subscriptionChangeService) createNewSubscription(
 		BillingPeriod:      req.BillingPeriod,
 		BillingPeriodCount: req.BillingPeriodCount,
 		BillingCycle:       req.BillingCycle,
-		BillingAnchor:      &currentSub.BillingAnchor,
+		BillingAnchor:      newBillingAnchor,
 		StartDate:          &effectiveDate,
 		Metadata:           req.Metadata,
 		ProrationBehavior:  req.ProrationBehavior,
