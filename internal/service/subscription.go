@@ -2192,24 +2192,12 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 	usageStartTime := req.StartTime
 	if usageStartTime.IsZero() {
 		usageStartTime = subscription.CurrentPeriodStart
-		// When a trial has ended but the period hasn't been re-anchored yet (payment pending),
-		// default to the first real billing period start so events after trial end are visible.
-		if subscription.TrialEnd != nil && subscription.TrialEnd.Before(time.Now().UTC()) &&
-			subscription.CurrentPeriodStart.Before(*subscription.TrialEnd) {
-			usageStartTime = *subscription.TrialEnd
-		}
 	}
 
 	// TODO: handle this to honour line item level end time
 	usageEndTime := req.EndTime
 	if usageEndTime.IsZero() {
 		usageEndTime = subscription.CurrentPeriodEnd
-		// Mirror the start-time adjustment: if we shifted start to TrialEnd, use now as end
-		// so the full post-trial window is visible before the period is officially re-anchored.
-		if subscription.TrialEnd != nil && subscription.TrialEnd.Before(time.Now().UTC()) &&
-			subscription.CurrentPeriodEnd.Equal(*subscription.TrialEnd) {
-			usageEndTime = time.Now().UTC()
-		}
 	}
 
 	if req.LifetimeUsage {
@@ -4815,20 +4803,13 @@ func (s *subscriptionService) HandleSubscriptionActivatingInvoicePaid(ctx contex
 	}
 }
 
-// completeTrialConversionToActive ends the trial period and starts the first paid billing period (used on
-// paid trial-end invoice or when that invoice is skipped as zero-amount, so no payment webhook fires).
+// completeTrialConversionToActive activates a subscription after its trial-end invoice is paid or
+// skipped (zero-amount). By the time this is called, processSubscriptionTrialEnd has already
+// advanced CurrentPeriodStart/End to the first real billing window, so only the status changes.
 func (s *subscriptionService) completeTrialConversionToActive(ctx context.Context, sub *subscription.Subscription) error {
-	if sub.SubscriptionStatus != types.SubscriptionStatusTrialing && sub.SubscriptionStatus != types.SubscriptionStatusIncomplete {
+	if sub.SubscriptionStatus == types.SubscriptionStatusActive {
 		return nil
 	}
-	// First paid period starts at the end of the prior (trial) period, not at payment time.
-	nextPeriodStart := sub.CurrentPeriodEnd.UTC()
-	nextEnd, err := types.NextBillingDate(nextPeriodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
-	if err != nil {
-		return err
-	}
-	sub.CurrentPeriodStart = nextPeriodStart
-	sub.CurrentPeriodEnd = nextEnd
 	sub.SubscriptionStatus = types.SubscriptionStatusActive
 	if err := s.SubRepo.Update(ctx, sub); err != nil {
 		return err

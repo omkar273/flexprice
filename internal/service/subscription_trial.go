@@ -219,14 +219,33 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 	}
 	sub = subWithItems
 
-	// The trial-end invoice is the first REAL billing period charge [TrialEnd, TrialEnd+BillingPeriod],
-	// not the trial period itself.
+	// First real billing period starts at trial end.
+	// Reset BillingAnchor to trial end so the customer gets a FULL first period
+	// (Stripe-aligned: trial_end becomes the new billing cycle anchor).
 	firstPeriodStart := lo.FromPtr(sub.TrialEnd)
+	sub.BillingAnchor = firstPeriodStart
 	firstPeriodEnd, err := types.NextBillingDate(firstPeriodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
 	if err != nil {
 		return err
 	}
 
+	// Atomically move the subscription out of trialing: reset the billing anchor,
+	// advance the period to the first real billing window, and set status to incomplete.
+	// This single UPDATE is idempotent — if the cron runs again, the status guard above
+	// exits early because status is no longer trialing.
+	sub.SubscriptionStatus = types.SubscriptionStatusIncomplete
+	sub.CurrentPeriodStart = firstPeriodStart
+	sub.CurrentPeriodEnd = firstPeriodEnd
+	if err := s.SubRepo.Update(ctx, sub); err != nil {
+		return err
+	}
+
+	s.Logger.InfowCtx(ctx, "subscription period advanced and moved to incomplete after trial end",
+		"subscription_id", sub.ID,
+		"first_period_start", firstPeriodStart,
+		"first_period_end", firstPeriodEnd)
+
+	// Idempotency: skip if a non-draft/non-skipped invoice already exists for this period.
 	existing, err := s.InvoiceRepo.GetForPeriod(
 		ctx,
 		sub.ID,
@@ -240,7 +259,7 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 	if existing != nil &&
 		existing.InvoiceStatus != types.InvoiceStatusDraft &&
 		existing.InvoiceStatus != types.InvoiceStatusSkipped {
-		s.Logger.InfowCtx(ctx, "trial end invoice already exists for period, skipping",
+		s.Logger.InfowCtx(ctx, "trial end invoice already exists for period, skipping invoice creation",
 			"subscription_id", sub.ID,
 			"invoice_id", existing.ID)
 		return nil
@@ -259,23 +278,14 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 	if err != nil {
 		return err
 	}
+
 	if inv == nil {
+		// Zero-amount or fully skipped invoice: activate immediately.
 		if err := s.completeTrialConversionToActive(ctx, sub); err != nil {
 			return err
 		}
-		s.Logger.InfowCtx(ctx, "subscription activated after zero-amount trial end (no invoice)",
+		s.Logger.InfowCtx(ctx, "subscription activated after zero-amount trial end",
 			"subscription_id", sub.ID)
-		return nil
 	}
-
-	// Trial has ended and a real invoice has been issued — move to incomplete so the
-	// subscription is no longer trialing while awaiting payment.
-	sub.SubscriptionStatus = types.SubscriptionStatusIncomplete
-	if err := s.SubRepo.Update(ctx, sub); err != nil {
-		return err
-	}
-	s.Logger.InfowCtx(ctx, "subscription moved to incomplete after trial-end invoice created",
-		"subscription_id", sub.ID,
-		"invoice_id", inv.ID)
 	return nil
 }

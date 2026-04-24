@@ -220,11 +220,11 @@ func (s *SubscriptionTrialInvoicePaidSuite) SetupTest() {
 	})
 }
 
-func (s *SubscriptionTrialInvoicePaidSuite) TestTrialEndPaidInvoice_ActivatesAndReanchors() {
+func (s *SubscriptionTrialInvoicePaidSuite) TestTrialEndPaidInvoice_ActivatesAndKeepsPeriod() {
 	ctx := s.GetContext()
 	anchor := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	trialEnd := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
-	paidAt := time.Date(2026, 1, 15, 12, 30, 0, 0, time.UTC) // payment time must not shift period start
+	paidAt := time.Date(2026, 1, 15, 12, 30, 0, 0, time.UTC)
 
 	cust := &customer.Customer{
 		ID:        types.GenerateUUIDWithPrefix(types.UUID_PREFIX_CUSTOMER),
@@ -241,11 +241,15 @@ func (s *SubscriptionTrialInvoicePaidSuite) TestTrialEndPaidInvoice_ActivatesAnd
 	}
 	s.Require().NoError(s.GetStores().PlanRepo.Create(ctx, pl))
 
+	// processSubscriptionTrialEnd already advanced the period before creating the invoice.
+	firstPeriodEnd, err := types.NextBillingDate(trialEnd, anchor, 1, types.BILLING_PERIOD_MONTHLY, nil)
+	s.Require().NoError(err)
+
 	sub := &subscription.Subscription{
 		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
 		CustomerID:         cust.ID,
 		PlanID:             pl.ID,
-		SubscriptionStatus: types.SubscriptionStatusTrialing,
+		SubscriptionStatus: types.SubscriptionStatusIncomplete,
 		Currency:           "usd",
 		BillingAnchor:      anchor,
 		BillingCycle:       types.BillingCycleAnniversary,
@@ -253,8 +257,8 @@ func (s *SubscriptionTrialInvoicePaidSuite) TestTrialEndPaidInvoice_ActivatesAnd
 		BillingPeriodCount: 1,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		StartDate:          anchor,
-		CurrentPeriodStart: anchor,
-		CurrentPeriodEnd:   trialEnd,
+		CurrentPeriodStart: trialEnd,
+		CurrentPeriodEnd:   firstPeriodEnd,
 		TrialStart:         &anchor,
 		TrialEnd:           &trialEnd,
 		PaymentBehavior:    string(types.PaymentBehaviorDefaultActive),
@@ -262,9 +266,6 @@ func (s *SubscriptionTrialInvoicePaidSuite) TestTrialEndPaidInvoice_ActivatesAnd
 		BaseModel:          types.GetDefaultBaseModel(ctx),
 	}
 	s.Require().NoError(s.GetStores().SubscriptionRepo.Create(ctx, sub))
-
-	wantEnd, err := types.NextBillingDate(trialEnd, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
-	s.Require().NoError(err)
 
 	inv := &invoice.Invoice{
 		ID:             types.GenerateUUIDWithPrefix(types.UUID_PREFIX_INVOICE),
@@ -278,9 +279,10 @@ func (s *SubscriptionTrialInvoicePaidSuite) TestTrialEndPaidInvoice_ActivatesAnd
 
 	updated, err := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
 	s.Require().NoError(err)
+	// Payment only flips status; period was already advanced at trial end.
 	s.Equal(types.SubscriptionStatusActive, updated.SubscriptionStatus)
-	s.True(updated.CurrentPeriodStart.Equal(trialEnd), "period start should be previous period end (trial end), not paid_at")
-	s.True(updated.CurrentPeriodEnd.Equal(wantEnd))
+	s.True(updated.CurrentPeriodStart.Equal(trialEnd))
+	s.True(updated.CurrentPeriodEnd.Equal(firstPeriodEnd))
 	s.NotNil(updated.TrialStart)
 	s.NotNil(updated.TrialEnd)
 }
@@ -306,11 +308,14 @@ func (s *SubscriptionTrialInvoicePaidSuite) TestTrialEndPaidInvoice_IdempotentWh
 	}
 	s.Require().NoError(s.GetStores().PlanRepo.Create(ctx, pl))
 
+	firstPeriodEnd, err := types.NextBillingDate(trialEnd, anchor, 1, types.BILLING_PERIOD_MONTHLY, nil)
+	s.Require().NoError(err)
+
 	sub := &subscription.Subscription{
 		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
 		CustomerID:         cust.ID,
 		PlanID:             pl.ID,
-		SubscriptionStatus: types.SubscriptionStatusTrialing,
+		SubscriptionStatus: types.SubscriptionStatusIncomplete,
 		Currency:           "usd",
 		BillingAnchor:      anchor,
 		BillingCycle:       types.BillingCycleAnniversary,
@@ -318,8 +323,8 @@ func (s *SubscriptionTrialInvoicePaidSuite) TestTrialEndPaidInvoice_IdempotentWh
 		BillingPeriodCount: 1,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		StartDate:          anchor,
-		CurrentPeriodStart: anchor,
-		CurrentPeriodEnd:   trialEnd,
+		CurrentPeriodStart: trialEnd,
+		CurrentPeriodEnd:   firstPeriodEnd,
 		TrialStart:         &anchor,
 		TrialEnd:           &trialEnd,
 		PaymentBehavior:    string(types.PaymentBehaviorDefaultActive),

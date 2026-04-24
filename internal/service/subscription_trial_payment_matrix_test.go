@@ -99,78 +99,77 @@ func (s *SubscriptionTrialPaymentMatrixSuite) TestMatrix_HandlePaymentBehavior_R
 	}
 	s.Require().NoError(s.GetStores().PlanRepo.Create(ctx, pl))
 
+	// Period is already advanced to the first real billing window by processSubscriptionTrialEnd.
+	firstPeriodEnd, err := types.NextBillingDate(trialEnd, trialStart, 1, types.BILLING_PERIOD_MONTHLY, nil)
+	s.Require().NoError(err)
+
 	tests := []struct {
-		name               string
-		collectionMethod   types.CollectionMethod
-		paymentBehavior    types.PaymentBehavior
-		amountDue          decimal.Decimal
-		wantStatus        types.SubscriptionStatus
-		wantPeriodsFrozen bool
-		notes             string
+		name             string
+		collectionMethod types.CollectionMethod
+		paymentBehavior  types.PaymentBehavior
+		amountDue        decimal.Decimal
+		wantStatus       types.SubscriptionStatus
+		notes            string
 	}{
 		{
-			name:              "charge_automatically_allow_incomplete_payment_fails",
-			collectionMethod:  types.CollectionMethodChargeAutomatically,
-			paymentBehavior:   types.PaymentBehaviorAllowIncomplete,
-			amountDue:         decimal.NewFromInt(25),
-			wantStatus:        types.SubscriptionStatusIncomplete,
-			wantPeriodsFrozen: true,
-			notes:             "Spec: unpaid converting invoice → incomplete + freeze.",
+			name:             "charge_automatically_allow_incomplete_payment_fails",
+			collectionMethod: types.CollectionMethodChargeAutomatically,
+			paymentBehavior:  types.PaymentBehaviorAllowIncomplete,
+			amountDue:        decimal.NewFromInt(25),
+			wantStatus:       types.SubscriptionStatusIncomplete,
+			notes:            "Unpaid invoice → stays incomplete; period already advanced at trial end.",
 		},
 		{
-			name:              "charge_automatically_default_active_payment_fails",
-			collectionMethod:  types.CollectionMethodChargeAutomatically,
-			paymentBehavior:   types.PaymentBehaviorDefaultActive,
-			amountDue:         decimal.NewFromInt(25),
-			wantStatus:        types.SubscriptionStatusActive,
-			wantPeriodsFrozen: true,
-			notes:             "Product gap: active while unpaid; periods stay on trial until paid (re-anchor only via HandleSubscriptionActivatingInvoicePaid).",
+			name:             "charge_automatically_default_active_payment_fails",
+			collectionMethod: types.CollectionMethodChargeAutomatically,
+			paymentBehavior:  types.PaymentBehaviorDefaultActive,
+			amountDue:        decimal.NewFromInt(25),
+			wantStatus:       types.SubscriptionStatusActive,
+			notes:            "default_active: always activates regardless of payment; period already correct.",
 		},
 		{
-			name:              "charge_automatically_error_if_incomplete_payment_fails_renewal",
-			collectionMethod:  types.CollectionMethodChargeAutomatically,
-			paymentBehavior:   types.PaymentBehaviorErrorIfIncomplete,
-			amountDue:         decimal.NewFromInt(25),
-			wantStatus:        types.SubscriptionStatusTrialing,
-			wantPeriodsFrozen: true,
-			notes:             "Renewal flow: payment failure does not flip status to incomplete (creation flow would error).",
+			name:             "charge_automatically_error_if_incomplete_payment_fails_renewal",
+			collectionMethod: types.CollectionMethodChargeAutomatically,
+			paymentBehavior:  types.PaymentBehaviorErrorIfIncomplete,
+			amountDue:        decimal.NewFromInt(25),
+			wantStatus:       types.SubscriptionStatusIncomplete,
+			notes:            "Renewal flow: payment failure does not change status; stays incomplete.",
 		},
 		{
-			name:              "charge_automatically_allow_incomplete_zero_due_treated_paid",
-			collectionMethod:  types.CollectionMethodChargeAutomatically,
-			paymentBehavior:   types.PaymentBehaviorAllowIncomplete,
-			amountDue:         decimal.Zero,
-			wantStatus:        types.SubscriptionStatusActive,
-			wantPeriodsFrozen: true,
-			notes:             "Zero-amount: behavior marks active; period re-anchor still requires converting-invoice paid hook for trial end.",
+			name:             "charge_automatically_allow_incomplete_zero_due_treated_paid",
+			collectionMethod: types.CollectionMethodChargeAutomatically,
+			paymentBehavior:  types.PaymentBehaviorAllowIncomplete,
+			amountDue:        decimal.Zero,
+			wantStatus:       types.SubscriptionStatusActive,
+			notes:            "Zero-amount: marks active immediately.",
 		},
 		{
-			name:              "send_invoice_default_active",
-			collectionMethod:  types.CollectionMethodSendInvoice,
-			paymentBehavior:   types.PaymentBehaviorDefaultActive,
-			amountDue:         decimal.NewFromInt(40),
-			wantStatus:        types.SubscriptionStatusActive,
-			wantPeriodsFrozen: true,
-			notes:             "Product gap: active without payment; periods frozen until paid path runs.",
+			name:             "send_invoice_default_active",
+			collectionMethod: types.CollectionMethodSendInvoice,
+			paymentBehavior:  types.PaymentBehaviorDefaultActive,
+			amountDue:        decimal.NewFromInt(40),
+			wantStatus:       types.SubscriptionStatusActive,
+			notes:            "send_invoice + default_active: activates without waiting for payment.",
 		},
 		{
-			name:              "send_invoice_default_incomplete",
-			collectionMethod:  types.CollectionMethodSendInvoice,
-			paymentBehavior:   types.PaymentBehaviorDefaultIncomplete,
-			amountDue:         decimal.NewFromInt(40),
-			wantStatus:        types.SubscriptionStatusIncomplete,
-			wantPeriodsFrozen: true,
-			notes:             "Unpaid invoice → incomplete; periods unchanged.",
+			name:             "send_invoice_default_incomplete",
+			collectionMethod: types.CollectionMethodSendInvoice,
+			paymentBehavior:  types.PaymentBehaviorDefaultIncomplete,
+			amountDue:        decimal.NewFromInt(40),
+			wantStatus:       types.SubscriptionStatusIncomplete,
+			notes:            "Unpaid invoice → stays incomplete.",
 		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
+			// Subscription arrives at HandlePaymentBehavior already in incomplete state with
+			// period advanced to [trialEnd, firstPeriodEnd] by processSubscriptionTrialEnd.
 			sub := &subscription.Subscription{
 				ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
 				CustomerID:         cust.ID,
 				PlanID:             pl.ID,
-				SubscriptionStatus: types.SubscriptionStatusTrialing,
+				SubscriptionStatus: types.SubscriptionStatusIncomplete,
 				Currency:           "usd",
 				BillingAnchor:      trialStart,
 				BillingCycle:       types.BillingCycleAnniversary,
@@ -178,8 +177,8 @@ func (s *SubscriptionTrialPaymentMatrixSuite) TestMatrix_HandlePaymentBehavior_R
 				BillingPeriodCount: 1,
 				BillingCadence:     types.BILLING_CADENCE_RECURRING,
 				StartDate:          trialStart,
-				CurrentPeriodStart: trialStart,
-				CurrentPeriodEnd:   trialEnd,
+				CurrentPeriodStart: trialEnd,
+				CurrentPeriodEnd:   firstPeriodEnd,
 				TrialStart:         &trialStart,
 				TrialEnd:           &trialEnd,
 				CollectionMethod:   string(tt.collectionMethod),
@@ -192,45 +191,44 @@ func (s *SubscriptionTrialPaymentMatrixSuite) TestMatrix_HandlePaymentBehavior_R
 			amtDue := tt.amountDue
 			amtRem := tt.amountDue
 			inv := &invoice.Invoice{
-				ID:                invID,
-				CustomerID:        cust.ID,
-				SubscriptionID:    &sub.ID,
-				InvoiceType:       types.InvoiceTypeSubscription,
-				InvoiceStatus:     types.InvoiceStatusFinalized,
-				PaymentStatus:     types.PaymentStatusPending,
-				Currency:          "usd",
-				AmountDue:         amtDue,
-				AmountRemaining:   amtRem,
-				AmountPaid:        decimal.Zero,
-				Total:             amtDue,
-				Subtotal:          amtDue,
-				BillingReason:     string(types.InvoiceBillingReasonSubscriptionTrialEnd),
-				BaseModel:         types.GetDefaultBaseModel(ctx),
-				LineItems:         []*invoice.InvoiceLineItem{},
+				ID:              invID,
+				CustomerID:      cust.ID,
+				SubscriptionID:  &sub.ID,
+				InvoiceType:     types.InvoiceTypeSubscription,
+				InvoiceStatus:   types.InvoiceStatusFinalized,
+				PaymentStatus:   types.PaymentStatusPending,
+				Currency:        "usd",
+				AmountDue:       amtDue,
+				AmountRemaining: amtRem,
+				AmountPaid:      decimal.Zero,
+				Total:           amtDue,
+				Subtotal:        amtDue,
+				BillingReason:   string(types.InvoiceBillingReasonSubscriptionTrialEnd),
+				BaseModel:       types.GetDefaultBaseModel(ctx),
+				LineItems:       []*invoice.InvoiceLineItem{},
 			}
 			s.Require().NoError(s.GetStores().InvoiceRepo.Create(ctx, inv))
 
 			invResp := dto.NewInvoiceResponse(inv)
-			err := s.proc.HandlePaymentBehavior(ctx, sub, invResp, tt.paymentBehavior, types.InvoiceFlowRenewal)
-			s.Require().NoError(err)
+			s.Require().NoError(s.proc.HandlePaymentBehavior(ctx, sub, invResp, tt.paymentBehavior, types.InvoiceFlowRenewal))
 
 			updated, gerr := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
 			s.Require().NoError(gerr)
 			s.Require().Equal(tt.wantStatus, updated.SubscriptionStatus, tt.notes)
 
-			if tt.wantPeriodsFrozen {
-				s.True(updated.CurrentPeriodStart.Equal(trialStart), "period start should stay at trial start")
-				s.True(updated.CurrentPeriodEnd.Equal(trialEnd), "period end should stay at trial end")
-			}
+			// Period must always remain at the first real billing window — HandlePaymentBehavior
+			// does not touch periods; they were set correctly by processSubscriptionTrialEnd.
+			s.True(updated.CurrentPeriodStart.Equal(trialEnd), "period start should be at trial end")
+			s.True(updated.CurrentPeriodEnd.Equal(firstPeriodEnd), "period end should be at first period end")
 
 			invAfter, ierr := s.GetStores().InvoiceRepo.Get(ctx, invID)
 			s.Require().NoError(ierr)
-			s.Equal(types.PaymentStatusPending, invAfter.PaymentStatus, "HandlePaymentBehavior does not mark invoice paid in these scenarios; invoice stays pending in store")
+			s.Equal(types.PaymentStatusPending, invAfter.PaymentStatus, "HandlePaymentBehavior does not mark invoice paid")
 		})
 	}
 }
 
-func (s *SubscriptionTrialPaymentMatrixSuite) TestFullPayAfterBehavior_ReanchorsFromTrialEnd() {
+func (s *SubscriptionTrialPaymentMatrixSuite) TestFullPayAfterBehavior_ActivatesFromIncomplete() {
 	ctx := s.GetContext()
 	trialStart := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
 	trialEnd := time.Date(2026, 4, 15, 0, 0, 0, 0, time.UTC)
@@ -251,6 +249,11 @@ func (s *SubscriptionTrialPaymentMatrixSuite) TestFullPayAfterBehavior_Reanchors
 	}
 	s.Require().NoError(s.GetStores().PlanRepo.Create(ctx, pl))
 
+	// processSubscriptionTrialEnd already advanced the period to [trialEnd, firstPeriodEnd]
+	// and set status to incomplete before creating the invoice.
+	firstPeriodEnd, err := types.NextBillingDate(trialEnd, trialStart, 1, types.BILLING_PERIOD_MONTHLY, nil)
+	s.Require().NoError(err)
+
 	sub := &subscription.Subscription{
 		ID:                 types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION),
 		CustomerID:         cust.ID,
@@ -263,8 +266,8 @@ func (s *SubscriptionTrialPaymentMatrixSuite) TestFullPayAfterBehavior_Reanchors
 		BillingPeriodCount: 1,
 		BillingCadence:     types.BILLING_CADENCE_RECURRING,
 		StartDate:          trialStart,
-		CurrentPeriodStart: trialStart,
-		CurrentPeriodEnd:   trialEnd,
+		CurrentPeriodStart: trialEnd,
+		CurrentPeriodEnd:   firstPeriodEnd,
 		TrialStart:         &trialStart,
 		TrialEnd:           &trialEnd,
 		CollectionMethod:   string(types.CollectionMethodChargeAutomatically),
@@ -334,14 +337,12 @@ func (s *SubscriptionTrialPaymentMatrixSuite) TestFullPayAfterBehavior_Reanchors
 		IntegrationFactory:         s.GetIntegrationFactory(),
 	})
 
-	wantEnd, err := types.NextBillingDate(trialEnd, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
-	s.Require().NoError(err)
-
 	s.Require().NoError(svc.HandleSubscriptionActivatingInvoicePaid(ctx, inv))
 
 	updated, gerr := s.GetStores().SubscriptionRepo.Get(ctx, sub.ID)
 	s.Require().NoError(gerr)
+	// Period was already advanced at trial end; paying the invoice only flips status to active.
 	s.Equal(types.SubscriptionStatusActive, updated.SubscriptionStatus)
-	s.True(updated.CurrentPeriodStart.Equal(trialEnd))
-	s.True(updated.CurrentPeriodEnd.Equal(wantEnd))
+	s.True(updated.CurrentPeriodStart.Equal(trialEnd), "period start remains at trial end")
+	s.True(updated.CurrentPeriodEnd.Equal(firstPeriodEnd), "period end remains at first period end")
 }
