@@ -257,7 +257,7 @@ func (s *eventConsumptionService) processMessage(msg *message.Message) error {
 		billingEvent := events.NewEvent(
 			"tenant_event", // Standardized event name for billing
 			s.Config.Billing.TenantID,
-			event.ExternalCustomerID, // Use original tenant ID
+			event.TenantID, // Use original tenant ID as external customer ID
 			map[string]interface{}{
 				"original_event_id":   event.ID,
 				"original_event_name": event.EventName,
