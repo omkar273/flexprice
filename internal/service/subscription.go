@@ -153,7 +153,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 	sub.CurrentPeriodStart = sub.StartDate
 	sub.CurrentPeriodEnd = nextBillingDate
 
-	effectiveTrialDays, err := applyTrialWindowToSubscription(&req, sub, validPrices)
+	_, err = applyTrialWindowToSubscription(&req, sub, validPrices)
 	if err != nil {
 		return nil, err
 	}
@@ -176,51 +176,28 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 			EntityType:   types.SubscriptionLineItemEntityTypePlan,
 		})
 
-		// Convert line items
-		for _, item := range lineItems {
-			price, ok := priceMap[item.PriceID]
-			if !ok {
-				return nil, ierr.NewError("failed to get price %s: price not found").
-					WithHint("Ensure all prices are valid and available").
-					WithReportableDetails(map[string]interface{}{
-						"price_id": item.PriceID,
-					}).
-					Mark(ierr.ErrDatabase)
+		if priceResponse.Price.Type == types.PRICE_TYPE_USAGE && priceResponse.Meter != nil {
+			item.MeterID = priceResponse.Meter.ID
+			item.MeterDisplayName = priceResponse.Meter.Name
+			item.DisplayName = priceResponse.Meter.Name
+			item.Quantity = decimal.Zero
+		} else {
+			item.DisplayName = plan.Name
+			if item.Quantity.IsZero() {
+				item.Quantity = decimal.NewFromInt(1)
 			}
-
-			if price.Price.Type == types.PRICE_TYPE_USAGE && price.Meter != nil {
-				item.MeterID = price.Meter.ID
-				item.MeterDisplayName = price.Meter.Name
-				item.DisplayName = price.Meter.Name
-				item.Quantity = decimal.Zero
-			} else {
-				item.DisplayName = plan.Name
-				if item.Quantity.IsZero() {
-					item.Quantity = decimal.NewFromInt(1)
-				}
-			}
-
-			if item.ID == "" {
-				item.ID = types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM)
-			}
-
-			item.SubscriptionID = sub.ID
-			item.PriceType = price.Type
-			item.EntityID = plan.ID
-			item.EntityType = types.SubscriptionLineItemEntityTypePlan
-			item.PlanDisplayName = plan.Name
-			item.CustomerID = sub.CustomerID
-			item.Currency = sub.Currency
-			item.BillingPeriod = price.BillingPeriod
-			item.BillingPeriodCount = price.BillingPeriodCount
-			item.InvoiceCadence = price.InvoiceCadence
-			if price.BillingCadence == types.BILLING_CADENCE_RECURRING && price.Type == types.PRICE_TYPE_FIXED {
-				item.TrialPeriodDays = effectiveTrialDays
-			} else {
-				item.TrialPeriodDays = price.TrialPeriodDays
-			}
-			// Set phase ID if phases exist
 		}
+
+		item.SubscriptionID = sub.ID
+		item.PriceType = priceResponse.Type
+		item.EntityID = plan.ID
+		item.EntityType = types.SubscriptionLineItemEntityTypePlan
+		item.PlanDisplayName = plan.Name
+		item.CustomerID = sub.CustomerID
+		item.Currency = sub.Currency
+		item.BillingPeriod = priceResponse.BillingPeriod
+		item.BillingPeriodCount = priceResponse.BillingPeriodCount
+		item.InvoiceCadence = priceResponse.InvoiceCadence
 		if firstPhaseID != "" {
 			item.SubscriptionPhaseID = &firstPhaseID
 		}
@@ -4611,7 +4588,6 @@ func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, price
 		Currency:        sub.Currency,
 		BillingPeriod:   price.BillingPeriod,
 		InvoiceCadence:  price.InvoiceCadence,
-		TrialPeriodDays: 0,
 		StartDate:       lineItemStart,
 		EndDate:         time.Time{},
 		Metadata: map[string]string{

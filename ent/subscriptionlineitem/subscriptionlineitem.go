@@ -64,8 +64,6 @@ const (
 	FieldBillingPeriodCount = "billing_period_count"
 	// FieldInvoiceCadence holds the string denoting the invoice_cadence field in the database.
 	FieldInvoiceCadence = "invoice_cadence"
-	// FieldTrialPeriodDays holds the string denoting the trial_period_days field in the database.
-	FieldTrialPeriodDays = "trial_period_days"
 	// FieldStartDate holds the string denoting the start_date field in the database.
 	FieldStartDate = "start_date"
 	// FieldEndDate holds the string denoting the end_date field in the database.
@@ -139,7 +137,6 @@ var Columns = []string{
 	FieldBillingPeriod,
 	FieldBillingPeriodCount,
 	FieldInvoiceCadence,
-	FieldTrialPeriodDays,
 	FieldStartDate,
 	FieldEndDate,
 	FieldSubscriptionPhaseID,
@@ -193,8 +190,6 @@ var (
 	BillingPeriodValidator func(string) error
 	// DefaultBillingPeriodCount holds the default value on creation for the "billing_period_count" field.
 	DefaultBillingPeriodCount int
-	// DefaultTrialPeriodDays holds the default value on creation for the "trial_period_days" field.
-	DefaultTrialPeriodDays int
 	// DefaultCommitmentTrueUpEnabled holds the default value on creation for the "commitment_true_up_enabled" field.
 	DefaultCommitmentTrueUpEnabled bool
 	// DefaultCommitmentWindowed holds the default value on creation for the "commitment_windowed" field.
@@ -327,11 +322,6 @@ func ByBillingPeriodCount(opts ...sql.OrderTermOption) OrderOption {
 // ByInvoiceCadence orders the results by the invoice_cadence field.
 func ByInvoiceCadence(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInvoiceCadence, opts...).ToFunc()
-}
-
-// ByTrialPeriodDays orders the results by the trial_period_days field.
-func ByTrialPeriodDays(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldTrialPeriodDays, opts...).ToFunc()
 }
 
 // ByStartDate orders the results by the start_date field.

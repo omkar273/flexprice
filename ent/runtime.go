@@ -1734,16 +1734,12 @@ func init() {
 	subscriptionlineitemDescBillingPeriodCount := subscriptionlineitemFields[16].Descriptor()
 	// subscriptionlineitem.DefaultBillingPeriodCount holds the default value on creation for the billing_period_count field.
 	subscriptionlineitem.DefaultBillingPeriodCount = subscriptionlineitemDescBillingPeriodCount.Default.(int)
-	// subscriptionlineitemDescTrialPeriodDays is the schema descriptor for trial_period_days field.
-	subscriptionlineitemDescTrialPeriodDays := subscriptionlineitemFields[18].Descriptor()
-	// subscriptionlineitem.DefaultTrialPeriodDays holds the default value on creation for the trial_period_days field.
-	subscriptionlineitem.DefaultTrialPeriodDays = subscriptionlineitemDescTrialPeriodDays.Default.(int)
 	// subscriptionlineitemDescCommitmentTrueUpEnabled is the schema descriptor for commitment_true_up_enabled field.
-	subscriptionlineitemDescCommitmentTrueUpEnabled := subscriptionlineitemFields[28].Descriptor()
+	subscriptionlineitemDescCommitmentTrueUpEnabled := subscriptionlineitemFields[27].Descriptor()
 	// subscriptionlineitem.DefaultCommitmentTrueUpEnabled holds the default value on creation for the commitment_true_up_enabled field.
 	subscriptionlineitem.DefaultCommitmentTrueUpEnabled = subscriptionlineitemDescCommitmentTrueUpEnabled.Default.(bool)
 	// subscriptionlineitemDescCommitmentWindowed is the schema descriptor for commitment_windowed field.
-	subscriptionlineitemDescCommitmentWindowed := subscriptionlineitemFields[29].Descriptor()
+	subscriptionlineitemDescCommitmentWindowed := subscriptionlineitemFields[28].Descriptor()
 	// subscriptionlineitem.DefaultCommitmentWindowed holds the default value on creation for the commitment_windowed field.
 	subscriptionlineitem.DefaultCommitmentWindowed = subscriptionlineitemDescCommitmentWindowed.Default.(bool)
 	subscriptionpauseMixin := schema.SubscriptionPause{}.Mixin()
