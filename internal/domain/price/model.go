@@ -562,8 +562,7 @@ func (p *Price) ValidateTrialPeriodDays() error {
 
 	// Trial period should only be set for recurring fixed prices
 	if p.TrialPeriodDays > 0 &&
-		p.BillingCadence != types.BILLING_CADENCE_RECURRING &&
-		p.Type != types.PRICE_TYPE_FIXED {
+		(p.BillingCadence != types.BILLING_CADENCE_RECURRING || p.Type != types.PRICE_TYPE_FIXED) {
 		return ierr.NewError("trial_period_days can only be set for recurring fixed prices").
 			WithHint("trial_period_days can only be set for recurring fixed prices").
 			Mark(ierr.ErrValidation)
