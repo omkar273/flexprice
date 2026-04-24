@@ -4814,6 +4814,9 @@ func (s *subscriptionService) completeTrialConversionToActive(ctx context.Contex
 	if err := s.SubRepo.Update(ctx, sub); err != nil {
 		return err
 	}
+	if err := s.cascadeTrialActivationToInherited(ctx, sub); err != nil {
+		return err
+	}
 	if err := s.processPendingCreditGrantsForSubscription(ctx, sub); err != nil {
 		return err
 	}

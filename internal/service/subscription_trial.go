@@ -240,6 +240,10 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		return err
 	}
 
+	if err := s.cascadeTrialEndToInherited(ctx, sub); err != nil {
+		return err
+	}
+
 	s.Logger.InfowCtx(ctx, "subscription period advanced and moved to incomplete after trial end",
 		"subscription_id", sub.ID,
 		"first_period_start", firstPeriodStart,
@@ -286,6 +290,47 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		}
 		s.Logger.InfowCtx(ctx, "subscription activated after zero-amount trial end",
 			"subscription_id", sub.ID)
+	}
+	return nil
+}
+
+// cascadeTrialEndToInherited propagates the trial-end state (incomplete + advanced period) to all
+// inherited subscriptions under a parent. Mirrors cascadePauseToInherited.
+func (s *subscriptionService) cascadeTrialEndToInherited(ctx context.Context, parentSub *subscription.Subscription) error {
+	if parentSub.SubscriptionType != types.SubscriptionTypeParent {
+		return nil
+	}
+	children, err := s.getInheritedSubscriptions(ctx, parentSub.ID)
+	if err != nil {
+		return err
+	}
+	for _, child := range children {
+		child.SubscriptionStatus = types.SubscriptionStatusIncomplete
+		child.BillingAnchor = parentSub.BillingAnchor
+		child.CurrentPeriodStart = parentSub.CurrentPeriodStart
+		child.CurrentPeriodEnd = parentSub.CurrentPeriodEnd
+		if err := s.SubRepo.Update(ctx, child); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// cascadeTrialActivationToInherited propagates active status to all inherited subscriptions
+// once the parent's trial-end invoice is paid (or was zero-amount). Mirrors cascadeResumeToInherited.
+func (s *subscriptionService) cascadeTrialActivationToInherited(ctx context.Context, parentSub *subscription.Subscription) error {
+	if parentSub.SubscriptionType != types.SubscriptionTypeParent {
+		return nil
+	}
+	children, err := s.getInheritedSubscriptions(ctx, parentSub.ID)
+	if err != nil {
+		return err
+	}
+	for _, child := range children {
+		child.SubscriptionStatus = types.SubscriptionStatusActive
+		if err := s.SubRepo.Update(ctx, child); err != nil {
+			return err
+		}
 	}
 	return nil
 }
