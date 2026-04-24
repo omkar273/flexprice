@@ -97,8 +97,8 @@ func subscriptionFilterFn(ctx context.Context, sub *subscription.Subscription, f
 		}
 	}
 
-	if f.TrialEndDueBy != nil {
-		d := *f.TrialEndDueBy
+	if f.TrialEndDueLTE != nil {
+		d := *f.TrialEndDueLTE
 		if sub.TrialEnd == nil || sub.TrialEnd.After(d) {
 			return false
 		}
@@ -315,7 +315,7 @@ func (s *InMemorySubscriptionStore) ListAll(ctx context.Context, filter *types.S
 		SubscriptionStatusNotIn: filter.SubscriptionStatusNotIn,
 		ActiveAt:                filter.ActiveAt,
 		EffectiveDateForUpdate:  filter.EffectiveDateForUpdate,
-		TrialEndDueBy:           filter.TrialEndDueBy,
+		TrialEndDueLTE:          filter.TrialEndDueLTE,
 	}
 
 	return s.List(ctx, unlimitedFilter)

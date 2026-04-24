@@ -129,7 +129,7 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 				Status: lo.ToPtr(types.StatusPublished),
 			},
 			SubscriptionStatus: []types.SubscriptionStatus{types.SubscriptionStatusTrialing},
-			TrialEndDueBy:      &now,
+			TrialEndDueLTE:     &now,
 		}
 
 		subs, err := s.SubRepo.GetSubscriptionsForBillingPeriodUpdate(ctx, filter)
