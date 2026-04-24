@@ -4578,18 +4578,18 @@ func (s *subscriptionService) createLineItemFromPrice(ctx context.Context, price
 	}
 
 	lineItem := &subscription.SubscriptionLineItem{
-		ID:              types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
-		SubscriptionID:  sub.ID,
-		CustomerID:      sub.CustomerID,
-		EntityID:        addonID,
-		EntityType:      types.SubscriptionLineItemEntityTypeAddon,
-		PriceID:         price.ID,
-		PriceType:       price.Type,
-		Currency:        sub.Currency,
-		BillingPeriod:   price.BillingPeriod,
-		InvoiceCadence:  price.InvoiceCadence,
-		StartDate:       lineItemStart,
-		EndDate:         time.Time{},
+		ID:             types.GenerateUUIDWithPrefix(types.UUID_PREFIX_SUBSCRIPTION_LINE_ITEM),
+		SubscriptionID: sub.ID,
+		CustomerID:     sub.CustomerID,
+		EntityID:       addonID,
+		EntityType:     types.SubscriptionLineItemEntityTypeAddon,
+		PriceID:        price.ID,
+		PriceType:      price.Type,
+		Currency:       sub.Currency,
+		BillingPeriod:  price.BillingPeriod,
+		InvoiceCadence: price.InvoiceCadence,
+		StartDate:      lineItemStart,
+		EndDate:        time.Time{},
 		Metadata: map[string]string{
 			"addon_id":        addonID,
 			"subscription_id": sub.ID,
@@ -4811,12 +4811,7 @@ func (s *subscriptionService) completeTrialConversionFromPaidInvoice(ctx context
 
 	sub, err := s.SubRepo.Get(ctx, subscriptionID)
 	if err != nil {
-		return ierr.WithError(err).
-			WithHint("Failed to get subscription").
-			WithReportableDetails(map[string]interface{}{
-				"subscription_id": subscriptionID,
-			}).
-			Mark(ierr.ErrDatabase)
+		return err
 	}
 
 	if sub.SubscriptionStatus != types.SubscriptionStatusTrialing && sub.SubscriptionStatus != types.SubscriptionStatusIncomplete {
@@ -4824,30 +4819,15 @@ func (s *subscriptionService) completeTrialConversionFromPaidInvoice(ctx context
 	}
 
 	// First paid period starts at the end of the prior (trial) period, not at payment time.
-	periodStart := sub.CurrentPeriodEnd.UTC()
-	if periodStart.IsZero() && sub.TrialEnd != nil {
-		periodStart = sub.TrialEnd.UTC()
-	}
-	if periodStart.IsZero() {
-		if inv.PaidAt != nil {
-			periodStart = inv.PaidAt.UTC()
-		} else {
-			periodStart = time.Now().UTC()
-		}
-	}
+	nextPeriodStart := sub.CurrentPeriodEnd.UTC()
 
-	nextEnd, err := types.NextBillingDate(periodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
+	nextEnd, err := types.NextBillingDate(nextPeriodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
 	if err != nil {
-		return ierr.WithError(err).
-			WithHint("Failed to compute next billing period after trial conversion").
-			WithReportableDetails(map[string]interface{}{
-				"subscription_id": subscriptionID,
-			}).
-			Mark(ierr.ErrInvalidOperation)
+		return err
 	}
 
 	prevStatus := sub.SubscriptionStatus
-	sub.CurrentPeriodStart = periodStart
+	sub.CurrentPeriodStart = nextPeriodStart
 	sub.CurrentPeriodEnd = nextEnd
 	sub.SubscriptionStatus = types.SubscriptionStatusActive
 
