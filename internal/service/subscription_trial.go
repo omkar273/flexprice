@@ -170,12 +170,6 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 				PeriodStart:    sub.CurrentPeriodStart,
 				PeriodEnd:      sub.CurrentPeriodEnd,
 			}
-			if sub.TrialStart != nil {
-				item.PeriodStart = *sub.TrialStart
-			}
-			if sub.TrialEnd != nil {
-				item.PeriodEnd = *sub.TrialEnd
-			}
 
 			err := s.processSubscriptionTrialEnd(ctx, sub, invoiceService, now)
 			if err != nil {
@@ -219,7 +213,13 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		return nil
 	}
 
-	existing, err := s.InvoiceRepo.GetForPeriod(ctx, sub.ID, *sub.TrialStart, *sub.TrialEnd, string(types.InvoiceBillingReasonSubscriptionTrialEnd))
+	existing, err := s.InvoiceRepo.GetForPeriod(
+		ctx,
+		sub.ID,
+		lo.FromPtr(sub.TrialStart),
+		lo.FromPtr(sub.TrialEnd),
+		string(types.InvoiceBillingReasonSubscriptionTrialEnd),
+	)
 	if err != nil && !ierr.IsNotFound(err) {
 		return err
 	}
@@ -243,8 +243,8 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 
 	inv, _, err := invoiceService.CreateSubscriptionInvoice(ctx, &dto.CreateSubscriptionInvoiceRequest{
 		SubscriptionID: sub.ID,
-		PeriodStart:    *sub.TrialStart,
-		PeriodEnd:      *sub.TrialEnd,
+		PeriodStart:    lo.FromPtr(sub.TrialStart),
+		PeriodEnd:      lo.FromPtr(sub.TrialEnd),
 		ReferencePoint: types.ReferencePointPeriodStart,
 		BillingReason:  types.InvoiceBillingReasonSubscriptionTrialEnd,
 	}, paymentParams, types.InvoiceFlowRenewal, false)
