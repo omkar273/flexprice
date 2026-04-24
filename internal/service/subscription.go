@@ -4826,32 +4826,16 @@ func (s *subscriptionService) completeTrialConversionFromPaidInvoice(ctx context
 		return err
 	}
 
-	prevStatus := sub.SubscriptionStatus
 	sub.CurrentPeriodStart = nextPeriodStart
 	sub.CurrentPeriodEnd = nextEnd
 	sub.SubscriptionStatus = types.SubscriptionStatusActive
 
 	if err := s.SubRepo.Update(ctx, sub); err != nil {
-		return ierr.WithError(err).
-			WithHint("Failed to update subscription after trial conversion").
-			WithReportableDetails(map[string]interface{}{
-				"subscription_id": subscriptionID,
-			}).
-			Mark(ierr.ErrDatabase)
+		return err
 	}
 
-	s.Logger.InfowCtx(ctx, "completed trial conversion from paid invoice",
-		"subscription_id", subscriptionID,
-		"invoice_id", inv.ID,
-		"previous_status", prevStatus,
-		"period_start", sub.CurrentPeriodStart,
-		"period_end", sub.CurrentPeriodEnd)
-
 	if err := s.processPendingCreditGrantsForSubscription(ctx, sub); err != nil {
-		s.Logger.ErrorwCtx(ctx, "failed to process pending credit grants after trial conversion",
-			"subscription_id", subscriptionID,
-			"error", err,
-			"note", "cron job will process these as backup")
+		return err
 	}
 
 	s.publishSystemEvent(ctx, types.WebhookEventSubscriptionActivated, subscriptionID)
@@ -4877,12 +4861,7 @@ func (s *subscriptionService) processPendingCreditGrantsForSubscription(ctx cont
 
 	applications, err := s.CreditGrantApplicationRepo.List(ctx, filter)
 	if err != nil {
-		return ierr.WithError(err).
-			WithHint("Failed to get pending credit grant applications").
-			WithReportableDetails(map[string]interface{}{
-				"subscription_id": sub.ID,
-			}).
-			Mark(ierr.ErrDatabase)
+		return err
 	}
 
 	if len(applications) == 0 {
