@@ -265,6 +265,17 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		}
 		s.Logger.InfowCtx(ctx, "subscription activated after zero-amount trial end (no invoice)",
 			"subscription_id", sub.ID)
+		return nil
 	}
+
+	// Trial has ended and a real invoice has been issued — move to incomplete so the
+	// subscription is no longer trialing while awaiting payment.
+	sub.SubscriptionStatus = types.SubscriptionStatusIncomplete
+	if err := s.SubRepo.Update(ctx, sub); err != nil {
+		return err
+	}
+	s.Logger.InfowCtx(ctx, "subscription moved to incomplete after trial-end invoice created",
+		"subscription_id", sub.ID,
+		"invoice_id", inv.ID)
 	return nil
 }

@@ -2192,12 +2192,24 @@ func (s *subscriptionService) GetUsageBySubscription(ctx context.Context, req *d
 	usageStartTime := req.StartTime
 	if usageStartTime.IsZero() {
 		usageStartTime = subscription.CurrentPeriodStart
+		// When a trial has ended but the period hasn't been re-anchored yet (payment pending),
+		// default to the first real billing period start so events after trial end are visible.
+		if subscription.TrialEnd != nil && subscription.TrialEnd.Before(time.Now().UTC()) &&
+			subscription.CurrentPeriodStart.Before(*subscription.TrialEnd) {
+			usageStartTime = *subscription.TrialEnd
+		}
 	}
 
 	// TODO: handle this to honour line item level end time
 	usageEndTime := req.EndTime
 	if usageEndTime.IsZero() {
 		usageEndTime = subscription.CurrentPeriodEnd
+		// Mirror the start-time adjustment: if we shifted start to TrialEnd, use now as end
+		// so the full post-trial window is visible before the period is officially re-anchored.
+		if subscription.TrialEnd != nil && subscription.TrialEnd.Before(time.Now().UTC()) &&
+			subscription.CurrentPeriodEnd.Equal(*subscription.TrialEnd) {
+			usageEndTime = time.Now().UTC()
+		}
 	}
 
 	if req.LifetimeUsage {
