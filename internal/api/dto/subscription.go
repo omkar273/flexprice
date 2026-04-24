@@ -775,11 +775,11 @@ func (r *CreateSubscriptionRequest) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 
-	if r.TrialPeriodDays != nil && *r.TrialPeriodDays < 0 {
+	if r.TrialPeriodDays != nil && lo.FromPtr(r.TrialPeriodDays) < 0 {
 		return ierr.NewError("trial_period_days must be non-negative").
 			WithHint("Use 0 to disable trial or omit to inherit from plan prices").
 			WithReportableDetails(map[string]interface{}{
-				"trial_period_days": *r.TrialPeriodDays,
+				"trial_period_days": lo.FromPtr(r.TrialPeriodDays),
 			}).
 			Mark(ierr.ErrValidation)
 	}
@@ -790,7 +790,7 @@ func (r *CreateSubscriptionRequest) Validate() error {
 			Mark(ierr.ErrValidation)
 	}
 
-	if r.TrialPeriodDays != nil && *r.TrialPeriodDays > 0 && (r.TrialStart != nil || r.TrialEnd != nil) {
+	if r.TrialPeriodDays != nil && lo.FromPtr(r.TrialPeriodDays) > 0 && (r.TrialStart != nil || r.TrialEnd != nil) {
 		return ierr.NewError("cannot set trial_period_days together with trial_start/trial_end").
 			WithHint("Use trial_period_days for API creates, or trial_start/trial_end for gateway sync only").
 			Mark(ierr.ErrValidation)
