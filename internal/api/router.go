@@ -25,7 +25,6 @@ type Handlers struct {
 	Connection               *v1.ConnectionHandler
 	Plan                     *v1.PlanHandler
 	Subscription             *v1.SubscriptionHandler
-	SubscriptionPause        *v1.SubscriptionPauseHandler
 	SubscriptionChange       *v1.SubscriptionChangeHandler
 	SubscriptionModification *v1.SubscriptionModificationHandler
 	SubscriptionSchedule     *v1.SubscriptionScheduleHandler
@@ -61,7 +60,7 @@ type Handlers struct {
 	Onboarding     *v1.OnboardingHandler
 	AIPricing      *v1.AIPricingHandler
 	CustomerPortal *v1.CustomerPortalHandler
-	// Cron jobs : TODO: move crons out of API based architecture
+	// Cron jobs: optional HTTP /v1/cron/... manual triggers; same work is automated via Temporal server schedules (worker creates them on startup).
 	CronSubscription       *cron.SubscriptionHandler
 	CronWallet             *cron.WalletCronHandler
 	CronCreditGrant        *cron.CreditGrantCronHandler
@@ -286,9 +285,6 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 			subscription.POST("/:id/cancel", handlers.Subscription.CancelSubscription)
 			subscription.POST("/usage", handlers.Subscription.GetUsageBySubscription)
 
-			subscription.POST("/:id/pause", handlers.SubscriptionPause.PauseSubscription)
-			subscription.POST("/:id/resume", handlers.SubscriptionPause.ResumeSubscription)
-			subscription.GET("/:id/pauses", handlers.SubscriptionPause.ListPauses)
 			subscription.GET("/:id/entitlements", handlers.Subscription.GetSubscriptionEntitlements)
 			subscription.GET("/:id/grants/upcoming", handlers.Subscription.GetUpcomingCreditGrantApplications)
 
@@ -617,35 +613,26 @@ func NewRouter(handlers Handlers, cfg *config.Configuration, logger *logger.Logg
 		webhooks.POST("/zoho_books/:tenant_id/:environment_id", handlers.Webhook.HandleZohoBooksWebhook)
 	}
 
-	// Cron routes
-	// TODO: move crons out of API based architecture
+	// HTTP cron: optional manual/legacy triggers (deprecated for automation; Temporal workers ensure server schedules on startup).
 	cron := v1Private.Group("/cron")
-	// Subscription related cron jobs
 	subscriptionGroup := cron.Group("/subscriptions")
 	{
 		subscriptionGroup.POST("/update-periods", handlers.CronSubscription.UpdateBillingPeriods)
 		subscriptionGroup.POST("/process-auto-cancellation", handlers.CronSubscription.ProcessAutoCancellationSubscriptions)
 		subscriptionGroup.POST("/renewal-due-alerts", handlers.CronSubscription.ProcessSubscriptionRenewalDueAlerts)
 	}
-
-	// Wallet related cron jobs
 	walletGroup := cron.Group("/wallets")
 	{
 		walletGroup.POST("/expire-credits", handlers.CronWallet.ExpireCredits)
 	}
-
-	// Credit grant related cron jobs
 	creditGrantGroup := cron.Group("/creditgrants")
 	{
 		creditGrantGroup.POST("/process-scheduled-applications", handlers.CronCreditGrant.ProcessScheduledCreditGrantApplications)
 	}
-
-	// Invoice related cron jobs
 	invoiceGroup := cron.Group("/invoices")
 	{
 		invoiceGroup.POST("/void-old-pending", handlers.CronInvoice.VoidOldPendingInvoices)
 	}
-	// Kafka lag monitoring related cron jobs
 	kafkaLagMonitoringGroup := cron.Group("/events")
 	{
 		kafkaLagMonitoringGroup.POST("/monitoring", handlers.CronKafkaLagMonitoring.HandleKafkaLagMonitoring)

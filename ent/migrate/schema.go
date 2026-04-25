@@ -1750,11 +1750,6 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{SubscriptionLineItemsColumns[37], SubscriptionLineItemsColumns[2]},
 			},
-			{
-				Name:    "subscriptionlineitem_tenant_id_environment_id_addon_association_id_status",
-				Unique:  false,
-				Columns: []*schema.Column{SubscriptionLineItemsColumns[1], SubscriptionLineItemsColumns[7], SubscriptionLineItemsColumns[28], SubscriptionLineItemsColumns[2]},
-			},
 		},
 	}
 	// SubscriptionPausesColumns holds the columns for the "subscription_pauses" table.
