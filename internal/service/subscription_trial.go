@@ -152,7 +152,7 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 	sub = subWithItems
 
 	// Billing really starts at trial end. Anchor there so the first paid period isn't short-changed
-	// (same idea as Stripe: trial end becomes the new cycle anchor).
+	// (same idea as trial end becomes the new cycle anchor).
 	firstPeriodStart := lo.FromPtr(sub.TrialEnd)
 	sub.BillingAnchor = firstPeriodStart
 	firstPeriodEnd, err := types.NextBillingDate(firstPeriodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
