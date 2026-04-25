@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	cronWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/cron"
 	"github.com/flexprice/flexprice/internal/types"
 	enumspb "go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
 	sdkclient "go.temporal.io/sdk/client"
 )
 
@@ -83,6 +85,14 @@ func ensureOneSchedule(ctx context.Context, tc client.TemporalClient, cfg types.
 		updateErr := handle.Update(ctx, sdkclient.ScheduleUpdateOptions{
 			DoUpdate: func(in sdkclient.ScheduleUpdateInput) (*sdkclient.ScheduleUpdate, error) {
 				in.Description.Schedule.Spec = &spec
+				in.Description.Schedule.Action = &sdkclient.ScheduleWorkflowAction{
+					Workflow:  cfg.Workflow,
+					TaskQueue: cfg.TaskQueue.String(),
+					Args:      []interface{}{cfg.Input},
+				}
+				in.Description.Schedule.Policy = &sdkclient.SchedulePolicies{
+					Overlap: enumspb.SCHEDULE_OVERLAP_POLICY_SKIP,
+				}
 				return &sdkclient.ScheduleUpdate{Schedule: &in.Description.Schedule}, nil
 			},
 		})
@@ -90,6 +100,11 @@ func ensureOneSchedule(ctx context.Context, tc client.TemporalClient, cfg types.
 			return fmt.Errorf("update temporal schedule %q: %w", id, updateErr)
 		}
 		return nil
+	}
+
+	var notFound *serviceerror.NotFound
+	if !errors.As(err, &notFound) {
+		return fmt.Errorf("describe temporal schedule %q: %w", id, err)
 	}
 
 	_, createErr := tc.CreateSchedule(ctx, models.CreateScheduleOptions{

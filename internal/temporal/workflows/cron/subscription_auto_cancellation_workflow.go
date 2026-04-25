@@ -20,7 +20,6 @@ func SubscriptionAutoCancellationWorkflow(ctx workflow.Context, _ cronModels.Sub
 
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: 30 * time.Minute,
-		HeartbeatTimeout:    5 * time.Minute,
 		RetryPolicy: &temporal.RetryPolicy{
 			InitialInterval:    10 * time.Second,
 			BackoffCoefficient: 2.0,
