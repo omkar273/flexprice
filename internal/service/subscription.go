@@ -4797,7 +4797,11 @@ func (s *subscriptionService) HandleSubscriptionActivatingInvoicePaid(ctx contex
 	case types.InvoiceBillingReasonSubscriptionCreate:
 		return s.ActivateIncompleteSubscription(ctx, *inv.SubscriptionID)
 	case types.InvoiceBillingReasonSubscriptionTrialEnd:
-		return s.completeTrialConversionFromPaidInvoice(ctx, inv)
+		sub, err := s.SubRepo.Get(ctx, *inv.SubscriptionID)
+		if err != nil {
+			return err
+		}
+		return s.completeTrialConversionToActive(ctx, sub)
 	default:
 		return nil
 	}
@@ -4822,17 +4826,6 @@ func (s *subscriptionService) completeTrialConversionToActive(ctx context.Contex
 	}
 	s.publishSystemEvent(ctx, types.WebhookEventSubscriptionActivated, sub.ID)
 	return nil
-}
-
-func (s *subscriptionService) completeTrialConversionFromPaidInvoice(ctx context.Context, inv *invoice.Invoice) error {
-	if inv.SubscriptionID == nil {
-		return nil
-	}
-	sub, err := s.SubRepo.Get(ctx, *inv.SubscriptionID)
-	if err != nil {
-		return err
-	}
-	return s.completeTrialConversionToActive(ctx, sub)
 }
 
 // processPendingCreditGrantsForSubscription finds and processes pending CGAs for a subscription

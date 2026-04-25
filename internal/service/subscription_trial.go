@@ -145,12 +145,6 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		return nil
 	}
 
-	subWithItems, _, err := s.SubRepo.GetWithLineItems(ctx, sub.ID)
-	if err != nil {
-		return err
-	}
-	sub = subWithItems
-
 	// Billing really starts at trial end. Anchor there so the first paid period isn't short-changed
 	// (same idea as trial end becomes the new cycle anchor).
 	firstPeriodStart := lo.FromPtr(sub.TrialEnd)
@@ -165,11 +159,32 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 	sub.SubscriptionStatus = types.SubscriptionStatusIncomplete
 	sub.CurrentPeriodStart = firstPeriodStart
 	sub.CurrentPeriodEnd = firstPeriodEnd
-	if err := s.SubRepo.Update(ctx, sub); err != nil {
-		return err
-	}
 
-	if err := s.cascadeTrialEndToInherited(ctx, sub); err != nil {
+	paymentParams := dto.NewPaymentParametersFromSubscription(sub.CollectionMethod, sub.PaymentBehavior, sub.GatewayPaymentMethodID)
+	paymentParams = paymentParams.NormalizePaymentParameters()
+
+	var trialEndInvoice *dto.InvoiceResponse
+
+	// Subscription update, cascade, and trial-end invoice creation commit together. A sub is only picked
+	err = s.DB.WithTx(ctx, func(txCtx context.Context) error {
+		if err := s.SubRepo.Update(txCtx, sub); err != nil {
+			return err
+		}
+		if err := s.cascadeTrialEndToInherited(txCtx, sub); err != nil {
+			return err
+		}
+
+		var errInv error
+		trialEndInvoice, _, errInv = invoiceService.CreateSubscriptionInvoice(txCtx, &dto.CreateSubscriptionInvoiceRequest{
+			SubscriptionID: sub.ID,
+			PeriodStart:    firstPeriodStart,
+			PeriodEnd:      firstPeriodEnd,
+			ReferencePoint: types.ReferencePointPeriodStart,
+			BillingReason:  types.InvoiceBillingReasonSubscriptionTrialEnd,
+		}, paymentParams, types.InvoiceFlowRenewal, false)
+		return errInv
+	})
+	if err != nil {
 		return err
 	}
 
@@ -178,43 +193,8 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		"first_period_start", firstPeriodStart,
 		"first_period_end", firstPeriodEnd)
 
-	// Already have a real invoice for this period? Don't mint another.
-	existing, err := s.InvoiceRepo.GetForPeriod(
-		ctx,
-		sub.ID,
-		firstPeriodStart,
-		firstPeriodEnd,
-		string(types.InvoiceBillingReasonSubscriptionTrialEnd),
-	)
-	if err != nil && !ierr.IsNotFound(err) {
-		return err
-	}
-	if existing != nil &&
-		existing.InvoiceStatus != types.InvoiceStatusDraft &&
-		existing.InvoiceStatus != types.InvoiceStatusSkipped {
-		s.Logger.InfowCtx(ctx, "trial end invoice already exists for period, skipping invoice creation",
-			"subscription_id", sub.ID,
-			"invoice_id", existing.ID)
-		return nil
-	}
-
-	paymentParams := dto.NewPaymentParametersFromSubscription(sub.CollectionMethod, sub.PaymentBehavior, sub.GatewayPaymentMethodID)
-	paymentParams = paymentParams.NormalizePaymentParameters()
-
-	// Generate the first bill after the trial. Duplicate guard is just above.
-	trialEndInvoice, _, err := invoiceService.CreateSubscriptionInvoice(ctx, &dto.CreateSubscriptionInvoiceRequest{
-		SubscriptionID: sub.ID,
-		PeriodStart:    firstPeriodStart,
-		PeriodEnd:      firstPeriodEnd,
-		ReferencePoint: types.ReferencePointPeriodStart,
-		BillingReason:  types.InvoiceBillingReasonSubscriptionTrialEnd,
-	}, paymentParams, types.InvoiceFlowRenewal, false)
-	if err != nil {
-		return err
-	}
-
+	// Runs after commit: webhooks and credit grants must not fire if the tx above rolled back.
 	if trialEndInvoice == nil {
-		// Nothing to collect — we can go straight to active.
 		if err := s.completeTrialConversionToActive(ctx, sub); err != nil {
 			return err
 		}
