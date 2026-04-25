@@ -15,12 +15,14 @@ func TestAllTemporalScheduleConfigsMatchServerScheduleIDs(t *testing.T) {
 	ids := types.AllTemporalServerScheduleIDs()
 	require.Equal(t, len(ids), len(configs), "each managed schedule must have a config entry")
 
-	seen := make(map[types.ScheduleID]struct{}, len(ids))
+	expected := make(map[types.ScheduleID]struct{}, len(ids))
 	for _, id := range ids {
-		seen[id] = struct{}{}
+		expected[id] = struct{}{}
 	}
 	for _, cfg := range configs {
-		_, ok := seen[cfg.ID]
+		_, ok := expected[cfg.ID]
 		require.True(t, ok, "config id %q not in AllTemporalServerScheduleIDs", cfg.ID)
+		delete(expected, cfg.ID)
 	}
+	require.Empty(t, expected, "missing schedule config ids")
 }
