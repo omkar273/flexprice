@@ -24896,7 +24896,8 @@
           },
           "trial_end_due_lte": {
             "type": "string",
-            "description": "TrialEndDueLTE, when set, restricts to subscriptions with trial_end not nil and trial_end <= trial_end_due_lte.\nUse with subscription_status trialing for trial-end cron processing."
+            "description": "TrialEndDueLTE, when set, restricts to subscriptions with trial_end not nil and trial_end <= trial_end_due_lte.\nUse with subscription_status trialing for trial-end cron processing.",
+            "format": "date-time"
           },
           "with_line_items": {
             "type": "boolean",
@@ -25504,6 +25505,7 @@
       "types.WindowSize": {
         "type": "string",
         "enum": [
+          "MONTH",
           "MINUTE",
           "15MIN",
           "30MIN",
@@ -25513,10 +25515,10 @@
           "12HOUR",
           "DAY",
           "WEEK",
-          "MONTH",
           "MONTH"
         ],
         "x-enum-varnames": [
+          "DefaultWindowSize",
           "WindowSizeMinute",
           "WindowSize15Min",
           "WindowSize30Min",
@@ -25526,8 +25528,7 @@
           "WindowSize12Hour",
           "WindowSizeDay",
           "WindowSizeWeek",
-          "WindowSizeMonth",
-          "DefaultWindowSize"
+          "WindowSizeMonth"
         ],
         "x-speakeasy-name-override": "WindowSize"
       },

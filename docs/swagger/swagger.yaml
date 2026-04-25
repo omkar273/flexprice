@@ -9053,6 +9053,7 @@ definitions:
     - WebhookEventCreditNoteUpdated
   types.WindowSize:
     enum:
+    - MONTH
     - MINUTE
     - 15MIN
     - 30MIN
@@ -9063,9 +9064,9 @@ definitions:
     - DAY
     - WEEK
     - MONTH
-    - MONTH
     type: string
     x-enum-varnames:
+    - DefaultWindowSize
     - WindowSizeMinute
     - WindowSize15Min
     - WindowSize30Min
@@ -9076,7 +9077,6 @@ definitions:
     - WindowSizeDay
     - WindowSizeWeek
     - WindowSizeMonth
-    - DefaultWindowSize
   types.WorkflowExecutionFilter:
     properties:
       end_time:

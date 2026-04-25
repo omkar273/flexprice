@@ -60,8 +60,13 @@ func setCreateSubscriptionTrialWindow(req *dto.CreateSubscriptionRequest, sub *s
 // ProcessTrialEndDue picks up trialing subs past trial end, moves them to the first real period, and creates
 // the trial-end invoice. Safe to run repeatedly for the same subscription.
 func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.SubscriptionUpdatePeriodResponse, error) {
+	// Re-query with offset 0 each time: processSubscriptionTrialEnd flips trialing → incomplete, so
+	// offset pagination would skip rows that slide into the first page after earlier rows are updated.
 	const batchSize = 100
+	// Safety cap for outer loop iterations; normal runs exit on empty result or a stuck "all already attempted" page.
+	const maxTrialEndDueLoopIterations = 100000
 	now := time.Now().UTC()
+	listCtx := ctx
 
 	s.Logger.InfowCtx(ctx, "starting trial end processing", "current_time", now)
 
@@ -73,19 +78,26 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 	}
 
 	invoiceService := NewInvoiceService(s.ServiceParams)
-	offset := 0
-	for {
+	attempted := make(map[string]struct{})
+
+	for iter := 1; ; iter++ {
+		if iter > maxTrialEndDueLoopIterations {
+			s.Logger.ErrorwCtx(listCtx, "trial end processing stopped: max loop iterations",
+				"max_iterations", maxTrialEndDueLoopIterations)
+			break
+		}
+
 		filter := &types.SubscriptionFilter{
 			QueryFilter: &types.QueryFilter{
 				Limit:  lo.ToPtr(batchSize),
-				Offset: lo.ToPtr(offset),
+				Offset: lo.ToPtr(0),
 				Status: lo.ToPtr(types.StatusPublished),
 			},
 			SubscriptionStatus: []types.SubscriptionStatus{types.SubscriptionStatusTrialing},
 			TrialEndDueLTE:     &now,
 		}
 
-		subs, err := s.SubRepo.GetSubscriptionsForBillingPeriodUpdate(ctx, filter)
+		subs, err := s.SubRepo.GetSubscriptionsForBillingPeriodUpdate(listCtx, filter)
 		if err != nil {
 			return response, err
 		}
@@ -94,15 +106,20 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 			break
 		}
 
-		s.Logger.InfowCtx(ctx, "processing trial end batch",
+		s.Logger.InfowCtx(listCtx, "processing trial end batch",
 			"batch_size", len(subs),
-			"offset", offset)
+			"iteration", iter)
 
-		// These rows can be from different envs/tenants — set ctx so the store doesn't cross wires.
+		newAttempts := 0
+		// These rows can be from different envs/tenants — derive per-sub context from listCtx (no WithValue chain growth).
 		for _, trialingSubscription := range subs {
-			ctx = context.WithValue(ctx, types.CtxTenantID, trialingSubscription.TenantID)
-			ctx = context.WithValue(ctx, types.CtxEnvironmentID, trialingSubscription.EnvironmentID)
-			ctx = context.WithValue(ctx, types.CtxUserID, trialingSubscription.CreatedBy)
+			if _, seen := attempted[trialingSubscription.ID]; seen {
+				continue
+			}
+			newAttempts++
+			attempted[trialingSubscription.ID] = struct{}{}
+
+			subCtx := derivePerSubscriptionCtx(listCtx, trialingSubscription)
 
 			responseItem := &dto.SubscriptionUpdatePeriodResponseItem{
 				SubscriptionID: trialingSubscription.ID,
@@ -110,9 +127,9 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 				PeriodEnd:      trialingSubscription.CurrentPeriodEnd,
 			}
 
-			err := s.processSubscriptionTrialEnd(ctx, trialingSubscription, invoiceService, now)
+			err := s.processSubscriptionTrialEnd(subCtx, trialingSubscription, invoiceService, now)
 			if err != nil {
-				s.Logger.ErrorwCtx(ctx, "failed to process trial end for subscription",
+				s.Logger.ErrorwCtx(subCtx, "failed to process trial end for subscription",
 					"subscription_id", trialingSubscription.ID,
 					"error", err)
 				response.TotalFailed++
@@ -124,13 +141,24 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 			response.Items = append(response.Items, responseItem)
 		}
 
-		offset += len(subs)
-		if len(subs) < batchSize {
+		if newAttempts == 0 {
+			s.Logger.WarnwCtx(listCtx, "trial end processing stopped: result page only contained subscriptions already attempted in this run",
+				"page_size", len(subs),
+				"iteration", iter)
 			break
 		}
 	}
 
 	return response, nil
+}
+
+// derivePerSubscriptionCtx scopes tenant, environment, and user onto parentCtx for a single subscription.
+// Callers must not reuse one subscription's context for the next; use a shared parent and derive per row.
+func derivePerSubscriptionCtx(parentCtx context.Context, sub *subscription.Subscription) context.Context {
+	ctx := context.WithValue(parentCtx, types.CtxTenantID, sub.TenantID)
+	ctx = context.WithValue(ctx, types.CtxEnvironmentID, sub.EnvironmentID)
+	ctx = context.WithValue(ctx, types.CtxUserID, sub.CreatedBy)
+	return ctx
 }
 
 func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, sub *subscription.Subscription, invoiceService InvoiceService, now time.Time) error {
