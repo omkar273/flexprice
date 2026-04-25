@@ -46,6 +46,9 @@ func (h *SubscriptionHandler) UpdateBillingPeriods(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// ProcessTrialEndDue is bound to POST /v1/cron/subscriptions/process-trial-end-due.
+//
+// Deprecated: the same work is run by the Temporal server schedule subscription-trial-end-due.
 func (h *SubscriptionHandler) ProcessTrialEndDue(c *gin.Context) {
 	ctx := c.Request.Context()
 	response, err := h.subscriptionService.ProcessTrialEndDue(ctx)
