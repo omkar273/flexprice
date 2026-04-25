@@ -153,7 +153,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 	sub.CurrentPeriodStart = sub.StartDate
 	sub.CurrentPeriodEnd = nextBillingDate
 
-	_, err = applyTrialWindowToSubscription(&req, sub, validPrices)
+	err = setCreateSubscriptionTrialWindow(&req, sub, validPrices)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (s *subscriptionService) CreateSubscription(ctx context.Context, req dto.Cr
 	if req.SubscriptionStatus != "" {
 		sub.SubscriptionStatus = req.SubscriptionStatus
 	}
-	applyTrialingStateAndPeriods(&req, sub)
+	syncTrialingStateFromCreateRequest(&req, sub)
 
 	s.Logger.InfowCtx(ctx, "creating subscription",
 		"customer_id", sub.CustomerID, "plan_id", sub.PlanID, "start_date", sub.StartDate,
@@ -7440,6 +7440,33 @@ func (s *subscriptionService) getInheritedSubscriptions(ctx context.Context, par
 	}
 
 	return s.SubRepo.List(ctx, filter)
+}
+
+// syncTrialingStateFromCreateRequest lines up trialing status and the current period with the trial window.
+// Skips draft subs. If the caller already set subscription_status to something other than trialing, respect it.
+func syncTrialingStateFromCreateRequest(req *dto.CreateSubscriptionRequest, sub *subscription.Subscription) {
+	if sub.TrialStart == nil || sub.TrialEnd == nil {
+		return
+	}
+	if req.SubscriptionStatus == types.SubscriptionStatusDraft {
+		return
+	}
+	// While trialing, "current period" is the trial, not the normal billing interval.
+	promoteToTrialingAndAlignCurrentPeriod := func() {
+		sub.SubscriptionStatus = types.SubscriptionStatusTrialing
+		sub.CurrentPeriodStart = lo.FromPtr(sub.TrialStart)
+		sub.CurrentPeriodEnd = lo.FromPtr(sub.TrialEnd)
+	}
+	switch {
+	case req.SubscriptionStatus == types.SubscriptionStatusTrialing:
+		promoteToTrialingAndAlignCurrentPeriod()
+	case !lo.IsEmpty(req.SubscriptionStatus):
+		// They asked for something specific (active, etc.) — keep it.
+		return
+	default:
+		// No status on the request but we have a trial window — treat as trialing.
+		promoteToTrialingAndAlignCurrentPeriod()
+	}
 }
 
 // cascadePauseToInherited mirrors pause status on all INHERITED child subscriptions.

@@ -18,52 +18,68 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestUniformTrialPeriodDaysAmongRecurringFixedPlanPrices_Success(t *testing.T) {
+func TestSetCreateSubscriptionTrialWindow_UniformRecurringFixedFromPlan(t *testing.T) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	sub := &subscription.Subscription{StartDate: start}
+	req := &dto.CreateSubscriptionRequest{}
 	prices := []*dto.PriceResponse{
 		{Price: &price.Price{BillingCadence: types.BILLING_CADENCE_RECURRING, Type: types.PRICE_TYPE_FIXED, TrialPeriodDays: 14}},
 		{Price: &price.Price{BillingCadence: types.BILLING_CADENCE_RECURRING, Type: types.PRICE_TYPE_FIXED, TrialPeriodDays: 14}},
 	}
-	d, err := uniformTrialPeriodDaysAmongRecurringFixedPlanPrices(prices)
+	err := setCreateSubscriptionTrialWindow(req, sub, prices)
 	require.NoError(t, err)
-	assert.Equal(t, 14, d)
+	assert.True(t, sub.TrialStart.Equal(start))
+	assert.Equal(t, start.AddDate(0, 0, 14), *sub.TrialEnd)
 }
 
-func TestUniformTrialPeriodDaysAmongRecurringFixedPlanPrices_Mismatch(t *testing.T) {
+func TestSetCreateSubscriptionTrialWindow_RecurringFixedTrialMismatch(t *testing.T) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	sub := &subscription.Subscription{StartDate: start}
+	req := &dto.CreateSubscriptionRequest{}
 	prices := []*dto.PriceResponse{
 		{Price: &price.Price{BillingCadence: types.BILLING_CADENCE_RECURRING, Type: types.PRICE_TYPE_FIXED, TrialPeriodDays: 14}},
 		{Price: &price.Price{BillingCadence: types.BILLING_CADENCE_RECURRING, Type: types.PRICE_TYPE_FIXED, TrialPeriodDays: 7}},
 	}
-	_, err := uniformTrialPeriodDaysAmongRecurringFixedPlanPrices(prices)
+	err := setCreateSubscriptionTrialWindow(req, sub, prices)
 	require.Error(t, err)
 	assert.True(t, ierr.IsValidation(err))
 }
 
-func TestUniformTrialPeriodDaysAmongRecurringFixedPlanPrices_SkipsNonFixedRecurring(t *testing.T) {
+func TestSetCreateSubscriptionTrialWindow_UsagePriceDoesNotInheritTrial(t *testing.T) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	sub := &subscription.Subscription{StartDate: start}
+	req := &dto.CreateSubscriptionRequest{}
 	prices := []*dto.PriceResponse{
 		{Price: &price.Price{BillingCadence: types.BILLING_CADENCE_RECURRING, Type: types.PRICE_TYPE_USAGE, TrialPeriodDays: 99}},
 	}
-	d, err := uniformTrialPeriodDaysAmongRecurringFixedPlanPrices(prices)
+	err := setCreateSubscriptionTrialWindow(req, sub, prices)
 	require.NoError(t, err)
-	assert.Equal(t, 0, d)
+	assert.Nil(t, sub.TrialStart)
+	assert.Nil(t, sub.TrialEnd)
 }
 
-func TestResolveEffectiveTrialPeriodDays_RequestOverrides(t *testing.T) {
+func TestSetCreateSubscriptionTrialWindow_RequestOverrideDays(t *testing.T) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	sub := &subscription.Subscription{StartDate: start}
 	seven := 7
 	req := &dto.CreateSubscriptionRequest{TrialPeriodDays: &seven}
-	d, err := resolveEffectiveTrialPeriodDays(req, nil)
+	err := setCreateSubscriptionTrialWindow(req, sub, nil)
 	require.NoError(t, err)
-	assert.Equal(t, 7, d)
+	assert.Equal(t, start, *sub.TrialStart)
+	assert.Equal(t, start.AddDate(0, 0, 7), *sub.TrialEnd)
 
 	zero := 0
 	req2 := &dto.CreateSubscriptionRequest{TrialPeriodDays: &zero}
-	d2, err := resolveEffectiveTrialPeriodDays(req2, []*dto.PriceResponse{
+	sub2 := &subscription.Subscription{StartDate: start}
+	err2 := setCreateSubscriptionTrialWindow(req2, sub2, []*dto.PriceResponse{
 		{Price: &price.Price{BillingCadence: types.BILLING_CADENCE_RECURRING, Type: types.PRICE_TYPE_FIXED, TrialPeriodDays: 14}},
 	})
-	require.NoError(t, err)
-	assert.Equal(t, 0, d2)
+	require.NoError(t, err2)
+	assert.Nil(t, sub2.TrialStart)
+	assert.Nil(t, sub2.TrialEnd)
 }
 
-func TestApplyTrialWindowToSubscription_FromDays(t *testing.T) {
+func TestSetCreateSubscriptionTrialWindow_FromPlanDays(t *testing.T) {
 	start := time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 	sub := &subscription.Subscription{StartDate: start}
 	req := &dto.CreateSubscriptionRequest{}
@@ -72,16 +88,15 @@ func TestApplyTrialWindowToSubscription_FromDays(t *testing.T) {
 		{Price: &price.Price{BillingCadence: types.BILLING_CADENCE_RECURRING, Type: types.PRICE_TYPE_FIXED, TrialPeriodDays: inherit}},
 	}
 
-	days, err := applyTrialWindowToSubscription(req, sub, prices)
+	err := setCreateSubscriptionTrialWindow(req, sub, prices)
 	require.NoError(t, err)
-	assert.Equal(t, 5, days)
 	require.NotNil(t, sub.TrialStart)
 	require.NotNil(t, sub.TrialEnd)
 	assert.True(t, sub.TrialStart.Equal(start))
 	assert.Equal(t, start.AddDate(0, 0, 5), *sub.TrialEnd)
 }
 
-func TestApplyTrialWindowToSubscription_InternalBounds(t *testing.T) {
+func TestSetCreateSubscriptionTrialWindow_InternalBounds(t *testing.T) {
 	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	trialEnd := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
 	sub := &subscription.Subscription{StartDate: start}
@@ -90,14 +105,13 @@ func TestApplyTrialWindowToSubscription_InternalBounds(t *testing.T) {
 		TrialEnd:   &trialEnd,
 	}
 
-	days, err := applyTrialWindowToSubscription(req, sub, nil)
+	err := setCreateSubscriptionTrialWindow(req, sub, nil)
 	require.NoError(t, err)
-	assert.Equal(t, 14, days)
 	assert.Equal(t, &start, sub.TrialStart)
 	assert.Equal(t, &trialEnd, sub.TrialEnd)
 }
 
-func TestApplyTrialingStateAndPeriods_AutoFromTrialWindow(t *testing.T) {
+func TestSyncTrialingStateFromCreateRequest_AutoFromTrialWindow(t *testing.T) {
 	ts := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	te := time.Date(2026, 1, 14, 0, 0, 0, 0, time.UTC)
 	sub := &subscription.Subscription{
@@ -109,13 +123,13 @@ func TestApplyTrialingStateAndPeriods_AutoFromTrialWindow(t *testing.T) {
 	}
 	req := &dto.CreateSubscriptionRequest{}
 
-	applyTrialingStateAndPeriods(req, sub)
+	syncTrialingStateFromCreateRequest(req, sub)
 	assert.Equal(t, types.SubscriptionStatusTrialing, sub.SubscriptionStatus)
 	assert.True(t, sub.CurrentPeriodStart.Equal(ts))
 	assert.True(t, sub.CurrentPeriodEnd.Equal(te))
 }
 
-func TestApplyTrialingStateAndPeriods_ExplicitActiveNoPromote(t *testing.T) {
+func TestSyncTrialingStateFromCreateRequest_ExplicitActiveNoPromote(t *testing.T) {
 	ts := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	te := time.Date(2026, 1, 14, 0, 0, 0, 0, time.UTC)
 	periodStart := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
@@ -129,13 +143,13 @@ func TestApplyTrialingStateAndPeriods_ExplicitActiveNoPromote(t *testing.T) {
 	}
 	req := &dto.CreateSubscriptionRequest{SubscriptionStatus: types.SubscriptionStatusActive}
 
-	applyTrialingStateAndPeriods(req, sub)
+	syncTrialingStateFromCreateRequest(req, sub)
 	assert.Equal(t, types.SubscriptionStatusActive, sub.SubscriptionStatus)
 	assert.True(t, sub.CurrentPeriodStart.Equal(periodStart))
 	assert.True(t, sub.CurrentPeriodEnd.Equal(periodEnd))
 }
 
-func TestApplyTrialingStateAndPeriods_DraftSkipped(t *testing.T) {
+func TestSyncTrialingStateFromCreateRequest_DraftSkipped(t *testing.T) {
 	ts := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	te := time.Date(2026, 1, 14, 0, 0, 0, 0, time.UTC)
 	sub := &subscription.Subscription{
@@ -145,11 +159,11 @@ func TestApplyTrialingStateAndPeriods_DraftSkipped(t *testing.T) {
 	}
 	req := &dto.CreateSubscriptionRequest{SubscriptionStatus: types.SubscriptionStatusDraft}
 
-	applyTrialingStateAndPeriods(req, sub)
+	syncTrialingStateFromCreateRequest(req, sub)
 	assert.Equal(t, types.SubscriptionStatusDraft, sub.SubscriptionStatus)
 }
 
-func TestApplyTrialWindowToSubscription_ZeroClears(t *testing.T) {
+func TestSetCreateSubscriptionTrialWindow_ZeroClears(t *testing.T) {
 	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	sub := &subscription.Subscription{StartDate: start, TrialStart: &start, TrialEnd: &start}
 	z := 0
@@ -158,9 +172,8 @@ func TestApplyTrialWindowToSubscription_ZeroClears(t *testing.T) {
 		{Price: &price.Price{BillingCadence: types.BILLING_CADENCE_RECURRING, Type: types.PRICE_TYPE_FIXED, TrialPeriodDays: 14}},
 	}
 
-	days, err := applyTrialWindowToSubscription(req, sub, prices)
+	err := setCreateSubscriptionTrialWindow(req, sub, prices)
 	require.NoError(t, err)
-	assert.Equal(t, 0, days)
 	assert.Nil(t, sub.TrialStart)
 	assert.Nil(t, sub.TrialEnd)
 }

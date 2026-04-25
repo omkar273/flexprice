@@ -11,116 +11,47 @@ import (
 	"github.com/samber/lo"
 )
 
-func uniformTrialPeriodDaysAmongRecurringFixedPlanPrices(prices []*dto.PriceResponse) (int, error) {
-	var first *int
-	for _, pr := range prices {
-		p := pr.Price
-		if p.BillingCadence != types.BILLING_CADENCE_RECURRING || p.Type != types.PRICE_TYPE_FIXED {
-			continue
-		}
-		d := p.TrialPeriodDays
-		if first == nil {
-			v := d
-			first = &v
-			continue
-		}
-		if *first != d {
-			return 0, ierr.NewError("all recurring fixed plan prices must have the same trial_period_days").
-				WithHint("Align trial_period_days on plan prices or override with subscription trial_period_days").
-				WithReportableDetails(map[string]any{
-					"expected": *first,
-					"got":      d,
-				}).
-				Mark(ierr.ErrValidation)
-		}
-	}
-	if first == nil {
-		return 0, nil
-	}
-	return *first, nil
-}
-
-func resolveEffectiveTrialPeriodDays(req *dto.CreateSubscriptionRequest, planPrices []*dto.PriceResponse) (int, error) {
-	if req.TrialPeriodDays != nil {
-		return *req.TrialPeriodDays, nil
-	}
-	return uniformTrialPeriodDaysAmongRecurringFixedPlanPrices(planPrices)
-}
-
-// trialDaysFromBounds returns whole days between trial start and end (floor of duration / 24h).
-func trialDaysFromBounds(start, end time.Time) int {
-	if !end.After(start) {
-		return 0
-	}
-	return int(end.Sub(start) / (24 * time.Hour))
-}
-
-// applyTrialWindowToSubscription sets TrialStart/TrialEnd from internal bounds (e.g. Stripe) or from
-// resolved trial_period_days vs subscription StartDate. Returns effective trial days for recurring fixed line items.
-func applyTrialWindowToSubscription(req *dto.CreateSubscriptionRequest, sub *subscription.Subscription, planPrices []*dto.PriceResponse) (effectiveTrialDays int, err error) {
+// setCreateSubscriptionTrialWindow fills in trial start/end. Precedence: explicit dates, then
+// subscription trial_period_days, then plan prices.
+func setCreateSubscriptionTrialWindow(req *dto.CreateSubscriptionRequest, sub *subscription.Subscription, planPrices []*dto.PriceResponse) error {
 	if req.TrialStart != nil && req.TrialEnd != nil {
 		sub.TrialStart = req.TrialStart
 		sub.TrialEnd = req.TrialEnd
-		return trialDaysFromBounds(*req.TrialStart, *req.TrialEnd), nil
+		return nil
 	}
 
-	planHasRecurringFixedTrial := false
-	for _, pr := range planPrices {
-		if pr == nil || pr.Price == nil {
-			continue
+	// check if the request has a trial_period_days else check if any price has a trial_period_days
+	effectiveTrialDays := 0
+	if req.TrialPeriodDays != nil {
+		effectiveTrialDays = lo.FromPtr(req.TrialPeriodDays)
+	} else {
+		trialDaysPerRecurringFixedPrice := lo.Map(planPrices, func(p *dto.PriceResponse, _ int) int {
+			return p.TrialPeriodDays
+		})
+		if len(trialDaysPerRecurringFixedPrice) == 0 {
+			return nil
 		}
-		p := pr.Price
-		if p.BillingCadence == types.BILLING_CADENCE_RECURRING && p.Type == types.PRICE_TYPE_FIXED && p.TrialPeriodDays > 0 {
-			planHasRecurringFixedTrial = true
-			break
+		if len(trialDaysPerRecurringFixedPrice) > 1 {
+			return ierr.NewError("all recurring fixed plan prices must have the same trial_period_days").
+				WithHint("Align trial_period_days on plan prices or override with subscription trial_period_days").
+				Mark(ierr.ErrValidation)
 		}
-	}
-	if req.TrialPeriodDays == nil && !planHasRecurringFixedTrial {
-		return 0, nil
+		effectiveTrialDays = trialDaysPerRecurringFixedPrice[0]
 	}
 
-	days, err := resolveEffectiveTrialPeriodDays(req, planPrices)
-	if err != nil {
-		return 0, err
-	}
-	if days <= 0 {
+	if effectiveTrialDays <= 0 {
 		sub.TrialStart, sub.TrialEnd = nil, nil
-		return 0, nil
+		return nil
 	}
 
-	ts := sub.StartDate
-	te := ts.AddDate(0, 0, days)
-	sub.TrialStart = &ts
-	sub.TrialEnd = &te
-	return days, nil
+	// Window starts on subscription start, N full days (AddDate(0,0,N)).
+	sub.TrialStart = lo.ToPtr(sub.StartDate)
+	sub.TrialEnd = lo.ToPtr(sub.StartDate.AddDate(0, 0, effectiveTrialDays))
+	return nil
 }
 
-// applyTrialingStateAndPeriods sets subscription to trialing and aligns the current billable period to the
-// trial window when trial bounds exist. Skipped for draft. If the client set an explicit subscription_status
-// other than trialing, status and periods are left unchanged (admin / gateway override).
-func applyTrialingStateAndPeriods(req *dto.CreateSubscriptionRequest, sub *subscription.Subscription) {
-	if sub.TrialStart == nil || sub.TrialEnd == nil {
-		return
-	}
-	if req.SubscriptionStatus == types.SubscriptionStatusDraft {
-		return
-	}
-	if req.SubscriptionStatus == types.SubscriptionStatusTrialing {
-		sub.SubscriptionStatus = types.SubscriptionStatusTrialing
-		sub.CurrentPeriodStart = *sub.TrialStart
-		sub.CurrentPeriodEnd = *sub.TrialEnd
-		return
-	}
-	if req.SubscriptionStatus != "" {
-		return
-	}
-	sub.SubscriptionStatus = types.SubscriptionStatusTrialing
-	sub.CurrentPeriodStart = *sub.TrialStart
-	sub.CurrentPeriodEnd = *sub.TrialEnd
-}
-
-// ProcessTrialEndDue finds trialing subscriptions whose trial has ended and creates the converting invoice
-// (billing_reason SUBSCRIPTION_TRIAL_END), then runs the same payment path as renewal. Idempotent per trial period.
+// ProcessTrialEndDue picks up trialing subs past trial end, moves them to the first real period, and creates
+// the trial-end invoice. Safe to run repeatedly for the same subscription.
 func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.SubscriptionUpdatePeriodResponse, error) {
 	const batchSize = 100
 	now := time.Now().UTC()
@@ -160,29 +91,30 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 			"batch_size", len(subs),
 			"offset", offset)
 
-		for _, sub := range subs {
-			ctx = context.WithValue(ctx, types.CtxTenantID, sub.TenantID)
-			ctx = context.WithValue(ctx, types.CtxEnvironmentID, sub.EnvironmentID)
-			ctx = context.WithValue(ctx, types.CtxUserID, sub.CreatedBy)
+		// These rows can be from different envs/tenants — set ctx so the store doesn't cross wires.
+		for _, trialingSubscription := range subs {
+			ctx = context.WithValue(ctx, types.CtxTenantID, trialingSubscription.TenantID)
+			ctx = context.WithValue(ctx, types.CtxEnvironmentID, trialingSubscription.EnvironmentID)
+			ctx = context.WithValue(ctx, types.CtxUserID, trialingSubscription.CreatedBy)
 
-			item := &dto.SubscriptionUpdatePeriodResponseItem{
-				SubscriptionID: sub.ID,
-				PeriodStart:    sub.CurrentPeriodStart,
-				PeriodEnd:      sub.CurrentPeriodEnd,
+			responseItem := &dto.SubscriptionUpdatePeriodResponseItem{
+				SubscriptionID: trialingSubscription.ID,
+				PeriodStart:    trialingSubscription.CurrentPeriodStart,
+				PeriodEnd:      trialingSubscription.CurrentPeriodEnd,
 			}
 
-			err := s.processSubscriptionTrialEnd(ctx, sub, invoiceService, now)
+			err := s.processSubscriptionTrialEnd(ctx, trialingSubscription, invoiceService, now)
 			if err != nil {
 				s.Logger.ErrorwCtx(ctx, "failed to process trial end for subscription",
-					"subscription_id", sub.ID,
+					"subscription_id", trialingSubscription.ID,
 					"error", err)
 				response.TotalFailed++
-				item.Error = err.Error()
+				responseItem.Error = err.Error()
 			} else {
 				response.TotalSuccess++
-				item.Success = true
+				responseItem.Success = true
 			}
-			response.Items = append(response.Items, item)
+			response.Items = append(response.Items, responseItem)
 		}
 
 		offset += len(subs)
@@ -219,9 +151,8 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 	}
 	sub = subWithItems
 
-	// First real billing period starts at trial end.
-	// Reset BillingAnchor to trial end so the customer gets a FULL first period
-	// (Stripe-aligned: trial_end becomes the new billing cycle anchor).
+	// Billing really starts at trial end. Anchor there so the first paid period isn't short-changed
+	// (same idea as Stripe: trial end becomes the new cycle anchor).
 	firstPeriodStart := lo.FromPtr(sub.TrialEnd)
 	sub.BillingAnchor = firstPeriodStart
 	firstPeriodEnd, err := types.NextBillingDate(firstPeriodStart, sub.BillingAnchor, sub.BillingPeriodCount, sub.BillingPeriod, sub.EndDate)
@@ -229,10 +160,8 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		return err
 	}
 
-	// Atomically move the subscription out of trialing: reset the billing anchor,
-	// advance the period to the first real billing window, and set status to incomplete.
-	// This single UPDATE is idempotent — if the cron runs again, the status guard above
-	// exits early because status is no longer trialing.
+	// Out of trialing, first real period on the books. If this job double-fires, we bail earlier because
+	// we aren't "trialing" anymore.
 	sub.SubscriptionStatus = types.SubscriptionStatusIncomplete
 	sub.CurrentPeriodStart = firstPeriodStart
 	sub.CurrentPeriodEnd = firstPeriodEnd
@@ -249,7 +178,7 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		"first_period_start", firstPeriodStart,
 		"first_period_end", firstPeriodEnd)
 
-	// Idempotency: skip if a non-draft/non-skipped invoice already exists for this period.
+	// Already have a real invoice for this period? Don't mint another.
 	existing, err := s.InvoiceRepo.GetForPeriod(
 		ctx,
 		sub.ID,
@@ -272,7 +201,8 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 	paymentParams := dto.NewPaymentParametersFromSubscription(sub.CollectionMethod, sub.PaymentBehavior, sub.GatewayPaymentMethodID)
 	paymentParams = paymentParams.NormalizePaymentParameters()
 
-	inv, _, err := invoiceService.CreateSubscriptionInvoice(ctx, &dto.CreateSubscriptionInvoiceRequest{
+	// Generate the first bill after the trial. Duplicate guard is just above.
+	trialEndInvoice, _, err := invoiceService.CreateSubscriptionInvoice(ctx, &dto.CreateSubscriptionInvoiceRequest{
 		SubscriptionID: sub.ID,
 		PeriodStart:    firstPeriodStart,
 		PeriodEnd:      firstPeriodEnd,
@@ -283,8 +213,8 @@ func (s *subscriptionService) processSubscriptionTrialEnd(ctx context.Context, s
 		return err
 	}
 
-	if inv == nil {
-		// Zero-amount or fully skipped invoice: activate immediately.
+	if trialEndInvoice == nil {
+		// Nothing to collect — we can go straight to active.
 		if err := s.completeTrialConversionToActive(ctx, sub); err != nil {
 			return err
 		}
