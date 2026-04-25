@@ -20,24 +20,30 @@ func setCreateSubscriptionTrialWindow(req *dto.CreateSubscriptionRequest, sub *s
 		return nil
 	}
 
-	// check if the request has a trial_period_days else check if any price has a trial_period_days
+	// Precedence: request trial_period_days, else uniform trial_period_days on recurring fixed plan prices
+	// (usage/tiered prices are ignored so trial is not "inherited" from a metered line item).
 	effectiveTrialDays := 0
 	if req.TrialPeriodDays != nil {
 		effectiveTrialDays = lo.FromPtr(req.TrialPeriodDays)
 	} else {
-		trialDaysPerRecurringFixedPrice := lo.Map(planPrices, func(p *dto.PriceResponse, _ int) int {
-			return p.TrialPeriodDays
+		recurringFixed := lo.Filter(planPrices, func(p *dto.PriceResponse, _ int) bool {
+			return p.BillingCadence == types.BILLING_CADENCE_RECURRING && p.Type == types.PRICE_TYPE_FIXED
 		})
-		distinctTrialDaysPerRecurringFixedPrice := lo.Uniq(trialDaysPerRecurringFixedPrice)
-		if len(distinctTrialDaysPerRecurringFixedPrice) == 0 {
+		if len(recurringFixed) == 0 {
 			return nil
 		}
-		if len(distinctTrialDaysPerRecurringFixedPrice) > 1 {
+		unique := lo.Uniq(lo.Map(recurringFixed, func(p *dto.PriceResponse, _ int) int {
+			return p.TrialPeriodDays
+		}))
+		if len(unique) == 0 {
+			return nil
+		}
+		if len(unique) > 1 {
 			return ierr.NewError("all recurring fixed plan prices must have the same trial_period_days").
 				WithHint("Align trial_period_days on plan prices or override with subscription trial_period_days").
 				Mark(ierr.ErrValidation)
 		}
-		effectiveTrialDays = distinctTrialDaysPerRecurringFixedPrice[0]
+		effectiveTrialDays = unique[0]
 	}
 
 	if effectiveTrialDays <= 0 {
