@@ -28,15 +28,16 @@ func setCreateSubscriptionTrialWindow(req *dto.CreateSubscriptionRequest, sub *s
 		trialDaysPerRecurringFixedPrice := lo.Map(planPrices, func(p *dto.PriceResponse, _ int) int {
 			return p.TrialPeriodDays
 		})
-		if len(trialDaysPerRecurringFixedPrice) == 0 {
+		distinctTrialDaysPerRecurringFixedPrice := lo.Uniq(trialDaysPerRecurringFixedPrice)
+		if len(distinctTrialDaysPerRecurringFixedPrice) == 0 {
 			return nil
 		}
-		if len(trialDaysPerRecurringFixedPrice) > 1 {
+		if len(distinctTrialDaysPerRecurringFixedPrice) > 1 {
 			return ierr.NewError("all recurring fixed plan prices must have the same trial_period_days").
 				WithHint("Align trial_period_days on plan prices or override with subscription trial_period_days").
 				Mark(ierr.ErrValidation)
 		}
-		effectiveTrialDays = trialDaysPerRecurringFixedPrice[0]
+		effectiveTrialDays = distinctTrialDaysPerRecurringFixedPrice[0]
 	}
 
 	if effectiveTrialDays <= 0 {
