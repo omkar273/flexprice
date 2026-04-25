@@ -94,6 +94,10 @@ func (s *subscriptionChangeService) PreviewSubscriptionChange(
 		return nil, err
 	}
 
+	if err := s.validateProrationForSubscriptionChange(currentSub, req.ProrationBehavior); err != nil {
+		return nil, err
+	}
+
 	// Determine change type and validate it's allowed
 	changeType, err := s.determineChangeType(ctx, currentPlan, targetPlan)
 	if err != nil {
@@ -227,6 +231,10 @@ func (s *subscriptionChangeService) ExecuteSubscriptionChangeInternal(
 
 		// Validate the change
 		if err := s.validateSubscriptionForChange(currentSub); err != nil {
+			return err
+		}
+
+		if err := s.validateProrationForSubscriptionChange(currentSub, req.ProrationBehavior); err != nil {
 			return err
 		}
 
@@ -392,6 +400,24 @@ func (s *subscriptionChangeService) scheduleChangeForPeriodEnd(
 	}
 
 	return response, nil
+}
+
+// validateProrationForSubscriptionChange aligns plan-change proration with CancelSubscription rules
+// so preview and execute both fail when cancellation proration is unsupported.
+func (s *subscriptionChangeService) validateProrationForSubscriptionChange(
+	sub *subscription.Subscription,
+	behavior types.ProrationBehavior,
+) error {
+	if behavior == types.ProrationBehaviorCreateProrations && sub.HasMixedBillingPeriods() {
+		return ierr.NewError("proration is not supported for subscriptions with mixed billing periods").
+			WithHint("Set proration_behavior to 'none' when changing a subscription with different billing periods").
+			WithReportableDetails(map[string]any{
+				"subscription_id":    sub.ID,
+				"proration_behavior": behavior,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+	return nil
 }
 
 // validateSubscriptionForChange checks if subscription can be changed
@@ -631,11 +657,12 @@ func (s *subscriptionChangeService) executeChange(
 	req dto.SubscriptionChangeRequest,
 	effectiveDate time.Time,
 ) (*dto.SubscriptionChangeExecuteResponse, error) {
-	// Cancel the old subscription
+	// Cancel the old subscription (pass through proration_behavior so execute matches preview).
 	subscriptionService := NewSubscriptionService(s.serviceParams)
 	archivedSub, err := subscriptionService.CancelSubscription(ctx, currentSub.ID, &dto.CancelSubscriptionRequest{
-		CancellationType: types.CancellationTypeImmediate,
-		Reason:           "subscription_change",
+		CancellationType:  types.CancellationTypeImmediate,
+		Reason:            "subscription_change",
+		ProrationBehavior: req.ProrationBehavior,
 	})
 	if err != nil {
 		return nil, err
@@ -647,7 +674,7 @@ func (s *subscriptionChangeService) executeChange(
 		return nil, err
 	}
 
-	return &dto.SubscriptionChangeExecuteResponse{
+	out := &dto.SubscriptionChangeExecuteResponse{
 		OldSubscription: dto.SubscriptionSummary{
 			ID:     archivedSub.SubscriptionID,
 			Status: archivedSub.Status,
@@ -664,7 +691,17 @@ func (s *subscriptionChangeService) executeChange(
 		ChangeType:    changeType,
 		EffectiveDate: effectiveDate,
 		Metadata:      req.Metadata,
-	}, nil
+	}
+
+	if req.ProrationBehavior == types.ProrationBehaviorCreateProrations {
+		prorationApplied, calcErr := s.calculateProrationPreview(ctx, currentSub, lineItems, targetPlan, effectiveDate)
+		if calcErr != nil {
+			return nil, calcErr
+		}
+		out.ProrationApplied = prorationApplied
+	}
+
+	return out, nil
 }
 
 // createNewSubscription creates a new subscription with the target plan using the existing subscription service
