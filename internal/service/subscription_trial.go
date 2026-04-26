@@ -63,8 +63,6 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 	// Re-query with offset 0 each time: processSubscriptionTrialEnd flips trialing → incomplete, so
 	// offset pagination would skip rows that slide into the first page after earlier rows are updated.
 	const batchSize = 100
-	// Safety cap for outer loop iterations; normal runs exit on empty result or a stuck "all already attempted" page.
-	const maxTrialEndDueLoopIterations = 100000
 	now := time.Now().UTC()
 	listCtx := ctx
 
@@ -78,15 +76,8 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 	}
 
 	invoiceService := NewInvoiceService(s.ServiceParams)
-	attempted := make(map[string]struct{})
 
-	for iter := 1; ; iter++ {
-		if iter > maxTrialEndDueLoopIterations {
-			s.Logger.ErrorwCtx(listCtx, "trial end processing stopped: max loop iterations",
-				"max_iterations", maxTrialEndDueLoopIterations)
-			break
-		}
-
+	for {
 		filter := &types.SubscriptionFilter{
 			QueryFilter: &types.QueryFilter{
 				Limit:  lo.ToPtr(batchSize),
@@ -106,19 +97,10 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 			break
 		}
 
-		s.Logger.InfowCtx(listCtx, "processing trial end batch",
-			"batch_size", len(subs),
-			"iteration", iter)
+		s.Logger.InfowCtx(listCtx, "processing trial end batch", "batch_size", len(subs))
 
-		newAttempts := 0
-		// These rows can be from different envs/tenants — derive per-sub context from listCtx (no WithValue chain growth).
+		// Derive per-sub context from listCtx (no WithValue chain growth); rows can span envs/tenants.
 		for _, trialingSubscription := range subs {
-			if _, seen := attempted[trialingSubscription.ID]; seen {
-				continue
-			}
-			newAttempts++
-			attempted[trialingSubscription.ID] = struct{}{}
-
 			subCtx := derivePerSubscriptionCtx(listCtx, trialingSubscription)
 
 			responseItem := &dto.SubscriptionUpdatePeriodResponseItem{
@@ -141,10 +123,7 @@ func (s *subscriptionService) ProcessTrialEndDue(ctx context.Context) (*dto.Subs
 			response.Items = append(response.Items, responseItem)
 		}
 
-		if newAttempts == 0 {
-			s.Logger.WarnwCtx(listCtx, "trial end processing stopped: result page only contained subscriptions already attempted in this run",
-				"page_size", len(subs),
-				"iteration", iter)
+		if len(subs) < batchSize {
 			break
 		}
 	}
