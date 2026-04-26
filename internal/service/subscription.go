@@ -4816,13 +4816,13 @@ func (s *subscriptionService) completeTrialConversionToActive(ctx context.Contex
 	}
 	sub.SubscriptionStatus = types.SubscriptionStatusActive
 	if err := s.DB.WithTx(ctx, func(txCtx context.Context) error {
-		if err := s.SubRepo.Update(ctx, sub); err != nil {
+		if err := s.SubRepo.Update(txCtx, sub); err != nil {
 			return err
 		}
-		if err := s.cascadeTrialActivationToInherited(ctx, sub); err != nil {
+		if err := s.cascadeTrialActivationToInherited(txCtx, sub); err != nil {
 			return err
 		}
-		if err := s.processPendingCreditGrantsForSubscription(ctx, sub); err != nil {
+		if err := s.processPendingCreditGrantsForSubscription(txCtx, sub); err != nil {
 			return err
 		}
 		return nil
