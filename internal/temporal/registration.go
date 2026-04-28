@@ -442,6 +442,7 @@ func buildWorkerConfig(
 			cronWorkflows.WalletCreditExpiryWorkflow,
 			cronWorkflows.SubscriptionBillingPeriodsWorkflow,
 			cronWorkflows.SubscriptionRenewalDueAlertsWorkflow,
+			cronWorkflows.SubscriptionTrialEndDueWorkflow,
 			cronWorkflows.OutboundWebhookStaleRetryWorkflow,
 		)
 		activitiesList = append(activitiesList,
@@ -450,6 +451,7 @@ func buildWorkerConfig(
 			cron.walletCreditExpiry.ExpireCreditsActivity,
 			cron.subscription.UpdateBillingPeriodsActivity,
 			cron.subscription.ProcessRenewalDueAlertsActivity,
+			cron.subscription.ProcessTrialEndDueActivity,
 			cron.webhookOutboundRetry.RetryStaleOutboundWebhooksActivity,
 		)
 	}

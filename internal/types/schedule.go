@@ -18,6 +18,7 @@ const (
 	ScheduleIDWalletCreditExpiry           ScheduleID = "wallet-credit-expiry"
 	ScheduleIDSubscriptionBillingPeriods   ScheduleID = "subscription-billing-periods"
 	ScheduleIDSubscriptionRenewalAlerts    ScheduleID = "subscription-renewal-due-alerts"
+	ScheduleIDSubscriptionTrialEndDue      ScheduleID = "subscription-trial-end-due"
 	ScheduleIDOutboundWebhookStaleRetry    ScheduleID = "webhook-stale-retry"
 )
 
@@ -33,6 +34,7 @@ func AllTemporalServerScheduleIDs() []ScheduleID {
 		ScheduleIDWalletCreditExpiry,
 		ScheduleIDSubscriptionBillingPeriods,
 		ScheduleIDSubscriptionRenewalAlerts,
+		ScheduleIDSubscriptionTrialEndDue,
 		ScheduleIDOutboundWebhookStaleRetry,
 	}
 }
