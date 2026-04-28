@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	flexent "github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/internal/config"
@@ -17,6 +18,18 @@ import (
 	"github.com/flexprice/flexprice/internal/webhook/payload"
 	"github.com/flexprice/flexprice/internal/webhook/publisher"
 )
+
+const (
+	staleWebhookGracePeriod = 15 * time.Minute
+	staleWebhookPageSize    = 500
+)
+
+// RetryStalePendingWebhooksResult counts bulk retry outcomes for stale undelivered system_events.
+type RetryStalePendingWebhooksResult struct {
+	Total     int `json:"total"`
+	Succeeded int `json:"succeeded"`
+	Failed    int `json:"failed"`
+}
 
 // WebhookService orchestrates webhook operations
 type WebhookService struct {
@@ -79,6 +92,45 @@ func (s *WebhookService) RetriggerSystemEvent(ctx context.Context, tenantID, env
 	}
 
 	return s.handler.DeliverWebhook(ctx, ev)
+}
+
+// RetryStalePendingWebhooks loads undelivered system_events older than the grace period and
+// delivers each via RetriggerSystemEvent. Pages until a batch smaller than staleWebhookPageSize.
+func (s *WebhookService) RetryStalePendingWebhooks(ctx context.Context) (RetryStalePendingWebhooksResult, error) {
+	var out RetryStalePendingWebhooksResult
+	if !s.config.Webhook.Enabled {
+		return out, nil
+	}
+
+	cutoff := time.Now().UTC().Add(-staleWebhookGracePeriod)
+
+	for {
+		rows, err := s.systemEventRepo.ListStaleUndeliveredWebhooks(ctx, cutoff, staleWebhookPageSize)
+		if err != nil {
+			return out, err
+		}
+
+		for _, se := range rows {
+			out.Total++
+			if err := s.RetriggerSystemEvent(ctx, se.TenantID, se.EnvironmentID, se.ID); err != nil {
+				out.Failed++
+				s.logger.Errorw("stale webhook retry failed",
+					"error", err,
+					"system_event_id", se.ID,
+					"tenant_id", se.TenantID,
+					"environment_id", se.EnvironmentID,
+				)
+				continue
+			}
+			out.Succeeded++
+		}
+
+		if len(rows) < staleWebhookPageSize {
+			break
+		}
+	}
+
+	return out, nil
 }
 
 // Start starts the webhook service
