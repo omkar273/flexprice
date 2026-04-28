@@ -69,6 +69,7 @@ func PaddleInvoiceSyncWorkflow(ctx workflow.Context, input models.PaddleInvoiceS
 
 	customerInput := models.PaddleCustomerSyncWorkflowInput{
 		CustomerID:    input.CustomerID,
+		InvoiceID:     input.InvoiceID,
 		TenantID:      input.TenantID,
 		EnvironmentID: input.EnvironmentID,
 	}
