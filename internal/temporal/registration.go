@@ -151,7 +151,6 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 	paddleInvoiceSyncActivities := paddleActivities.NewInvoiceSyncActivities(
 		params.IntegrationFactory,
 		customerService,
-		params.InvoiceRepo,
 		params.Logger,
 	)
 	paddleCustomerSyncActivities := paddleActivities.NewCustomerSyncActivities(
@@ -320,7 +319,6 @@ func buildWorkerConfig(
 			hubspotQuoteSyncActivities.CreateQuoteAndLineItems,
 			nomodInvoiceSyncActivities.SyncInvoiceToNomod,
 			moyasarInvoiceSyncActivities.SyncInvoiceToMoyasar,
-			paddleInvoiceSyncActivities.EnsureCustomerSyncedForInvoice,
 			paddleInvoiceSyncActivities.SyncInvoiceToPaddle,
 			stripeInvoiceSyncActivities.SyncInvoiceToStripe,
 			razorpayInvoiceSyncActivities.SyncInvoiceToRazorpay,
