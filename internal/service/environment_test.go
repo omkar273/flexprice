@@ -54,7 +54,7 @@ func (s *EnvironmentServiceSuite) SetupTest() {
 func (s *EnvironmentServiceSuite) TestCreateEnvironment() {
 	req := dto.CreateEnvironmentRequest{
 		Name: "Production",
-		Type: "production",
+		Type: "development",
 	}
 
 	resp, err := s.environmentService.CreateEnvironment(s.ctx, req)

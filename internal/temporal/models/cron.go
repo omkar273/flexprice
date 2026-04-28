@@ -59,3 +59,15 @@ type SubscriptionTrialEndDueWorkflowResult struct {
 	TotalFailed  int       `json:"total_failed"`
 	StartAt      time.Time `json:"start_at"`
 }
+
+// ===================== Outbound webhook stale retry =====================
+
+// OutboundWebhookStaleRetryWorkflowInput is the input for OutboundWebhookStaleRetryWorkflow.
+type OutboundWebhookStaleRetryWorkflowInput struct{}
+
+// OutboundWebhookStaleRetryWorkflowResult captures bulk retry metrics.
+type OutboundWebhookStaleRetryWorkflowResult struct {
+	Total     int `json:"total"`
+	Succeeded int `json:"succeeded"`
+	Failed    int `json:"failed"`
+}

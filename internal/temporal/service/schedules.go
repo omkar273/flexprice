@@ -62,6 +62,13 @@ func AllTemporalScheduleConfigs() []types.ScheduleConfig {
 			Input:     models.SubscriptionTrialEndDueWorkflowInput{},
 			TaskQueue: types.TemporalTaskQueueCron,
 		},
+		{
+			ID:        types.ScheduleIDOutboundWebhookStaleRetry,
+			Interval:  15 * time.Minute,
+			Workflow:  cronWorkflows.OutboundWebhookStaleRetryWorkflow,
+			Input:     models.OutboundWebhookStaleRetryWorkflowInput{},
+			TaskQueue: types.TemporalTaskQueueCron,
+		},
 	}
 }
 

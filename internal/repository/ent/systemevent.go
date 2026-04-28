@@ -31,6 +31,24 @@ func (r *SystemEventRepository) GetByID(ctx context.Context, tenantID, environme
 		Only(ctx)
 }
 
+// ListStaleUndeliveredWebhooks returns system_events rows that were consumed but never
+// delivered (no published_at / webhook_message_id), with created_at strictly before olderThan.
+// Results are ordered by created_at ascending. Pass limit > 0 (caller caps page size).
+func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context, olderThan time.Time, limit int) ([]*flexent.SystemEvent, error) {
+	if limit <= 0 {
+		return nil, nil
+	}
+	return r.client.Reader(ctx).SystemEvent.Query().
+		Where(
+			systemevent.WebhookMessageIDIsNil(),
+			systemevent.PublishedAtIsNil(),
+			systemevent.CreatedAtLT(olderThan),
+		).
+		Order(flexent.Asc(systemevent.FieldCreatedAt)).
+		Limit(limit).
+		All(ctx)
+}
+
 // OnConsumed creates a full system_events row when the consumer reads the Kafka message.
 // All fields are populated from the event — only webhook_message_id and published_at are left
 // empty until the webhook is actually delivered (see OnDelivered).
