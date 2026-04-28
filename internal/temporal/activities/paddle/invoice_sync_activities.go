@@ -10,6 +10,8 @@ import (
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/temporal/models"
 	"github.com/flexprice/flexprice/internal/types"
+
+	invoicedomain "github.com/flexprice/flexprice/internal/domain/invoice"
 	"go.temporal.io/sdk/temporal"
 )
 
@@ -17,6 +19,7 @@ import (
 type InvoiceSyncActivities struct {
 	integrationFactory *integration.Factory
 	customerService    interfaces.CustomerService
+	invoiceRepo        invoicedomain.Repository
 	logger             *logger.Logger
 }
 
@@ -24,11 +27,13 @@ type InvoiceSyncActivities struct {
 func NewInvoiceSyncActivities(
 	integrationFactory *integration.Factory,
 	customerService interfaces.CustomerService,
+	invoiceRepo invoicedomain.Repository,
 	logger *logger.Logger,
 ) *InvoiceSyncActivities {
 	return &InvoiceSyncActivities{
 		integrationFactory: integrationFactory,
 		customerService:    customerService,
+		invoiceRepo:        invoiceRepo,
 		logger:             logger,
 	}
 }
@@ -86,4 +91,38 @@ func (a *InvoiceSyncActivities) SyncInvoiceToPaddle(
 		"customer_id", input.CustomerID)
 
 	return nil
+}
+
+// EnsureCustomerSyncedForInvoice checks if the customer for the given invoice is already
+// synced to Paddle and syncs them if not. This is a no-op when the customer is already synced.
+func (a *InvoiceSyncActivities) EnsureCustomerSyncedForInvoice(
+	ctx context.Context,
+	input models.PaddleInvoiceSyncWorkflowInput,
+) error {
+	ctx = types.SetTenantID(ctx, input.TenantID)
+	ctx = types.SetEnvironmentID(ctx, input.EnvironmentID)
+
+	paddleIntegration, err := a.integrationFactory.GetPaddleIntegration(ctx)
+	if err != nil {
+		if ierr.IsNotFound(err) {
+			return temporal.NewNonRetryableApplicationError(
+				"Paddle connection not configured",
+				"ConnectionNotFound",
+				err,
+			)
+		}
+		return err
+	}
+
+	flexInvoice, err := a.invoiceRepo.Get(ctx, input.InvoiceID)
+	if err != nil {
+		return err
+	}
+
+	a.logger.Infow("ensuring customer is synced to Paddle before invoice sync",
+		"invoice_id", input.InvoiceID,
+		"customer_id", flexInvoice.CustomerID)
+
+	_, err = paddleIntegration.CustomerSvc.EnsureCustomerSyncedToPaddle(ctx, flexInvoice.CustomerID, a.customerService)
+	return err
 }

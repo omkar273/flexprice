@@ -12,7 +12,8 @@ const (
 	// Workflow name - must match the function name
 	WorkflowPaddleInvoiceSync = "PaddleInvoiceSyncWorkflow"
 	// Activity names - must match the registered method names
-	ActivitySyncInvoiceToPaddle = "SyncInvoiceToPaddle"
+	ActivitySyncInvoiceToPaddle             = "SyncInvoiceToPaddle"
+	ActivityEnsureCustomerSyncedForInvoice  = "EnsureCustomerSyncedForInvoice"
 )
 
 // PaddleInvoiceSyncWorkflow orchestrates the Paddle invoice synchronization process
@@ -54,8 +55,24 @@ func PaddleInvoiceSyncWorkflow(ctx workflow.Context, input models.PaddleInvoiceS
 
 	logger.Info("Wait completed, proceeding to sync invoice to Paddle", "invoice_id", input.InvoiceID)
 
-	// Step 2: Sync invoice to Paddle
-	logger.Info("Step 2: Syncing invoice to Paddle", "invoice_id", input.InvoiceID)
+	// Step 2: Ensure customer is synced to Paddle before invoice sync.
+	// This is a no-op if the customer is already synced. It recovers cases where the initial
+	// PaddleCustomerSyncWorkflow failed (e.g. missing email or address) and the customer data
+	// has since been corrected.
+	logger.Info("Step 2: Ensuring customer is synced to Paddle", "invoice_id", input.InvoiceID)
+
+	err = workflow.ExecuteActivity(ctx, ActivityEnsureCustomerSyncedForInvoice, input).Get(ctx, nil)
+	if err != nil {
+		logger.Error("Failed to ensure customer is synced to Paddle",
+			"error", err,
+			"invoice_id", input.InvoiceID)
+		return err
+	}
+
+	logger.Info("Customer sync check completed, proceeding to sync invoice", "invoice_id", input.InvoiceID)
+
+	// Step 3: Sync invoice to Paddle
+	logger.Info("Step 3: Syncing invoice to Paddle", "invoice_id", input.InvoiceID)
 
 	err = workflow.ExecuteActivity(ctx, ActivitySyncInvoiceToPaddle, input).Get(ctx, nil)
 	if err != nil {
