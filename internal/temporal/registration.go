@@ -32,6 +32,7 @@ import (
 	invoiceWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/invoice"
 	subscriptionWorkflows "github.com/flexprice/flexprice/internal/temporal/workflows/subscription"
 	"github.com/flexprice/flexprice/internal/types"
+	"github.com/flexprice/flexprice/internal/webhook"
 )
 
 // WorkerConfig defines the configuration for a specific task queue worker
@@ -43,13 +44,14 @@ type WorkerConfig struct {
 
 // cronActivityBundle groups activities registered on the Temporal "cron" task queue only.
 type cronActivityBundle struct {
-	creditGrant        *cronActivities.CreditGrantActivities
-	subscription       *cronActivities.SubscriptionCronActivities
-	walletCreditExpiry *cronActivities.WalletCreditExpiryActivities
+	creditGrant          *cronActivities.CreditGrantActivities
+	subscription         *cronActivities.SubscriptionCronActivities
+	walletCreditExpiry   *cronActivities.WalletCreditExpiryActivities
+	webhookOutboundRetry *cronActivities.WebhookOutboundRetryActivities
 }
 
 // RegisterWorkflowsAndActivities registers all workflows and activities with the temporal service
-func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalService, params service.ServiceParams) error {
+func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalService, params service.ServiceParams, webhookService *webhook.WebhookService) error {
 	// Create workflow tracking activity (follows standard activity pattern)
 	workflowTrackingActivities := workflowActivities.NewWorkflowTrackingActivities(
 		params,
@@ -228,9 +230,10 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 	settingsService := service.NewSettingsService(params)
 	environmentService := service.NewEnvironmentService(params.EnvironmentRepo, envAccessService, settingsService, params)
 	cronBundle := &cronActivityBundle{
-		creditGrant:        cronActivities.NewCreditGrantActivities(creditGrantService),
-		subscription:       cronActivities.NewSubscriptionCronActivities(subscriptionService, params.Logger),
-		walletCreditExpiry: cronActivities.NewWalletCreditExpiryActivities(walletService, tenantService, environmentService, params.Logger),
+		creditGrant:          cronActivities.NewCreditGrantActivities(creditGrantService),
+		subscription:         cronActivities.NewSubscriptionCronActivities(subscriptionService, params.Logger),
+		walletCreditExpiry:   cronActivities.NewWalletCreditExpiryActivities(walletService, tenantService, environmentService, params.Logger),
+		webhookOutboundRetry: cronActivities.NewWebhookOutboundRetryActivities(webhookService, params.Logger),
 	}
 
 	// Get all task queues and register workflows/activities for each
@@ -439,6 +442,7 @@ func buildWorkerConfig(
 			cronWorkflows.WalletCreditExpiryWorkflow,
 			cronWorkflows.SubscriptionBillingPeriodsWorkflow,
 			cronWorkflows.SubscriptionRenewalDueAlertsWorkflow,
+			cronWorkflows.OutboundWebhookStaleRetryWorkflow,
 		)
 		activitiesList = append(activitiesList,
 			cron.creditGrant.ProcessScheduledCreditGrantApplicationsActivity,
@@ -446,6 +450,7 @@ func buildWorkerConfig(
 			cron.walletCreditExpiry.ExpireCreditsActivity,
 			cron.subscription.UpdateBillingPeriodsActivity,
 			cron.subscription.ProcessRenewalDueAlertsActivity,
+			cron.webhookOutboundRetry.RetryStaleOutboundWebhooksActivity,
 		)
 	}
 	return WorkerConfig{
