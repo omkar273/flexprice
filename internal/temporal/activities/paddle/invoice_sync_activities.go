@@ -103,7 +103,7 @@ func (a *InvoiceSyncActivities) EnsureCustomerSyncedForInvoice(
 	ctx = types.SetEnvironmentID(ctx, input.EnvironmentID)
 
 	paddleIntegration, err := a.integrationFactory.GetPaddleIntegration(ctx)
-	if err != nil {
+	if err != nil { 
 		if ierr.IsNotFound(err) {
 			return temporal.NewNonRetryableApplicationError(
 				"Paddle connection not configured",

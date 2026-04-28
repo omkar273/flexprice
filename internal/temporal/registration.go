@@ -320,6 +320,7 @@ func buildWorkerConfig(
 			hubspotQuoteSyncActivities.CreateQuoteAndLineItems,
 			nomodInvoiceSyncActivities.SyncInvoiceToNomod,
 			moyasarInvoiceSyncActivities.SyncInvoiceToMoyasar,
+			paddleInvoiceSyncActivities.EnsureCustomerSyncedForInvoice,
 			paddleInvoiceSyncActivities.SyncInvoiceToPaddle,
 			stripeInvoiceSyncActivities.SyncInvoiceToStripe,
 			razorpayInvoiceSyncActivities.SyncInvoiceToRazorpay,

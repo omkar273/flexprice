@@ -246,9 +246,9 @@ func (s *CustomerService) SyncCustomerToPaddle(ctx context.Context, flexpriceCus
 
 	// Store mapping in entity_integration_mapping
 	mappingMetadata := map[string]interface{}{
-		"created_via":         "flexprice_to_provider",
-		"paddle_customer_id":  paddleCustomerID,
-		"synced_at":           time.Now().UTC().Format(time.RFC3339),
+		"created_via":        "flexprice_to_provider",
+		"paddle_customer_id": paddleCustomerID,
+		"synced_at":          time.Now().UTC().Format(time.RFC3339),
 	}
 	if paddleAddressID != "" {
 		mappingMetadata["paddle_address_id"] = paddleAddressID
@@ -507,9 +507,9 @@ func (s *CustomerService) CreateCustomerFromPaddle(ctx context.Context, paddleCu
 	}
 
 	createReq := dto.CreateCustomerRequest{
-		ExternalID:            paddleCustomerID,
-		Name:                  name,
-		Email:                 paddleCustomer.Email,
+		ExternalID:             paddleCustomerID,
+		Name:                   name,
+		Email:                  paddleCustomer.Email,
 		SkipOnboardingWorkflow: true,
 		Metadata: map[string]string{
 			"paddle_customer_id": paddleCustomerID,
