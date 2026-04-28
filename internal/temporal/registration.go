@@ -334,6 +334,7 @@ func buildWorkerConfig(
 			qbCustomerSyncActivities.SyncCustomerToQuickBooks,
 			nomodCustomerSyncActivities.SyncCustomerToNomod,
 			paddleCustomerSyncActivities.SyncCustomerToPaddle,
+			paddleCustomerSyncActivities.EnsureCustomerSyncedToPaddle,
 			prepareEventsActivities.CreateFeatureAndPriceActivity,
 			prepareEventsActivities.RolloutToSubscriptionsActivity,
 		)
