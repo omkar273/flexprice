@@ -158,6 +158,7 @@ func RegisterWorkflowsAndActivities(temporalService temporalService.TemporalServ
 	paddleCustomerSyncActivities := paddleActivities.NewCustomerSyncActivities(
 		params.IntegrationFactory,
 		customerService,
+		params.InvoiceRepo,
 		params.Logger,
 	)
 
