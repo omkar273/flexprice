@@ -44,6 +44,7 @@ func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context
 			systemevent.PublishedAtIsNil(),
 			systemevent.CreatedAtLT(olderThan),
 			systemevent.EventNameNotNil(),
+			systemevent.EntityTypeNEQ(""),
 		).
 		Order(flexent.Asc(systemevent.FieldCreatedAt)).
 		Limit(limit).
