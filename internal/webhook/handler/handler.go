@@ -114,10 +114,30 @@ func (h *handler) DeliverWebhook(ctx context.Context, event *types.WebhookEvent)
 		"event_id", event.ID,
 	)
 
+	var deliveryErr error
 	if h.config.Svix.Enabled {
-		return h.deliverSvix(ctx, event, messageUUID)
+		deliveryErr = h.deliverSvix(ctx, event, messageUUID)
+	} else {
+		deliveryErr = h.deliverNative(ctx, event, messageUUID)
 	}
-	return h.deliverNative(ctx, event, messageUUID)
+	if deliveryErr != nil {
+		h.logger.Errorw("failed to deliver webhook synchronously",
+			"error", deliveryErr,
+			"event_id", event.ID,
+			"event_name", event.EventName,
+			"tenant_id", event.TenantID,
+			"message_uuid", messageUUID,
+		)
+		if h.systemEventRepo != nil && event.ID != "" {
+			if dbErr := h.systemEventRepo.OnFailed(ctx, event.ID, deliveryErr.Error()); dbErr != nil {
+				h.logger.Warnw("failed to persist webhook failure_reason",
+					"error", dbErr,
+					"event_id", event.ID,
+				)
+			}
+		}
+	}
+	return deliveryErr
 }
 
 // webhookMissingDataError is true when the failure is permanent (referenced entity missing).
