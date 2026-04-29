@@ -39,6 +39,8 @@ const (
 	FieldPublishedAt = "published_at"
 	// FieldPayload holds the string denoting the payload field in the database.
 	FieldPayload = "payload"
+	// FieldFailureCount holds the string denoting the failure_count field in the database.
+	FieldFailureCount = "failure_count"
 	// FieldFailureReason holds the string denoting the failure_reason field in the database.
 	FieldFailureReason = "failure_reason"
 	// Table holds the table name of the systemevent in the database.
@@ -61,6 +63,7 @@ var Columns = []string{
 	FieldWebhookMessageID,
 	FieldPublishedAt,
 	FieldPayload,
+	FieldFailureCount,
 	FieldFailureReason,
 }
 
@@ -93,6 +96,8 @@ var (
 	DefaultEntityType string
 	// DefaultEntityID holds the default value on creation for the "entity_id" field.
 	DefaultEntityID string
+	// DefaultFailureCount holds the default value on creation for the "failure_count" field.
+	DefaultFailureCount int
 )
 
 // OrderOption defines the ordering options for the SystemEvent queries.
@@ -161,6 +166,11 @@ func ByWebhookMessageID(opts ...sql.OrderTermOption) OrderOption {
 // ByPublishedAt orders the results by the published_at field.
 func ByPublishedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPublishedAt, opts...).ToFunc()
+}
+
+// ByFailureCount orders the results by the failure_count field.
+func ByFailureCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailureCount, opts...).ToFunc()
 }
 
 // ByFailureReason orders the results by the failure_reason field.

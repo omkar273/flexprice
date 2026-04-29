@@ -1912,6 +1912,10 @@ func init() {
 	systemeventDescEntityID := systemeventFields[3].Descriptor()
 	// systemevent.DefaultEntityID holds the default value on creation for the entity_id field.
 	systemevent.DefaultEntityID = systemeventDescEntityID.Default.(string)
+	// systemeventDescFailureCount is the schema descriptor for failure_count field.
+	systemeventDescFailureCount := systemeventFields[7].Descriptor()
+	// systemevent.DefaultFailureCount holds the default value on creation for the failure_count field.
+	systemevent.DefaultFailureCount = systemeventDescFailureCount.Default.(int)
 	taskMixin := schema.Task{}.Mixin()
 	taskMixinFields0 := taskMixin[0].Fields()
 	_ = taskMixinFields0

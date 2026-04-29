@@ -55813,6 +55813,8 @@ type SystemEventMutation struct {
 	webhook_message_id *string
 	published_at       *time.Time
 	payload            *map[string]interface{}
+	failure_count      *int
+	addfailure_count   *int
 	failure_reason     *string
 	clearedFields      map[string]struct{}
 	done               bool
@@ -56509,6 +56511,62 @@ func (m *SystemEventMutation) ResetPayload() {
 	delete(m.clearedFields, systemevent.FieldPayload)
 }
 
+// SetFailureCount sets the "failure_count" field.
+func (m *SystemEventMutation) SetFailureCount(i int) {
+	m.failure_count = &i
+	m.addfailure_count = nil
+}
+
+// FailureCount returns the value of the "failure_count" field in the mutation.
+func (m *SystemEventMutation) FailureCount() (r int, exists bool) {
+	v := m.failure_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureCount returns the old "failure_count" field's value of the SystemEvent entity.
+// If the SystemEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemEventMutation) OldFailureCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureCount: %w", err)
+	}
+	return oldValue.FailureCount, nil
+}
+
+// AddFailureCount adds i to the "failure_count" field.
+func (m *SystemEventMutation) AddFailureCount(i int) {
+	if m.addfailure_count != nil {
+		*m.addfailure_count += i
+	} else {
+		m.addfailure_count = &i
+	}
+}
+
+// AddedFailureCount returns the value that was added to the "failure_count" field in this mutation.
+func (m *SystemEventMutation) AddedFailureCount() (r int, exists bool) {
+	v := m.addfailure_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFailureCount resets all changes to the "failure_count" field.
+func (m *SystemEventMutation) ResetFailureCount() {
+	m.failure_count = nil
+	m.addfailure_count = nil
+}
+
 // SetFailureReason sets the "failure_reason" field.
 func (m *SystemEventMutation) SetFailureReason(s string) {
 	m.failure_reason = &s
@@ -56592,7 +56650,7 @@ func (m *SystemEventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SystemEventMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 15)
 	if m.tenant_id != nil {
 		fields = append(fields, systemevent.FieldTenantID)
 	}
@@ -56632,6 +56690,9 @@ func (m *SystemEventMutation) Fields() []string {
 	if m.payload != nil {
 		fields = append(fields, systemevent.FieldPayload)
 	}
+	if m.failure_count != nil {
+		fields = append(fields, systemevent.FieldFailureCount)
+	}
 	if m.failure_reason != nil {
 		fields = append(fields, systemevent.FieldFailureReason)
 	}
@@ -56669,6 +56730,8 @@ func (m *SystemEventMutation) Field(name string) (ent.Value, bool) {
 		return m.PublishedAt()
 	case systemevent.FieldPayload:
 		return m.Payload()
+	case systemevent.FieldFailureCount:
+		return m.FailureCount()
 	case systemevent.FieldFailureReason:
 		return m.FailureReason()
 	}
@@ -56706,6 +56769,8 @@ func (m *SystemEventMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldPublishedAt(ctx)
 	case systemevent.FieldPayload:
 		return m.OldPayload(ctx)
+	case systemevent.FieldFailureCount:
+		return m.OldFailureCount(ctx)
 	case systemevent.FieldFailureReason:
 		return m.OldFailureReason(ctx)
 	}
@@ -56808,6 +56873,13 @@ func (m *SystemEventMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPayload(v)
 		return nil
+	case systemevent.FieldFailureCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureCount(v)
+		return nil
 	case systemevent.FieldFailureReason:
 		v, ok := value.(string)
 		if !ok {
@@ -56822,13 +56894,21 @@ func (m *SystemEventMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *SystemEventMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addfailure_count != nil {
+		fields = append(fields, systemevent.FieldFailureCount)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *SystemEventMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case systemevent.FieldFailureCount:
+		return m.AddedFailureCount()
+	}
 	return nil, false
 }
 
@@ -56837,6 +56917,13 @@ func (m *SystemEventMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *SystemEventMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case systemevent.FieldFailureCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailureCount(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SystemEvent numeric field %s", name)
 }
@@ -56965,6 +57052,9 @@ func (m *SystemEventMutation) ResetField(name string) error {
 		return nil
 	case systemevent.FieldPayload:
 		m.ResetPayload()
+		return nil
+	case systemevent.FieldFailureCount:
+		m.ResetFailureCount()
 		return nil
 	case systemevent.FieldFailureReason:
 		m.ResetFailureReason()
