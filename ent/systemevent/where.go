@@ -124,6 +124,11 @@ func PublishedAt(v time.Time) predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldEQ(FieldPublishedAt, v))
 }
 
+// FailureCount applies equality check predicate on the "failure_count" field. It's identical to FailureCountEQ.
+func FailureCount(v int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEQ(FieldFailureCount, v))
+}
+
 // FailureReason applies equality check predicate on the "failure_reason" field. It's identical to FailureReasonEQ.
 func FailureReason(v string) predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldEQ(FieldFailureReason, v))
@@ -922,6 +927,46 @@ func PayloadIsNil() predicate.SystemEvent {
 // PayloadNotNil applies the NotNil predicate on the "payload" field.
 func PayloadNotNil() predicate.SystemEvent {
 	return predicate.SystemEvent(sql.FieldNotNull(FieldPayload))
+}
+
+// FailureCountEQ applies the EQ predicate on the "failure_count" field.
+func FailureCountEQ(v int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldEQ(FieldFailureCount, v))
+}
+
+// FailureCountNEQ applies the NEQ predicate on the "failure_count" field.
+func FailureCountNEQ(v int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNEQ(FieldFailureCount, v))
+}
+
+// FailureCountIn applies the In predicate on the "failure_count" field.
+func FailureCountIn(vs ...int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldIn(FieldFailureCount, vs...))
+}
+
+// FailureCountNotIn applies the NotIn predicate on the "failure_count" field.
+func FailureCountNotIn(vs ...int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldNotIn(FieldFailureCount, vs...))
+}
+
+// FailureCountGT applies the GT predicate on the "failure_count" field.
+func FailureCountGT(v int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldGT(FieldFailureCount, v))
+}
+
+// FailureCountGTE applies the GTE predicate on the "failure_count" field.
+func FailureCountGTE(v int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldGTE(FieldFailureCount, v))
+}
+
+// FailureCountLT applies the LT predicate on the "failure_count" field.
+func FailureCountLT(v int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldLT(FieldFailureCount, v))
+}
+
+// FailureCountLTE applies the LTE predicate on the "failure_count" field.
+func FailureCountLTE(v int) predicate.SystemEvent {
+	return predicate.SystemEvent(sql.FieldLTE(FieldFailureCount, v))
 }
 
 // FailureReasonEQ applies the EQ predicate on the "failure_reason" field.

@@ -45,6 +45,7 @@ func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context
 			systemevent.CreatedAtLT(olderThan),
 			systemevent.EventNameNotNil(),
 			systemevent.EventNameNEQ(""),
+			systemevent.FailureCountLT(4),
 		).
 		Order(flexent.Asc(systemevent.FieldCreatedAt)).
 		Limit(limit).
@@ -131,6 +132,7 @@ func (r *SystemEventRepository) OnFailed(ctx context.Context, eventID, reason st
 	return r.client.Writer(ctx).SystemEvent.UpdateOneID(eventID).
 		SetUpdatedAt(time.Now().UTC()).
 		SetFailureReason(reason).
+		AddFailureCount(1).
 		Exec(ctx)
 }
 

@@ -180,6 +180,27 @@ func (seu *SystemEventUpdate) ClearPayload() *SystemEventUpdate {
 	return seu
 }
 
+// SetFailureCount sets the "failure_count" field.
+func (seu *SystemEventUpdate) SetFailureCount(i int) *SystemEventUpdate {
+	seu.mutation.ResetFailureCount()
+	seu.mutation.SetFailureCount(i)
+	return seu
+}
+
+// SetNillableFailureCount sets the "failure_count" field if the given value is not nil.
+func (seu *SystemEventUpdate) SetNillableFailureCount(i *int) *SystemEventUpdate {
+	if i != nil {
+		seu.SetFailureCount(*i)
+	}
+	return seu
+}
+
+// AddFailureCount adds i to the "failure_count" field.
+func (seu *SystemEventUpdate) AddFailureCount(i int) *SystemEventUpdate {
+	seu.mutation.AddFailureCount(i)
+	return seu
+}
+
 // SetFailureReason sets the "failure_reason" field.
 func (seu *SystemEventUpdate) SetFailureReason(s string) *SystemEventUpdate {
 	seu.mutation.SetFailureReason(s)
@@ -303,6 +324,12 @@ func (seu *SystemEventUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if seu.mutation.PayloadCleared() {
 		_spec.ClearField(systemevent.FieldPayload, field.TypeJSON)
+	}
+	if value, ok := seu.mutation.FailureCount(); ok {
+		_spec.SetField(systemevent.FieldFailureCount, field.TypeInt, value)
+	}
+	if value, ok := seu.mutation.AddedFailureCount(); ok {
+		_spec.AddField(systemevent.FieldFailureCount, field.TypeInt, value)
 	}
 	if value, ok := seu.mutation.FailureReason(); ok {
 		_spec.SetField(systemevent.FieldFailureReason, field.TypeString, value)
@@ -482,6 +509,27 @@ func (seuo *SystemEventUpdateOne) ClearPayload() *SystemEventUpdateOne {
 	return seuo
 }
 
+// SetFailureCount sets the "failure_count" field.
+func (seuo *SystemEventUpdateOne) SetFailureCount(i int) *SystemEventUpdateOne {
+	seuo.mutation.ResetFailureCount()
+	seuo.mutation.SetFailureCount(i)
+	return seuo
+}
+
+// SetNillableFailureCount sets the "failure_count" field if the given value is not nil.
+func (seuo *SystemEventUpdateOne) SetNillableFailureCount(i *int) *SystemEventUpdateOne {
+	if i != nil {
+		seuo.SetFailureCount(*i)
+	}
+	return seuo
+}
+
+// AddFailureCount adds i to the "failure_count" field.
+func (seuo *SystemEventUpdateOne) AddFailureCount(i int) *SystemEventUpdateOne {
+	seuo.mutation.AddFailureCount(i)
+	return seuo
+}
+
 // SetFailureReason sets the "failure_reason" field.
 func (seuo *SystemEventUpdateOne) SetFailureReason(s string) *SystemEventUpdateOne {
 	seuo.mutation.SetFailureReason(s)
@@ -635,6 +683,12 @@ func (seuo *SystemEventUpdateOne) sqlSave(ctx context.Context) (_node *SystemEve
 	}
 	if seuo.mutation.PayloadCleared() {
 		_spec.ClearField(systemevent.FieldPayload, field.TypeJSON)
+	}
+	if value, ok := seuo.mutation.FailureCount(); ok {
+		_spec.SetField(systemevent.FieldFailureCount, field.TypeInt, value)
+	}
+	if value, ok := seuo.mutation.AddedFailureCount(); ok {
+		_spec.AddField(systemevent.FieldFailureCount, field.TypeInt, value)
 	}
 	if value, ok := seuo.mutation.FailureReason(); ok {
 		_spec.SetField(systemevent.FieldFailureReason, field.TypeString, value)
