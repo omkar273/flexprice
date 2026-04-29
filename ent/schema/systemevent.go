@@ -60,7 +60,10 @@ func (SystemEvent) Fields() []ent.Field {
 			Optional(),
 		field.String("failure_reason").
 			Optional().
-			Nillable(),
+			Nillable().
+			SchemaType(map[string]string{
+				"postgres": "text",
+			}),
 	}
 }
 

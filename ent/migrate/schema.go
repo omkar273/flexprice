@@ -1926,7 +1926,7 @@ var (
 		{Name: "webhook_message_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(128)"}},
 		{Name: "published_at", Type: field.TypeTime, Nullable: true},
 		{Name: "payload", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
-		{Name: "failure_reason", Type: field.TypeString, Nullable: true},
+		{Name: "failure_reason", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 	}
 	// SystemEventsTable holds the schema information for the "system_events" table.
 	SystemEventsTable = &schema.Table{
