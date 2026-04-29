@@ -39,6 +39,8 @@ const (
 	FieldPublishedAt = "published_at"
 	// FieldPayload holds the string denoting the payload field in the database.
 	FieldPayload = "payload"
+	// FieldFailureReason holds the string denoting the failure_reason field in the database.
+	FieldFailureReason = "failure_reason"
 	// Table holds the table name of the systemevent in the database.
 	Table = "system_events"
 )
@@ -59,6 +61,7 @@ var Columns = []string{
 	FieldWebhookMessageID,
 	FieldPublishedAt,
 	FieldPayload,
+	FieldFailureReason,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -158,4 +161,9 @@ func ByWebhookMessageID(opts ...sql.OrderTermOption) OrderOption {
 // ByPublishedAt orders the results by the published_at field.
 func ByPublishedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPublishedAt, opts...).ToFunc()
+}
+
+// ByFailureReason orders the results by the failure_reason field.
+func ByFailureReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFailureReason, opts...).ToFunc()
 }

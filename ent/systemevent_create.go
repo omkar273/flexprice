@@ -186,6 +186,20 @@ func (sec *SystemEventCreate) SetPayload(m map[string]interface{}) *SystemEventC
 	return sec
 }
 
+// SetFailureReason sets the "failure_reason" field.
+func (sec *SystemEventCreate) SetFailureReason(s string) *SystemEventCreate {
+	sec.mutation.SetFailureReason(s)
+	return sec
+}
+
+// SetNillableFailureReason sets the "failure_reason" field if the given value is not nil.
+func (sec *SystemEventCreate) SetNillableFailureReason(s *string) *SystemEventCreate {
+	if s != nil {
+		sec.SetFailureReason(*s)
+	}
+	return sec
+}
+
 // SetID sets the "id" field.
 func (sec *SystemEventCreate) SetID(s string) *SystemEventCreate {
 	sec.mutation.SetID(s)
@@ -362,6 +376,10 @@ func (sec *SystemEventCreate) createSpec() (*SystemEvent, *sqlgraph.CreateSpec) 
 	if value, ok := sec.mutation.Payload(); ok {
 		_spec.SetField(systemevent.FieldPayload, field.TypeJSON, value)
 		_node.Payload = value
+	}
+	if value, ok := sec.mutation.FailureReason(); ok {
+		_spec.SetField(systemevent.FieldFailureReason, field.TypeString, value)
+		_node.FailureReason = &value
 	}
 	return _node, _spec
 }

@@ -55813,6 +55813,7 @@ type SystemEventMutation struct {
 	webhook_message_id *string
 	published_at       *time.Time
 	payload            *map[string]interface{}
+	failure_reason     *string
 	clearedFields      map[string]struct{}
 	done               bool
 	oldValue           func(context.Context) (*SystemEvent, error)
@@ -56508,6 +56509,55 @@ func (m *SystemEventMutation) ResetPayload() {
 	delete(m.clearedFields, systemevent.FieldPayload)
 }
 
+// SetFailureReason sets the "failure_reason" field.
+func (m *SystemEventMutation) SetFailureReason(s string) {
+	m.failure_reason = &s
+}
+
+// FailureReason returns the value of the "failure_reason" field in the mutation.
+func (m *SystemEventMutation) FailureReason() (r string, exists bool) {
+	v := m.failure_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureReason returns the old "failure_reason" field's value of the SystemEvent entity.
+// If the SystemEvent object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SystemEventMutation) OldFailureReason(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureReason: %w", err)
+	}
+	return oldValue.FailureReason, nil
+}
+
+// ClearFailureReason clears the value of the "failure_reason" field.
+func (m *SystemEventMutation) ClearFailureReason() {
+	m.failure_reason = nil
+	m.clearedFields[systemevent.FieldFailureReason] = struct{}{}
+}
+
+// FailureReasonCleared returns if the "failure_reason" field was cleared in this mutation.
+func (m *SystemEventMutation) FailureReasonCleared() bool {
+	_, ok := m.clearedFields[systemevent.FieldFailureReason]
+	return ok
+}
+
+// ResetFailureReason resets all changes to the "failure_reason" field.
+func (m *SystemEventMutation) ResetFailureReason() {
+	m.failure_reason = nil
+	delete(m.clearedFields, systemevent.FieldFailureReason)
+}
+
 // Where appends a list predicates to the SystemEventMutation builder.
 func (m *SystemEventMutation) Where(ps ...predicate.SystemEvent) {
 	m.predicates = append(m.predicates, ps...)
@@ -56542,7 +56592,7 @@ func (m *SystemEventMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SystemEventMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 14)
 	if m.tenant_id != nil {
 		fields = append(fields, systemevent.FieldTenantID)
 	}
@@ -56582,6 +56632,9 @@ func (m *SystemEventMutation) Fields() []string {
 	if m.payload != nil {
 		fields = append(fields, systemevent.FieldPayload)
 	}
+	if m.failure_reason != nil {
+		fields = append(fields, systemevent.FieldFailureReason)
+	}
 	return fields
 }
 
@@ -56616,6 +56669,8 @@ func (m *SystemEventMutation) Field(name string) (ent.Value, bool) {
 		return m.PublishedAt()
 	case systemevent.FieldPayload:
 		return m.Payload()
+	case systemevent.FieldFailureReason:
+		return m.FailureReason()
 	}
 	return nil, false
 }
@@ -56651,6 +56706,8 @@ func (m *SystemEventMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldPublishedAt(ctx)
 	case systemevent.FieldPayload:
 		return m.OldPayload(ctx)
+	case systemevent.FieldFailureReason:
+		return m.OldFailureReason(ctx)
 	}
 	return nil, fmt.Errorf("unknown SystemEvent field %s", name)
 }
@@ -56751,6 +56808,13 @@ func (m *SystemEventMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPayload(v)
 		return nil
+	case systemevent.FieldFailureReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureReason(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SystemEvent field %s", name)
 }
@@ -56808,6 +56872,9 @@ func (m *SystemEventMutation) ClearedFields() []string {
 	if m.FieldCleared(systemevent.FieldPayload) {
 		fields = append(fields, systemevent.FieldPayload)
 	}
+	if m.FieldCleared(systemevent.FieldFailureReason) {
+		fields = append(fields, systemevent.FieldFailureReason)
+	}
 	return fields
 }
 
@@ -56848,6 +56915,9 @@ func (m *SystemEventMutation) ClearField(name string) error {
 		return nil
 	case systemevent.FieldPayload:
 		m.ClearPayload()
+		return nil
+	case systemevent.FieldFailureReason:
+		m.ClearFailureReason()
 		return nil
 	}
 	return fmt.Errorf("unknown SystemEvent nullable field %s", name)
@@ -56895,6 +56965,9 @@ func (m *SystemEventMutation) ResetField(name string) error {
 		return nil
 	case systemevent.FieldPayload:
 		m.ResetPayload()
+		return nil
+	case systemevent.FieldFailureReason:
+		m.ResetFailureReason()
 		return nil
 	}
 	return fmt.Errorf("unknown SystemEvent field %s", name)
