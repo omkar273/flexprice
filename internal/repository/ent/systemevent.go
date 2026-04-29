@@ -122,6 +122,18 @@ func (r *SystemEventRepository) OnDelivered(ctx context.Context, eventID string,
 		Exec(ctx)
 }
 
+// OnFailed records the reason a webhook delivery failed. It overwrites any
+// previous failure_reason and never clears it — not even on later success.
+func (r *SystemEventRepository) OnFailed(ctx context.Context, eventID, reason string) error {
+	if eventID == "" {
+		return nil
+	}
+	return r.client.Writer(ctx).SystemEvent.UpdateOneID(eventID).
+		SetUpdatedAt(time.Now().UTC()).
+		SetFailureReason(reason).
+		Exec(ctx)
+}
+
 func toPayloadMap(raw json.RawMessage) (map[string]interface{}, error) {
 	if len(raw) == 0 {
 		return nil, nil

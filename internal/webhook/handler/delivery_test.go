@@ -78,7 +78,7 @@ func TestAbsorbDeliveryError_NilErrNoPanic(t *testing.T) {
 
 	h := &handler{logger: testLogger(t)}
 	require.NotPanics(t, func() {
-		h.absorbDeliveryError("native", nil, &types.WebhookEvent{EventName: "x"}, "mid")
+		h.absorbDeliveryError(context.Background(), "native", nil, &types.WebhookEvent{EventName: "x"}, "mid")
 	})
 }
 
@@ -88,9 +88,26 @@ func TestAbsorbDeliveryError_MissingEntityUsesSkipLogSemantics(t *testing.T) {
 	h := &handler{logger: testLogger(t)}
 	missing := ierr.NewError("invoice not found").Mark(ierr.ErrNotFound)
 	require.NotPanics(t, func() {
-		h.absorbDeliveryError("native", missing, &types.WebhookEvent{
+		h.absorbDeliveryError(context.Background(), "native", missing, &types.WebhookEvent{
 			TenantID:  "ten_1",
 			EventName: types.WebhookEventInvoiceUpdateFinalized,
+		}, "mid")
+	})
+}
+
+func TestAbsorbDeliveryError_RealErrorNoPanicWithoutRepo(t *testing.T) {
+	t.Parallel()
+
+	h := &handler{
+		// systemEventRepo intentionally nil — guards must handle this safely
+		logger: testLogger(t),
+	}
+	deliveryErr := ierr.NewError("connection refused").Mark(ierr.ErrInternal)
+	require.NotPanics(t, func() {
+		h.absorbDeliveryError(context.Background(), "native", deliveryErr, &types.WebhookEvent{
+			ID:        "sev_1",
+			TenantID:  "ten_1",
+			EventName: types.WebhookEventCustomerCreated,
 		}, "mid")
 	})
 }
