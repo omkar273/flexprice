@@ -120,6 +120,12 @@ func (s *WebhookService) RetryStalePendingWebhooks(ctx context.Context) (RetrySt
 					"tenant_id", se.TenantID,
 					"environment_id", se.EnvironmentID,
 				)
+				if dbErr := s.systemEventRepo.OnFailed(ctx, se.ID, err.Error()); dbErr != nil {
+					s.logger.Warnw("failed to persist webhook failure_reason on stale retry",
+						"error", dbErr,
+						"system_event_id", se.ID,
+					)
+				}
 				continue
 			}
 			out.Succeeded++
