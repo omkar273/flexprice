@@ -129,8 +129,9 @@ func webhookMissingDataError(err error) bool {
 	return ierr.IsNotFound(err) || ent.IsNotFound(err)
 }
 
-// absorbDeliveryError logs delivery failures for the Kafka consumer path and always acks (returns are handled by caller).
-func (h *handler) absorbDeliveryError(transport string, err error, event *types.WebhookEvent, messageUUID string) {
+// absorbDeliveryError logs delivery failures for the Kafka consumer path and always acks.
+// It also persists the failure reason on the system_events row so it is never silently dropped.
+func (h *handler) absorbDeliveryError(ctx context.Context, transport string, err error, event *types.WebhookEvent, messageUUID string) {
 	if err == nil {
 		return
 	}
@@ -142,15 +143,23 @@ func (h *handler) absorbDeliveryError(transport string, err error, event *types.
 			"event_name", event.EventName,
 			"tenant_id", event.TenantID,
 		)
-		return
+	} else {
+		h.logger.Errorw("failed to send webhook",
+			"transport", transport,
+			"error", err,
+			"message_uuid", messageUUID,
+			"tenant_id", event.TenantID,
+			"event", event.EventName,
+		)
 	}
-	h.logger.Errorw("failed to send webhook",
-		"transport", transport,
-		"error", err,
-		"message_uuid", messageUUID,
-		"tenant_id", event.TenantID,
-		"event", event.EventName,
-	)
+	if h.systemEventRepo != nil && event.ID != "" {
+		if dbErr := h.systemEventRepo.OnFailed(ctx, event.ID, err.Error()); dbErr != nil {
+			h.logger.Warnw("failed to persist webhook failure_reason",
+				"error", dbErr,
+				"event_id", event.ID,
+			)
+		}
+	}
 }
 
 // processMessage processes a single webhook message from the system_events topic:
@@ -184,11 +193,11 @@ func (h *handler) processMessage(msg *message.Message) error {
 	)
 
 	if h.config.Svix.Enabled {
-		h.absorbDeliveryError("svix", h.deliverSvix(ctx, &event, msg.UUID), &event, msg.UUID)
+		h.absorbDeliveryError(ctx, "svix", h.deliverSvix(ctx, &event, msg.UUID), &event, msg.UUID)
 		return nil
 	}
 
-	h.absorbDeliveryError("native", h.deliverNative(ctx, &event, msg.UUID), &event, msg.UUID)
+	h.absorbDeliveryError(ctx, "native", h.deliverNative(ctx, &event, msg.UUID), &event, msg.UUID)
 	return nil
 }
 
