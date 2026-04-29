@@ -58,6 +58,12 @@ func (SystemEvent) Fields() []ent.Field {
 				"postgres": "jsonb",
 			}).
 			Optional(),
+		field.String("failure_reason").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{
+				"postgres": "text",
+			}),
 	}
 }
 
