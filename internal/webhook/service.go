@@ -17,6 +17,7 @@ import (
 	"github.com/flexprice/flexprice/internal/webhook/handler"
 	"github.com/flexprice/flexprice/internal/webhook/payload"
 	"github.com/flexprice/flexprice/internal/webhook/publisher"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -31,6 +32,15 @@ type RetryStalePendingWebhooksResult struct {
 	Failed    int `json:"failed"`
 }
 
+// systemEventRepo is the subset of SystemEventRepository methods used by WebhookService.
+type systemEventRepo interface {
+	ListStaleUndeliveredWebhooks(ctx context.Context, params repoent.ListStaleUndeliveredWebhooksParams) ([]*flexent.SystemEvent, error)
+	GetByID(ctx context.Context, tenantID, environmentID, id string) (*flexent.SystemEvent, error)
+	OnConsumed(ctx context.Context, event *types.WebhookEvent) error
+	OnDelivered(ctx context.Context, eventID string, webhookMessageID *string) error
+	OnFailed(ctx context.Context, eventID, reason string) error
+}
+
 // WebhookService orchestrates webhook operations
 type WebhookService struct {
 	config          *config.Configuration
@@ -39,7 +49,7 @@ type WebhookService struct {
 	factory         payload.PayloadBuilderFactory
 	client          httpclient.Client
 	logger          *logger.Logger
-	systemEventRepo *repoent.SystemEventRepository
+	systemEventRepo systemEventRepo
 }
 
 // NewWebhookService creates a new webhook service
@@ -50,7 +60,7 @@ func NewWebhookService(
 	f payload.PayloadBuilderFactory,
 	c httpclient.Client,
 	l *logger.Logger,
-	systemEventRepo *repoent.SystemEventRepository,
+	systemEventRepo systemEventRepo,
 ) *WebhookService {
 	return &WebhookService{
 		config:          cfg,
@@ -95,12 +105,35 @@ func (s *WebhookService) RetriggerSystemEvent(ctx context.Context, tenantID, env
 }
 
 // RetryStalePendingWebhooks loads undelivered system_events older than the grace period and
-// delivers each via RetriggerSystemEvent. Pages until a batch smaller than staleWebhookPageSize.
+// delivers each via RetriggerSystemEvent. Behaviour is controlled by cfg.WebhookRetryJob.
 func (s *WebhookService) RetryStalePendingWebhooks(ctx context.Context) (RetryStalePendingWebhooksResult, error) {
 	var out RetryStalePendingWebhooksResult
+
 	if !s.config.Webhook.Enabled {
 		return out, nil
 	}
+
+	jobCfg := s.config.WebhookRetryJob
+	if !jobCfg.Enabled {
+		return out, nil
+	}
+
+	// Build fast-lookup sets for in-memory filtering.
+	excludedTenants := make(map[string]struct{}, len(jobCfg.ExcludedTenants))
+	for _, id := range jobCfg.ExcludedTenants {
+		excludedTenants[id] = struct{}{}
+	}
+	allowedEvents := make(map[string]struct{}, len(jobCfg.AllowedEventTypes))
+	for _, name := range jobCfg.AllowedEventTypes {
+		allowedEvents[name] = struct{}{}
+	}
+
+	// Token-bucket rate limiter: RateLimit deliveries per second.
+	rps := jobCfg.RateLimit
+	if rps <= 0 {
+		rps = 5
+	}
+	limiter := rate.NewLimiter(rate.Limit(rps), rps)
 
 	cutoff := time.Now().UTC().Add(-staleWebhookGracePeriod)
 
@@ -108,14 +141,32 @@ func (s *WebhookService) RetryStalePendingWebhooks(ctx context.Context) (RetrySt
 		rows, err := s.systemEventRepo.ListStaleUndeliveredWebhooks(ctx, repoent.ListStaleUndeliveredWebhooksParams{
 			OlderThan:   cutoff,
 			Limit:       staleWebhookPageSize,
-			MaxAttempts: 5,
+			MaxAttempts: jobCfg.MaxAttempts,
 		})
 		if err != nil {
 			return out, err
 		}
 
 		for _, se := range rows {
+			// Skip excluded tenants.
+			if _, skip := excludedTenants[se.TenantID]; skip {
+				continue
+			}
+
+			// Skip event types not in the allowlist (when allowlist is non-empty).
+			if len(allowedEvents) > 0 {
+				if _, ok := allowedEvents[string(se.EventName)]; !ok {
+					continue
+				}
+			}
+
 			out.Total++
+
+			// Throttle delivery rate.
+			if err := limiter.Wait(ctx); err != nil {
+				return out, err
+			}
+
 			if err := s.RetriggerSystemEvent(ctx, se.TenantID, se.EnvironmentID, se.ID); err != nil {
 				out.Failed++
 				s.logger.Errorw("stale webhook retry failed",
