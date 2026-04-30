@@ -8,11 +8,11 @@ import (
 
 	flexent "github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/internal/config"
+	domainsystemevent "github.com/flexprice/flexprice/internal/domain/systemevent"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/httpclient"
 	"github.com/flexprice/flexprice/internal/logger"
 	pubsubRouter "github.com/flexprice/flexprice/internal/pubsub/router"
-	repoent "github.com/flexprice/flexprice/internal/repository/ent"
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/flexprice/flexprice/internal/webhook/handler"
 	"github.com/flexprice/flexprice/internal/webhook/payload"
@@ -40,7 +40,7 @@ type WebhookService struct {
 	factory         payload.PayloadBuilderFactory
 	client          httpclient.Client
 	logger          *logger.Logger
-	systemEventRepo *repoent.SystemEventRepository
+	systemEventRepo domainsystemevent.Repository
 }
 
 // NewWebhookService creates a new webhook service
@@ -51,7 +51,7 @@ func NewWebhookService(
 	f payload.PayloadBuilderFactory,
 	c httpclient.Client,
 	l *logger.Logger,
-	systemEventRepo *repoent.SystemEventRepository,
+	systemEventRepo domainsystemevent.Repository,
 ) *WebhookService {
 	return &WebhookService{
 		config:          cfg,
@@ -119,7 +119,7 @@ func (s *WebhookService) RetryStalePendingWebhooks(ctx context.Context) (RetrySt
 	cutoff := time.Now().UTC().Add(-staleWebhookGracePeriod)
 
 	for {
-		rows, err := s.systemEventRepo.ListStaleUndeliveredWebhooks(ctx, repoent.ListStaleUndeliveredWebhooksParams{
+		rows, err := s.systemEventRepo.ListStaleUndeliveredWebhooks(ctx, domainsystemevent.ListStaleUndeliveredWebhooksParams{
 			OlderThan:         cutoff,
 			Limit:             staleWebhookPageSize,
 			MaxAttempts:       jobCfg.MaxAttempts,

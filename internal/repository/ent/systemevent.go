@@ -8,6 +8,7 @@ import (
 	flexent "github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/ent/predicate"
 	"github.com/flexprice/flexprice/ent/systemevent"
+	domainsystemevent "github.com/flexprice/flexprice/internal/domain/systemevent"
 	"github.com/flexprice/flexprice/internal/postgres"
 	"github.com/flexprice/flexprice/internal/types"
 )
@@ -19,14 +20,6 @@ type SystemEventRepository struct {
 
 func NewSystemEventRepository(client postgres.IClient) *SystemEventRepository {
 	return &SystemEventRepository{client: client}
-}
-
-type ListStaleUndeliveredWebhooksParams struct {
-	OlderThan         time.Time
-	Limit             int
-	MaxAttempts       int
-	ExcludedTenants   []string
-	AllowedEventTypes []string
 }
 
 // GetByID returns a system_events row only when id matches tenant and environment.
@@ -43,7 +36,7 @@ func (r *SystemEventRepository) GetByID(ctx context.Context, tenantID, environme
 // ListStaleUndeliveredWebhooks returns system_events rows that were consumed but never
 // delivered (no published_at / webhook_message_id), with created_at strictly before olderThan.
 // Results are ordered by created_at ascending. Pass limit > 0 (caller caps page size).
-func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context, params ListStaleUndeliveredWebhooksParams) ([]*flexent.SystemEvent, error) {
+func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context, params domainsystemevent.ListStaleUndeliveredWebhooksParams) ([]*flexent.SystemEvent, error) {
 	if params.Limit <= 0 {
 		return nil, nil
 	}
