@@ -20,6 +20,12 @@ func NewSystemEventRepository(client postgres.IClient) *SystemEventRepository {
 	return &SystemEventRepository{client: client}
 }
 
+type ListStaleUndeliveredWebhooksParams struct {
+	OlderThan   time.Time
+	Limit       int
+	MaxAttempts int
+}
+
 // GetByID returns a system_events row only when id matches tenant and environment.
 func (r *SystemEventRepository) GetByID(ctx context.Context, tenantID, environmentID, id string) (*flexent.SystemEvent, error) {
 	return r.client.Reader(ctx).SystemEvent.Query().
@@ -34,21 +40,21 @@ func (r *SystemEventRepository) GetByID(ctx context.Context, tenantID, environme
 // ListStaleUndeliveredWebhooks returns system_events rows that were consumed but never
 // delivered (no published_at / webhook_message_id), with created_at strictly before olderThan.
 // Results are ordered by created_at ascending. Pass limit > 0 (caller caps page size).
-func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context, olderThan time.Time, limit, maxAttempts int) ([]*flexent.SystemEvent, error) {
-	if limit <= 0 {
+func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context, params ListStaleUndeliveredWebhooksParams) ([]*flexent.SystemEvent, error) {
+	if params.Limit <= 0 || params.MaxAttempts <= 0 {
 		return nil, nil
 	}
 	return r.client.Reader(ctx).SystemEvent.Query().
 		Where(
 			systemevent.WebhookMessageIDIsNil(),
 			systemevent.PublishedAtIsNil(),
-			systemevent.CreatedAtLT(olderThan),
+			systemevent.CreatedAtLT(params.OlderThan),
 			systemevent.EventNameNotNil(),
 			systemevent.EventNameNEQ(""),
-			systemevent.FailureCountLT(maxAttempts),
+			systemevent.FailureCountLT(params.MaxAttempts),
 		).
 		Order(flexent.Asc(systemevent.FieldCreatedAt)).
-		Limit(limit).
+		Limit(params.Limit).
 		All(ctx)
 }
 
