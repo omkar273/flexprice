@@ -59,7 +59,7 @@ type Configuration struct {
 	RawEventConsumption        RawEventConsumptionConfig        `mapstructure:"raw_event_consumption" validate:"required"`
 	IntegrationEvents          IntegrationEventsConfig          `mapstructure:"integration_events" validate:"omitempty"`
 	OnboardingEvents           OnboardingEventsConfig           `mapstructure:"onboarding_events" validate:"omitempty"`
-	WebhookRetryJob            WebhookRetryJob                  `mapstructure:"webhook_retry_job" validate:"omitempty"`
+	WebhookRetryJob            WebhookRetryJobConfig            `mapstructure:"webhook_retry_job" validate:"omitempty"`
 	Gemini                     GeminiConfig                     `mapstructure:"gemini" validate:"omitempty"`
 }
 
@@ -358,9 +358,9 @@ type OnboardingEventsConfig struct {
 	MaxRetries    int    `mapstructure:"max_retries" default:"3"`
 }
 
-// WebhookRetryJob configures the Temporal stale-webhook retry cron job.
+// WebhookRetryJobConfig configures the Temporal stale-webhook retry cron job.
 // All filtering is applied by the activity after the DB query.
-type WebhookRetryJob struct {
+type WebhookRetryJobConfig struct {
 	// Enabled is a kill switch — false exits the activity immediately with zero counts.
 	Enabled bool `mapstructure:"enabled" default:"true"`
 	// MaxAttempts is the maximum number of delivery failures before a system_event is
