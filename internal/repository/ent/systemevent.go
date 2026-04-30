@@ -6,6 +6,7 @@ import (
 	"time"
 
 	flexent "github.com/flexprice/flexprice/ent"
+	"github.com/flexprice/flexprice/ent/predicate"
 	"github.com/flexprice/flexprice/ent/systemevent"
 	"github.com/flexprice/flexprice/internal/postgres"
 	"github.com/flexprice/flexprice/internal/types"
@@ -21,9 +22,11 @@ func NewSystemEventRepository(client postgres.IClient) *SystemEventRepository {
 }
 
 type ListStaleUndeliveredWebhooksParams struct {
-	OlderThan   time.Time
-	Limit       int
-	MaxAttempts int
+	OlderThan         time.Time
+	Limit             int
+	MaxAttempts       int
+	ExcludedTenants   []string
+	AllowedEventTypes []string
 }
 
 // GetByID returns a system_events row only when id matches tenant and environment.
@@ -47,15 +50,22 @@ func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context
 	if params.MaxAttempts <= 0 {
 		params.MaxAttempts = 5
 	}
+	preds := []predicate.SystemEvent{
+		systemevent.WebhookMessageIDIsNil(),
+		systemevent.PublishedAtIsNil(),
+		systemevent.CreatedAtLT(params.OlderThan),
+		systemevent.EventNameNotNil(),
+		systemevent.EventNameNEQ(""),
+		systemevent.FailureCountLT(params.MaxAttempts),
+	}
+	if len(params.ExcludedTenants) > 0 {
+		preds = append(preds, systemevent.TenantIDNotIn(params.ExcludedTenants...))
+	}
+	if len(params.AllowedEventTypes) > 0 {
+		preds = append(preds, systemevent.EventNameIn(params.AllowedEventTypes...))
+	}
 	return r.client.Reader(ctx).SystemEvent.Query().
-		Where(
-			systemevent.WebhookMessageIDIsNil(),
-			systemevent.PublishedAtIsNil(),
-			systemevent.CreatedAtLT(params.OlderThan),
-			systemevent.EventNameNotNil(),
-			systemevent.EventNameNEQ(""),
-			systemevent.FailureCountLT(params.MaxAttempts),
-		).
+		Where(preds...).
 		Order(flexent.Asc(systemevent.FieldCreatedAt)).
 		Limit(params.Limit).
 		All(ctx)

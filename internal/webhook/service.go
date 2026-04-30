@@ -32,15 +32,6 @@ type RetryStalePendingWebhooksResult struct {
 	Failed    int `json:"failed"`
 }
 
-// systemEventRepo is the subset of SystemEventRepository methods used by WebhookService.
-type systemEventRepo interface {
-	ListStaleUndeliveredWebhooks(ctx context.Context, params repoent.ListStaleUndeliveredWebhooksParams) ([]*flexent.SystemEvent, error)
-	GetByID(ctx context.Context, tenantID, environmentID, id string) (*flexent.SystemEvent, error)
-	OnConsumed(ctx context.Context, event *types.WebhookEvent) error
-	OnDelivered(ctx context.Context, eventID string, webhookMessageID *string) error
-	OnFailed(ctx context.Context, eventID, reason string) error
-}
-
 // WebhookService orchestrates webhook operations
 type WebhookService struct {
 	config          *config.Configuration
@@ -49,7 +40,7 @@ type WebhookService struct {
 	factory         payload.PayloadBuilderFactory
 	client          httpclient.Client
 	logger          *logger.Logger
-	systemEventRepo systemEventRepo
+	systemEventRepo *repoent.SystemEventRepository
 }
 
 // NewWebhookService creates a new webhook service
@@ -60,7 +51,7 @@ func NewWebhookService(
 	f payload.PayloadBuilderFactory,
 	c httpclient.Client,
 	l *logger.Logger,
-	systemEventRepo systemEventRepo,
+	systemEventRepo *repoent.SystemEventRepository,
 ) *WebhookService {
 	return &WebhookService{
 		config:          cfg,
@@ -118,16 +109,6 @@ func (s *WebhookService) RetryStalePendingWebhooks(ctx context.Context) (RetrySt
 		return out, nil
 	}
 
-	// Build fast-lookup sets for in-memory filtering.
-	excludedTenants := make(map[string]struct{}, len(jobCfg.ExcludedTenants))
-	for _, id := range jobCfg.ExcludedTenants {
-		excludedTenants[id] = struct{}{}
-	}
-	allowedEvents := make(map[string]struct{}, len(jobCfg.AllowedEventTypes))
-	for _, name := range jobCfg.AllowedEventTypes {
-		allowedEvents[name] = struct{}{}
-	}
-
 	// Token-bucket rate limiter: RateLimit deliveries per second.
 	rps := jobCfg.RateLimit
 	if rps <= 0 {
@@ -139,27 +120,17 @@ func (s *WebhookService) RetryStalePendingWebhooks(ctx context.Context) (RetrySt
 
 	for {
 		rows, err := s.systemEventRepo.ListStaleUndeliveredWebhooks(ctx, repoent.ListStaleUndeliveredWebhooksParams{
-			OlderThan:   cutoff,
-			Limit:       staleWebhookPageSize,
-			MaxAttempts: jobCfg.MaxAttempts,
+			OlderThan:         cutoff,
+			Limit:             staleWebhookPageSize,
+			MaxAttempts:       jobCfg.MaxAttempts,
+			ExcludedTenants:   jobCfg.ExcludedTenants,
+			AllowedEventTypes: jobCfg.AllowedEventTypes,
 		})
 		if err != nil {
 			return out, err
 		}
 
 		for _, se := range rows {
-			// Skip excluded tenants.
-			if _, skip := excludedTenants[se.TenantID]; skip {
-				continue
-			}
-
-			// Skip event types not in the allowlist (when allowlist is non-empty).
-			if len(allowedEvents) > 0 {
-				if _, ok := allowedEvents[string(se.EventName)]; !ok {
-					continue
-				}
-			}
-
 			out.Total++
 
 			// Throttle delivery rate.
