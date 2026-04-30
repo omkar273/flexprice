@@ -25,9 +25,9 @@ Added inline to `internal/config/config.go`:
 ```go
 type WebhookRetryJob struct {
     Enabled           bool     `mapstructure:"enabled" default:"true"`
-    MaxFailureCount   int      `mapstructure:"max_failure_count" default:"5"`
-    RateLimitRPS      int      `mapstructure:"rate_limit_rps" default:"5"`
-    TenantsToSkip     []string `mapstructure:"tenants_to_skip"`
+    MaxAttempts       int      `mapstructure:"max_attempts" default:"5"`
+    RateLimit         int      `mapstructure:"rate_limit" default:"5"`
+    ExcludedTenants   []string `mapstructure:"excluded_tenants"`
     AllowedEventTypes []string `mapstructure:"allowed_event_types"`
 }
 ```
@@ -43,9 +43,9 @@ WebhookRetryJob WebhookRetryJob `mapstructure:"webhook_retry_job"`
 | Field | Default | Behaviour when empty/zero |
 |---|---|---|
 | `enabled` | `true` | `false` = activity exits immediately, no events processed |
-| `max_failure_count` | `5` | Replaces hardcoded `FailureCountLT(4)` in repository query |
-| `rate_limit_rps` | `5` | Token-bucket rate limiter around per-event retry loop in activity |
-| `tenants_to_skip` | `[]` | Empty = process all tenants; non-empty = skip listed tenant IDs |
+| `max_attempts` | `5` | Replaces hardcoded `FailureCountLT(4)` in repository query |
+| `rate_limit` | `5` | Token-bucket rate limiter (RPS) around per-event retry loop in activity |
+| `excluded_tenants` | `[]` | Empty = process all tenants; non-empty = skip listed tenant IDs |
 | `allowed_event_types` | `[]` | Empty = process all event types; non-empty = only retry listed event names |
 
 ## YAML Block
@@ -55,9 +55,9 @@ Added to `internal/config/config.yaml`:
 ```yaml
 webhook_retry_job:
   enabled: true
-  max_failure_count: 5
-  rate_limit_rps: 5
-  tenants_to_skip: []
+  max_attempts: 5
+  rate_limit: 5
+  excluded_tenants: []
   allowed_event_types: []
 ```
 
@@ -68,9 +68,9 @@ File: `internal/temporal/activities/cron/webhook_outbound_retry_activities.go`
 Changes to `RetryStalePendingWebhooks` (called by the activity):
 
 1. **Kill switch** — check `cfg.WebhookRetryJob.Enabled` at entry; return early with zero counts if false.
-2. **MaxFailureCount** — pass to repository `ListStaleUndeliveredWebhooks` to replace the hardcoded `FailureCountLT(4)`.
-3. **TenantsToSkip / AllowedEventTypes** — in-memory filters applied on each fetched batch (page size 500); `MaxFailureCount` is the only value pushed into the DB query (replaces `FailureCountLT(4)`).
-4. **RateLimitRPS** — `golang.org/x/time/rate` token bucket (`rate.NewLimiter(rate.Limit(rps), rps)`) wraps the per-event retry call.
+2. **MaxAttempts** — passed to repository `ListStaleUndeliveredWebhooks` to replace the hardcoded `FailureCountLT(4)`.
+3. **ExcludedTenants / AllowedEventTypes** — in-memory filters applied on each fetched batch (page size 500); `MaxAttempts` is the only value pushed into the DB query.
+4. **RateLimit** — `golang.org/x/time/rate` token bucket (`rate.NewLimiter(rate.Limit(rps), rps)`) wraps the per-event retry call.
 
 ## Files Touched
 
@@ -78,8 +78,8 @@ Changes to `RetryStalePendingWebhooks` (called by the activity):
 |---|---|
 | `internal/config/config.go` | Add `WebhookRetryJob` struct + field on `Configuration` |
 | `internal/config/config.yaml` | Add `webhook_retry_job:` block with defaults |
-| `internal/repository/ent/systemevent.go` | Accept `maxFailureCount int` param in `ListStaleUndeliveredWebhooks` |
-| `internal/webhook/service.go` | Thread `maxFailureCount`, `tenantsToSkip`, `allowedEventTypes` into `RetryStalePendingWebhooks` |
+| `internal/repository/ent/systemevent.go` | Accept `maxAttempts int` param in `ListStaleUndeliveredWebhooks` |
+| `internal/webhook/service.go` | Thread `maxAttempts`, `excludedTenants`, `allowedEventTypes` into `RetryStalePendingWebhooks` |
 | `internal/temporal/activities/cron/webhook_outbound_retry_activities.go` | Read config, apply kill switch, pass params, apply rate limiter |
 
 ## What Is Not Changing
