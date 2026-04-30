@@ -41,8 +41,11 @@ func (r *SystemEventRepository) GetByID(ctx context.Context, tenantID, environme
 // delivered (no published_at / webhook_message_id), with created_at strictly before olderThan.
 // Results are ordered by created_at ascending. Pass limit > 0 (caller caps page size).
 func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context, params ListStaleUndeliveredWebhooksParams) ([]*flexent.SystemEvent, error) {
-	if params.Limit <= 0 || params.MaxAttempts <= 0 {
+	if params.Limit <= 0 {
 		return nil, nil
+	}
+	if params.MaxAttempts <= 0 {
+		params.MaxAttempts = 5
 	}
 	return r.client.Reader(ctx).SystemEvent.Query().
 		Where(
