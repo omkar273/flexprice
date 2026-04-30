@@ -105,7 +105,7 @@ func (s *WebhookService) RetryStalePendingWebhooks(ctx context.Context) (RetrySt
 	cutoff := time.Now().UTC().Add(-staleWebhookGracePeriod)
 
 	for {
-		rows, err := s.systemEventRepo.ListStaleUndeliveredWebhooks(ctx, cutoff, staleWebhookPageSize)
+		rows, err := s.systemEventRepo.ListStaleUndeliveredWebhooks(ctx, cutoff, staleWebhookPageSize, 5)
 		if err != nil {
 			return out, err
 		}

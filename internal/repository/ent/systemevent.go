@@ -34,7 +34,7 @@ func (r *SystemEventRepository) GetByID(ctx context.Context, tenantID, environme
 // ListStaleUndeliveredWebhooks returns system_events rows that were consumed but never
 // delivered (no published_at / webhook_message_id), with created_at strictly before olderThan.
 // Results are ordered by created_at ascending. Pass limit > 0 (caller caps page size).
-func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context, olderThan time.Time, limit int) ([]*flexent.SystemEvent, error) {
+func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context, olderThan time.Time, limit, maxAttempts int) ([]*flexent.SystemEvent, error) {
 	if limit <= 0 {
 		return nil, nil
 	}
@@ -45,7 +45,7 @@ func (r *SystemEventRepository) ListStaleUndeliveredWebhooks(ctx context.Context
 			systemevent.CreatedAtLT(olderThan),
 			systemevent.EventNameNotNil(),
 			systemevent.EventNameNEQ(""),
-			systemevent.FailureCountLT(4),
+			systemevent.FailureCountLT(maxAttempts),
 		).
 		Order(flexent.Asc(systemevent.FieldCreatedAt)).
 		Limit(limit).
