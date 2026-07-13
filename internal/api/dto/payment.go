@@ -68,6 +68,10 @@ type PaymentResponse struct {
 	ErrorMessage           *string                      `json:"error_message,omitempty"`
 	Attempts               []*PaymentAttemptResponse    `json:"attempts,omitempty"`
 	InvoiceNumber          *string                      `json:"invoice_number,omitempty"`
+	// RefundedAmount is the total amount claimed by refunds against this payment.
+	RefundedAmount         decimal.Decimal              `json:"refunded_amount" swaggertype:"string"`
+	// Refunds contains the refunds associated with this payment (populated when expanded).
+	Refunds                []*RefundResponse            `json:"refunds,omitempty"`
 	TenantID               string                       `json:"tenant_id"`
 	SaveCardAndMakeDefault bool                         `json:"save_card_and_make_default"`
 	CreatedAt              time.Time                    `json:"created_at"`
@@ -119,6 +123,7 @@ func NewPaymentResponse(p *payment.Payment) *PaymentResponse {
 		RefundedAt:        p.RefundedAt,
 		VoidedAt:          p.VoidedAt,
 		ErrorMessage:      p.ErrorMessage,
+		RefundedAmount:    p.RefundedAmount,
 		TenantID:          p.TenantID,
 		CreatedAt:         p.CreatedAt,
 		UpdatedAt:         p.UpdatedAt,
