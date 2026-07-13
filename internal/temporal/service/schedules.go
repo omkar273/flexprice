@@ -99,6 +99,13 @@ func AllTemporalScheduleConfigs() []types.ScheduleConfig {
 			Input:     models.CheckoutSessionExpiryWorkflowInput{},
 			TaskQueue: types.TemporalTaskQueueCron,
 		},
+		{
+			ID:        types.ScheduleIDRefundRecovery,
+			Interval:  1 * time.Minute,
+			Workflow:  cronWorkflows.RefundRecoveryWorkflow,
+			Input:     models.RefundRecoveryWorkflowInput{},
+			TaskQueue: types.TemporalTaskQueueCron,
+		},
 	}
 }
 

@@ -42,6 +42,10 @@ type Repository interface {
 	// IncrementPaymentRefundedAmount increments payment.refunded_amount by delta under a SELECT FOR UPDATE lock.
 	// Must be called within a transaction. delta can be negative to release a previously claimed amount.
 	IncrementPaymentRefundedAmount(ctx context.Context, paymentID string, delta decimal.Decimal) error
+
+	// ListStalePendingAll returns PENDING refunds across all tenants and environments
+	// where claimed_at is older than olderThan. Used by the cron recovery sweep.
+	ListStalePendingAll(ctx context.Context, olderThan time.Duration) ([]*Refund, error)
 }
 
 // RefundStatusUpdate contains optional fields to set alongside a status transition.
@@ -73,4 +77,8 @@ type WebhookEventRepository interface {
 
 	// IncrementAttempts bumps the attempts counter on the given event.
 	IncrementAttempts(ctx context.Context, id string) error
+
+	// ListUnprocessedAll returns unprocessed events across all tenants and environments
+	// whose created_at is older than minAge. Used by the cron recovery sweep.
+	ListUnprocessedAll(ctx context.Context, minAge time.Duration) ([]*RefundWebhookEvent, error)
 }

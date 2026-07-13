@@ -487,6 +487,39 @@ WHERE id = $2 AND tenant_id = $3 AND environment_id = $4`
 	return nil
 }
 
+// ListStalePendingAll returns PENDING refunds across all tenants and environments
+// where claimed_at is older than olderThan. This is an intentionally cross-tenant
+// query used exclusively by the cron recovery sweep.
+func (r *refundRepository) ListStalePendingAll(ctx context.Context, olderThan time.Duration) ([]*domainRefund.Refund, error) {
+	threshold := time.Now().UTC().Add(-olderThan)
+
+	span := StartRepositorySpan(ctx, "refund", "list_stale_pending_all", map[string]interface{}{
+		"older_than": olderThan.String(),
+		"threshold":  threshold,
+	})
+	defer FinishSpan(span)
+
+	client := r.client.Reader(ctx)
+
+	refs, err := client.Refund.Query().
+		Where(
+			entRefund.RefundStatus(string(types.RefundStatusPending)),
+			entRefund.ClaimedAtNotNil(),
+			entRefund.ClaimedAtLT(threshold),
+			entRefund.StatusNotIn(string(types.StatusDeleted)),
+		).
+		All(ctx)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to list stale pending refunds").
+			Mark(ierr.ErrDatabase)
+	}
+
+	SetSpanSuccess(span)
+	return domainRefund.FromEntList(refs), nil
+}
+
 // RefundQuery is a type alias for better readability
 type RefundQuery = *ent.RefundQuery
 

@@ -207,6 +207,38 @@ func (r *refundWebhookEventRepository) ListUnprocessed(ctx context.Context, minA
 	return domainRefund.FromEntWebhookEventList(events), nil
 }
 
+// ListUnprocessedAll returns unprocessed events across all tenants and environments
+// whose created_at is older than minAge. This is an intentionally cross-tenant
+// query used exclusively by the cron recovery sweep.
+func (r *refundWebhookEventRepository) ListUnprocessedAll(ctx context.Context, minAge time.Duration) ([]*domainRefund.RefundWebhookEvent, error) {
+	threshold := time.Now().UTC().Add(-minAge)
+
+	span := StartRepositorySpan(ctx, "refund_webhook_event", "list_unprocessed_all", map[string]interface{}{
+		"min_age":   minAge.String(),
+		"threshold": threshold,
+	})
+	defer FinishSpan(span)
+
+	client := r.client.Reader(ctx)
+
+	events, err := client.RefundWebhookEvent.Query().
+		Where(
+			entRWE.Processed(false),
+			entRWE.CreatedAtLTE(threshold),
+			entRWE.StatusNotIn(string(types.StatusDeleted)),
+		).
+		All(ctx)
+	if err != nil {
+		SetSpanError(span, err)
+		return nil, ierr.WithError(err).
+			WithHint("Failed to list all unprocessed refund webhook events").
+			Mark(ierr.ErrDatabase)
+	}
+
+	SetSpanSuccess(span)
+	return domainRefund.FromEntWebhookEventList(events), nil
+}
+
 // IncrementAttempts bumps the attempts counter on the given event.
 func (r *refundWebhookEventRepository) IncrementAttempts(ctx context.Context, id string) error {
 	span := StartRepositorySpan(ctx, "refund_webhook_event", "increment_attempts", map[string]interface{}{

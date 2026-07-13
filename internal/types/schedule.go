@@ -24,6 +24,7 @@ const (
 	ScheduleIDPaddleInvoicePullSync                   ScheduleID = "paddle-invoice-pull-sync"
 	ScheduleIDMoyasarAuthPaymentSettlement             ScheduleID = "moyasar-auth-payment-settlement"
 	ScheduleIDCheckoutSessionExpiry                    ScheduleID = "checkout-session-expiry"
+	ScheduleIDRefundRecovery                           ScheduleID = "refund-recovery"
 )
 
 // String returns the raw schedule id.
@@ -44,6 +45,7 @@ func AllTemporalServerScheduleIDs() []ScheduleID {
 		ScheduleIDPaddleInvoicePullSync,
 		ScheduleIDMoyasarAuthPaymentSettlement,
 		ScheduleIDCheckoutSessionExpiry,
+		ScheduleIDRefundRecovery,
 	}
 }
 
