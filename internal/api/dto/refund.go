@@ -14,6 +14,9 @@ import (
 // payment_id comes from the URL path, not the body.
 // IdempotencyKey is required per the refund spec.
 type CreateRefundRequest struct {
+	// PaymentID is populated from the URL path parameter, not the request body.
+	PaymentID string `json:"-"`
+
 	// amount is the monetary value to refund; must be > 0 and <= payment amount minus previously refunded amount
 	Amount decimal.Decimal `json:"amount" validate:"required" swaggertype:"string"`
 

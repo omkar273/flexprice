@@ -230,6 +230,14 @@ type CheckoutSessionService interface {
 	CompleteCheckoutSession(ctx context.Context, sessionID string, providerResult *types.CheckoutProviderResult) error
 }
 
+// RefundService defines the interface for gateway refund operations.
+type RefundService interface {
+	CreateRefund(ctx context.Context, req *dto.CreateRefundRequest) (*dto.RefundResponse, error)
+	GetRefund(ctx context.Context, id string) (*dto.RefundResponse, error)
+	ListRefunds(ctx context.Context, filter *types.RefundFilter) (*dto.ListRefundsResponse, error)
+	CancelRefund(ctx context.Context, id string) (*dto.RefundResponse, error)
+}
+
 type ServiceDependencies struct {
 	CustomerService                 CustomerService
 	PaymentService                  PaymentService
