@@ -11,12 +11,14 @@ import (
 
 	"github.com/flexprice/flexprice/internal/api/dto"
 	"github.com/flexprice/flexprice/internal/config"
+	domainRefund "github.com/flexprice/flexprice/internal/domain/refund"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/integration"
 	chargebeewebhook "github.com/flexprice/flexprice/internal/integration/chargebee/webhook"
 	moyasarwebhook "github.com/flexprice/flexprice/internal/integration/moyasar/webhook"
 	nomodwebhook "github.com/flexprice/flexprice/internal/integration/nomod/webhook"
 	paddlewebhook "github.com/flexprice/flexprice/internal/integration/paddle/webhook"
+	"github.com/flexprice/flexprice/internal/integration/payments"
 	quickbookswebhook "github.com/flexprice/flexprice/internal/integration/quickbooks/webhook"
 	razorpaywebhook "github.com/flexprice/flexprice/internal/integration/razorpay/webhook"
 	"github.com/flexprice/flexprice/internal/integration/stripe/webhook"
@@ -46,6 +48,10 @@ type WebhookHandler struct {
 	checkoutSessionService          interfaces.CheckoutSessionService
 	db                              postgres.IClient
 	webhookService                  *flexwebhook.WebhookService
+	// Refund webhook handling — wired by DI; nil means refund events are not yet configured.
+	refundRepo             domainRefund.Repository
+	refundWebhookEventRepo domainRefund.WebhookEventRepository
+	refundLifecycle        *payments.RefundLifecycle
 }
 
 // NewWebhookHandler creates a new webhook handler
@@ -63,6 +69,9 @@ func NewWebhookHandler(
 	checkoutSessionService interfaces.CheckoutSessionService,
 	db postgres.IClient,
 	webhookService *flexwebhook.WebhookService,
+	refundRepo domainRefund.Repository,
+	refundWebhookEventRepo domainRefund.WebhookEventRepository,
+	refundLifecycle *payments.RefundLifecycle,
 ) *WebhookHandler {
 	return &WebhookHandler{
 		config:                          cfg,
@@ -78,6 +87,9 @@ func NewWebhookHandler(
 		checkoutSessionService:          checkoutSessionService,
 		db:                              db,
 		webhookService:                  webhookService,
+		refundRepo:                      refundRepo,
+		refundWebhookEventRepo:          refundWebhookEventRepo,
+		refundLifecycle:                 refundLifecycle,
 	}
 }
 
@@ -235,6 +247,92 @@ func (h *WebhookHandler) HandleStripeWebhook(c *gin.Context) {
 		h.logger.Error(c.Request.Context(), "failed to parse/verify Stripe webhook event", "error", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to verify webhook signature or parse event",
+		})
+		return
+	}
+
+	// Handle refund events inline — inbox-first, then lifecycle update.
+	// refund.updated → RecordRefundSucceeded; refund.failed → RecordRefundFailed.
+	// charge.refunded is redundant with refund.updated and is intentionally ignored.
+	// On GetByGatewayRefundID miss, return 5xx so Stripe's own retry-with-backoff
+	// redelivers a few seconds later, by which time Phase 3 will have committed.
+	switch string(event.Type) {
+	case "refund.updated", "refund.failed":
+		if h.refundRepo == nil || h.refundWebhookEventRepo == nil || h.refundLifecycle == nil {
+			h.logger.Error(ctx, "refund webhook handling not configured (nil deps) — rejecting so Stripe retries",
+				"event_type", event.Type,
+				"event_id", event.ID,
+			)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Refund handling not configured",
+			})
+			return
+		}
+
+		// Persist to inbox FIRST — makes the event retryable by the recovery sweep
+		// regardless of what happens next. ON CONFLICT DO NOTHING deduplicates.
+		var rawPayload map[string]interface{}
+		_ = json.Unmarshal(body, &rawPayload)
+		inboxEvent := &domainRefund.RefundWebhookEvent{
+			ID:             types.GenerateUUIDWithPrefix("rwhe"),
+			Gateway:        "stripe",
+			GatewayEventID: event.ID,
+			RawPayload:     rawPayload,
+			Processed:      false,
+		}
+		_ = h.refundWebhookEventRepo.Create(ctx, inboxEvent)
+
+		// Extract the gateway refund ID from event.Data.Raw
+		var refundObj struct {
+			ID string `json:"id"`
+		}
+		if err := json.Unmarshal(event.Data.Raw, &refundObj); err != nil || refundObj.ID == "" {
+			h.logger.Error(ctx, "failed to extract refund ID from Stripe event data",
+				"event_type", event.Type,
+				"event_id", event.ID,
+				"error", err,
+			)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid refund event data",
+			})
+			return
+		}
+		gatewayRefundID := refundObj.ID
+
+		var lifecycleErr error
+		if string(event.Type) == "refund.updated" {
+			lifecycleErr = h.refundLifecycle.RecordRefundSucceeded(ctx, gatewayRefundID)
+		} else {
+			lifecycleErr = h.refundLifecycle.RecordRefundFailed(ctx, gatewayRefundID, "Gateway reported refund failed")
+		}
+
+		if lifecycleErr != nil {
+			h.logger.Error(ctx, "failed to process Stripe refund lifecycle",
+				"event_type", event.Type,
+				"event_id", event.ID,
+				"gateway_refund_id", gatewayRefundID,
+				"error", lifecycleErr,
+			)
+			// Return 5xx so Stripe retries — handles the webhook-before-commit race
+			// where GetByGatewayRefundID misses because Phase 3 hasn't committed yet.
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to process refund event",
+			})
+			return
+		}
+
+		// Mark the inbox event processed so the recovery sweep skips it
+		if existingInbox, lookupErr := h.refundWebhookEventRepo.GetByGatewayEventID(ctx, "stripe", event.ID); lookupErr == nil {
+			_ = h.refundWebhookEventRepo.MarkProcessed(ctx, existingInbox.ID, nil)
+		}
+
+		h.logger.Info(ctx, "Stripe refund webhook processed successfully",
+			"event_type", event.Type,
+			"event_id", event.ID,
+			"gateway_refund_id", gatewayRefundID,
+		)
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Webhook processed successfully",
 		})
 		return
 	}
@@ -500,6 +598,164 @@ func (h *WebhookHandler) HandleRazorpayWebhook(c *gin.Context) {
 	err = json.Unmarshal(body, &event)
 	if err != nil {
 		h.logger.Error(context.Background(), "failed to parse Razorpay webhook payload", "error", err)
+		return
+	}
+
+	// Handle refund events inline with inbox-first persistence and Razorpay-specific
+	// fallback logic. Razorpay always ACKs 200 (defer at top of handler) so we never
+	// return 5xx here — on a GetByGatewayRefundID miss, fall back to the payment_id
+	// lookup; if that also fails, mark the inbox event unprocessed for the recovery sweep.
+	switch event.Event {
+	case string(razorpaywebhook.EventRefundProcessed), string(razorpaywebhook.EventRefundFailed):
+		if h.refundRepo == nil || h.refundWebhookEventRepo == nil || h.refundLifecycle == nil {
+			h.logger.Error(context.Background(), "refund webhook handling not configured (nil deps)",
+				"event_type", event.Event,
+				"event_id", eventID,
+			)
+			return
+		}
+
+		refundEntity := event.Payload.Refund.Entity
+		gatewayRefundID := refundEntity.ID
+		paymentID := refundEntity.PaymentID
+
+		// Use the event-level header ID for inbox dedup; fall back to refund ID if missing.
+		gatewayEventID := eventID
+		if gatewayEventID == "" {
+			gatewayEventID = gatewayRefundID
+		}
+		if gatewayEventID == "" {
+			gatewayEventID = types.GenerateUUIDWithPrefix("rwhe")
+		}
+
+		// Persist to inbox FIRST — makes the event retryable regardless of what follows.
+		var rawPayload map[string]interface{}
+		_ = json.Unmarshal(body, &rawPayload)
+		inboxEvent := &domainRefund.RefundWebhookEvent{
+			ID:             types.GenerateUUIDWithPrefix("rwhe"),
+			Gateway:        "razorpay",
+			GatewayEventID: gatewayEventID,
+			RawPayload:     rawPayload,
+			Processed:      false,
+		}
+		_ = h.refundWebhookEventRepo.Create(ctx, inboxEvent)
+
+		isSuccess := event.Event == string(razorpaywebhook.EventRefundProcessed)
+
+		// Primary lookup: find refund by the gateway refund ID set during Phase 3.
+		ref, lookupErr := h.refundRepo.GetByGatewayRefundID(ctx, gatewayRefundID)
+		if lookupErr != nil && !ierr.IsNotFound(lookupErr) {
+			h.logger.Error(context.Background(), "failed to look up Razorpay refund by gateway refund ID",
+				"gateway_refund_id", gatewayRefundID,
+				"error", lookupErr,
+			)
+			return
+		}
+
+		if ref != nil {
+			// Direct match found — drive lifecycle.
+			var lifecycleErr error
+			if isSuccess {
+				lifecycleErr = h.refundLifecycle.RecordRefundSucceeded(ctx, gatewayRefundID)
+			} else {
+				lifecycleErr = h.refundLifecycle.RecordRefundFailed(ctx, gatewayRefundID, "Gateway reported refund failed")
+			}
+			if lifecycleErr != nil {
+				h.logger.Error(context.Background(), "failed to process Razorpay refund lifecycle (direct match)",
+					"event_type", event.Event,
+					"gateway_refund_id", gatewayRefundID,
+					"error", lifecycleErr,
+				)
+				return
+			}
+			// Mark inbox processed
+			if existing, getErr := h.refundWebhookEventRepo.GetByGatewayEventID(ctx, "razorpay", gatewayEventID); getErr == nil {
+				refID := ref.ID
+				_ = h.refundWebhookEventRepo.MarkProcessed(ctx, existing.ID, &refID)
+			}
+			h.logger.Info(context.Background(), "Razorpay refund webhook processed (direct match)",
+				"event_type", event.Event,
+				"gateway_refund_id", gatewayRefundID,
+			)
+			return
+		}
+
+		// GatewayRefundID miss — webhook arrived before Phase 3 committed (race).
+		// Fallback: look for the single in-flight refund for this payment_id with
+		// no GatewayRefundID yet. If exactly one match, reconcile it.
+		if paymentID == "" {
+			h.logger.Warn(context.Background(), "Razorpay refund webhook has no payment_id for fallback lookup — leaving unprocessed",
+				"event_type", event.Event,
+				"gateway_refund_id", gatewayRefundID,
+			)
+			return
+		}
+
+		pendingRefs, pendingErr := h.refundRepo.GetPendingByPaymentID(ctx, paymentID)
+		if pendingErr != nil {
+			h.logger.Error(context.Background(), "failed to get pending refunds by payment ID for Razorpay fallback",
+				"payment_id", paymentID,
+				"error", pendingErr,
+			)
+			return
+		}
+
+		if len(pendingRefs) != 1 {
+			// Zero or more than one candidate — cannot safely reconcile; leave
+			// inbox event unprocessed for the recovery sweep (§5b).
+			h.logger.Warn(context.Background(), "Razorpay refund fallback: expected exactly 1 pending refund, got different count — leaving unprocessed for recovery sweep",
+				"event_type", event.Event,
+				"payment_id", paymentID,
+				"gateway_refund_id", gatewayRefundID,
+				"candidate_count", len(pendingRefs),
+			)
+			return
+		}
+
+		// Exactly one candidate — set GatewayRefundID via same-status CAS, then drive lifecycle.
+		candidateRef := pendingRefs[0]
+		_, casErr := h.refundRepo.UpdateStatus(
+			ctx,
+			candidateRef.ID,
+			candidateRef.RefundStatus,
+			candidateRef.RefundStatus, // same status: only sets GatewayRefundID
+			domainRefund.RefundStatusUpdate{GatewayRefundID: &gatewayRefundID},
+		)
+		if casErr != nil {
+			h.logger.Error(context.Background(), "failed to set GatewayRefundID on fallback-matched refund",
+				"refund_id", candidateRef.ID,
+				"gateway_refund_id", gatewayRefundID,
+				"error", casErr,
+			)
+			return
+		}
+
+		var lifecycleErr error
+		if isSuccess {
+			lifecycleErr = h.refundLifecycle.RecordRefundSucceeded(ctx, gatewayRefundID)
+		} else {
+			lifecycleErr = h.refundLifecycle.RecordRefundFailed(ctx, gatewayRefundID, "Gateway reported refund failed")
+		}
+		if lifecycleErr != nil {
+			h.logger.Error(context.Background(), "failed to process Razorpay refund lifecycle (fallback match)",
+				"event_type", event.Event,
+				"gateway_refund_id", gatewayRefundID,
+				"refund_id", candidateRef.ID,
+				"error", lifecycleErr,
+			)
+			return
+		}
+
+		// Mark inbox processed
+		if existing, getErr := h.refundWebhookEventRepo.GetByGatewayEventID(ctx, "razorpay", gatewayEventID); getErr == nil {
+			refID := candidateRef.ID
+			_ = h.refundWebhookEventRepo.MarkProcessed(ctx, existing.ID, &refID)
+		}
+		h.logger.Info(context.Background(), "Razorpay refund webhook processed (fallback match)",
+			"event_type", event.Event,
+			"gateway_refund_id", gatewayRefundID,
+			"refund_id", candidateRef.ID,
+		)
 		return
 	}
 

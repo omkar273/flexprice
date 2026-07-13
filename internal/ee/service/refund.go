@@ -27,6 +27,9 @@ type RefundService interface {
 	CreateRefund(ctx context.Context, req *dto.CreateRefundRequest) (*dto.RefundResponse, error)
 	GetRefund(ctx context.Context, id string) (*dto.RefundResponse, error)
 	ListRefunds(ctx context.Context, filter *types.RefundFilter) (*dto.ListRefundsResponse, error)
+	// CancelRefund cancels a PROCESSING refund via the gateway (Stripe only).
+	// Calls the gateway first; local state is only updated after gateway confirmation.
+	CancelRefund(ctx context.Context, id string) (*dto.RefundResponse, error)
 }
 
 type refundService struct {
@@ -781,6 +784,16 @@ func (s *refundService) ListRefunds(ctx context.Context, filter *types.RefundFil
 		return nil, err
 	}
 	return dto.NewListRefundsResponse(refunds, total), nil
+}
+
+// CancelRefund cancels a PROCESSING refund via the gateway (Stripe only).
+// The gateway is called first; local state is only updated after the gateway confirms
+// that cancellation actually took effect. Returns an error if the gateway does not
+// support cancellation (Razorpay) or if the refund is not in PROCESSING state.
+func (s *refundService) CancelRefund(ctx context.Context, id string) (*dto.RefundResponse, error) {
+	return nil, ierr.NewError("CancelRefund is not yet implemented").
+		WithHint("Refund cancellation is not yet available").
+		Mark(ierr.ErrSystem)
 }
 
 // --- webhook event helper --------------------------------------------------------

@@ -46,7 +46,7 @@ func (s *PaymentService) RefundPayment(ctx context.Context, gatewayPaymentID str
 		headers["X-Razorpay-Idempotency-Key"] = gatewayIdempotencyToken
 	}
 
-	resp, err := razorpayClient.Payment.Refund(gatewayPaymentID, body, headers)
+	resp, err := razorpayClient.Payment.Refund(gatewayPaymentID, int(amountInPaise), body, headers)
 	if err != nil {
 		s.logger.Error(ctx, "failed to create refund in Razorpay",
 			"error", err,
