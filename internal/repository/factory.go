@@ -28,6 +28,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/invoice"
 	"github.com/flexprice/flexprice/internal/domain/meter"
 	"github.com/flexprice/flexprice/internal/domain/payment"
+	"github.com/flexprice/flexprice/internal/domain/refund"
 	"github.com/flexprice/flexprice/internal/domain/paymentmethod"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/domain/planpricesync"
@@ -298,4 +299,12 @@ func NewIncomingWebhookEventRepository(p RepositoryParams) incomingwebhookevent.
 
 func NewCheckoutSessionRepository(p RepositoryParams) checkout.Repository {
 	return entRepo.NewCheckoutSessionRepository(p.EntClient, p.Logger)
+}
+
+func NewRefundRepository(p RepositoryParams) refund.Repository {
+	return entRepo.NewRefundRepository(p.EntClient, p.Logger)
+}
+
+func NewRefundWebhookEventRepository(p RepositoryParams) refund.WebhookEventRepository {
+	return entRepo.NewRefundWebhookEventRepository(p.EntClient, p.Logger)
 }
