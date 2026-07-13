@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/samber/lo"
@@ -487,6 +488,80 @@ func (s *creditNoteService) FinalizeCreditNote(ctx context.Context, id string) e
 			if err != nil {
 				return err
 			}
+
+			// --- Payment.RefundedAmount reservation (decision 8) ---
+			// Claim capacity from backing payments before committing the wallet credit so
+			// two concurrent FinalizeCreditNote calls cannot both succeed against the same
+			// payment amount. All repo calls MUST use tx (not ctx) so SELECT FOR UPDATE
+			// holds across the whole transaction through the wallet top-up commit.
+			{
+				paymentFilter := types.NewNoLimitPaymentFilter()
+				destID := inv.ID
+				destType := string(types.PaymentDestinationTypeInvoice)
+				paymentFilter.DestinationID = &destID
+				paymentFilter.DestinationType = &destType
+
+				allPayments, err := s.PaymentRepo.List(tx, paymentFilter)
+				if err != nil {
+					return err
+				}
+
+				// Collect payments eligible for refund reservation; sort oldest first.
+				eligiblePayments := allPayments[:0:0]
+				for _, p := range allPayments {
+					if p.PaymentStatus == types.PaymentStatusSucceeded || p.PaymentStatus == types.PaymentStatusPartiallyRefunded {
+						eligiblePayments = append(eligiblePayments, p)
+					}
+				}
+				sort.Slice(eligiblePayments, func(i, j int) bool {
+					if eligiblePayments[i].SucceededAt == nil {
+						return false
+					}
+					if eligiblePayments[j].SucceededAt == nil {
+						return true
+					}
+					return eligiblePayments[i].SucceededAt.Before(*eligiblePayments[j].SucceededAt)
+				})
+
+				remainingToReserve := cn.TotalAmount
+				for _, p := range eligiblePayments {
+					if remainingToReserve.IsZero() {
+						break
+					}
+					// Lock the payment row within tx; the lock is held until commit/rollback.
+					locked, lockErr := s.PaymentRepo.GetForUpdate(tx, p.ID)
+					if lockErr != nil {
+						return lockErr
+					}
+					available := locked.Amount.Sub(locked.RefundedAmount)
+					if available.LessThanOrEqual(decimal.Zero) {
+						continue
+					}
+					claim := decimal.Min(remainingToReserve, available)
+					locked.RefundedAmount = locked.RefundedAmount.Add(claim)
+					if updateErr := s.PaymentRepo.Update(tx, locked); updateErr != nil {
+						return updateErr
+					}
+					remainingToReserve = remainingToReserve.Sub(claim)
+				}
+
+				if remainingToReserve.GreaterThan(decimal.Zero) {
+					paymentIDs := make([]string, len(eligiblePayments))
+					for i, p := range eligiblePayments {
+						paymentIDs[i] = p.ID
+					}
+					return ierr.NewError("insufficient refundable capacity: payment amounts already claimed by concurrent refunds").
+						WithHint("Insufficient capacity: refund reservation already claimed this payment").
+						WithReportableDetails(map[string]any{
+							"credit_note_id":       cn.ID,
+							"credit_note_amount":   cn.TotalAmount,
+							"remaining_unreserved": remainingToReserve,
+							"payment_ids":          paymentIDs,
+						}).
+						Mark(ierr.ErrValidation)
+				}
+			}
+			// --- end Payment.RefundedAmount reservation ---
 
 			// Find or create wallet using transaction context
 			wallets, err := walletService.GetWalletsByCustomerID(tx, inv.CustomerID)
