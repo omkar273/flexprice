@@ -117,6 +117,10 @@ const (
 const (
 	WebhookEventCreditNoteCreated WebhookEventName = "credit_note.created"
 	WebhookEventCreditNoteUpdated WebhookEventName = "credit_note.updated"
+
+	// Refund lifecycle events
+	WebhookEventRefundCreated WebhookEventName = "refund.created"
+	WebhookEventRefundUpdated WebhookEventName = "refund.updated"
 )
 
 // checkout session event names

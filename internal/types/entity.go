@@ -14,5 +14,6 @@ const (
 	SystemEntityTypeWallet          SystemEntityType = "wallet"
 	SystemEntityTypeEntitlement     SystemEntityType = "entitlement"
 	SystemEntityTypeCheckoutSession SystemEntityType = "checkout_session"
+	SystemEntityTypeRefund          SystemEntityType = "refund"
 	SystemEntityTypeEvent           SystemEntityType = "event"
 )

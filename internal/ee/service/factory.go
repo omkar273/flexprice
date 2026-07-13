@@ -27,6 +27,7 @@ import (
 	"github.com/flexprice/flexprice/internal/domain/invoice"
 	"github.com/flexprice/flexprice/internal/domain/meter"
 	"github.com/flexprice/flexprice/internal/domain/payment"
+	"github.com/flexprice/flexprice/internal/domain/refund"
 	"github.com/flexprice/flexprice/internal/domain/plan"
 	"github.com/flexprice/flexprice/internal/domain/planpricesync"
 	"github.com/flexprice/flexprice/internal/domain/price"
@@ -95,6 +96,10 @@ type ServiceParams struct {
 	FeatureRepo                  feature.Repository
 	EntitlementRepo              entitlement.Repository
 	PaymentRepo                  payment.Repository
+	// TODO(refund-service): RefundRepo and RefundWebhookEventRepo are used by NewRefundService.
+	// Wire them in cmd/server/main.go via fx.Provide once the repository implementations are ready.
+	RefundRepo             refund.Repository
+	RefundWebhookEventRepo refund.WebhookEventRepository
 	SecretRepo                   secret.Repository
 	EnvironmentRepo              environment.Repository
 	TaskRepo                     task.Repository
