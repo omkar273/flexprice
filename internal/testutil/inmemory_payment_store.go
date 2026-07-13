@@ -401,6 +401,12 @@ func (m *InMemoryPaymentStore) GetPaymentsForDestination(ctx context.Context, de
 	return m.List(ctx, filter)
 }
 
+// GetForUpdate returns a payment by ID, simulating a row-level lock for testing.
+// In the in-memory store, no actual locking occurs.
+func (m *InMemoryPaymentStore) GetForUpdate(ctx context.Context, id string) (*payment.Payment, error) {
+	return m.Get(ctx, id)
+}
+
 // GetCreatedPayments returns all payments that were created, in order of creation
 // This is a helper method for testing
 func (m *InMemoryPaymentStore) GetCreatedPayments() []*payment.Payment {

@@ -60,6 +60,7 @@ type Handlers struct {
 	Workflow                 *v1.WorkflowHandler
 	MeterUsage               *v1.MeterUsageHandler
 	CheckoutSession          *v1.CheckoutSessionHandler
+	Refund                   *v1.RefundHandler
 
 	// Portal handlers
 	Onboarding     *v1.OnboardingHandler
@@ -448,12 +449,21 @@ func NewRouter(
 			payments.PUT("/:id", write(types.EntityPayment, types.ActionWrite), handlers.Payment.UpdatePayment)
 			payments.DELETE("/:id", write(types.EntityPayment, types.ActionWrite), handlers.Payment.DeletePayment)
 			payments.POST("/:id/process", write(types.EntityPayment, types.ActionWrite), handlers.Payment.ProcessPayment)
+			payments.POST("/:id/refunds", write(types.EntityPayment, types.ActionWrite), handlers.Refund.CreateRefund)
 
 			custPaymentsGroup := payments.Group("/customers")
 			{
 				custPaymentsGroup.GET("/:id/methods", handlers.SetupIntent.ListCustomerPaymentMethods)
 				custPaymentsGroup.POST("/:id/setup/intent", write(types.EntityPayment, types.ActionWrite), handlers.SetupIntent.CreateSetupIntentSession)
 			}
+		}
+
+		// Refund routes
+		refunds := v1Private.Group("/refunds")
+		{
+			refunds.GET("", handlers.Refund.ListRefunds)
+			refunds.GET("/:id", handlers.Refund.GetRefund)
+			refunds.POST("/:id/cancel", write(types.EntityPayment, types.ActionWrite), handlers.Refund.CancelRefund)
 		}
 
 		tasks := v1Private.Group("/tasks")

@@ -15,6 +15,7 @@ import (
 	"github.com/flexprice/flexprice/internal/ee/service"
 	"github.com/flexprice/flexprice/internal/httpclient"
 	integrationevents "github.com/flexprice/flexprice/internal/integration/events"
+	"github.com/flexprice/flexprice/internal/integration/payments"
 	"github.com/flexprice/flexprice/internal/kafka"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/pdf"
@@ -43,6 +44,7 @@ import (
 	_ "github.com/flexprice/flexprice/docs/swagger"
 	"github.com/flexprice/flexprice/internal/domain/incomingwebhookevent"
 	"github.com/flexprice/flexprice/internal/domain/proration"
+	domainRefund "github.com/flexprice/flexprice/internal/domain/refund"
 	syncExport "github.com/flexprice/flexprice/internal/ee/service/sync/export"
 	"github.com/flexprice/flexprice/internal/integration"
 	"github.com/flexprice/flexprice/internal/interfaces"
@@ -191,6 +193,8 @@ func main() {
 			repository.NewWorkflowExecutionRepository,
 			repository.NewCheckoutSessionRepository,
 			repository.NewRawEventRepository,
+			repository.NewRefundRepository,
+			repository.NewRefundWebhookEventRepository,
 
 			// PubSub
 			pubsubRouter.NewRouter,
@@ -282,6 +286,8 @@ func main() {
 			service.NewDashboardService,
 			service.NewWorkflowExecutionService,
 			service.NewWorkflowService,
+			payments.NewRefundLifecycle,
+			service.NewRefundService,
 		),
 	)
 
@@ -375,6 +381,10 @@ func provideHandlers(
 	geminiPricingService service.GeminiPricingService,
 	webhookService *webhook.WebhookService,
 	usageBenchmarkService service.UsageBenchmarkService,
+	refundService service.RefundService,
+	refundLifecycle *payments.RefundLifecycle,
+	refundRepo domainRefund.Repository,
+	refundWebhookEventRepo domainRefund.WebhookEventRepository,
 ) api.Handlers {
 	return api.Handlers{
 		Events:                   v1.NewEventsHandler(eventService, eventPostProcessingService, featureUsageTrackingService, rawEventsReprocessingService, rawEventConsumptionService, meterUsageService, usageBenchmarkService, cfg, logger),
@@ -413,7 +423,7 @@ func provideHandlers(
 		Connection:               v1.NewConnectionHandler(connectionService, logger),
 		Integration:              v1.NewIntegrationHandler(integrationSyncService, entityIntegrationMappingService, connectionService, logger),
 		Paddle:                   v1.NewPaddleHandler(integrationFactory, logger),
-		Webhook:                  v1.NewWebhookHandler(cfg, svixClient, logger, integrationFactory, customerService, paymentService, invoiceService, planService, subscriptionService, entityIntegrationMappingService, checkoutSessionService, db, webhookService),
+		Webhook:                  v1.NewWebhookHandler(cfg, svixClient, logger, integrationFactory, customerService, paymentService, invoiceService, planService, subscriptionService, entityIntegrationMappingService, checkoutSessionService, db, webhookService, refundRepo, refundWebhookEventRepo, refundLifecycle),
 		Coupon:                   v1.NewCouponHandler(couponService, couponAssociationService, logger),
 		Addon:                    v1.NewAddonHandler(addonService, entitlementService, logger),
 		Settings:                 v1.NewSettingsHandler(settingsService, logger),
@@ -430,6 +440,7 @@ func provideHandlers(
 		Workflow:                 v1.NewWorkflowHandler(workflowService, logger),
 		MeterUsage:               v1.NewMeterUsageHandler(meterUsageService, logger),
 		CheckoutSession:          v1.NewCheckoutSessionHandler(checkoutSessionService, logger),
+		Refund:                   v1.NewRefundHandler(refundService, logger),
 	}
 }
 
