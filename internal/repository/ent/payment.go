@@ -68,6 +68,7 @@ func (r *paymentRepository) Create(ctx context.Context, p *domainPayment.Payment
 		SetNillableGatewayTrackingID(p.GatewayTrackingID).
 		SetGatewayMetadata(p.GatewayMetadata).
 		SetAmount(p.Amount).
+		SetRefundedAmount(p.RefundedAmount).
 		SetCurrency(p.Currency).
 		SetPaymentStatus(string(p.PaymentStatus)).
 		SetTrackAttempts(p.TrackAttempts).
@@ -305,6 +306,7 @@ func (r *paymentRepository) Update(ctx context.Context, p *domainPayment.Payment
 		SetNillableRefundedAt(p.RefundedAt).
 		SetNillableVoidedAt(p.VoidedAt).
 		SetNillableErrorMessage(p.ErrorMessage).
+		SetRefundedAmount(p.RefundedAmount).
 		Save(ctx)
 
 	if err != nil {
@@ -327,6 +329,34 @@ func (r *paymentRepository) Update(ctx context.Context, p *domainPayment.Payment
 
 	r.DeleteCache(ctx, p.ID)
 	return nil
+}
+
+func (r *paymentRepository) GetForUpdate(ctx context.Context, id string) (*domainPayment.Payment, error) {
+	span := StartRepositorySpan(ctx, "payment", "get_for_update", map[string]interface{}{"payment_id": id})
+	defer FinishSpan(span)
+
+	client := r.client.Writer(ctx)
+	tenantID := types.GetTenantID(ctx)
+	environmentID := types.GetEnvironmentID(ctx)
+
+	lockQuery := `SELECT id FROM payments WHERE id = $1 AND tenant_id = $2 AND environment_id = $3 FOR UPDATE`
+	rows, err := client.QueryContext(ctx, lockQuery, id, tenantID, environmentID)
+	if err != nil {
+		return nil, ierr.WithError(err).WithHint("payment lock failed").Mark(ierr.ErrDatabase)
+	}
+	hasRow := rows.Next()
+	rowErr := rows.Err()
+	rows.Close()
+	if rowErr != nil {
+		return nil, ierr.WithError(rowErr).WithHint("payment lock failed").Mark(ierr.ErrDatabase)
+	}
+	if !hasRow {
+		return nil, ierr.NewError("payment not found").
+			WithHint("payment not found: " + id).
+			WithReportableDetails(map[string]any{"id": id}).
+			Mark(ierr.ErrNotFound)
+	}
+	return r.Get(ctx, id)
 }
 
 func (r *paymentRepository) Delete(ctx context.Context, id string) error {

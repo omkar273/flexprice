@@ -54,6 +54,10 @@ type Payment struct {
 	RecordedAt *time.Time `json:"recorded_at,omitempty"`
 	// The error_message field provides details about why the payment failed (optional)
 	ErrorMessage *string `json:"error_message,omitempty"`
+	// RefundedAmount is the running total claimed by any refund mechanism (gateway Refund at
+	// creation, or wallet-credit CreditNote at finalize). Incremented under SELECT FOR UPDATE
+	// on the Payment row (decision 8).
+	RefundedAmount decimal.Decimal `json:"refunded_amount" swaggertype:"string"`
 	// The attempts array contains all processing attempts made for this payment (optional)
 	Attempts []*PaymentAttempt `json:"attempts,omitempty"`
 	// The environment_id identifies which environment this payment belongs to
@@ -191,6 +195,7 @@ func FromEnt(p *ent.Payment) *Payment {
 		RefundedAt:        p.RefundedAt,
 		RecordedAt:        p.RecordedAt,
 		ErrorMessage:      p.ErrorMessage,
+		RefundedAmount:    p.RefundedAmount,
 		EnvironmentID:     p.EnvironmentID,
 		BaseModel: types.BaseModel{
 			TenantID:  p.TenantID,

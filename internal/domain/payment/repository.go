@@ -20,6 +20,10 @@ type Repository interface {
 	// Payment operations
 	Create(ctx context.Context, payment *Payment) error
 	Get(ctx context.Context, id string) (*Payment, error)
+	// GetForUpdate retrieves a Payment with a row-level lock (SELECT ... FOR UPDATE).
+	// Must be called within a transaction so the lock is held until commit/rollback.
+	// This is the same pattern as Invoice.GetForUpdate.
+	GetForUpdate(ctx context.Context, id string) (*Payment, error)
 	Update(ctx context.Context, payment *Payment) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter *types.PaymentFilter) ([]*Payment, error)
