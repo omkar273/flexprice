@@ -18,6 +18,11 @@ const (
 	EventPaymentLinkPaid      RazorpayEventType = "payment_link.paid"
 	EventPaymentLinkCancelled RazorpayEventType = "payment_link.cancelled"
 	EventPaymentLinkExpired   RazorpayEventType = "payment_link.expired"
+
+	// Refund events
+	EventRefundCreated   RazorpayEventType = "refund.created"
+	EventRefundProcessed RazorpayEventType = "refund.processed"
+	EventRefundFailed    RazorpayEventType = "refund.failed"
 )
 
 // RazorpayPaymentMethod represents the payment method used in Razorpay
@@ -47,6 +52,7 @@ type RazorpayWebhookEvent struct {
 type RazorpayWebhookPayload struct {
 	Payment     PayloadPayment     `json:"payment"`
 	PaymentLink PayloadPaymentLink `json:"payment_link"`
+	Refund      PayloadRefund      `json:"refund"`
 }
 
 // PayloadPayment represents the payment entity in the webhook payload
@@ -95,6 +101,29 @@ type Payment struct {
 	ErrorReason      string        `json:"error_reason"`      // Error reason
 	Notes            FlexibleNotes `json:"notes"`             // Custom notes (can be object or array)
 	CreatedAt        int64         `json:"created_at"`        // Unix timestamp
+}
+
+// PayloadRefund represents the refund entity in the webhook payload
+type PayloadRefund struct {
+	Entity RazorpayRefundEntity `json:"entity"`
+}
+
+// RazorpayRefundEntity represents a Razorpay refund in webhook payloads.
+// Field list confirmed against Razorpay's actual refund.processed webhook payload.
+type RazorpayRefundEntity struct {
+	ID             string                 `json:"id"`              // rfnd_...
+	Entity         string                 `json:"entity"`          // "refund"
+	Amount         int64                  `json:"amount"`          // amount in paise
+	Currency       string                 `json:"currency"`
+	PaymentID      string                 `json:"payment_id"`      // pay_...
+	Notes          map[string]interface{} `json:"notes"`
+	Receipt        *string                `json:"receipt"`
+	AcquirerData   map[string]interface{} `json:"acquirer_data"`
+	CreatedAt      int64                  `json:"created_at"`
+	BatchID        *string                `json:"batch_id"`
+	Status         string                 `json:"status"`          // "pending", "processed", "failed"
+	SpeedProcessed string                 `json:"speed_processed"`
+	SpeedRequested string                 `json:"speed_requested"`
 }
 
 // FlexibleNotes handles both array and object formats from Razorpay
