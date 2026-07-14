@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
+	domainPayment "github.com/flexprice/flexprice/internal/domain/payment"
 	domainRefund "github.com/flexprice/flexprice/internal/domain/refund"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
+	"github.com/flexprice/flexprice/internal/postgres"
 	"github.com/flexprice/flexprice/internal/types"
 )
 
@@ -14,18 +16,24 @@ import (
 // It mirrors the shape of PaymentLifecycle: every method is its own read-then-CAS-write,
 // and every status transition inside it is a CAS UPDATE (never a plain read-then-write).
 type RefundLifecycle struct {
-	refundRepo domainRefund.Repository
-	logger     *logger.Logger
+	refundRepo  domainRefund.Repository
+	paymentRepo domainPayment.Repository
+	db          postgres.IClient
+	logger      *logger.Logger
 }
 
-// NewRefundLifecycle returns a RefundLifecycle wired with the given refund repository.
+// NewRefundLifecycle returns a RefundLifecycle wired with the given repositories.
 func NewRefundLifecycle(
 	refundRepo domainRefund.Repository,
+	paymentRepo domainPayment.Repository,
+	db postgres.IClient,
 	log *logger.Logger,
 ) *RefundLifecycle {
 	return &RefundLifecycle{
-		refundRepo: refundRepo,
-		logger:     log,
+		refundRepo:  refundRepo,
+		paymentRepo: paymentRepo,
+		db:          db,
+		logger:      log,
 	}
 }
 
@@ -75,31 +83,67 @@ func (l *RefundLifecycle) RecordRefundSucceeded(ctx context.Context, gatewayRefu
 	}
 
 	now := time.Now().UTC()
-	updated, err := l.refundRepo.UpdateStatus(
-		ctx,
-		ref.ID,
-		ref.RefundStatus,
-		types.RefundStatusSucceeded,
-		domainRefund.RefundStatusUpdate{SucceededAt: &now},
-	)
-	if err != nil {
-		return ierr.WithError(err).
-			WithHint("Failed to update refund status to SUCCEEDED").
-			WithReportableDetails(map[string]any{"refund_id": ref.ID}).
-			Mark(ierr.ErrDatabase)
-	}
-	if !updated {
-		l.logger.Warn(ctx, "CAS update missed for SUCCEEDED (concurrent write advanced the status)",
+
+	// Wrap the CAS update and Payment.PaymentStatus update in a single transaction so
+	// they are atomic — the same guarantee confirmSucceeded provides on the inline path.
+	return l.db.WithTx(ctx, func(tx context.Context) error {
+		updated, err := l.refundRepo.UpdateStatus(
+			tx,
+			ref.ID,
+			ref.RefundStatus,
+			types.RefundStatusSucceeded,
+			domainRefund.RefundStatusUpdate{SucceededAt: &now},
+		)
+		if err != nil {
+			return ierr.WithError(err).
+				WithHint("Failed to update refund status to SUCCEEDED").
+				WithReportableDetails(map[string]any{"refund_id": ref.ID}).
+				Mark(ierr.ErrDatabase)
+		}
+		if !updated {
+			l.logger.Warn(ctx, "CAS update missed for SUCCEEDED (concurrent write advanced the status)",
+				"refund_id", ref.ID,
+				"gateway_refund_id", gatewayRefundID,
+			)
+			return nil
+		}
+
+		// Update Payment.PaymentStatus to REFUNDED or PARTIALLY_REFUNDED.
+		// Lock the payment row within this transaction to serialize with concurrent refunds.
+		pmt, pmtErr := l.paymentRepo.GetForUpdate(tx, ref.PaymentID)
+		if pmtErr != nil {
+			l.logger.Error(ctx, "RecordRefundSucceeded: failed to lock payment for status update — payment status may lag",
+				"refund_id", ref.ID,
+				"payment_id", ref.PaymentID,
+				"error", pmtErr,
+			)
+			// Don't fail the transaction — the refund itself is confirmed; the payment
+			// status inconsistency is recoverable by the recovery sweep.
+			return nil
+		}
+
+		if pmt.RefundedAmount.GreaterThanOrEqual(pmt.Amount) {
+			pmt.PaymentStatus = types.PaymentStatusRefunded
+		} else {
+			pmt.PaymentStatus = types.PaymentStatusPartiallyRefunded
+		}
+		pmt.RefundedAt = &now
+
+		if updateErr := l.paymentRepo.Update(tx, pmt); updateErr != nil {
+			l.logger.Error(ctx, "RecordRefundSucceeded: failed to update payment status",
+				"refund_id", ref.ID,
+				"payment_id", ref.PaymentID,
+				"error", updateErr,
+			)
+			// Same rationale: don't roll back the refund CAS for a payment-status lag.
+		}
+
+		l.logger.Info(ctx, "refund marked as SUCCEEDED",
 			"refund_id", ref.ID,
 			"gateway_refund_id", gatewayRefundID,
 		)
-	}
-
-	l.logger.Info(ctx, "refund marked as SUCCEEDED",
-		"refund_id", ref.ID,
-		"gateway_refund_id", gatewayRefundID,
-	)
-	return nil
+		return nil
+	})
 }
 
 // RecordRefundFailed transitions a refund from any non-terminal status to FAILED via a CAS UPDATE.
