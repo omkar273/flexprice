@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/flexprice/flexprice/ent/payment"
 	"github.com/flexprice/flexprice/ent/paymentattempt"
+	"github.com/flexprice/flexprice/ent/refund"
 	"github.com/shopspring/decimal"
 )
 
@@ -328,6 +329,20 @@ func (pc *PaymentCreate) SetNillableErrorMessage(s *string) *PaymentCreate {
 	return pc
 }
 
+// SetRefundedAmount sets the "refunded_amount" field.
+func (pc *PaymentCreate) SetRefundedAmount(d decimal.Decimal) *PaymentCreate {
+	pc.mutation.SetRefundedAmount(d)
+	return pc
+}
+
+// SetNillableRefundedAmount sets the "refunded_amount" field if the given value is not nil.
+func (pc *PaymentCreate) SetNillableRefundedAmount(d *decimal.Decimal) *PaymentCreate {
+	if d != nil {
+		pc.SetRefundedAmount(*d)
+	}
+	return pc
+}
+
 // SetID sets the "id" field.
 func (pc *PaymentCreate) SetID(s string) *PaymentCreate {
 	pc.mutation.SetID(s)
@@ -347,6 +362,21 @@ func (pc *PaymentCreate) AddAttempts(p ...*PaymentAttempt) *PaymentCreate {
 		ids[i] = p[i].ID
 	}
 	return pc.AddAttemptIDs(ids...)
+}
+
+// AddRefundIDs adds the "refunds" edge to the Refund entity by IDs.
+func (pc *PaymentCreate) AddRefundIDs(ids ...string) *PaymentCreate {
+	pc.mutation.AddRefundIDs(ids...)
+	return pc
+}
+
+// AddRefunds adds the "refunds" edges to the Refund entity.
+func (pc *PaymentCreate) AddRefunds(r ...*Refund) *PaymentCreate {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pc.AddRefundIDs(ids...)
 }
 
 // Mutation returns the PaymentMutation object of the builder.
@@ -407,6 +437,10 @@ func (pc *PaymentCreate) defaults() {
 	if _, ok := pc.mutation.TrackAttempts(); !ok {
 		v := payment.DefaultTrackAttempts
 		pc.mutation.SetTrackAttempts(v)
+	}
+	if _, ok := pc.mutation.RefundedAmount(); !ok {
+		v := payment.DefaultRefundedAmount
+		pc.mutation.SetRefundedAmount(v)
 	}
 }
 
@@ -477,6 +511,9 @@ func (pc *PaymentCreate) check() error {
 	}
 	if _, ok := pc.mutation.TrackAttempts(); !ok {
 		return &ValidationError{Name: "track_attempts", err: errors.New(`ent: missing required field "Payment.track_attempts"`)}
+	}
+	if _, ok := pc.mutation.RefundedAmount(); !ok {
+		return &ValidationError{Name: "refunded_amount", err: errors.New(`ent: missing required field "Payment.refunded_amount"`)}
 	}
 	return nil
 }
@@ -621,6 +658,10 @@ func (pc *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 		_spec.SetField(payment.FieldErrorMessage, field.TypeString, value)
 		_node.ErrorMessage = &value
 	}
+	if value, ok := pc.mutation.RefundedAmount(); ok {
+		_spec.SetField(payment.FieldRefundedAmount, field.TypeOther, value)
+		_node.RefundedAmount = value
+	}
 	if nodes := pc.mutation.AttemptsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -630,6 +671,22 @@ func (pc *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(paymentattempt.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.RefundsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   payment.RefundsTable,
+			Columns: []string{payment.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

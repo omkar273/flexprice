@@ -191,6 +191,11 @@ func ErrorMessage(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldErrorMessage, v))
 }
 
+// RefundedAmount applies equality check predicate on the "refunded_amount" field. It's identical to RefundedAmountEQ.
+func RefundedAmount(v decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldRefundedAmount, v))
+}
+
 // TenantIDEQ applies the EQ predicate on the "tenant_id" field.
 func TenantIDEQ(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldTenantID, v))
@@ -1711,6 +1716,46 @@ func ErrorMessageContainsFold(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldContainsFold(FieldErrorMessage, v))
 }
 
+// RefundedAmountEQ applies the EQ predicate on the "refunded_amount" field.
+func RefundedAmountEQ(v decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldRefundedAmount, v))
+}
+
+// RefundedAmountNEQ applies the NEQ predicate on the "refunded_amount" field.
+func RefundedAmountNEQ(v decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldRefundedAmount, v))
+}
+
+// RefundedAmountIn applies the In predicate on the "refunded_amount" field.
+func RefundedAmountIn(vs ...decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldRefundedAmount, vs...))
+}
+
+// RefundedAmountNotIn applies the NotIn predicate on the "refunded_amount" field.
+func RefundedAmountNotIn(vs ...decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldRefundedAmount, vs...))
+}
+
+// RefundedAmountGT applies the GT predicate on the "refunded_amount" field.
+func RefundedAmountGT(v decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldRefundedAmount, v))
+}
+
+// RefundedAmountGTE applies the GTE predicate on the "refunded_amount" field.
+func RefundedAmountGTE(v decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldRefundedAmount, v))
+}
+
+// RefundedAmountLT applies the LT predicate on the "refunded_amount" field.
+func RefundedAmountLT(v decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldRefundedAmount, v))
+}
+
+// RefundedAmountLTE applies the LTE predicate on the "refunded_amount" field.
+func RefundedAmountLTE(v decimal.Decimal) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldRefundedAmount, v))
+}
+
 // HasAttempts applies the HasEdge predicate on the "attempts" edge.
 func HasAttempts() predicate.Payment {
 	return predicate.Payment(func(s *sql.Selector) {
@@ -1726,6 +1771,29 @@ func HasAttempts() predicate.Payment {
 func HasAttemptsWith(preds ...predicate.PaymentAttempt) predicate.Payment {
 	return predicate.Payment(func(s *sql.Selector) {
 		step := newAttemptsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRefunds applies the HasEdge predicate on the "refunds" edge.
+func HasRefunds() predicate.Payment {
+	return predicate.Payment(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RefundsTable, RefundsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRefundsWith applies the HasEdge predicate on the "refunds" edge with a given conditions (other predicates).
+func HasRefundsWith(preds ...predicate.Refund) predicate.Payment {
+	return predicate.Payment(func(s *sql.Selector) {
+		step := newRefundsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

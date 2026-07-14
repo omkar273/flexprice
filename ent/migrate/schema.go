@@ -142,9 +142,9 @@ var (
 		{Name: "updated_by", Type: field.TypeString, Nullable: true},
 		{Name: "environment_id", Type: field.TypeString, Nullable: true, Default: "", SchemaType: map[string]string{"postgres": "varchar(50)"}},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
-		{Name: "entity_type", Type: field.TypeEnum, Enums: []string{"wallet", "feature", "subscription", "subscription_line_item", "group"}},
+		{Name: "entity_type", Type: field.TypeEnum, Enums: []string{"subscription", "subscription_line_item", "group"}},
 		{Name: "entity_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
-		{Name: "parent_entity_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"wallet", "feature", "subscription", "subscription_line_item", "group"}},
+		{Name: "parent_entity_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"subscription"}},
 		{Name: "parent_entity_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(50)"}},
 		{Name: "config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
 	}
@@ -1405,6 +1405,7 @@ var (
 		{Name: "voided_at", Type: field.TypeTime, Nullable: true},
 		{Name: "recorded_at", Type: field.TypeTime, Nullable: true},
 		{Name: "error_message", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "refunded_amount", Type: field.TypeOther, SchemaType: map[string]string{"postgres": "numeric(20,8)"}},
 	}
 	// PaymentsTable holds the schema information for the "payments" table.
 	PaymentsTable = &schema.Table{
@@ -1676,6 +1677,113 @@ var (
 				Annotation: &entsql.IndexAnnotation{
 					Where: "((status)::text = 'published'::text)",
 				},
+			},
+		},
+	}
+	// RefundsColumns holds the columns for the "refunds" table.
+	RefundsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "tenant_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "status", Type: field.TypeString, Default: "published", SchemaType: map[string]string{"postgres": "varchar(20)"}},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeString, Nullable: true},
+		{Name: "updated_by", Type: field.TypeString, Nullable: true},
+		{Name: "environment_id", Type: field.TypeString, Nullable: true, Default: "", SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "payment_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "payment_gateway", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "gateway_refund_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(255)"}},
+		{Name: "gateway_tracking_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(255)"}},
+		{Name: "amount", Type: field.TypeOther, SchemaType: map[string]string{"postgres": "numeric(20,8)"}},
+		{Name: "currency", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(10)"}},
+		{Name: "refund_status", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "refund_reason", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "idempotency_key", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(255)"}},
+		{Name: "gateway_idempotency_token", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(255)"}},
+		{Name: "failure_reason", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "metadata", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "gateway_metadata", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "initiated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "claimed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "succeeded_at", Type: field.TypeTime, Nullable: true},
+		{Name: "failed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "cancelled_at", Type: field.TypeTime, Nullable: true},
+		{Name: "payment_refunds", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+	}
+	// RefundsTable holds the schema information for the "refunds" table.
+	RefundsTable = &schema.Table{
+		Name:       "refunds",
+		Columns:    RefundsColumns,
+		PrimaryKey: []*schema.Column{RefundsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "refunds_payments_refunds",
+				Columns:    []*schema.Column{RefundsColumns[26]},
+				RefColumns: []*schema.Column{PaymentsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idx_refund_tenant_env_idempotency",
+				Unique:  true,
+				Columns: []*schema.Column{RefundsColumns[1], RefundsColumns[7], RefundsColumns[16]},
+			},
+			{
+				Name:    "idx_refund_tenant_payment",
+				Unique:  false,
+				Columns: []*schema.Column{RefundsColumns[1], RefundsColumns[7], RefundsColumns[8]},
+			},
+			{
+				Name:    "idx_refund_tenant_status",
+				Unique:  false,
+				Columns: []*schema.Column{RefundsColumns[1], RefundsColumns[7], RefundsColumns[14]},
+			},
+			{
+				Name:    "idx_refund_status_claimed_at",
+				Unique:  false,
+				Columns: []*schema.Column{RefundsColumns[14], RefundsColumns[22]},
+			},
+			{
+				Name:    "idx_refund_gateway_refund_id",
+				Unique:  false,
+				Columns: []*schema.Column{RefundsColumns[10]},
+			},
+		},
+	}
+	// RefundWebhookEventsColumns holds the columns for the "refund_webhook_events" table.
+	RefundWebhookEventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "tenant_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "status", Type: field.TypeString, Default: "published", SchemaType: map[string]string{"postgres": "varchar(20)"}},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeString, Nullable: true},
+		{Name: "updated_by", Type: field.TypeString, Nullable: true},
+		{Name: "environment_id", Type: field.TypeString, Nullable: true, Default: "", SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "gateway", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "gateway_event_id", Type: field.TypeString, SchemaType: map[string]string{"postgres": "varchar(255)"}},
+		{Name: "raw_payload", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "processed", Type: field.TypeBool, Default: false},
+		{Name: "processed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "matched_refund_id", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "varchar(50)"}},
+		{Name: "attempts", Type: field.TypeInt, Default: 0},
+	}
+	// RefundWebhookEventsTable holds the schema information for the "refund_webhook_events" table.
+	RefundWebhookEventsTable = &schema.Table{
+		Name:       "refund_webhook_events",
+		Columns:    RefundWebhookEventsColumns,
+		PrimaryKey: []*schema.Column{RefundWebhookEventsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "idx_refund_webhook_event_gateway_event",
+				Unique:  true,
+				Columns: []*schema.Column{RefundWebhookEventsColumns[8], RefundWebhookEventsColumns[9]},
+			},
+			{
+				Name:    "idx_refund_webhook_event_processed",
+				Unique:  false,
+				Columns: []*schema.Column{RefundWebhookEventsColumns[11], RefundWebhookEventsColumns[3]},
 			},
 		},
 	}
@@ -2653,6 +2761,8 @@ var (
 		PlansTable,
 		PricesTable,
 		PriceUnitsTable,
+		RefundsTable,
+		RefundWebhookEventsTable,
 		ScheduledTasksTable,
 		SecretsTable,
 		SettingsTable,
@@ -2692,6 +2802,7 @@ func init() {
 	InvoiceLineItemsTable.ForeignKeys[0].RefTable = InvoicesTable
 	PaymentAttemptsTable.ForeignKeys[0].RefTable = PaymentsTable
 	PricesTable.ForeignKeys[0].RefTable = PriceUnitsTable
+	RefundsTable.ForeignKeys[0].RefTable = PaymentsTable
 	SubscriptionsTable.ForeignKeys[0].RefTable = CustomersTable
 	SubscriptionLineItemsTable.ForeignKeys[0].RefTable = SubscriptionsTable
 	SubscriptionPausesTable.ForeignKeys[0].RefTable = SubscriptionsTable

@@ -48,6 +48,8 @@ import (
 	"github.com/flexprice/flexprice/ent/plan"
 	"github.com/flexprice/flexprice/ent/price"
 	"github.com/flexprice/flexprice/ent/priceunit"
+	"github.com/flexprice/flexprice/ent/refund"
+	"github.com/flexprice/flexprice/ent/refundwebhookevent"
 	"github.com/flexprice/flexprice/ent/scheduledtask"
 	"github.com/flexprice/flexprice/ent/secret"
 	"github.com/flexprice/flexprice/ent/settings"
@@ -141,6 +143,10 @@ type Client struct {
 	Price *PriceClient
 	// PriceUnit is the client for interacting with the PriceUnit builders.
 	PriceUnit *PriceUnitClient
+	// Refund is the client for interacting with the Refund builders.
+	Refund *RefundClient
+	// RefundWebhookEvent is the client for interacting with the RefundWebhookEvent builders.
+	RefundWebhookEvent *RefundWebhookEventClient
 	// ScheduledTask is the client for interacting with the ScheduledTask builders.
 	ScheduledTask *ScheduledTaskClient
 	// Secret is the client for interacting with the Secret builders.
@@ -221,6 +227,8 @@ func (c *Client) init() {
 	c.Plan = NewPlanClient(c.config)
 	c.Price = NewPriceClient(c.config)
 	c.PriceUnit = NewPriceUnitClient(c.config)
+	c.Refund = NewRefundClient(c.config)
+	c.RefundWebhookEvent = NewRefundWebhookEventClient(c.config)
 	c.ScheduledTask = NewScheduledTaskClient(c.config)
 	c.Secret = NewSecretClient(c.config)
 	c.Settings = NewSettingsClient(c.config)
@@ -364,6 +372,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Plan:                     NewPlanClient(cfg),
 		Price:                    NewPriceClient(cfg),
 		PriceUnit:                NewPriceUnitClient(cfg),
+		Refund:                   NewRefundClient(cfg),
+		RefundWebhookEvent:       NewRefundWebhookEventClient(cfg),
 		ScheduledTask:            NewScheduledTaskClient(cfg),
 		Secret:                   NewSecretClient(cfg),
 		Settings:                 NewSettingsClient(cfg),
@@ -434,6 +444,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Plan:                     NewPlanClient(cfg),
 		Price:                    NewPriceClient(cfg),
 		PriceUnit:                NewPriceUnitClient(cfg),
+		Refund:                   NewRefundClient(cfg),
+		RefundWebhookEvent:       NewRefundWebhookEventClient(cfg),
 		ScheduledTask:            NewScheduledTaskClient(cfg),
 		Secret:                   NewSecretClient(cfg),
 		Settings:                 NewSettingsClient(cfg),
@@ -488,11 +500,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.Entitlement, c.EntityIntegrationMapping, c.Environment, c.Feature, c.Group,
 		c.IncomingWebhookEvent, c.Invoice, c.InvoiceLineItem, c.InvoiceSequence,
 		c.Meter, c.Payment, c.PaymentAttempt, c.PaymentMethod, c.Plan, c.Price,
-		c.PriceUnit, c.ScheduledTask, c.Secret, c.Settings, c.Subscription,
-		c.SubscriptionLineItem, c.SubscriptionPause, c.SubscriptionPhase,
-		c.SubscriptionSchedule, c.SystemEvent, c.Task, c.TaxApplied, c.TaxAssociation,
-		c.TaxRate, c.Tenant, c.User, c.Wallet, c.WalletTransaction,
-		c.WorkflowExecution,
+		c.PriceUnit, c.Refund, c.RefundWebhookEvent, c.ScheduledTask, c.Secret,
+		c.Settings, c.Subscription, c.SubscriptionLineItem, c.SubscriptionPause,
+		c.SubscriptionPhase, c.SubscriptionSchedule, c.SystemEvent, c.Task,
+		c.TaxApplied, c.TaxAssociation, c.TaxRate, c.Tenant, c.User, c.Wallet,
+		c.WalletTransaction, c.WorkflowExecution,
 	} {
 		n.Use(hooks...)
 	}
@@ -509,11 +521,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.Entitlement, c.EntityIntegrationMapping, c.Environment, c.Feature, c.Group,
 		c.IncomingWebhookEvent, c.Invoice, c.InvoiceLineItem, c.InvoiceSequence,
 		c.Meter, c.Payment, c.PaymentAttempt, c.PaymentMethod, c.Plan, c.Price,
-		c.PriceUnit, c.ScheduledTask, c.Secret, c.Settings, c.Subscription,
-		c.SubscriptionLineItem, c.SubscriptionPause, c.SubscriptionPhase,
-		c.SubscriptionSchedule, c.SystemEvent, c.Task, c.TaxApplied, c.TaxAssociation,
-		c.TaxRate, c.Tenant, c.User, c.Wallet, c.WalletTransaction,
-		c.WorkflowExecution,
+		c.PriceUnit, c.Refund, c.RefundWebhookEvent, c.ScheduledTask, c.Secret,
+		c.Settings, c.Subscription, c.SubscriptionLineItem, c.SubscriptionPause,
+		c.SubscriptionPhase, c.SubscriptionSchedule, c.SystemEvent, c.Task,
+		c.TaxApplied, c.TaxAssociation, c.TaxRate, c.Tenant, c.User, c.Wallet,
+		c.WalletTransaction, c.WorkflowExecution,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -588,6 +600,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Price.mutate(ctx, m)
 	case *PriceUnitMutation:
 		return c.PriceUnit.mutate(ctx, m)
+	case *RefundMutation:
+		return c.Refund.mutate(ctx, m)
+	case *RefundWebhookEventMutation:
+		return c.RefundWebhookEvent.mutate(ctx, m)
 	case *ScheduledTaskMutation:
 		return c.ScheduledTask.mutate(ctx, m)
 	case *SecretMutation:
@@ -4696,6 +4712,22 @@ func (c *PaymentClient) QueryAttempts(pa *Payment) *PaymentAttemptQuery {
 	return query
 }
 
+// QueryRefunds queries the refunds edge of a Payment.
+func (c *PaymentClient) QueryRefunds(pa *Payment) *RefundQuery {
+	query := (&RefundClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(payment.Table, payment.FieldID, id),
+			sqlgraph.To(refund.Table, refund.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, payment.RefundsTable, payment.RefundsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *PaymentClient) Hooks() []Hook {
 	return c.hooks.Payment
@@ -5463,6 +5495,272 @@ func (c *PriceUnitClient) mutate(ctx context.Context, m *PriceUnitMutation) (Val
 		return (&PriceUnitDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown PriceUnit mutation op: %q", m.Op())
+	}
+}
+
+// RefundClient is a client for the Refund schema.
+type RefundClient struct {
+	config
+}
+
+// NewRefundClient returns a client for the Refund from the given config.
+func NewRefundClient(c config) *RefundClient {
+	return &RefundClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `refund.Hooks(f(g(h())))`.
+func (c *RefundClient) Use(hooks ...Hook) {
+	c.hooks.Refund = append(c.hooks.Refund, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `refund.Intercept(f(g(h())))`.
+func (c *RefundClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Refund = append(c.inters.Refund, interceptors...)
+}
+
+// Create returns a builder for creating a Refund entity.
+func (c *RefundClient) Create() *RefundCreate {
+	mutation := newRefundMutation(c.config, OpCreate)
+	return &RefundCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Refund entities.
+func (c *RefundClient) CreateBulk(builders ...*RefundCreate) *RefundCreateBulk {
+	return &RefundCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RefundClient) MapCreateBulk(slice any, setFunc func(*RefundCreate, int)) *RefundCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RefundCreateBulk{err: fmt.Errorf("calling to RefundClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RefundCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RefundCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Refund.
+func (c *RefundClient) Update() *RefundUpdate {
+	mutation := newRefundMutation(c.config, OpUpdate)
+	return &RefundUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RefundClient) UpdateOne(r *Refund) *RefundUpdateOne {
+	mutation := newRefundMutation(c.config, OpUpdateOne, withRefund(r))
+	return &RefundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RefundClient) UpdateOneID(id string) *RefundUpdateOne {
+	mutation := newRefundMutation(c.config, OpUpdateOne, withRefundID(id))
+	return &RefundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Refund.
+func (c *RefundClient) Delete() *RefundDelete {
+	mutation := newRefundMutation(c.config, OpDelete)
+	return &RefundDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RefundClient) DeleteOne(r *Refund) *RefundDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RefundClient) DeleteOneID(id string) *RefundDeleteOne {
+	builder := c.Delete().Where(refund.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RefundDeleteOne{builder}
+}
+
+// Query returns a query builder for Refund.
+func (c *RefundClient) Query() *RefundQuery {
+	return &RefundQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRefund},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Refund entity by its id.
+func (c *RefundClient) Get(ctx context.Context, id string) (*Refund, error) {
+	return c.Query().Where(refund.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RefundClient) GetX(ctx context.Context, id string) *Refund {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RefundClient) Hooks() []Hook {
+	return c.hooks.Refund
+}
+
+// Interceptors returns the client interceptors.
+func (c *RefundClient) Interceptors() []Interceptor {
+	return c.inters.Refund
+}
+
+func (c *RefundClient) mutate(ctx context.Context, m *RefundMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RefundCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RefundUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RefundUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RefundDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Refund mutation op: %q", m.Op())
+	}
+}
+
+// RefundWebhookEventClient is a client for the RefundWebhookEvent schema.
+type RefundWebhookEventClient struct {
+	config
+}
+
+// NewRefundWebhookEventClient returns a client for the RefundWebhookEvent from the given config.
+func NewRefundWebhookEventClient(c config) *RefundWebhookEventClient {
+	return &RefundWebhookEventClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `refundwebhookevent.Hooks(f(g(h())))`.
+func (c *RefundWebhookEventClient) Use(hooks ...Hook) {
+	c.hooks.RefundWebhookEvent = append(c.hooks.RefundWebhookEvent, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `refundwebhookevent.Intercept(f(g(h())))`.
+func (c *RefundWebhookEventClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RefundWebhookEvent = append(c.inters.RefundWebhookEvent, interceptors...)
+}
+
+// Create returns a builder for creating a RefundWebhookEvent entity.
+func (c *RefundWebhookEventClient) Create() *RefundWebhookEventCreate {
+	mutation := newRefundWebhookEventMutation(c.config, OpCreate)
+	return &RefundWebhookEventCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RefundWebhookEvent entities.
+func (c *RefundWebhookEventClient) CreateBulk(builders ...*RefundWebhookEventCreate) *RefundWebhookEventCreateBulk {
+	return &RefundWebhookEventCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RefundWebhookEventClient) MapCreateBulk(slice any, setFunc func(*RefundWebhookEventCreate, int)) *RefundWebhookEventCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RefundWebhookEventCreateBulk{err: fmt.Errorf("calling to RefundWebhookEventClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RefundWebhookEventCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RefundWebhookEventCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RefundWebhookEvent.
+func (c *RefundWebhookEventClient) Update() *RefundWebhookEventUpdate {
+	mutation := newRefundWebhookEventMutation(c.config, OpUpdate)
+	return &RefundWebhookEventUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RefundWebhookEventClient) UpdateOne(rwe *RefundWebhookEvent) *RefundWebhookEventUpdateOne {
+	mutation := newRefundWebhookEventMutation(c.config, OpUpdateOne, withRefundWebhookEvent(rwe))
+	return &RefundWebhookEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RefundWebhookEventClient) UpdateOneID(id string) *RefundWebhookEventUpdateOne {
+	mutation := newRefundWebhookEventMutation(c.config, OpUpdateOne, withRefundWebhookEventID(id))
+	return &RefundWebhookEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RefundWebhookEvent.
+func (c *RefundWebhookEventClient) Delete() *RefundWebhookEventDelete {
+	mutation := newRefundWebhookEventMutation(c.config, OpDelete)
+	return &RefundWebhookEventDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RefundWebhookEventClient) DeleteOne(rwe *RefundWebhookEvent) *RefundWebhookEventDeleteOne {
+	return c.DeleteOneID(rwe.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RefundWebhookEventClient) DeleteOneID(id string) *RefundWebhookEventDeleteOne {
+	builder := c.Delete().Where(refundwebhookevent.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RefundWebhookEventDeleteOne{builder}
+}
+
+// Query returns a query builder for RefundWebhookEvent.
+func (c *RefundWebhookEventClient) Query() *RefundWebhookEventQuery {
+	return &RefundWebhookEventQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRefundWebhookEvent},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RefundWebhookEvent entity by its id.
+func (c *RefundWebhookEventClient) Get(ctx context.Context, id string) (*RefundWebhookEvent, error) {
+	return c.Query().Where(refundwebhookevent.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RefundWebhookEventClient) GetX(ctx context.Context, id string) *RefundWebhookEvent {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RefundWebhookEventClient) Hooks() []Hook {
+	return c.hooks.RefundWebhookEvent
+}
+
+// Interceptors returns the client interceptors.
+func (c *RefundWebhookEventClient) Interceptors() []Interceptor {
+	return c.inters.RefundWebhookEvent
+}
+
+func (c *RefundWebhookEventClient) mutate(ctx context.Context, m *RefundWebhookEventMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RefundWebhookEventCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RefundWebhookEventUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RefundWebhookEventUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RefundWebhookEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RefundWebhookEvent mutation op: %q", m.Op())
 	}
 }
 
@@ -8077,10 +8375,10 @@ type (
 		CreditNoteLineItem, Customer, Entitlement, EntityIntegrationMapping,
 		Environment, Feature, Group, IncomingWebhookEvent, Invoice, InvoiceLineItem,
 		InvoiceSequence, Meter, Payment, PaymentAttempt, PaymentMethod, Plan, Price,
-		PriceUnit, ScheduledTask, Secret, Settings, Subscription, SubscriptionLineItem,
-		SubscriptionPause, SubscriptionPhase, SubscriptionSchedule, SystemEvent, Task,
-		TaxApplied, TaxAssociation, TaxRate, Tenant, User, Wallet, WalletTransaction,
-		WorkflowExecution []ent.Hook
+		PriceUnit, Refund, RefundWebhookEvent, ScheduledTask, Secret, Settings,
+		Subscription, SubscriptionLineItem, SubscriptionPause, SubscriptionPhase,
+		SubscriptionSchedule, SystemEvent, Task, TaxApplied, TaxAssociation, TaxRate,
+		Tenant, User, Wallet, WalletTransaction, WorkflowExecution []ent.Hook
 	}
 	inters struct {
 		Addon, AddonAssociation, AlertLogs, AlertSettings, Auth, BillingSequence,
@@ -8089,10 +8387,10 @@ type (
 		CreditNoteLineItem, Customer, Entitlement, EntityIntegrationMapping,
 		Environment, Feature, Group, IncomingWebhookEvent, Invoice, InvoiceLineItem,
 		InvoiceSequence, Meter, Payment, PaymentAttempt, PaymentMethod, Plan, Price,
-		PriceUnit, ScheduledTask, Secret, Settings, Subscription, SubscriptionLineItem,
-		SubscriptionPause, SubscriptionPhase, SubscriptionSchedule, SystemEvent, Task,
-		TaxApplied, TaxAssociation, TaxRate, Tenant, User, Wallet, WalletTransaction,
-		WorkflowExecution []ent.Interceptor
+		PriceUnit, Refund, RefundWebhookEvent, ScheduledTask, Secret, Settings,
+		Subscription, SubscriptionLineItem, SubscriptionPause, SubscriptionPhase,
+		SubscriptionSchedule, SystemEvent, Task, TaxApplied, TaxAssociation, TaxRate,
+		Tenant, User, Wallet, WalletTransaction, WorkflowExecution []ent.Interceptor
 	}
 )
 

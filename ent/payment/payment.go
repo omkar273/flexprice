@@ -69,8 +69,12 @@ const (
 	FieldRecordedAt = "recorded_at"
 	// FieldErrorMessage holds the string denoting the error_message field in the database.
 	FieldErrorMessage = "error_message"
+	// FieldRefundedAmount holds the string denoting the refunded_amount field in the database.
+	FieldRefundedAmount = "refunded_amount"
 	// EdgeAttempts holds the string denoting the attempts edge name in mutations.
 	EdgeAttempts = "attempts"
+	// EdgeRefunds holds the string denoting the refunds edge name in mutations.
+	EdgeRefunds = "refunds"
 	// Table holds the table name of the payment in the database.
 	Table = "payments"
 	// AttemptsTable is the table that holds the attempts relation/edge.
@@ -80,6 +84,13 @@ const (
 	AttemptsInverseTable = "payment_attempts"
 	// AttemptsColumn is the table column denoting the attempts relation/edge.
 	AttemptsColumn = "payment_id"
+	// RefundsTable is the table that holds the refunds relation/edge.
+	RefundsTable = "refunds"
+	// RefundsInverseTable is the table name for the Refund entity.
+	// It exists in this package in order to avoid circular dependency with the "refund" package.
+	RefundsInverseTable = "refunds"
+	// RefundsColumn is the table column denoting the refunds relation/edge.
+	RefundsColumn = "payment_refunds"
 )
 
 // Columns holds all SQL columns for payment fields.
@@ -112,6 +123,7 @@ var Columns = []string{
 	FieldVoidedAt,
 	FieldRecordedAt,
 	FieldErrorMessage,
+	FieldRefundedAmount,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -151,6 +163,8 @@ var (
 	PaymentStatusValidator func(string) error
 	// DefaultTrackAttempts holds the default value on creation for the "track_attempts" field.
 	DefaultTrackAttempts bool
+	// DefaultRefundedAmount holds the default value on creation for the "refunded_amount" field.
+	DefaultRefundedAmount decimal.Decimal
 )
 
 // OrderOption defines the ordering options for the Payment queries.
@@ -286,6 +300,11 @@ func ByErrorMessage(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldErrorMessage, opts...).ToFunc()
 }
 
+// ByRefundedAmount orders the results by the refunded_amount field.
+func ByRefundedAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRefundedAmount, opts...).ToFunc()
+}
+
 // ByAttemptsCount orders the results by attempts count.
 func ByAttemptsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -299,10 +318,31 @@ func ByAttempts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAttemptsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByRefundsCount orders the results by refunds count.
+func ByRefundsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRefundsStep(), opts...)
+	}
+}
+
+// ByRefunds orders the results by refunds terms.
+func ByRefunds(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRefundsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newAttemptsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AttemptsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AttemptsTable, AttemptsColumn),
+	)
+}
+func newRefundsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RefundsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RefundsTable, RefundsColumn),
 	)
 }

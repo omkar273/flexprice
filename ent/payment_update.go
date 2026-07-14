@@ -14,6 +14,7 @@ import (
 	"github.com/flexprice/flexprice/ent/payment"
 	"github.com/flexprice/flexprice/ent/paymentattempt"
 	"github.com/flexprice/flexprice/ent/predicate"
+	"github.com/flexprice/flexprice/ent/refund"
 	"github.com/shopspring/decimal"
 )
 
@@ -378,6 +379,20 @@ func (pu *PaymentUpdate) ClearErrorMessage() *PaymentUpdate {
 	return pu
 }
 
+// SetRefundedAmount sets the "refunded_amount" field.
+func (pu *PaymentUpdate) SetRefundedAmount(d decimal.Decimal) *PaymentUpdate {
+	pu.mutation.SetRefundedAmount(d)
+	return pu
+}
+
+// SetNillableRefundedAmount sets the "refunded_amount" field if the given value is not nil.
+func (pu *PaymentUpdate) SetNillableRefundedAmount(d *decimal.Decimal) *PaymentUpdate {
+	if d != nil {
+		pu.SetRefundedAmount(*d)
+	}
+	return pu
+}
+
 // AddAttemptIDs adds the "attempts" edge to the PaymentAttempt entity by IDs.
 func (pu *PaymentUpdate) AddAttemptIDs(ids ...string) *PaymentUpdate {
 	pu.mutation.AddAttemptIDs(ids...)
@@ -391,6 +406,21 @@ func (pu *PaymentUpdate) AddAttempts(p ...*PaymentAttempt) *PaymentUpdate {
 		ids[i] = p[i].ID
 	}
 	return pu.AddAttemptIDs(ids...)
+}
+
+// AddRefundIDs adds the "refunds" edge to the Refund entity by IDs.
+func (pu *PaymentUpdate) AddRefundIDs(ids ...string) *PaymentUpdate {
+	pu.mutation.AddRefundIDs(ids...)
+	return pu
+}
+
+// AddRefunds adds the "refunds" edges to the Refund entity.
+func (pu *PaymentUpdate) AddRefunds(r ...*Refund) *PaymentUpdate {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pu.AddRefundIDs(ids...)
 }
 
 // Mutation returns the PaymentMutation object of the builder.
@@ -417,6 +447,27 @@ func (pu *PaymentUpdate) RemoveAttempts(p ...*PaymentAttempt) *PaymentUpdate {
 		ids[i] = p[i].ID
 	}
 	return pu.RemoveAttemptIDs(ids...)
+}
+
+// ClearRefunds clears all "refunds" edges to the Refund entity.
+func (pu *PaymentUpdate) ClearRefunds() *PaymentUpdate {
+	pu.mutation.ClearRefunds()
+	return pu
+}
+
+// RemoveRefundIDs removes the "refunds" edge to Refund entities by IDs.
+func (pu *PaymentUpdate) RemoveRefundIDs(ids ...string) *PaymentUpdate {
+	pu.mutation.RemoveRefundIDs(ids...)
+	return pu
+}
+
+// RemoveRefunds removes "refunds" edges to Refund entities.
+func (pu *PaymentUpdate) RemoveRefunds(r ...*Refund) *PaymentUpdate {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pu.RemoveRefundIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -600,6 +651,9 @@ func (pu *PaymentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if pu.mutation.ErrorMessageCleared() {
 		_spec.ClearField(payment.FieldErrorMessage, field.TypeString)
 	}
+	if value, ok := pu.mutation.RefundedAmount(); ok {
+		_spec.SetField(payment.FieldRefundedAmount, field.TypeOther, value)
+	}
 	if pu.mutation.AttemptsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -638,6 +692,51 @@ func (pu *PaymentUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(paymentattempt.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.RefundsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   payment.RefundsTable,
+			Columns: []string{payment.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedRefundsIDs(); len(nodes) > 0 && !pu.mutation.RefundsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   payment.RefundsTable,
+			Columns: []string{payment.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RefundsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   payment.RefundsTable,
+			Columns: []string{payment.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {
@@ -1013,6 +1112,20 @@ func (puo *PaymentUpdateOne) ClearErrorMessage() *PaymentUpdateOne {
 	return puo
 }
 
+// SetRefundedAmount sets the "refunded_amount" field.
+func (puo *PaymentUpdateOne) SetRefundedAmount(d decimal.Decimal) *PaymentUpdateOne {
+	puo.mutation.SetRefundedAmount(d)
+	return puo
+}
+
+// SetNillableRefundedAmount sets the "refunded_amount" field if the given value is not nil.
+func (puo *PaymentUpdateOne) SetNillableRefundedAmount(d *decimal.Decimal) *PaymentUpdateOne {
+	if d != nil {
+		puo.SetRefundedAmount(*d)
+	}
+	return puo
+}
+
 // AddAttemptIDs adds the "attempts" edge to the PaymentAttempt entity by IDs.
 func (puo *PaymentUpdateOne) AddAttemptIDs(ids ...string) *PaymentUpdateOne {
 	puo.mutation.AddAttemptIDs(ids...)
@@ -1026,6 +1139,21 @@ func (puo *PaymentUpdateOne) AddAttempts(p ...*PaymentAttempt) *PaymentUpdateOne
 		ids[i] = p[i].ID
 	}
 	return puo.AddAttemptIDs(ids...)
+}
+
+// AddRefundIDs adds the "refunds" edge to the Refund entity by IDs.
+func (puo *PaymentUpdateOne) AddRefundIDs(ids ...string) *PaymentUpdateOne {
+	puo.mutation.AddRefundIDs(ids...)
+	return puo
+}
+
+// AddRefunds adds the "refunds" edges to the Refund entity.
+func (puo *PaymentUpdateOne) AddRefunds(r ...*Refund) *PaymentUpdateOne {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return puo.AddRefundIDs(ids...)
 }
 
 // Mutation returns the PaymentMutation object of the builder.
@@ -1052,6 +1180,27 @@ func (puo *PaymentUpdateOne) RemoveAttempts(p ...*PaymentAttempt) *PaymentUpdate
 		ids[i] = p[i].ID
 	}
 	return puo.RemoveAttemptIDs(ids...)
+}
+
+// ClearRefunds clears all "refunds" edges to the Refund entity.
+func (puo *PaymentUpdateOne) ClearRefunds() *PaymentUpdateOne {
+	puo.mutation.ClearRefunds()
+	return puo
+}
+
+// RemoveRefundIDs removes the "refunds" edge to Refund entities by IDs.
+func (puo *PaymentUpdateOne) RemoveRefundIDs(ids ...string) *PaymentUpdateOne {
+	puo.mutation.RemoveRefundIDs(ids...)
+	return puo
+}
+
+// RemoveRefunds removes "refunds" edges to Refund entities.
+func (puo *PaymentUpdateOne) RemoveRefunds(r ...*Refund) *PaymentUpdateOne {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return puo.RemoveRefundIDs(ids...)
 }
 
 // Where appends a list predicates to the PaymentUpdate builder.
@@ -1265,6 +1414,9 @@ func (puo *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err e
 	if puo.mutation.ErrorMessageCleared() {
 		_spec.ClearField(payment.FieldErrorMessage, field.TypeString)
 	}
+	if value, ok := puo.mutation.RefundedAmount(); ok {
+		_spec.SetField(payment.FieldRefundedAmount, field.TypeOther, value)
+	}
 	if puo.mutation.AttemptsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -1303,6 +1455,51 @@ func (puo *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(paymentattempt.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.RefundsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   payment.RefundsTable,
+			Columns: []string{payment.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeString),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedRefundsIDs(); len(nodes) > 0 && !puo.mutation.RefundsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   payment.RefundsTable,
+			Columns: []string{payment.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeString),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RefundsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   payment.RefundsTable,
+			Columns: []string{payment.RefundsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(refund.FieldID, field.TypeString),
 			},
 		}
 		for _, k := range nodes {

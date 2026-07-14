@@ -15,6 +15,7 @@ import (
 	"github.com/flexprice/flexprice/ent/payment"
 	"github.com/flexprice/flexprice/ent/paymentattempt"
 	"github.com/flexprice/flexprice/ent/predicate"
+	"github.com/flexprice/flexprice/ent/refund"
 )
 
 // PaymentQuery is the builder for querying Payment entities.
@@ -25,6 +26,7 @@ type PaymentQuery struct {
 	inters       []Interceptor
 	predicates   []predicate.Payment
 	withAttempts *PaymentAttemptQuery
+	withRefunds  *RefundQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -76,6 +78,28 @@ func (pq *PaymentQuery) QueryAttempts() *PaymentAttemptQuery {
 			sqlgraph.From(payment.Table, payment.FieldID, selector),
 			sqlgraph.To(paymentattempt.Table, paymentattempt.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, payment.AttemptsTable, payment.AttemptsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRefunds chains the current query on the "refunds" edge.
+func (pq *PaymentQuery) QueryRefunds() *RefundQuery {
+	query := (&RefundClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(payment.Table, payment.FieldID, selector),
+			sqlgraph.To(refund.Table, refund.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, payment.RefundsTable, payment.RefundsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -276,6 +300,7 @@ func (pq *PaymentQuery) Clone() *PaymentQuery {
 		inters:       append([]Interceptor{}, pq.inters...),
 		predicates:   append([]predicate.Payment{}, pq.predicates...),
 		withAttempts: pq.withAttempts.Clone(),
+		withRefunds:  pq.withRefunds.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -290,6 +315,17 @@ func (pq *PaymentQuery) WithAttempts(opts ...func(*PaymentAttemptQuery)) *Paymen
 		opt(query)
 	}
 	pq.withAttempts = query
+	return pq
+}
+
+// WithRefunds tells the query-builder to eager-load the nodes that are connected to
+// the "refunds" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PaymentQuery) WithRefunds(opts ...func(*RefundQuery)) *PaymentQuery {
+	query := (&RefundClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withRefunds = query
 	return pq
 }
 
@@ -371,8 +407,9 @@ func (pq *PaymentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Paym
 	var (
 		nodes       = []*Payment{}
 		_spec       = pq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			pq.withAttempts != nil,
+			pq.withRefunds != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -397,6 +434,13 @@ func (pq *PaymentQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Paym
 		if err := pq.loadAttempts(ctx, query, nodes,
 			func(n *Payment) { n.Edges.Attempts = []*PaymentAttempt{} },
 			func(n *Payment, e *PaymentAttempt) { n.Edges.Attempts = append(n.Edges.Attempts, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withRefunds; query != nil {
+		if err := pq.loadRefunds(ctx, query, nodes,
+			func(n *Payment) { n.Edges.Refunds = []*Refund{} },
+			func(n *Payment, e *Refund) { n.Edges.Refunds = append(n.Edges.Refunds, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -428,6 +472,37 @@ func (pq *PaymentQuery) loadAttempts(ctx context.Context, query *PaymentAttemptQ
 		node, ok := nodeids[fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "payment_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (pq *PaymentQuery) loadRefunds(ctx context.Context, query *RefundQuery, nodes []*Payment, init func(*Payment), assign func(*Payment, *Refund)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Payment)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Refund(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(payment.RefundsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.payment_refunds
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "payment_refunds" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "payment_refunds" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

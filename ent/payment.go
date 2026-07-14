@@ -73,6 +73,8 @@ type Payment struct {
 	RecordedAt *time.Time `json:"recorded_at,omitempty"`
 	// ErrorMessage holds the value of the "error_message" field.
 	ErrorMessage *string `json:"error_message,omitempty"`
+	// RefundedAmount holds the value of the "refunded_amount" field.
+	RefundedAmount decimal.Decimal `json:"refunded_amount,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PaymentQuery when eager-loading is set.
 	Edges        PaymentEdges `json:"edges"`
@@ -83,9 +85,11 @@ type Payment struct {
 type PaymentEdges struct {
 	// Attempts holds the value of the attempts edge.
 	Attempts []*PaymentAttempt `json:"attempts,omitempty"`
+	// Refunds holds the value of the refunds edge.
+	Refunds []*Refund `json:"refunds,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // AttemptsOrErr returns the Attempts value or an error if the edge
@@ -97,6 +101,15 @@ func (e PaymentEdges) AttemptsOrErr() ([]*PaymentAttempt, error) {
 	return nil, &NotLoadedError{edge: "attempts"}
 }
 
+// RefundsOrErr returns the Refunds value or an error if the edge
+// was not loaded in eager-loading.
+func (e PaymentEdges) RefundsOrErr() ([]*Refund, error) {
+	if e.loadedTypes[1] {
+		return e.Refunds, nil
+	}
+	return nil, &NotLoadedError{edge: "refunds"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Payment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -104,7 +117,7 @@ func (*Payment) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case payment.FieldGatewayMetadata, payment.FieldMetadata:
 			values[i] = new([]byte)
-		case payment.FieldAmount:
+		case payment.FieldAmount, payment.FieldRefundedAmount:
 			values[i] = new(decimal.Decimal)
 		case payment.FieldTrackAttempts:
 			values[i] = new(sql.NullBool)
@@ -308,6 +321,12 @@ func (pa *Payment) assignValues(columns []string, values []any) error {
 				pa.ErrorMessage = new(string)
 				*pa.ErrorMessage = value.String
 			}
+		case payment.FieldRefundedAmount:
+			if value, ok := values[i].(*decimal.Decimal); !ok {
+				return fmt.Errorf("unexpected type %T for field refunded_amount", values[i])
+			} else if value != nil {
+				pa.RefundedAmount = *value
+			}
 		default:
 			pa.selectValues.Set(columns[i], values[i])
 		}
@@ -324,6 +343,11 @@ func (pa *Payment) Value(name string) (ent.Value, error) {
 // QueryAttempts queries the "attempts" edge of the Payment entity.
 func (pa *Payment) QueryAttempts() *PaymentAttemptQuery {
 	return NewPaymentClient(pa.config).QueryAttempts(pa)
+}
+
+// QueryRefunds queries the "refunds" edge of the Payment entity.
+func (pa *Payment) QueryRefunds() *RefundQuery {
+	return NewPaymentClient(pa.config).QueryRefunds(pa)
 }
 
 // Update returns a builder for updating this Payment.
@@ -447,6 +471,9 @@ func (pa *Payment) String() string {
 		builder.WriteString("error_message=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("refunded_amount=")
+	builder.WriteString(fmt.Sprintf("%v", pa.RefundedAmount))
 	builder.WriteByte(')')
 	return builder.String()
 }

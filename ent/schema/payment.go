@@ -125,6 +125,14 @@ func (Payment) Fields() []ent.Field {
 			}).
 			Optional().
 			Nillable(),
+		// refunded_amount is the running total claimed by any refund mechanism (gateway Refund
+		// at creation, or wallet-credit CreditNote at finalize). Both paths increment this field
+		// under a SELECT ... FOR UPDATE row lock so they serialize against each other (decision 8).
+		field.Other("refunded_amount", decimal.Decimal{}).
+			SchemaType(map[string]string{
+				"postgres": "numeric(20,8)",
+			}).
+			Default(decimal.Zero),
 	}
 }
 
@@ -132,6 +140,7 @@ func (Payment) Fields() []ent.Field {
 func (Payment) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("attempts", PaymentAttempt.Type),
+		edge.To("refunds", Refund.Type),
 	}
 }
 

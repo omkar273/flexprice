@@ -38,6 +38,8 @@ import (
 	"github.com/flexprice/flexprice/ent/plan"
 	"github.com/flexprice/flexprice/ent/price"
 	"github.com/flexprice/flexprice/ent/priceunit"
+	"github.com/flexprice/flexprice/ent/refund"
+	"github.com/flexprice/flexprice/ent/refundwebhookevent"
 	"github.com/flexprice/flexprice/ent/scheduledtask"
 	"github.com/flexprice/flexprice/ent/schema"
 	"github.com/flexprice/flexprice/ent/secret"
@@ -1326,6 +1328,10 @@ func init() {
 	paymentDescTrackAttempts := paymentFields[13].Descriptor()
 	// payment.DefaultTrackAttempts holds the default value on creation for the track_attempts field.
 	payment.DefaultTrackAttempts = paymentDescTrackAttempts.Default.(bool)
+	// paymentDescRefundedAmount is the schema descriptor for refunded_amount field.
+	paymentDescRefundedAmount := paymentFields[21].Descriptor()
+	// payment.DefaultRefundedAmount holds the default value on creation for the refunded_amount field.
+	payment.DefaultRefundedAmount = paymentDescRefundedAmount.Default.(decimal.Decimal)
 	paymentattemptMixin := schema.PaymentAttempt{}.Mixin()
 	paymentattemptMixinFields0 := paymentattemptMixin[0].Fields()
 	_ = paymentattemptMixinFields0
@@ -1605,6 +1611,112 @@ func init() {
 	priceunitDescConversionRate := priceunitFields[5].Descriptor()
 	// priceunit.DefaultConversionRate holds the default value on creation for the conversion_rate field.
 	priceunit.DefaultConversionRate = priceunitDescConversionRate.Default.(decimal.Decimal)
+	refundMixin := schema.Refund{}.Mixin()
+	refundMixinFields0 := refundMixin[0].Fields()
+	_ = refundMixinFields0
+	refundMixinFields1 := refundMixin[1].Fields()
+	_ = refundMixinFields1
+	refundFields := schema.Refund{}.Fields()
+	_ = refundFields
+	// refundDescTenantID is the schema descriptor for tenant_id field.
+	refundDescTenantID := refundMixinFields0[0].Descriptor()
+	// refund.TenantIDValidator is a validator for the "tenant_id" field. It is called by the builders before save.
+	refund.TenantIDValidator = refundDescTenantID.Validators[0].(func(string) error)
+	// refundDescStatus is the schema descriptor for status field.
+	refundDescStatus := refundMixinFields0[1].Descriptor()
+	// refund.DefaultStatus holds the default value on creation for the status field.
+	refund.DefaultStatus = refundDescStatus.Default.(string)
+	// refundDescCreatedAt is the schema descriptor for created_at field.
+	refundDescCreatedAt := refundMixinFields0[2].Descriptor()
+	// refund.DefaultCreatedAt holds the default value on creation for the created_at field.
+	refund.DefaultCreatedAt = refundDescCreatedAt.Default.(func() time.Time)
+	// refundDescUpdatedAt is the schema descriptor for updated_at field.
+	refundDescUpdatedAt := refundMixinFields0[3].Descriptor()
+	// refund.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	refund.DefaultUpdatedAt = refundDescUpdatedAt.Default.(func() time.Time)
+	// refund.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	refund.UpdateDefaultUpdatedAt = refundDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// refundDescEnvironmentID is the schema descriptor for environment_id field.
+	refundDescEnvironmentID := refundMixinFields1[0].Descriptor()
+	// refund.DefaultEnvironmentID holds the default value on creation for the environment_id field.
+	refund.DefaultEnvironmentID = refundDescEnvironmentID.Default.(string)
+	// refundDescPaymentID is the schema descriptor for payment_id field.
+	refundDescPaymentID := refundFields[1].Descriptor()
+	// refund.PaymentIDValidator is a validator for the "payment_id" field. It is called by the builders before save.
+	refund.PaymentIDValidator = refundDescPaymentID.Validators[0].(func(string) error)
+	// refundDescPaymentGateway is the schema descriptor for payment_gateway field.
+	refundDescPaymentGateway := refundFields[2].Descriptor()
+	// refund.PaymentGatewayValidator is a validator for the "payment_gateway" field. It is called by the builders before save.
+	refund.PaymentGatewayValidator = refundDescPaymentGateway.Validators[0].(func(string) error)
+	// refundDescAmount is the schema descriptor for amount field.
+	refundDescAmount := refundFields[5].Descriptor()
+	// refund.DefaultAmount holds the default value on creation for the amount field.
+	refund.DefaultAmount = refundDescAmount.Default.(decimal.Decimal)
+	// refundDescCurrency is the schema descriptor for currency field.
+	refundDescCurrency := refundFields[6].Descriptor()
+	// refund.CurrencyValidator is a validator for the "currency" field. It is called by the builders before save.
+	refund.CurrencyValidator = refundDescCurrency.Validators[0].(func(string) error)
+	// refundDescRefundStatus is the schema descriptor for refund_status field.
+	refundDescRefundStatus := refundFields[7].Descriptor()
+	// refund.RefundStatusValidator is a validator for the "refund_status" field. It is called by the builders before save.
+	refund.RefundStatusValidator = refundDescRefundStatus.Validators[0].(func(string) error)
+	// refundDescRefundReason is the schema descriptor for refund_reason field.
+	refundDescRefundReason := refundFields[8].Descriptor()
+	// refund.RefundReasonValidator is a validator for the "refund_reason" field. It is called by the builders before save.
+	refund.RefundReasonValidator = refundDescRefundReason.Validators[0].(func(string) error)
+	// refundDescIdempotencyKey is the schema descriptor for idempotency_key field.
+	refundDescIdempotencyKey := refundFields[9].Descriptor()
+	// refund.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
+	refund.IdempotencyKeyValidator = refundDescIdempotencyKey.Validators[0].(func(string) error)
+	// refundDescGatewayIdempotencyToken is the schema descriptor for gateway_idempotency_token field.
+	refundDescGatewayIdempotencyToken := refundFields[10].Descriptor()
+	// refund.GatewayIdempotencyTokenValidator is a validator for the "gateway_idempotency_token" field. It is called by the builders before save.
+	refund.GatewayIdempotencyTokenValidator = refundDescGatewayIdempotencyToken.Validators[0].(func(string) error)
+	refundwebhookeventMixin := schema.RefundWebhookEvent{}.Mixin()
+	refundwebhookeventMixinFields0 := refundwebhookeventMixin[0].Fields()
+	_ = refundwebhookeventMixinFields0
+	refundwebhookeventMixinFields1 := refundwebhookeventMixin[1].Fields()
+	_ = refundwebhookeventMixinFields1
+	refundwebhookeventFields := schema.RefundWebhookEvent{}.Fields()
+	_ = refundwebhookeventFields
+	// refundwebhookeventDescTenantID is the schema descriptor for tenant_id field.
+	refundwebhookeventDescTenantID := refundwebhookeventMixinFields0[0].Descriptor()
+	// refundwebhookevent.TenantIDValidator is a validator for the "tenant_id" field. It is called by the builders before save.
+	refundwebhookevent.TenantIDValidator = refundwebhookeventDescTenantID.Validators[0].(func(string) error)
+	// refundwebhookeventDescStatus is the schema descriptor for status field.
+	refundwebhookeventDescStatus := refundwebhookeventMixinFields0[1].Descriptor()
+	// refundwebhookevent.DefaultStatus holds the default value on creation for the status field.
+	refundwebhookevent.DefaultStatus = refundwebhookeventDescStatus.Default.(string)
+	// refundwebhookeventDescCreatedAt is the schema descriptor for created_at field.
+	refundwebhookeventDescCreatedAt := refundwebhookeventMixinFields0[2].Descriptor()
+	// refundwebhookevent.DefaultCreatedAt holds the default value on creation for the created_at field.
+	refundwebhookevent.DefaultCreatedAt = refundwebhookeventDescCreatedAt.Default.(func() time.Time)
+	// refundwebhookeventDescUpdatedAt is the schema descriptor for updated_at field.
+	refundwebhookeventDescUpdatedAt := refundwebhookeventMixinFields0[3].Descriptor()
+	// refundwebhookevent.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	refundwebhookevent.DefaultUpdatedAt = refundwebhookeventDescUpdatedAt.Default.(func() time.Time)
+	// refundwebhookevent.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	refundwebhookevent.UpdateDefaultUpdatedAt = refundwebhookeventDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// refundwebhookeventDescEnvironmentID is the schema descriptor for environment_id field.
+	refundwebhookeventDescEnvironmentID := refundwebhookeventMixinFields1[0].Descriptor()
+	// refundwebhookevent.DefaultEnvironmentID holds the default value on creation for the environment_id field.
+	refundwebhookevent.DefaultEnvironmentID = refundwebhookeventDescEnvironmentID.Default.(string)
+	// refundwebhookeventDescGateway is the schema descriptor for gateway field.
+	refundwebhookeventDescGateway := refundwebhookeventFields[1].Descriptor()
+	// refundwebhookevent.GatewayValidator is a validator for the "gateway" field. It is called by the builders before save.
+	refundwebhookevent.GatewayValidator = refundwebhookeventDescGateway.Validators[0].(func(string) error)
+	// refundwebhookeventDescGatewayEventID is the schema descriptor for gateway_event_id field.
+	refundwebhookeventDescGatewayEventID := refundwebhookeventFields[2].Descriptor()
+	// refundwebhookevent.GatewayEventIDValidator is a validator for the "gateway_event_id" field. It is called by the builders before save.
+	refundwebhookevent.GatewayEventIDValidator = refundwebhookeventDescGatewayEventID.Validators[0].(func(string) error)
+	// refundwebhookeventDescProcessed is the schema descriptor for processed field.
+	refundwebhookeventDescProcessed := refundwebhookeventFields[4].Descriptor()
+	// refundwebhookevent.DefaultProcessed holds the default value on creation for the processed field.
+	refundwebhookevent.DefaultProcessed = refundwebhookeventDescProcessed.Default.(bool)
+	// refundwebhookeventDescAttempts is the schema descriptor for attempts field.
+	refundwebhookeventDescAttempts := refundwebhookeventFields[7].Descriptor()
+	// refundwebhookevent.DefaultAttempts holds the default value on creation for the attempts field.
+	refundwebhookevent.DefaultAttempts = refundwebhookeventDescAttempts.Default.(int)
 	scheduledtaskMixin := schema.ScheduledTask{}.Mixin()
 	scheduledtaskMixinFields0 := scheduledtaskMixin[0].Fields()
 	_ = scheduledtaskMixinFields0

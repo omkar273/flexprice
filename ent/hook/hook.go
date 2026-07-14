@@ -405,6 +405,30 @@ func (f PriceUnitFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PriceUnitMutation", m)
 }
 
+// The RefundFunc type is an adapter to allow the use of ordinary
+// function as Refund mutator.
+type RefundFunc func(context.Context, *ent.RefundMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RefundFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RefundMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RefundMutation", m)
+}
+
+// The RefundWebhookEventFunc type is an adapter to allow the use of ordinary
+// function as RefundWebhookEvent mutator.
+type RefundWebhookEventFunc func(context.Context, *ent.RefundWebhookEventMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RefundWebhookEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RefundWebhookEventMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RefundWebhookEventMutation", m)
+}
+
 // The ScheduledTaskFunc type is an adapter to allow the use of ordinary
 // function as ScheduledTask mutator.
 type ScheduledTaskFunc func(context.Context, *ent.ScheduledTaskMutation) (ent.Value, error)

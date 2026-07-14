@@ -1,0 +1,906 @@
+# Refund Object — Design Spec
+
+Date: 2026-07-14
+Status: Approved (pending implementation plan)
+
+## 1. Problem & Goal
+
+Flexprice has no first-class concept of an actual gateway refund. What the codebase
+currently calls a "refund" is a `CreditNote` of type `REFUND`, which — on finalize —
+tops up the customer's Flexprice **wallet balance**. It never calls a payment gateway
+to send money back to the customer's original payment method (card/bank account).
+
+`Payment` already has `PaymentStatus` values `REFUNDED`/`PARTIALLY_REFUNDED` and a
+`RefundedAt` timestamp, but nothing outside one narrow internal case
+(`internal/integration/moyasar/webhook/handler.go` — void-or-refund cleanup for
+stranded AUTH/tokenization charges) drives them. Stripe and Razorpay integrations have
+zero refund-related code today.
+
+**Goal:** introduce a first-class `Refund` object that actually calls out to the
+payment gateway (Stripe, Razorpay) to return funds to the customer's original payment
+method, tracks the async lifecycle of that gateway call, and updates `Payment`
+accordingly — safely, under concurrency, and without opening a second way to pay out
+the same money that `CreditNote` already has a path to.
+
+## 2. Scope
+
+**In scope:**
+
+- New `Refund` domain entity, Ent schema, repository, service, API, following existing
+  repo conventions (`ServiceParams` DI, `internal/interfaces/service.go`, factory-based
+  gateway integrations).
+- Gateway refund support for **Stripe** and **Razorpay** only.
+- Async status lifecycle mirroring `PaymentStatus`'s shape (`PENDING` → `PROCESSING` →
+  `SUCCEEDED`/`FAILED`/`CANCELLED`), driven primarily by gateway webhooks.
+- Refund creation scoped strictly to a `Payment` (`POST /payments/{id}/refunds`) — no
+  invoice-scoped or invoice-accepting creation path.
+- A **lightweight recovery sweep** (§5b) that reclaims stale in-flight reservations and
+  retries unmatched webhook events, implemented as a **Temporal Schedule** (an entry in
+  `AllTemporalScheduleConfigs()`, matching the existing
+  `ScheduleIDMoyasarAuthPaymentSettlement` pattern) — **not** the `internal/api/cron/`
+  HTTP-endpoint pattern. That distinction matters and was gotten wrong in an earlier
+  draft of this spec: every handler under `internal/api/cron/` is explicitly marked
+  `// Deprecated: for automation, use Temporal server schedules` (see
+  `internal/api/cron/{creditgrant,subscription,invoice,wallet}.go`), and nothing
+  currently invokes them on a schedule — they're manual/legacy trigger endpoints. A
+  Temporal Schedule is the actual lightweight, idiomatic mechanism here; it requires no
+  new external scheduler infrastructure since Temporal already runs the existing
+  schedule list.
+
+**Explicitly out of scope (this iteration):**
+
+- Chargebee, Moyasar (as a general-purpose refund target — its existing narrow
+  AUTH-cleanup usage is untouched), and any other gateway.
+- A **gateway-polling reconciliation workflow** (actively calling out to Stripe/Razorpay
+  to ask "what really happened" to a stuck refund). The Temporal-scheduled sweep in
+  scope above is a much smaller mechanism — it only reclaims/retries using data already
+  available locally (timeouts and unmatched local webhook events); it never calls a
+  gateway API to check state. A full gateway-polling reconciliation workflow, if needed
+  later, would extend this same schedule/workflow rather than introduce a second
+  mechanism — this is a scope boundary on _what the workflow does_, not on _whether
+  Temporal is used_, correcting the earlier draft's framing.
+- A shared `PaymentRefunder` interface across gateway integrations (see §5).
+- Any change to how `CreditNote` is presented to the caller, or to its wallet-credit
+  mechanics — those are unchanged. What _is_ in scope is a change to how and when
+  `CreditNote` reserves capacity against `Payment` internally (§3 decision 8), which is
+  invisible to callers.
+
+## 3. Key Decisions
+
+These were explicitly decided during design (including three rounds of adversarial
+principal-engineer review) and should not be re-litigated without a reason:
+
+1. **Real gateway refunds, not reconciliation-only.** This is a net-new capability to
+   actually move money back to the customer, not just record refunds issued elsewhere.
+2. **Sibling path to CreditNote, not a replacement.** `CreditNote` → wallet-credit
+   keeps working unchanged from the caller's perspective. `Refund` is a separate,
+   additional path for when the business wants money sent back to the original payment
+   method instead of wallet credit. The two are **not linked** as entities — no shared
+   row, no automatic creation of one from the other — but they **do** share a
+   capacity-accounting mechanism internally (decision 8), because they draw from the
+   same pool of money.
+3. **`Refund` never writes to `Invoice`.** It only ever reads/updates `Payment`.
+   `Invoice.RefundedAmount` and `Invoice.PaymentStatus` remain driven solely by
+   `CreditNote` as today — `Refund` does not touch either field. The correctness gap
+   this alone would create (CreditNote's cap check is Invoice-field-based and blind to
+   gateway refunds) is closed by decision 8's _separate_, Payment-level, lock-guarded
+   counter — not by changing this decision.
+4. **`RefundReason` is its own new enum**, separate from `types.CreditNoteReason` —
+   not reused, not free text.
+5. **Refund creation is payment-scoped only**: `POST /payments/{id}/refunds`. No
+   standalone `/refunds` create endpoint that accepts either a payment or invoice ID.
+6. **Gateway abstraction: Option A — per-gateway method, no shared interface yet.**
+   `RefundPayment(...)` is added directly to `StripeIntegration` and
+   `RazorpayIntegration` (loosely following the existing ad-hoc precedent of
+   `(c *Client) RefundPayment(ctx, paymentID string, amount int)` on Moyasar's client
+   (`internal/integration/moyasar/client.go`) for "a refund method lives directly on
+   the gateway struct" — note that method has no idempotency-key parameter, so the
+   idempotency threading in decision 11 is net-new, not mirrored from Moyasar), wired
+   through the factory. A shared `PaymentRefunder` interface can be introduced later,
+   mechanically, once/if a 3rd gateway needs refund support.
+7. **Status lifecycle mirrors `PaymentStatus`'s shape**: `PENDING`, `PROCESSING`,
+   `SUCCEEDED`, `FAILED`, `CANCELLED` — five states, no additional internal-only state
+   (an earlier draft added a transient `INITIATING` state; §5's atomic-claim redesign
+   removed the need for it — `PENDING` itself now denotes "claimed, gateway call about
+   to be attempted," per §5). Updated primarily via gateway webhooks, with synchronous
+   terminal states handled inline when a gateway returns one immediately (e.g. some
+   Razorpay instant refunds).
+8. **`Payment.RefundedAmount` is the single, shared, lock-guarded counter for "how much
+   of this payment has been claimed by a refund-in-progress-or-complete, by any
+   mechanism" — both `Refund` and `CreditNote` write to it, under the same row lock,
+   at the point each mechanism actually commits to paying money out.**
+   This is the load-bearing guard against double payout and went through two prior,
+   broken versions during review — the final mechanics, and _why_ the earlier versions
+   failed, matter for the implementer:
+   - **Attempt 1** (CreditNote does an unlocked read of `Payment.RefundedAmount` at
+     create time): broken because it only guarded one direction (CreditNote-after-
+     Refund, not Refund-after-CreditNote) and the read wasn't taken under any lock, so
+     it could race a concurrent reservation.
+   - **Attempt 2** (CreditNote takes the _same_ row lock and increments
+     `Payment.RefundedAmount`, but at `CreateCreditNote` time): broken because
+     `CreditNote` has a real two-phase lifecycle — `CreateCreditNote` produces a
+     **Draft** that reserves nothing today (see `internal/ee/service/creditnote.go`),
+     and `VoidCreditNote` explicitly allows voiding a Draft refund-type note at any
+     time. Reserving capacity at create time with no corresponding release-on-void
+     logic leaks a permanent phantom reservation every time a draft refund credit note
+     is voided instead of finalized.
+   - **Final design**: the lock-and-increment happens at **`FinalizeCreditNote`** time
+     — the same transaction that already performs the real, currently-irreversible
+     money movement (`walletService.TopUpWallet` and
+     `RecalculateInvoiceAmountsForCreditNote`/`Invoice.RefundedAmount`). This matches
+     where CreditNote's _existing_ invariant already is: "you cannot void a finalized
+     refund-type credit note because money has already moved" — the new
+     `Payment.RefundedAmount` reservation moves at exactly that same moment, so it
+     needs no separate release path. `CreateCreditNote`'s existing Invoice-field-based
+     cap check (`calculateMaxCreditableAmount`) is **unchanged** and still runs at
+     create time as a fast-fail UX check (a Draft can still be created optimistically
+     and shown to the user); it is _not_ the authoritative check. `FinalizeCreditNote`
+     gains the authoritative, lock-guarded check and is where a finalize can now fail
+     with "insufficient remaining capacity, already claimed by a concurrent refund" —
+     in which case the CreditNote simply stays in Draft (voidable under existing rules,
+     no reservation to release because none was taken).
+   - Concretely, in `FinalizeCreditNote`, within its existing transaction: resolve the
+     invoice's backing `Payment`(s) (`DestinationID == invoiceID`, status `SUCCEEDED`
+     or `PARTIALLY_REFUNDED`), ordered by `SucceededAt` ascending; `SELECT ... FOR
+UPDATE` each in turn; claim as much of the credit note's amount as each payment
+     can absorb (`Amount - RefundedAmount`), spilling into the next payment for any
+     remainder; increment each claimed payment's `RefundedAmount` **in the same `tx`
+     as the wallet top-up** (this is the one guarantee this decision actually needs and
+     controls). The `Invoice.RefundedAmount` update in the same function is a separate
+     matter — see the landmine note immediately below for why it is _not_ currently
+     atomic with the wallet top-up, and why that's a pre-existing, independent issue
+     this decision doesn't need to fix to be correct itself. This is real, non-trivial
+     new implementation work in `creditnote.go` (deterministic ordering, per-payment
+     capping, defensive rejection if collective capacity is somehow insufficient) — it
+     must ship in the same release as `Refund`, scoped explicitly in the implementation
+     plan, not treated as a one-line addition.
+   - **Known landmine in this exact function, verified against real code**:
+     `FinalizeCreditNote` (`internal/ee/service/creditnote.go:441-563`) opens
+     `s.DB.WithTx(ctx, func(tx context.Context) error {...})` and correctly uses `tx`
+     for the wallet top-up (lines 486-528), but its invoice-recalculation call —
+     `s.InvoiceRepo.Get(ctx, ...)` / `RecalculateInvoiceAmountsForCreditNote(ctx, ...)`
+     (lines 536-546) — uses the outer **`ctx`**, not `tx`, so that write already
+     executes outside the transaction today (verified via `WithTx`'s mechanics in
+     `internal/postgres/client.go:224-249,288-305`: only the closure's `tx` parameter
+     carries the transaction marker) and its error is only logged, never propagated. The
+     **new** `Payment.GetForUpdate` + increment code added for decision 8 must use `tx`,
+     not `ctx` — copying the adjacent pattern would silently defeat the entire guard
+     this decision exists to build, since a lock taken outside the transaction doesn't
+     span the wallet-top-up commit. This is called out explicitly here because it's the
+     single easiest implementation mistake to make in this change, sitting right next to
+     working code that already makes it. Fixing the pre-existing `ctx`/`tx` bug in the
+     invoice-recalculation call is **not required** for decision 8's own correctness
+     property (the `Payment.RefundedAmount` guard doesn't depend on
+     `Invoice.RefundedAmount` being transactionally consistent, since `Refund` never
+     reads `Invoice` per decision 3) — but it's a real, separate bug worth flagging to
+     the team independently of this spec.
+   - **Lock-ordering invariant**: `Payment.GetForUpdate` is taken only by `Refund`'s
+     Phase 1 (single row, §5) or `CreditNote`'s `FinalizeCreditNote` (loop over an
+     invoice's payments, this decision) — no other code path may acquire a `Payment`
+     lock nested inside a transaction that also holds an `Invoice` or `Wallet` lock
+     taken _after_ it, to avoid introducing deadlock potential as more lock-takers are
+     added later. Not a concern today (no other caller takes a `Payment` lock, since
+     `GetForUpdate` doesn't exist on `Payment` yet), but worth stating as an explicit
+     invariant rather than an emergent accident.
+   - `Refund`'s own Phase 1 reserve step (§5) takes the identical `SELECT ... FOR
+UPDATE` lock and increments the same field, at `Refund` creation time (which is
+     already the moment `Refund` commits to attempting the payout — there is no
+     separate draft/finalize split on the `Refund` side).
+   - Because both paths lock the _same_ `Payment` row, at the point each is actually
+     committing to move money, before reading or writing `RefundedAmount`, Postgres
+     serializes them — there is no window where both can observe pre-increment state,
+     in either order, and no orphaned reservation is possible from either side.
+   - This requires adding a `GetForUpdate`-equivalent to `Payment`'s domain repository
+     interface — today `GetForUpdate` exists only for `Invoice`
+     (`internal/domain/invoice/repository.go`, `internal/repository/ent/invoice.go`).
+     Call this out explicitly as a deliverable (§10), not an implied side effect.
+9. **Gateway HTTP calls never happen inside an open DB transaction.** `RefundLifecycle`
+   follows the same untransacted read-then-write shape as the existing
+   `PaymentLifecycle` — no step wraps a network round-trip in `s.DB.WithTx`. See §5 for
+   the concrete reserve → call-gateway → confirm/release sequence this implies.
+10. **The refund cap is enforced with a row lock, not a plain read-then-write**, and
+    (per decision 8) that same lock is shared with `CreditNote`'s competing write path
+    at the point it actually finalizes — closing the cross-mechanism race, not just the
+    same-mechanism race.
+11. **`IdempotencyKey` is required on every `CreateRefund` call, not auto-generated,
+    and a value derived from it (not the raw client string) is passed to the gateway's
+    own idempotency mechanism.** Requiring the key gives internal dedup only; a
+    derived, deterministic, format-safe token is additionally sent as Stripe's
+    `Idempotency-Key` header / Razorpay's `X-Refund-Idempotency` header on every
+    `RefundPayment` call, including retries, so a crash-and-retry cannot double-charge
+    the gateway. The token is derived (e.g. a hex-encoded hash of `Refund.ID +
+Refund.IdempotencyKey`) rather than passed through raw, because Razorpay requires
+    the header value to be ≥10 alphanumeric/hyphen/underscore characters and a
+    client-supplied key has no guaranteed format — deriving it sidesteps rejecting a
+    legitimate request on a formatting technicality while staying deterministic across
+    retries (same inputs → same derived token, so the gateway still recognizes a
+    repeat).
+12. **The initial claim is a single atomic `INSERT ... ON CONFLICT (tenant_id,
+environment_id, idempotency_key) DO NOTHING RETURNING id` (§5 Phase 1) — never a
+    separate insert-then-claim pair of statements, and never a table-wide-unique key.**
+    The uniqueness constraint, the `ON CONFLICT` target, and every lookup by
+    `IdempotencyKey` (Phase 1 step 1's pre-check, step 6's re-select, the
+    crash-recovery table's "found"/"params match" checks) are scoped to `(tenant_id,
+environment_id, idempotency_key)`, not `idempotency_key` alone — a table-wide
+    unique key (which is what `Payment.IdempotencyKey` actually uses today,
+    `ent/schema/payment.go`, unscoped) would let two different tenants collide on the
+    same client-supplied key string, either spuriously rejecting a legitimate request
+    or surfacing one tenant's `Refund` row to another tenant's lookup — a data-leak
+    class bug per `AGENTS.md`'s multi-tenancy invariant ("every query filters on both
+    [tenant_id, environment_id]... missing filter = data leak = critical bug"). This
+    spec deliberately does not repeat `Payment`'s existing unscoped pattern for a
+    newly-designed object.
+    **Mechanism note**: this codebase's Ent codegen does not enable the `sql/upsert`
+    feature (verified: no `.OnConflict(...)` usage anywhere in the repo, and the
+    `Makefile`'s `ent generate` invocation doesn't pass `--feature sql/upsert`), so
+    this insert cannot be expressed through Ent's normal fluent `Create()` builder the
+    way most repository methods in this codebase are written. It must be raw SQL
+    executed against the transaction's underlying connection — the same escape hatch
+    already used for `Invoice.GetForUpdate` (`internal/repository/ent/invoice.go`,
+    raw `SELECT ... FOR UPDATE`) and the invoice-sequence `ON CONFLICT ... DO UPDATE`
+    (`internal/repository/ent/invoice.go`, sourced from
+    `migrations/postgres/V2_invoice_sequences.up.sql`). `RefundRepo`'s `Create` method
+    should follow that same raw-SQL-inside-the-Ent-tx pattern, not attempt to coerce
+    Ent's fluent builder into doing this. **Every subsequent `Refund` status
+    transition is a single conditional `UPDATE ... WHERE id = $1 AND refund_status =
+<expected>` (compare-and-swap), never a plain read-then-write** — applied
+    uniformly to: the stale-claim reclaim (crash-recovery table, §5), Phase 3's
+    confirm/release, and both gateways' webhook-driven `RecordRefundSucceeded`/
+    `RecordRefundFailed`. Two writers racing to transition the same already-claimed
+    `Refund` (e.g. a synchronous Phase 3 commit and an async webhook reconciling the
+    same row) resolve safely: whichever `UPDATE` lands first wins, the other affects 0
+    rows and is treated as "already handled by a concurrent writer" — logged, not
+    retried, not treated as an error — **with one carve-out**: this "0 rows affected =
+    safe no-op" rule applies when the CAS's target state matches what's already
+    persisted (ordinary duplicate delivery — the common case). It does **not** apply
+    when the row is found in a _different_ terminal state than the one being written
+    (e.g. a `RecordRefundSucceeded` call finds the row already `CANCELLED`, or vice
+    versa) — that's a genuine disagreement between the gateway and this system's
+    records, not a harmless race, and must be logged as a data-integrity anomaly for
+    investigation rather than silently swallowed. See §6's `/cancel` handling for the
+    specific case this guards against.
+    **This is a deliberate deviation from the existing `PaymentLifecycle` pattern, not
+    an extension of it** — verified: `PaymentLifecycle`'s `RecordPaymentSuccess`/
+    `RecordPaymentFailure`/`RecordPaymentVoided`/`RecordPaymentRefunded`
+    (`internal/integration/payments/lifecycle.go`) all do a plain `Get` → check status
+    in Go → `Update`, with no status guard on the write itself
+    (`PaymentRepository.Update()`, `internal/repository/ent/payment.go:272-308`, is an
+    unconditional overwrite by ID). `Refund` needs the stricter CAS discipline because
+    its async multi-writer surface is racier than `Payment`'s — a synchronous Phase 3
+    commit, a Stripe webhook, and (for Razorpay) a fallback reconciliation lookup can
+    all target the same row, versus `Payment` having effectively one writer per
+    gateway-event type. This spec does not propose retrofitting `PaymentLifecycle` to
+    match. See §5 for the full state table and §5b for how a claim that never
+    completes (crashed while `PENDING`, before reaching Phase 3) gets reclaimed rather
+    than stuck forever.
+13. **A resume-and-call-the-gateway-again retry is only permitted within a bounded
+    freshness window from the original reservation** (default: 15 minutes from
+    `Refund.InitiatedAt`, comfortably inside Stripe's ~24h idempotency-key retention
+    and Razorpay's key validity, with wide margin for clock/network variance). Past
+    that window, automatic resume is refused — the caller gets a clear error directing
+    to manual/support reconciliation instead of a silent retry that could fall outside
+    the gateway's own idempotency-key honoring window and risk a genuine double-spend.
+    The window value itself is an implementation-plan open item (§10), not fixed by
+    this spec.
+
+## 4. Data Model
+
+### New `Refund` entity
+
+`internal/domain/refund/` (model + repository interface), `ent/schema/refund.go`,
+`internal/repository/refund.go` (Ent-backed impl). One row per gateway refund attempt,
+child of `Payment`.
+
+| Field                     | Type               | Notes                                                                                                                                                                                                      |
+| ------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ID`                      | string             | `refund_<shortid>`                                                                                                                                                                                         |
+| `PaymentID`               | string             | required, immutable — FK to the refunded Payment                                                                                                                                                           |
+| `PaymentGateway`          | string             | copied from Payment at creation — actual `types.PaymentGateway` enum values are lowercase (`"stripe"`, `"razorpay"`), immutable                                                                            |
+| `GatewayRefundID`         | \*string           | nullable until the gateway call returns (e.g. Stripe `re_...`)                                                                                                                                             |
+| `GatewayTrackingID`       | \*string           | mirrors Payment's tracking-id pattern, for correlating retries                                                                                                                                             |
+| `Amount`                  | decimal.Decimal    | required, > 0                                                                                                                                                                                              |
+| `Currency`                | string             | immutable, copied from Payment                                                                                                                                                                             |
+| `RefundStatus`            | types.RefundStatus | `PENDING`\|`PROCESSING`\|`SUCCEEDED`\|`FAILED`\|`CANCELLED` — `PENDING` denotes "claimed at insert time, gateway call about to be/being attempted" (§5), not "waiting to be claimed"                       |
+| `RefundReason`            | types.RefundReason | new enum — see §3.4; exact value list finalized during implementation (e.g. `DUPLICATE`, `FRAUDULENT`, `REQUESTED_BY_CUSTOMER`, `ORDER_CHANGE`, `SERVICE_ISSUE`, `OTHER`)                                  |
+| `IdempotencyKey`          | string             | required, client-supplied — unique **per `(tenant_id, environment_id)`**, not table-wide (decision 12); the `refund` table's actual unique constraint is on `(tenant_id, environment_id, idempotency_key)` |
+| `GatewayIdempotencyToken` | string             | derived (not client-supplied) token actually sent to the gateway (decision 11) — stored so a resumed retry re-derives/reuses the identical value                                                           |
+| `FailureReason`           | \*string           | nullable, populated on FAILED                                                                                                                                                                              |
+| `Metadata`                | map[string]string  | jsonb                                                                                                                                                                                                      |
+| `GatewayMetadata`         | jsonb              | raw gateway response, for debugging                                                                                                                                                                        |
+| `InitiatedAt`             | \*time.Time        | set at Phase 1 commit — anchors the resume-freshness window (decision 13)                                                                                                                                  |
+| `ClaimedAt`               | \*time.Time        | set at insert time (§5 Phase 1) and refreshed on a reclaim CAS — used by the recovery sweep (§5b) and the crash-recovery table (§5) to detect and reclaim a stale claim                                    |
+| `SucceededAt`             | \*time.Time        |                                                                                                                                                                                                            |
+| `FailedAt`                | \*time.Time        |                                                                                                                                                                                                            |
+| `CancelledAt`             | \*time.Time        |                                                                                                                                                                                                            |
+
+Plus standard tenant/environment scoping columns on all rows, per the multi-tenancy
+invariant in `AGENTS.md`.
+
+### New `RefundWebhookEvent` entity (inbox table, §5b)
+
+`ent/schema/refund_webhook_event.go`. Every inbound refund-related webhook (Stripe and
+Razorpay) is durably persisted here immediately on receipt, before any
+matching/reconciliation logic runs — a fast, always-succeeding single-row insert.
+
+| Field             | Type        | Notes                                   |
+| ----------------- | ----------- | --------------------------------------- |
+| `ID`              | string      |                                         |
+| `Gateway`         | string      | `stripe` \| `razorpay`                  |
+| `GatewayEventID`  | string      | provider's event ID, for dedup          |
+| `RawPayload`      | jsonb       | full webhook body                       |
+| `Processed`       | bool        | default false                           |
+| `ProcessedAt`     | \*time.Time |                                         |
+| `MatchedRefundID` | \*string    | nullable — set once reconciled          |
+| `Attempts`        | int         | incremented by the recovery sweep (§5b) |
+
+Unique constraint on `(gateway, gateway_event_id)`; insert uses `ON CONFLICT DO
+NOTHING` — this is the concrete dedup mechanism for genuine duplicate gateway
+deliveries at the inbox layer, on top of (not instead of) the CAS-idempotent
+`RecordRefundSucceeded`/`RecordRefundFailed` transitions downstream.
+
+### `Payment` schema addition
+
+- `RefundedAmount decimal.Decimal` (default 0) — running total **reserved or
+  succeeded, by either mechanism** (gateway `Refund` at creation, or wallet-credit
+  `CreditNote` at finalize — decision 8) against this payment. Incremented under a
+  `SELECT ... FOR UPDATE` lock on this row by whichever mechanism claims capacity
+  first; capped at `Payment.Amount`.
+- New edge `refunds` → `Refund` (one-to-many), mirroring the existing `attempts` →
+  `PaymentAttempt` edge.
+- `PaymentRepository`/`internal/repository/ent/payment.go` gains a `GetForUpdate`
+  method, mirroring `Invoice`'s existing one (decision 8) — does not exist today.
+
+### Cap & eligibility rules
+
+- `RefundService.CreateRefund` rejects if
+  `requestedAmount > (Payment.Amount - Payment.RefundedAmount)`, checked and enforced
+  under a row lock — see §5.
+- Only `Payment`s in a refundable status are eligible: `SUCCEEDED` or already
+  `PARTIALLY_REFUNDED` (to allow further partial refunds up to the cap).
+  `PaymentStatusOverpaid` was considered and dropped from this list — grep across the
+  codebase shows it is only ever set on `Invoice.PaymentStatus` (an aggregate-across-
+  multiple-payments concept), never on an individual `Payment`, so a
+  Payment-level `OVERPAID` branch would be dead code with an undefined cap meaning.
+- Multiple partial refunds against one `Payment` are allowed, same as
+  Stripe/Razorpay/Chargebee.
+- **Double-payout guard (bidirectional, race-free)**: because both `Refund` (at
+  creation) and `CreditNote` (at finalize) reserve capacity from the same locked
+  `Payment.RefundedAmount` counter, the guard holds regardless of ordering or
+  concurrency — see decision 8 for the full mechanics and the two prior broken
+  attempts.
+
+## 5. Service & Lifecycle
+
+### `RefundService`
+
+- Interface declared in `internal/interfaces/service.go`: `CreateRefund`, `GetRefund`,
+  `ListRefunds` (filterable by `payment_id`, `status`, `gateway`, date range).
+- Aliased in `internal/ee/service/refund.go`: `type RefundService = interfaces.RefundService`.
+- `refundService struct { ServiceParams }`, `NewRefundService(params ServiceParams) RefundService`
+  — identical shape to `creditNoteService`/`paymentService`.
+- `ServiceParams` gains a `RefundRepo` and `RefundWebhookEventRepo`.
+
+### `CreateRefund` flow — atomic claim, then call the gateway outside any transaction
+
+No step in this flow holds a DB transaction open across the gateway HTTP call
+(decision 9, §3). This mirrors `PaymentLifecycle`, where every step is its own
+untransacted read-then-write — `WithTx` in this codebase is reserved for multi-row
+writes that must land together, never for wrapping an external network call.
+
+An earlier draft of this spec split "insert the row" and "claim it for the gateway
+call" into two separate statements (a `PENDING` insert, then a follow-up CAS to an
+`INITIATING` state). Design review found that split left a real race — two statements
+aren't atomic with each other, so a concurrent request could win the claim CAS against
+the very request that had just inserted the row. The design below collapses insertion
+and claiming into a single atomic statement, which removes that race entirely rather
+than trying to out-CAS it, and also removes a status value and a phase (net
+simplification, not just a bug fix).
+
+**Phase 1 — claim (single short transaction, row-locked, atomic insert):**
+
+1. Idempotency pre-check: look up an existing `Refund` by `(tenant_id, environment_id,
+IdempotencyKey)` (required on every request, decision 11 — tenant/environment
+   scoping is load-bearing here, not optional, per decision 12), outside any new
+   transaction — this is just a pre-check; correctness does not depend on it seeing
+   consistent state, because the insert in step 4 is what's actually atomic.
+2. If found: apply the crash-recovery table below against the found row and stop here
+   (do not proceed to step 3+).
+3. If not found: `s.DB.WithTx`: `SELECT ... FOR UPDATE` the `Payment` row. Validate
+   refundable status and `requestedAmount <= Payment.Amount - Payment.RefundedAmount`
+   under the lock. If it fails, roll back and return the validation error.
+4. Raw SQL, executed against the transaction's connection (Ent's `sql/upsert` feature
+   isn't enabled in this codebase — decision 12 — so this bypasses the fluent builder,
+   same as `Payment.GetForUpdate`): `INSERT INTO refunds (..., tenant_id,
+environment_id, refund_status, claimed_at, initiated_at, idempotency_key,
+gateway_idempotency_token, ...) VALUES (..., $tenantID, $envID, 'PENDING',
+$claimedAt, $initiatedAt, $key, $token, ...) ON CONFLICT (tenant_id,
+environment_id, idempotency_key) DO NOTHING RETURNING id`. Note `$claimedAt`/
+   `$initiatedAt` are Go-computed bind parameters, not SQL `now()` — unlike the bare-
+   scalar `RETURNING` precedents this pattern is modeled on (`Invoice.GetForUpdate`,
+   the invoice-sequence `ON CONFLICT`), this insert needs to populate a full
+   Ent-mapped `Refund` struct for the rest of the service to use immediately, and
+   binding the timestamps in Go rather than round-tripping them back out of
+   `RETURNING` is the simpler way to get a complete struct without extra columns in
+   the `RETURNING` clause. `Refund.RefundStatus = PENDING` denotes "claimed, gateway
+   call about to be attempted" here — note this is subtly different from `Payment`'s
+   `PENDING`, which denotes a longer-lived post-gateway-acceptance state; the name is
+   shared per decision 7's mirroring, the semantics at this specific point aren't
+   identical, and that's worth a one-line comment on the enum definition for the
+   implementer.
+5. If the `INSERT` returned a row (this request won): increment
+   `Payment.RefundedAmount` by `requestedAmount` in the _same_ transaction, commit,
+   proceed directly to Phase 2 — no further state-table lookup needed, this request is
+   the sole owner of a freshly claimed row.
+6. If the `INSERT` returned no row (lost the race — a concurrent identical request's
+   `IdempotencyKey` won first, in the gap between step 1's pre-check and this insert):
+   roll back (nothing was written — the `Payment.RefundedAmount` increment in step 5
+   never ran, so there's nothing to undo), re-`SELECT` the winning `Refund` row, and
+   apply the crash-recovery table below against it, same as step 2.
+
+**Phase 2 — call the gateway (no open transaction), with the derived idempotency token
+set:** 7. `RefundLifecycle.InitiateRefund(ctx, refund)` → resolves gateway from
+`Payment.PaymentGateway`, calls that integration's `RefundPayment(ctx,
+   gatewayPaymentID, amount, gatewayIdempotencyToken)` via the factory, passing
+`Refund.GatewayIdempotencyToken` (not the raw client key — decision 11) as Stripe's
+`Idempotency-Key` header or Razorpay's `X-Refund-Idempotency` header. Because the
+token is stored and deterministic, a resumed retry sends the exact same header
+value, so the gateway recognizes a repeat rather than processing a second refund —
+a second, independent layer of protection underneath Phase 1's atomic claim, not a
+substitute for it. Plain HTTP call, no DB work in progress.
+
+**Phase 3 — confirm or release (single CAS `UPDATE`, decision 12):** 8. On synchronous gateway acceptance: `UPDATE refunds SET gateway_refund_id = $gwid,
+   refund_status = 'PROCESSING' WHERE id = $1 AND refund_status = 'PENDING'` (or
+straight to `SUCCEEDED` + `Payment.PaymentStatus` update if the gateway returns a
+terminal state inline, e.g. some instant Razorpay refunds) — the reservation from
+step 5 stands. If 0 rows affected: re-read the row's current status and apply
+decision 12's carve-out, not a blanket "treat as success" — if the current status is
+the _same_ terminal/next state this write was attempting (e.g. a concurrent webhook
+already advanced it to `PROCESSING`, or to the identical terminal state this call
+would have written), that's ordinary duplicate-convergence, log and continue, no
+error. If the current status is a _different_ terminal state than this write was
+attempting (e.g. this call is trying to write `SUCCEEDED` inline but the row is
+already `FAILED` or `CANCELLED` — realistic via the Razorpay fallback-lookup path in
+§7, which can reach a terminal state before Phase 3 runs, since it matches on
+`payment_id` rather than waiting for `GatewayRefundID`), that is a genuine
+disagreement between what this synchronous call observed from the gateway and what
+this system already recorded — log it as a data-integrity anomaly per decision 12,
+do not silently prefer either value. 9. On gateway rejection (network error, 4xx): **release the reservation** in one
+transaction — CAS the `Refund` to `FAILED` with `FailureReason` set
+(`WHERE refund_status = 'PENDING'`), and if that CAS won, decrement
+`Payment.RefundedAmount` back by `requestedAmount` under its row lock in the same
+transaction. No dangling row, no stuck reservation. 10. Publish `WebhookEventRefundCreated` (new event type), same `publishSystemEvent`
+convention as `CreditNote`/`Payment`.
+
+**Crash recovery — explicit state machine.** This table only applies to a request that
+did _not_ win Phase 1's insert (steps 2 and 6 above) — a request that won proceeds
+straight to Phase 2 with no lookup needed:
+
+| State found (same `IdempotencyKey`)                                                                                                                                                                                   | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Refund` found, params match, `RefundStatus = PENDING`, `ClaimedAt` within the claim-staleness threshold (default 30s — long enough for a real gateway RTT), **and** within the resume-freshness window (decision 13) | A gateway call is genuinely in flight (the winner of Phase 1's insert). Return `409`/`425` — do not reclaim, do not call the gateway.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `Refund` found, params match, `RefundStatus = PENDING`, `ClaimedAt` **older** than the claim-staleness threshold, within the resume-freshness window                                                                  | The original claimant likely crashed before reaching Phase 3. CAS-reclaim: `UPDATE refunds SET claimed_at = now() WHERE id = $1 AND refund_status = 'PENDING' AND claimed_at < now() - interval '30 seconds'`. If this CAS wins, proceed to Phase 2 using the stored `GatewayIdempotencyToken`. If it loses (another reclaimer won first, or the original wasn't actually crashed and is still working), `409`/`425`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `Refund` found, params match, `RefundStatus = PENDING`, **outside** the resume-freshness window                                                                                                                       | Refuse automatic resume (decision 13) — return an error directing to manual/support reconciliation. The Temporal-scheduled sweep (§5b) is the mechanism that eventually surfaces/escalates this row (it alerts on stale `PENDING` rows indefinitely, by `ClaimedAt` staleness alone — not gated on the freshness window); a client retry is not. Note this is a stall, not a stuck-forever state: the reservation staying held is the deliberately safe failure mode here (consistent with this design's bias throughout toward stalling over risking a double-spend), and support can still safely resolve it manually using the row's stored `GatewayIdempotencyToken` (§4) — replaying the gateway call with that exact token remains safe well past the 15-minute client-facing window, since it's bounded by the _gateway's_ idempotency-key retention (Stripe: ~24h), which decision 13 deliberately sets the client-facing window far inside of. The 15-minute cutoff is a conservative guard on _automatic_ retries, not a claim that replay becomes gateway-unsafe at that point. |
+| `Refund` found, params match, `RefundStatus` is a terminal or post-gateway-call state (`PROCESSING`/`SUCCEEDED`/`FAILED`/`CANCELLED`)                                                                                 | Plain idempotent replay — return the existing `Refund` (200), no gateway call. `CANCELLED` is included explicitly here — it's easy to omit by only listing the "gateway lifecycle" terminal states and forgetting the caller-initiated one, and an earlier draft of this spec's table did exactly that.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `Refund` found, params differ                                                                                                                                                                                         | `409 Conflict` (decision 11, §3).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+
+This table is normative for the implementation. Every transition in it is a
+single CAS `UPDATE`, per decision 12 — there is no state in this table reached via a
+plain read-then-write, and there is no state where two concurrent callers can both
+believe they own the right to call the gateway (Phase 1's atomicity ensures exactly
+one caller ever holds a freshly-claimed row; every other caller goes through this
+table, which is itself all single-statement CAS operations).
+
+### `RefundLifecycle`
+
+New `internal/integration/payments/refund_lifecycle.go`, same shape as the existing
+`PaymentLifecycle` — every method is its own untransacted read-then-write, and every
+status transition inside it is a CAS `UPDATE` (decision 12), never a plain
+read-then-write:
+
+- `InitiateRefund(ctx, refund) error` — Phase 2/3 above.
+- `RecordRefundSucceeded(ctx, gatewayRefundID) error` — CAS transition from **any**
+  non-terminal status (`PENDING` or `PROCESSING`) to `SUCCEEDED`, not strictly
+  `PROCESSING`-only — this must accept `PENDING` too, because the Razorpay
+  fallback-reconciliation path (§7) can legitimately observe and need to confirm a
+  `Refund` that hasn't reached `PROCESSING` yet (Phase 3 hasn't committed).
+  Sets `SucceededAt`. Does **not** re-increment `Payment.RefundedAmount` (already
+  reserved in Phase 1) — only flips `Payment.PaymentStatus` to `REFUNDED` (if
+  `RefundedAmount == Amount`) or `PARTIALLY_REFUNDED` (if less), and sets
+  `Payment.RefundedAt` — mirroring `PaymentLifecycle.RecordPaymentRefunded`'s existing
+  behavior on the same field (`internal/integration/payments/lifecycle.go`), so a
+  gateway-refunded `Payment` doesn't silently diverge from the narrow legacy Moyasar
+  path on a field already surfaced in `PaymentResponse` (§6) today. Never touches
+  `Invoice` (decision 3) — `RefundedAt` lives on `Payment`, this isn't an exception to
+  that rule.
+- `RecordRefundFailed(ctx, gatewayRefundID, reason) error` — CAS transition from any
+  non-terminal status to `FAILED`, releasing the reservation (decrements
+  `Payment.RefundedAmount`) exactly like Phase 3 step 8 — same shared internal helper,
+  triggered from either the synchronous failure path or an async webhook.
+- `RecordRefundCancelled(ctx, refundID) error` — CAS transition from `PROCESSING`
+  **only** to `CANCELLED` (`WHERE refund_status = 'PROCESSING'`) —
+  **deliberately excludes `PENDING`**, see below —
+  **releasing the reservation via the same shared release helper as
+  `RecordRefundFailed`** — decrements `Payment.RefundedAmount` back by the refund's
+  amount under its row lock, in the same transaction as the status CAS. This method
+  did not exist in an earlier draft of this spec, which specified `POST
+/refunds/{id}/cancel` (§6) without ever saying what it does to the reservation taken
+  at Phase 1 — leaving cancel as an unguarded second door into the exact
+  phantom-reservation bug class decision 8 exists to close on the `CreditNote` side.
+  **Only called after the gateway has confirmed the cancellation succeeded** (§6) —
+  never called as a purely-local operation. This matters because of a race an earlier
+  draft of this spec missed entirely: `PROCESSING` doesn't guarantee the gateway hasn't
+  _already_ committed to the payout by the time a cancel request lands (that's exactly
+  what the status denotes — "in flight"). If `/cancel` flipped local state to
+  `CANCELLED` and released the reservation based on local bookkeeping alone, a genuine
+  concurrent success (webhook or synchronous Phase 3) could lose the race under
+  decision 12's blanket CAS rule, silently under-counting `Payment.RefundedAmount`
+  against money that had actually left the gateway — reopening a double-payout path
+  through decision 8's guard. Gating the local transition on the gateway's own
+  cancel-confirmation response makes the gateway the arbiter of whether cancellation
+  actually beat the payout, rather than trying to resolve that race with
+  local CAS ordering alone. Not called from any webhook — only from the `/cancel` API
+  handler, after its gateway call succeeds.
+  **Why `PENDING` is excluded, and what `/cancel` does instead for a `PENDING`
+  refund**: `GatewayRefundID` is only ever set together with the `PENDING`→`PROCESSING`
+  transition in Phase 3 step 8 — by construction, a `Refund` in `PENDING` always has
+  `GatewayRefundID == nil`. `StripeIntegration.CancelRefund` (below) requires a gateway
+  refund ID, so there is nothing to hand it for a `PENDING` row — there is no
+  gateway-side refund object yet to confirm cancellation against, whether that `PENDING`
+  is fresh (Phase 2 is still genuinely in flight in the original request) or stale
+  (crashed before Phase 3, per the claim-staleness threshold, §5). Attempting to cancel
+  a `PENDING` row by flipping local state without a gateway to confirm against would be
+  exactly the unguarded local-only mutation this fix exists to prevent, just moved to a
+  different status. The `/cancel` handler therefore rejects a request against a
+  `PENDING` refund outright — with a `409`/`422` error directing the caller to retry
+  the original `CreateRefund` call instead (same `IdempotencyKey`): that path already
+  has a defined, safe way to resolve ambiguity about a `PENDING` row (the
+  crash-recovery table's stale-claim reclaim, §5), because retrying `CreateRefund`
+  resumes Phase 2 using the stored `GatewayIdempotencyToken` — and the _gateway_ then
+  authoritatively reports whether it already processed the original attempt, rather
+  than this system guessing. Cancellation is only ever a well-defined operation once a
+  `GatewayRefundID` exists, i.e. once the row has reached `PROCESSING`.
+- Called both from the synchronous `CreateRefund` path (Phase 2/3 above), from each
+  gateway's webhook handler (§7), and — for `RecordRefundCancelled` — from the
+  `/cancel` API handler (§6).
+
+### Gateway integration methods
+
+- `StripeIntegration.RefundPayment(ctx, gatewayPaymentID string, amount decimal.Decimal, gatewayIdempotencyToken string) (*RefundResult, error)`
+- `RazorpayIntegration.RefundPayment(ctx, gatewayPaymentID string, amount decimal.Decimal, gatewayIdempotencyToken string) (*RefundResult, error)`
+- `StripeIntegration.CancelRefund(ctx, gatewayRefundID string) (*CancelRefundResult, error)`
+  — Stripe-only (Razorpay has no cancel API for refunds, per §6). Returns whether the
+  cancellation actually took effect; if Stripe reports the refund already reached a
+  terminal state (already succeeded/failed) the result indicates cancellation did
+  **not** apply, and the caller must not proceed to `RecordRefundCancelled`.
+
+`gatewayIdempotencyToken` is required in both signatures (not optional) — the derived
+token (decision 11), not the raw client `IdempotencyKey`. Both added directly to their
+respective integration structs, wired through `internal/integration/factory.go`. No
+shared interface (§3.6).
+
+### Change required in `CreditNoteService`
+
+Per decision 8 (§3), `internal/ee/service/creditnote.go`'s **`FinalizeCreditNote`**
+(not `CreateCreditNote`) gains new logic, in the same transaction that already performs
+the wallet top-up and `Invoice.RefundedAmount` update:
+
+1. Resolve the invoice's backing `Payment`(s) (`DestinationID == invoiceID`,
+   status `SUCCEEDED` or `PARTIALLY_REFUNDED`), ordered by `SucceededAt` ascending.
+2. For each, in order: `SELECT ... FOR UPDATE` the `Payment` row, compute remaining
+   capacity (`Amount - RefundedAmount`), claim as much of the credit note's amount as
+   that payment can absorb, increment its `RefundedAmount` accordingly, and continue to
+   the next payment for any remainder.
+3. If the invoice's payments collectively cannot absorb the full credit note amount
+   (shouldn't happen if `calculateMaxCreditableAmount` — itself unchanged, still
+   Invoice-field-based, still runs at create time as a fast-fail check — is correct,
+   but must be defensively checked at finalize time under the lock), fail the finalize
+   with a clear "capacity already claimed by a concurrent refund" error. The
+   `CreditNote` remains in Draft, voidable under its existing rules (§3 decision 8's
+   "attempt 2" writeup explains why this doesn't leak a reservation).
+
+This is real, non-trivial implementation work in `creditnote.go` — deterministic
+ordering, per-payment capping, defensive rejection — and must ship in the same release
+as `Refund`.
+
+## 5b. Recovery & Reconciliation Sweep (Temporal Schedule)
+
+A small Temporal-scheduled workflow, added to `AllTemporalScheduleConfigs()`
+(`internal/temporal/service/schedules.go`) alongside the existing
+`ScheduleIDMoyasarAuthPaymentSettlement` entry — **not** an `internal/api/cron/`
+HTTP endpoint (see §2: that directory's handlers are explicitly deprecated for
+automation and nothing invokes them on a schedule; a Temporal Schedule is the actual
+lightweight, idiomatic mechanism for exactly this kind of stale-state reclaim in this
+codebase, and requires no new external scheduler infrastructure). Runs on a short
+interval (e.g. every 1–2 minutes; exact value an implementation-plan open item, §10).
+
+**This is "lightweight" relative to a gateway-polling reconciliation workflow, not
+relative to zero new code** — be precise about the actual surface area, verified
+against the `Moyasar` precedent: a schedule config entry alone isn't sufficient. It
+requires (1) a new `ScheduleID...` constant in `internal/types/schedule.go`, registered
+in `AllTemporalServerScheduleIDs()` (an existing test enforces every schedule ID is
+registered there), (2) a workflow definition file (mirroring
+`internal/temporal/workflows/cron/moyasar_auth_payment_settlement_workflow.go`) plus
+its input/result types (mirroring the Moyasar cron's models file), (3) an activities
+struct with the two methods below (mirroring
+`cronActivities.MoyasarAuthPaymentSettlementActivities`, needing `RefundRepo`,
+`RefundWebhookEventRepo`, and `PaymentRepo` as dependencies), and (4) registration
+wiring in `internal/temporal/registration.go` — constructing the activities struct,
+registering the workflow, registering both activities, and adding a field to the
+existing cron-activities bundle struct that's passed into worker construction (not a
+new parameter on the worker-config function itself — the existing cron activities are
+grouped into one bundle, and a new schedule adds a field to that bundle). Real,
+multi-file work to scope explicitly in the implementation plan, not a one-line config
+addition.
+
+Two responsibilities — deliberately scoped to _local_ data only, never calling out to
+a gateway (that would be gateway-polling reconciliation, explicitly out of scope §2):
+
+1. **Reclaim-visibility for stale `PENDING` refunds.** Query `Refund`s with
+   `refund_status = 'PENDING' AND claimed_at < now() - interval '30 seconds'`. These
+   are refunds whose claimant crashed between winning Phase 1's insert and reaching
+   Phase 3. The sweep doesn't itself resume them (that requires a client retry to hit
+   the crash-recovery table in §5 and win the reclaim CAS) — it logs/alerts on them so
+   they're visible for support-driven or client-driven resume, rather than silently
+   invisible. (Whether the sweep should also proactively attempt the resume itself is
+   an open item, §10 — the safer default here is surface-and-alert, not auto-resume,
+   given decision 13's caution around gateway idempotency-key freshness.)
+2. **Retry unprocessed `RefundWebhookEvent` rows.** Query rows where
+   `processed = false` and `created_at` is older than a short grace period (e.g. 10
+   seconds, to avoid racing the normal synchronous path). Re-attempt the
+   matching/reconciliation logic from §7 (including the Razorpay payment-ID fallback
+   lookup). Increment `Attempts`; alert (not infinite-retry) past a bounded attempt
+   count for manual investigation.
+
+This sweep is what makes §7's "zero or multiple candidates, can't reconcile
+synchronously" branch and §5's "stale claimed `PENDING`" branch actually terminate in a
+bounded amount of time, rather than being permanently stuck states with no recovery
+path — the two gaps found in design review round 3.
+
+## 6. API Surface
+
+Registered in `internal/api/router.go`, handlers in `internal/api/v1/refund.go`.
+
+| Method | Path                     | Scope    | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------ | ------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/payments/{id}/refunds` | `write`  | Create. Only creation entry point.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| GET    | `/refunds/{id}`          | `read`   | Get by ID.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| GET    | `/refunds`               | `read`   | List, filterable by `payment_id`, `status`, `gateway`, date range.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| POST   | `/refunds/{id}/cancel`   | `delete` | Cancel a `PROCESSING` refund where the gateway supports it — **not** `PENDING` (§5 explains why: a `PENDING` refund has no `GatewayRefundID` yet, so there's nothing to confirm cancellation against; the handler rejects with `409`/`422` directing the caller to retry `CreateRefund` instead, which safely resumes via the crash-recovery path). Razorpay has no cancel API — reject with a clear "cancellation not supported for this gateway" error. Stripe: the handler calls `StripeIntegration.CancelRefund` **synchronously first**; only if the gateway confirms cancellation actually applied does it then call `RefundLifecycle.RecordRefundCancelled` (§5), which releases the `Payment.RefundedAmount` reservation exactly like `RecordRefundFailed` does. If Stripe reports the refund already reached a terminal state (raced a real success/failure), the handler returns an error reflecting that — it does **not** force local state to `CANCELLED` — and leaves the refund's actual outcome to be settled by the normal webhook/sync path. This ordering (gateway confirms, then local state follows) is what prevents cancel from racing and losing to a genuine concurrent success in a way that would under-count `Payment.RefundedAmount` against money that already left the gateway. |
+
+### DTOs (`internal/api/dto/refund.go`)
+
+- `CreateRefundRequest{ Amount, Reason, Metadata, IdempotencyKey }` — `payment_id`
+  comes from the path, not the body. `IdempotencyKey` is **required**, validated
+  non-empty at the DTO layer. No format constraint is imposed on the client-supplied
+  key itself (decision 11 — the gateway-facing token is derived separately, so the
+  client key doesn't need to satisfy any particular gateway's format rules).
+- `RefundResponse` — mirrors domain fields.
+- `ListRefundsResponse`.
+- `PaymentResponse` gains `RefundedAmount` and optionally-expandable `Refunds
+[]RefundResponse`, alongside the existing `RefundedAt` field.
+
+Swagger annotations include `@x-scope` per the MCP scope convention in `AGENTS.md`
+(POST `/refunds/{id}/cancel` needs an explicit override since POST would otherwise
+default to `write`).
+
+## 7. Webhook Handling
+
+Each gateway's existing webhook handler gains new event cases feeding
+`RefundLifecycle`, looked up by `GatewayRefundID` (new repo method
+`RefundRepo.GetByGatewayRefundID`). Every inbound refund-related webhook is first
+persisted to the `RefundWebhookEvent` inbox (§4, §5b) before any matching is attempted
+— this makes the reconciliation step retryable by the cron sweep regardless of what
+happens next.
+
+- **Stripe** (`internal/integration/stripe/webhook/`): handle `refund.updated` →
+  `RecordRefundSucceeded`, `refund.failed` → `RecordRefundFailed`. `charge.refunded` is
+  redundant with `refund.updated` and is ignored to avoid double-processing.
+- **Razorpay** (`internal/integration/razorpay/webhook/`): handle `refund.processed` →
+  `RecordRefundSucceeded`, `refund.failed` → `RecordRefundFailed`. **Requires new DTO
+  work, not just a new `switch` case**: the current `RazorpayWebhookPayload`
+  (`internal/integration/razorpay/webhook/types.go`) only has `Payment`/`PaymentLink`
+  fields — there is no struct for `payload.refund.entity` today. A `RazorpayRefundEntity`
+  DTO (`id`, `amount`, `currency`, `payment_id`, `status`, `notes`, `acquirer_data`)
+  needs to be added. The existing (currently-unused) `AmountRefunded`/`Refunded` fields
+  on the _payment_ webhook payload remain a reconciliation cross-check signal only.
+
+**Webhook-before-commit race — handled differently per gateway, verified against
+`internal/api/v1/webhook.go`:**
+
+- **`HandleStripeWebhook`** (lines 153–267) genuinely propagates handler errors as
+  `http.StatusInternalServerError`. On a `GetByGatewayRefundID` miss, return a 5xx
+  instead of 200, so Stripe's own webhook-retry-with-backoff redelivers a few seconds
+  later, by which point Phase 3 has committed.
+- **`HandleRazorpayWebhook`** (lines 429–528) opens with an unconditional
+  `defer func() { c.JSON(http.StatusOK, ...) }()` — it **always** ACKs 200 for every
+  Razorpay event type, so a 5xx-triggers-redelivery strategy does not work for Razorpay
+  in this codebase, and changing that shared ACK behavior for all Razorpay event types
+  is out of scope here. Instead: on a `GetByGatewayRefundID` miss, fall back to
+  looking up the single `Refund` row for that webhook's `payment_id` with
+  `RefundStatus IN (PENDING, PROCESSING)` and no `GatewayRefundID` set
+  yet. If exactly one match, reconcile it (set `GatewayRefundID` from the payload, then
+  call `RecordRefundSucceeded`/`RecordRefundFailed` — which, per §5, now accepts
+  `PENDING` as a valid source state, not just `PROCESSING`, specifically so this
+  fallback path works). If zero or more than one match, mark the
+  `RefundWebhookEvent` row unprocessed and leave it for the recovery sweep (§5b) rather
+  than guessing or dropping it.
+
+Both handlers must additionally be idempotent against duplicate webhook delivery once
+the record _is_ found — same pattern as the existing `RecordPaymentRefunded`.
+
+## 8. Idempotency, Validation, Error Handling
+
+- Idempotency has two layers, both required (decision 11):
+  1. **Internal**: required client-supplied `IdempotencyKey` — no auto-generation.
+     Behavior on lookup hit is governed by the crash-recovery state table in §5, not a
+     single rule (it depends on `RefundStatus`, `ClaimedAt`, and the resume-freshness
+     window).
+  2. **Gateway-level**: a _derived_ token (decision 11), not the raw client key, is
+     passed to Stripe/Razorpay's own idempotency mechanism on every `RefundPayment`
+     call, including retries — this is what prevents a crash-and-retry from
+     double-charging the gateway itself.
+- Pre-reservation validation (Phase 1, under the `Payment` row lock): `Payment` exists
+  and belongs to tenant/environment, status is refundable (`SUCCEEDED` or
+  `PARTIALLY_REFUNDED` — not `OVERPAID`, §4), `amount > 0`,
+  `amount <= remaining refundable amount`, gateway is `stripe` or `razorpay`.
+- Gateway call failures (Phase 2/3) are caught, the reservation released via CAS
+  (decision 12), and the `Refund` persisted as `FAILED` with `FailureReason` — no
+  dangling `PENDING` rows and no phantom balance left on `Payment.RefundedAmount`.
+- Resume attempts outside the freshness window (decision 13) are refused with a clear
+  error, not silently retried.
+
+## 9. Testing Plan
+
+- Unit tests (table-driven) for `RefundService.CreateRefund`: cap enforcement,
+  non-refundable status rejection, idempotency replay for every row of the
+  crash-recovery state table in §5 (winning Phase 1's atomic insert, stale-`PENDING`
+  reclaim, live-`PENDING` conflict, outside-freshness-window refusal, terminal-state
+  replay, params-differ 409), unsupported gateway.
+- **Concurrency test**: fire N concurrent `CreateRefund` calls against the same
+  `Payment` with `N * amount > Payment.Amount`; assert exactly enough succeed to reach
+  the cap and the rest fail cap validation.
+- **Reservation-release test**: force the gateway call to fail after Phase 1 commits;
+  assert `Payment.RefundedAmount` is decremented back to its pre-reservation value.
+- **Cancel-releases-reservation test** (decision 8/§5's `RecordRefundCancelled`):
+  create a `Refund`, cancel it via `POST /refunds/{id}/cancel` with the mocked Stripe
+  client confirming cancellation, then assert `Payment.RefundedAmount` is back to its
+  pre-reservation value and a subsequent `Refund` or `CreditNote` can claim that
+  capacity — this is the test that would have caught the round-6-review finding that
+  `/cancel` originally had no defined effect on the reservation, reopening the same
+  phantom-reservation bug class decision 8 exists to close.
+- **Cancel-races-real-success test** (this is the test that would have caught the
+  round-7-review finding): mock Stripe's cancel call to report "already succeeded, not
+  cancelable" (simulating the refund having actually completed at the gateway just
+  before the cancel request arrived); assert the `/cancel` handler returns an error,
+  does **not** transition the `Refund` to `CANCELLED`, and does **not** touch
+  `Payment.RefundedAmount` — the reservation must remain intact because the money is
+  actually gone. Separately, assert that if `RecordRefundSucceeded` or
+  `RecordRefundFailed` is ever called against a `Refund` already in a _different_
+  terminal state (the decision-12 carve-out), it's logged as an anomaly rather than
+  silently treated as a normal duplicate-delivery no-op — including Phase 3 step 8's
+  own inline-terminal-state branch racing a concurrent Razorpay-fallback-lookup
+  reconciliation to a _different_ terminal state, not just the ordinary
+  PENDING→PROCESSING convergence case (this is the test that would have caught the
+  round-8-review finding that Phase 3 step 8's own "0 rows affected" handling hadn't
+  been threaded through the carve-out).
+- **Cancel-rejected-for-PENDING test** (this is the test that would have caught the
+  other round-8-review finding): attempt `POST /refunds/{id}/cancel` against a `Refund`
+  still in `PENDING` (no `GatewayRefundID`); assert it's rejected with `409`/`422` and
+  neither `StripeIntegration.CancelRefund` nor `RecordRefundCancelled` is ever called
+  — cancellation is only well-defined once a `GatewayRefundID` exists.
+- **Tenant-scoped idempotency test** (decision 12): two different tenants each call
+  `CreateRefund` with the _same_ client-supplied `IdempotencyKey` string against their
+  own, unrelated payments; assert both succeed independently, neither sees or is
+  blocked by the other's `Refund` row — this is the test that would have caught the
+  round-6-review finding that an unscoped unique constraint on `IdempotencyKey` alone
+  would cause cross-tenant collisions.
+- **Double-payout prevention tests — both directions, both under contention**:
+  1. `Refund` created, then a `CreditNote` finalized for the same invoice/payment —
+     assert the finalize fails/caps once combined claims would exceed `Payment.Amount`.
+  2. `CreditNote` finalized first, then `Refund` created for the same payment — assert
+     the refund's cap check rejects once combined claims would exceed `Payment.Amount`.
+  3. **Concurrent finalize-vs-create**: race a `CreateRefund` against a
+     `FinalizeCreditNote` on the same payment, each individually within cap but
+     together exceeding it; assert only the shared cap is honored, no over-allocation.
+  4. **Draft-then-void does not reserve**: create a Draft refund-type `CreditNote`,
+     void it without finalizing, then create a `Refund` for the full payment amount —
+     assert it succeeds (no phantom reservation left by the voided draft) — this is the
+     test that would have caught the "attempt 2" bug in decision 8.
+- **Gateway idempotency-token test**: simulate a crash between a successful gateway
+  response and Phase 3's commit; retry within the freshness window; assert the mocked
+  gateway client receives the exact same `GatewayIdempotencyToken` on the retried call.
+- **Atomic-claim race test (this is the test that would have caught round 5's finding
+  directly)**: fire N concurrent `CreateRefund` calls with the _identical_
+  `IdempotencyKey` (simulating a client retry racing its own original request, not just
+  two independent retries) against the same `Payment`. Assert exactly one reaches
+  `INSERT ... RETURNING` successfully and proceeds to call the (mocked) gateway; assert
+  every other caller — including ones that could plausibly have "won" a naive
+  two-step claim — instead observes the winner's row via the crash-recovery table and
+  returns 409/425 without calling the gateway. This must be tested with real concurrent
+  goroutines against a real (or realistically-locking) Postgres-backed test store, not
+  an in-memory store that can't reproduce a genuine statement-level race.
+- **Stale-reclaim test**: a `Refund` left `PENDING` with `ClaimedAt` past the staleness
+  threshold (simulating a crash before Phase 3) — a fresh request with the same
+  `IdempotencyKey` reclaims it via CAS and proceeds to Phase 2 using the stored
+  `GatewayIdempotencyToken`; a second simultaneous reclaim attempt loses and gets
+  409/425.
+- **Resume-freshness-window test**: a request against a `PENDING` refund whose
+  `InitiatedAt` is past the configured window — assert it's refused with a clear
+  error, not silently retried against the gateway.
+- **Gateway-specific webhook race tests**: Stripe — not-found triggers a 5xx and a
+  simulated redelivery after Phase 3 commits succeeds. Razorpay — not-found triggers
+  the payment-ID fallback lookup; assert `RecordRefundSucceeded` accepts a `PENDING`
+  source state via this path (not just `PROCESSING`); assert zero/multiple candidates
+  land the event unprocessed in the inbox rather than being dropped or mismatched.
+- **Recovery sweep tests** (§5b): a stale `PENDING` row is surfaced/alerted, not
+  silently ignored, and not double-reclaimed if the sweep's own alerting logic runs
+  concurrently with a client-driven reclaim (the reclaim CAS itself must remain the
+  single source of truth — test that alerting never mutates `RefundStatus`). An
+  unprocessed webhook event is retried and, once the corresponding `Refund` row exists,
+  successfully reconciled.
+- **Slow-original-vs-concurrent-retry test**: start a `CreateRefund` call and hold its
+  Phase 2 gateway call open (mocked delay) — this request already won Phase 1's atomic
+  insert. While it's in flight, fire a second `CreateRefund` with the same
+  `IdempotencyKey`; assert the second call's pre-check finds the first's claimed
+  `PENDING` row (fresh `ClaimedAt`) via the crash-recovery table and gets `409`/`425`,
+  rather than independently reaching the gateway. Together with the atomic-claim race
+  test above (same `IdempotencyKey`, true concurrent start) and this one (one request
+  already past Phase 1, a second arrives later), these two tests cover both edges of
+  the race the two-step `PENDING`→`INITIATING` design failed on in round 5 review.
+- **Transaction-boundary test for the `CreditNote` → `Payment` lock** (§3 decision 8):
+  assert the new `Payment.GetForUpdate` + increment call executes inside the _same_
+  transaction object as the wallet top-up — e.g. force a failure in the
+  post-lock-but-pre-commit path and assert the `Payment.RefundedAmount` increment rolls
+  back along with the wallet top-up, not just that end states independently look
+  correct. A test that only checks outcomes (not that the same `tx` was used) would not
+  catch a `ctx`-instead-of-`tx` mistake copied from the adjacent pre-existing bug in
+  `RecalculateInvoiceAmountsForCreditNote` (§3 decision 8's "known landmine" note).
+- Unit tests for `RefundLifecycle` transitions: idempotent double-webhook delivery,
+  every CAS source-state combination for `RecordRefundSucceeded`/`RecordRefundFailed`
+  (`PENDING`/`PROCESSING` → terminal), concurrent-writer 0-rows-affected handled as
+  success-not-error.
+- Integration tests using `internal/testutil` in-memory stores for the full
+  create→webhook-confirm→`Payment`-status-update path.
+- Gateway integration tests for `StripeIntegration.RefundPayment` /
+  `RazorpayIntegration.RefundPayment` against recorded/mocked HTTP responses.
+
+## 10. Open Items for Implementation Plan
+
+- Exact `RefundReason` enum value list.
+- Exact Ent index set on `refund` table (at minimum: `gateway_refund_id`,
+  `(tenant_id, environment_id, payment_id)`, `(tenant_id, environment_id, status)`,
+  `(status, claimed_at)` for the recovery sweep's stale-`PENDING` query, and a
+  **unique index on `(tenant_id, environment_id, idempotency_key)` — not a bare
+  index on `idempotency_key` alone** (decision 12, §3) — this is load-bearing for
+  Phase 1's `ON CONFLICT` target, not just a nice-to-have, and building the wrong
+  (unscoped) constraint here would either break the `ON CONFLICT` clause outright or
+  silently reintroduce the cross-tenant collision decision 12 exists to prevent.
+- Whether `RefundedAmount` needs a DB-level check constraint (`<= amount`) in addition
+  to service-layer validation.
+- Confirmation of Stripe/Razorpay SDK method names used for `RefundPayment` and
+  `cancel` support.
+- New `RazorpayRefundEntity` DTO for `payload.refund.entity` — field list finalized
+  against Razorpay's actual webhook payload during implementation.
+- Exact retry/backoff behavior expected from Stripe on a 5xx webhook response —
+  confirm the documented retry window comfortably covers the Phase 1→Phase 3 gap.
+- `RefundWebhookEvent` inbox: confirm no existing dead-letter/inbox pattern in this
+  codebase should be reused instead of introducing a new table.
+- Recovery-sweep schedule interval, claim-staleness threshold (default proposed: 30s),
+  and resume-freshness window (default proposed: 15 minutes) — defaults proposed in
+  this spec, to be confirmed/tuned during implementation against real gateway latency
+  data.
+- Whether the recovery sweep should only surface/alert on stale claimed `PENDING`
+  rows, or proactively attempt the resume itself on the caller's behalf (§5b) — this
+  spec proposes surface-and-alert as the safer default; revisit if manual resume
+  proves too slow in practice.
+- **Pre-existing bug, not introduced by this spec, flagged during design review**:
+  `FinalizeCreditNote`'s invoice-recalculation call
+  (`internal/ee/service/creditnote.go:536-546`) uses the outer `ctx` instead of the
+  transaction's `tx`, so it already executes outside `FinalizeCreditNote`'s
+  transaction today, independent of any `Refund` work. Not required to fix for decision
+  8's own correctness (§3), but worth its own follow-up ticket since it means a
+  wallet-top-up-succeeds-but-invoice-update-fails scenario isn't rolled back today.
+- Exact row-locking order and rollback semantics when a `CreditNote` spans multiple
+  `Payment`s (§3 decision 8 / §5 "Change required in `CreditNoteService`") — nontrivial
+  new logic in `creditnote.go`, needs its own design attention in the implementation
+  plan.

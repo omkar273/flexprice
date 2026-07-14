@@ -105,6 +105,12 @@ type Price func(*sql.Selector)
 // PriceUnit is the predicate function for priceunit builders.
 type PriceUnit func(*sql.Selector)
 
+// Refund is the predicate function for refund builders.
+type Refund func(*sql.Selector)
+
+// RefundWebhookEvent is the predicate function for refundwebhookevent builders.
+type RefundWebhookEvent func(*sql.Selector)
+
 // ScheduledTask is the predicate function for scheduledtask builders.
 type ScheduledTask func(*sql.Selector)
 
