@@ -19,26 +19,37 @@ type analyticsCoupon struct {
 	EndDate   *time.Time
 }
 
-// activeAt reports whether the association window covers t. EndDate nil = open-ended; both
-// bounds inclusive.
+// activeAt reports whether the association window [StartDate, EndDate) covers t. EndDate nil =
+// open-ended. Start inclusive, end exclusive — matches the repo's CouponAssociation ActiveOnly
+// filter and the codebase-wide billing-period convention. A degenerate window (EndDate ==
+// StartDate, i.e. voided) is naturally never active for any t under this check.
 func (ac analyticsCoupon) activeAt(t time.Time) bool {
 	if t.Before(ac.StartDate) {
 		return false
 	}
-	if ac.EndDate != nil && t.After(*ac.EndDate) {
+	if ac.EndDate != nil && !t.Before(*ac.EndDate) {
 		return false
 	}
 	return true
 }
 
-// activeOverlaps reports whether the association window overlaps [start, end]. EndDate nil =
-// open-ended; both bounds inclusive (a coupon with EndDate == start is still considered active).
-// This matches the repo's CouponAssociation ActiveOnly filter (end_date >= period_start).
+// activeOverlaps reports whether the association window [StartDate, EndDate) overlaps the
+// half-open query range [start, end). EndDate nil = open-ended. This matches the repo's
+// CouponAssociation ActiveOnly filter (StartDateLT(periodEnd) AND EndDateGT(periodStart)) for
+// the genuine-range case — callers of this method always pass genuine, non-degenerate
+// RangeStart/RangeEnd (never a collapsed point-in-time query), so no point-membership branch is
+// needed here (contrast with the repository-layer filter, which does need one).
+// A degenerate window (EndDate == StartDate, i.e. voided) must be excluded explicitly: the
+// half-open overlap check alone is not sufficient for a zero-width interval (it would
+// incorrectly report overlap for any query range that contains the voided point).
 func (ac analyticsCoupon) activeOverlaps(start, end time.Time) bool {
-	if ac.EndDate != nil && ac.EndDate.Before(start) {
+	if ac.EndDate != nil && ac.EndDate.Equal(ac.StartDate) {
 		return false
 	}
-	return !ac.StartDate.After(end)
+	if ac.EndDate != nil && !ac.EndDate.After(start) {
+		return false
+	}
+	return ac.StartDate.Before(end)
 }
 
 type discountInput struct {

@@ -69,11 +69,11 @@ func TestApplyAnalyticsDiscounts_NonWindowed(t *testing.T) {
 	}
 }
 
-func TestApplyAnalyticsDiscounts_OverlapBoundaryInclusive(t *testing.T) {
+func TestApplyAnalyticsDiscounts_OverlapBoundaryExclusive(t *testing.T) {
 	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	t1 := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
-	// Coupon EndDate == RangeStart must still overlap (both bounds inclusive),
-	// so a 10% discount applies.
+	// Coupon EndDate == RangeStart must NOT overlap under half-open [start, end)
+	// semantics (start inclusive, end exclusive) — no discount applies.
 	out := ApplyAnalyticsDiscounts(&discountInput{
 		Currency:   "USD",
 		SubTotal:   dec("100.00"),
@@ -81,8 +81,39 @@ func TestApplyAnalyticsDiscounts_OverlapBoundaryInclusive(t *testing.T) {
 		RangeStart: t0,
 		RangeEnd:   t1,
 	})
-	if !out.TotalDiscount.Equal(dec("10")) || !out.SubTotal.Equal(dec("90")) {
-		t.Fatalf("boundary-inclusive: discount=%s net=%s", out.TotalDiscount, out.SubTotal)
+	if !out.TotalDiscount.Equal(dec("0")) || !out.SubTotal.Equal(dec("100.00")) {
+		t.Fatalf("boundary-exclusive: discount=%s net=%s", out.TotalDiscount, out.SubTotal)
+	}
+}
+
+func TestApplyAnalyticsDiscounts_VoidedCouponNeverOverlaps(t *testing.T) {
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	t1 := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	voidedAt := t0.AddDate(0, 0, 15) // strictly inside [t0, t1)
+
+	out := ApplyAnalyticsDiscounts(&discountInput{
+		Currency:   "USD",
+		SubTotal:   dec("100.00"),
+		SubCoupons: []*analyticsCoupon{pctCoupon("10", voidedAt, ptrTime(voidedAt))},
+		RangeStart: t0,
+		RangeEnd:   t1,
+	})
+	if !out.TotalDiscount.Equal(dec("0")) || !out.SubTotal.Equal(dec("100.00")) {
+		t.Fatalf("voided coupon must never overlap: discount=%s net=%s", out.TotalDiscount, out.SubTotal)
+	}
+}
+
+func TestApplyAnalyticsDiscounts_WindowedVoidedCouponNeverActive(t *testing.T) {
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	rangeEnd := time.Date(2026, 1, 3, 0, 0, 0, 0, time.UTC)
+	points := []events.UsageAnalyticPoint{{Timestamp: t0, Cost: dec("50")}}
+
+	out := ApplyAnalyticsDiscounts(&discountInput{
+		Currency: "USD", SubTotal: dec("50"), Points: points,
+		SubCoupons: []*analyticsCoupon{pctCoupon("10", t0, ptrTime(t0))}, RangeStart: t0, RangeEnd: rangeEnd,
+	})
+	if !out.PointDiscounts[0].Discount.Equal(decimal.Zero) {
+		t.Fatalf("voided coupon (start_date == end_date) must never be active, got %s", out.PointDiscounts[0].Discount)
 	}
 }
 
