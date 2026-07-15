@@ -167,18 +167,18 @@ func (s *SubscriptionModificationServiceSuite) TestCouponModification() {
 			},
 		},
 		{
-			name: "add coupon — duplicate active association returns error",
+			name: "add coupon — same coupon can be applied to a subscription multiple times",
 			run: func() {
 				ctx := s.GetContext()
-				cust := s.createCustomer("coup-add-dup")
+				cust := s.createCustomer("coup-add-multi")
 				sub := s.createActiveSub(cust.ID)
 				c := s.createCoupon()
 
 				now := s.GetNow()
-				// Create an existing active association starting at now
+				// Pre-existing active association for the same coupon + subscription.
 				s.createCouponAssociation(c.ID, sub.ID, now, nil)
 
-				// Try to add the same coupon at the same time
+				// Applying the same coupon again must succeed, not be rejected as a duplicate.
 				req := dto.ExecuteSubscriptionModifyRequest{
 					Type: dto.SubscriptionModifyTypeCoupon,
 					CouponParams: &dto.SubModifyCouponParams{
@@ -186,8 +186,18 @@ func (s *SubscriptionModificationServiceSuite) TestCouponModification() {
 						CouponCode: c.CouponCode,
 					},
 				}
-				_, err := s.service.Execute(ctx, sub.ID, req)
-				s.Require().Error(err, "duplicate active association should be rejected")
+				resp, err := s.service.Execute(ctx, sub.ID, req)
+				s.Require().NoError(err, "applying the same coupon twice should succeed")
+				s.Require().NotNil(resp)
+
+				filter := &types.CouponAssociationFilter{
+					QueryFilter:     types.NewNoLimitQueryFilter(),
+					SubscriptionIDs: []string{sub.ID},
+					CouponIDs:       []string{c.ID},
+				}
+				assocs, err := s.GetStores().CouponAssociationRepo.List(ctx, filter)
+				s.Require().NoError(err)
+				s.Require().Len(assocs, 2, "both associations should exist")
 			},
 		},
 		{

@@ -87,29 +87,6 @@ func (s *subscriptionModificationService) executeAddCoupon(
 		startDate = params.StartDate.UTC()
 	}
 
-	filter := &types.CouponAssociationFilter{
-		QueryFilter:     types.NewNoLimitQueryFilter(),
-		SubscriptionIDs: []string{subscriptionID},
-		CouponIDs:       []string{couponID},
-		ActiveOnly:      true,
-		PeriodStart:     &effectiveDate,
-		PeriodEnd:       &effectiveDate,
-	}
-	existing, err := sp.CouponAssociationRepo.List(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if len(existing) > 0 {
-		return nil, ierr.NewError("coupon already active on this subscription for the given date range").
-			WithHint("Remove the existing coupon association before adding it again, or use a different start_date").
-			WithReportableDetails(map[string]interface{}{
-				"coupon_id":       couponID,
-				"subscription_id": subscriptionID,
-				"checked_at":      effectiveDate,
-			}).
-			Mark(ierr.ErrValidation)
-	}
-
 	assoc := &coupon_association.CouponAssociation{
 		ID:                     types.GenerateUUIDWithPrefix(types.UUID_PREFIX_COUPON_ASSOCIATION),
 		CouponID:               couponID,
@@ -237,7 +214,6 @@ func (s *subscriptionModificationService) previewAddCoupon(
 			WithHint("Ensure the coupon is in 'published' status").
 			Mark(ierr.ErrValidation)
 	}
-	couponID := c.ID
 
 	// Resolve target: line-item level or subscription level.
 	if params.SubscriptionLineItemID != nil {
@@ -260,28 +236,6 @@ func (s *subscriptionModificationService) previewAddCoupon(
 			WithReportableDetails(map[string]interface{}{
 				"provided_subscription_id": *params.SubscriptionID,
 				"subscription_id":          subscriptionID,
-			}).
-			Mark(ierr.ErrValidation)
-	}
-
-	filter := &types.CouponAssociationFilter{
-		QueryFilter:     types.NewNoLimitQueryFilter(),
-		SubscriptionIDs: []string{subscriptionID},
-		CouponIDs:       []string{couponID},
-		ActiveOnly:      true,
-		PeriodStart:     &effectiveDate,
-		PeriodEnd:       &effectiveDate,
-	}
-	existing, err := sp.CouponAssociationRepo.List(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	if len(existing) > 0 {
-		return nil, ierr.NewError("coupon already active on this subscription for the given date range").
-			WithReportableDetails(map[string]interface{}{
-				"coupon_id":       couponID,
-				"subscription_id": subscriptionID,
-				"effective_date":  effectiveDate,
 			}).
 			Mark(ierr.ErrValidation)
 	}
