@@ -21,10 +21,9 @@ type analyticsCoupon struct {
 
 // activeAt reports whether the association window [StartDate, EndDate) covers t. EndDate nil =
 // open-ended. Start inclusive, end exclusive — matches the codebase-wide billing-period
-// convention (start inclusive, end exclusive) — intended to stay in sync with the repo's
-// CouponAssociation ActiveOnly filter (internal/repository/ent/coupon_association.go), which is
-// being migrated to the same convention in a separate task. A degenerate window (EndDate ==
-// StartDate, i.e. voided) is naturally never active for any t under this check.
+// convention and the repo's CouponAssociation ActiveOnly filter
+// (internal/repository/ent/coupon_association.go). A degenerate window (EndDate == StartDate,
+// i.e. voided) is naturally never active for any t under this check.
 func (ac analyticsCoupon) activeAt(t time.Time) bool {
 	if t.Before(ac.StartDate) {
 		return false
@@ -36,10 +35,9 @@ func (ac analyticsCoupon) activeAt(t time.Time) bool {
 }
 
 // activeOverlaps reports whether the association window [StartDate, EndDate) overlaps the
-// half-open query range [start, end). EndDate nil = open-ended. This is intended to match the
-// repo's CouponAssociation ActiveOnly filter once it's migrated to the same half-open convention
-// (a separate, still-pending task) — as of this commit that filter still uses inclusive
-// StartDateLTE/EndDateGTE bounds. Callers of this method always pass genuine, non-degenerate
+// half-open query range [start, end). EndDate nil = open-ended. Matches the repo's
+// CouponAssociation ActiveOnly filter (internal/repository/ent/coupon_association.go) for the
+// genuine-range case. Callers of this method always pass genuine, non-degenerate
 // RangeStart/RangeEnd (never a collapsed point-in-time query), so no point-membership branch is
 // needed here (contrast with the repository-layer filter, which does need one).
 // A degenerate window (EndDate == StartDate, i.e. voided) must be excluded explicitly: the
