@@ -14,6 +14,7 @@ import (
 	"github.com/flexprice/flexprice/internal/types"
 	"github.com/samber/lo"
 	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -252,4 +253,33 @@ func (s *CouponAssociationServiceSuite) TestListCouponAssociations_ExpandSubscri
 	}
 	s.True(subLevelItem)
 	s.True(lineItemLevelItem)
+}
+
+func TestComputeCouponEndDate(t *testing.T) {
+	anchor := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name    string
+		n       int
+		wantEnd time.Time
+	}{
+		{
+			name:    "single monthly period",
+			n:       1,
+			wantEnd: time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name:    "three monthly periods",
+			n:       3,
+			wantEnd: time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := computeCouponEndDate(anchor, anchor, types.BILLING_PERIOD_MONTHLY, 1, tt.n, "UTC")
+			require.NoError(t, err)
+			require.True(t, got.Equal(tt.wantEnd), "computeCouponEndDate() = %v, want %v", got, tt.wantEnd)
+		})
+	}
 }

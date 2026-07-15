@@ -308,9 +308,9 @@ func (s *couponAssociationService) toCouponAssociationResponse(ca *coupon_associ
 
 // computeCouponEndDate advances startDate through n billing periods using the
 // subscription's billing anchor and period configuration (same logic as invoice
-// scheduling), then subtracts 1s so the result is strictly before the (n+1)th
-// period start — ensuring the ActiveOnly filter (end_date >= period_start) does
-// not match that next period.
+// scheduling). The result is the exclusive end of the coupon's active window —
+// under the [start, end) ActiveOnly convention, this naturally excludes the
+// (n+1)th period with no further adjustment.
 func computeCouponEndDate(startDate, billingAnchor time.Time, period types.BillingPeriod, periodCount, n int, timezone string) (time.Time, error) {
 	current := startDate
 	for i := 0; i < n; i++ {
@@ -326,5 +326,5 @@ func computeCouponEndDate(startDate, billingAnchor time.Time, period types.Billi
 		}
 		current = next
 	}
-	return current.Add(-time.Second), nil
+	return current, nil
 }
