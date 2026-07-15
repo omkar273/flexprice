@@ -198,6 +198,12 @@ func couponAssociationFilterFn(ctx context.Context, ca *coupon_association.Coupo
 	// applyActiveOnlyFilter — keep all three in sync).
 	if f.ActiveOnly {
 		var periodStart, periodEnd time.Time
+		// pointInTime is true when the caller supplied at most one of PeriodStart/PeriodEnd
+		// (or neither, defaulting to now()) — i.e. "is this association active AT this
+		// instant", not "does it overlap this range". Point membership needs a non-strict
+		// start comparison (start <= T), unlike genuine range overlap which needs strict
+		// (start < periodEnd) — see the branch below.
+		pointInTime := f.PeriodStart == nil || f.PeriodEnd == nil
 
 		if f.PeriodStart != nil && f.PeriodEnd != nil {
 			// Use provided period
@@ -219,16 +225,29 @@ func couponAssociationFilterFn(ctx context.Context, ca *coupon_association.Coupo
 		}
 
 		// A voided association (start_date == end_date) is a degenerate, empty window
-		// and must never overlap any period, regardless of where that period falls.
+		// and must never overlap any period or instant, regardless of where it falls.
+		// This can't be left to the checks below: for a zero-width window, both the
+		// range-overlap and point-membership formulas can still evaluate true when the
+		// void point falls strictly inside the query period, since neither formula on
+		// its own encodes "this window contains nothing."
 		if ca.EndDate != nil && ca.EndDate.Equal(ca.StartDate) {
 			return false
 		}
 
-		// Half-open overlap: [start_date, end_date_or_+inf) intersects [periodStart, periodEnd)
-		// iff start_date < periodEnd AND (end_date is nil OR end_date > periodStart).
-		if !ca.StartDate.Before(periodEnd) {
-			return false
+		if pointInTime {
+			// Point membership: start <= T < end (T == periodStart == periodEnd here).
+			if ca.StartDate.After(periodEnd) {
+				return false
+			}
+		} else {
+			// Half-open range overlap: start < periodEnd (strict).
+			if !ca.StartDate.Before(periodEnd) {
+				return false
+			}
 		}
+		// End check is identical for both modes: end must be strictly after periodStart
+		// (or nil/open-ended). For point queries periodStart == periodEnd == T, so this
+		// correctly requires end > T.
 		if ca.EndDate != nil && !ca.EndDate.After(periodStart) {
 			return false
 		}

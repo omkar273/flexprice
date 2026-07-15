@@ -307,3 +307,57 @@ func (s *BillingCouponPeriodSuite) TestVoidedCouponAssociationNeverSelected() {
 	s.Require().NotNil(req)
 	s.Empty(req.InvoiceCoupons, "a voided association (start_date == end_date) must never be selected, even for a period containing that timestamp")
 }
+
+// TestCouponActiveAtExactStartInstant_PointInTimeQuery proves point-membership
+// semantics for a collapsed (single-instant) ActiveOnly query: when the caller
+// supplies only PeriodStart (PeriodEnd left nil, so the store defaults it to the
+// same instant T), an association whose StartDate is exactly T must be considered
+// active at T ("start <= T"), not excluded by a strict "start < T" comparison that
+// would only be correct for a genuine two-sided range query. This mode isn't
+// exercised by CreateInvoiceRequestForCharges (which always supplies both period
+// bounds), so it's tested directly against the repository filter.
+func (s *BillingCouponPeriodSuite) TestCouponActiveAtExactStartInstant_PointInTimeQuery() {
+	ctx := s.GetContext()
+
+	cust := &customer.Customer{ID: "cust_period_5", ExternalID: "ext_period_5", Name: "Period Test Customer 5", BaseModel: types.GetDefaultBaseModel(ctx)}
+	s.NoError(s.GetStores().CustomerRepo.Create(ctx, cust))
+
+	sub := &subscription.Subscription{
+		ID: "sub_period_5", CustomerID: cust.ID, Currency: "usd",
+		SubscriptionStatus: types.SubscriptionStatusActive,
+		CurrentPeriodStart: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		CurrentPeriodEnd:   time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC),
+		BillingAnchor:      time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		StartDate:          time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		BillingPeriod:      types.BILLING_PERIOD_MONTHLY, BillingPeriodCount: 1,
+		BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.Create(ctx, sub))
+
+	c := &coupon.Coupon{
+		ID: "coupon_period_5", Name: "Starts Exactly At Query Instant", Type: types.CouponTypePercentage,
+		PercentageOff: lo.ToPtr(decimal.NewFromFloat(10)), Cadence: types.CouponCadenceForever,
+		Currency: "usd", EnvironmentID: types.GetEnvironmentID(ctx), BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CouponRepo.Create(ctx, c))
+
+	// StartDate lands EXACTLY on the query instant T; no EndDate (open-ended).
+	queryInstant := time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC)
+	assoc := &coupon_association.CouponAssociation{
+		ID: "assoc_period_5", CouponID: c.ID, SubscriptionID: sub.ID,
+		StartDate:     queryInstant,
+		EnvironmentID: types.GetEnvironmentID(ctx), Coupon: c, BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CouponAssociationRepo.Create(ctx, assoc))
+
+	filter := &types.CouponAssociationFilter{
+		QueryFilter:     types.NewNoLimitQueryFilter(),
+		SubscriptionIDs: []string{sub.ID},
+		ActiveOnly:      true,
+		PeriodStart:     &queryInstant, // PeriodEnd intentionally left nil -> collapsed point query
+	}
+	assocs, err := s.GetStores().CouponAssociationRepo.List(ctx, filter)
+	s.Require().NoError(err)
+	s.Require().Len(assocs, 1, "association starting exactly at the query instant must be considered active at that instant")
+	s.Equal(assoc.ID, assocs[0].ID)
+}
