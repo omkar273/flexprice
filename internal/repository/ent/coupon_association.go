@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/flexprice/flexprice/ent"
 	"github.com/flexprice/flexprice/ent/couponassociation"
 	"github.com/flexprice/flexprice/ent/predicate"
@@ -78,14 +79,31 @@ func (o CouponAssociationQueryOptions) GetFieldResolver(field string) (string, e
 	return fieldName, nil
 }
 
-// applyActiveOnlyFilter applies a filter to return only coupon associations active during the specified period
-// When ActiveOnly is true, the association must overlap with the period specified by ActivePeriodStart and ActivePeriodEnd
-// If ActivePeriodStart/ActivePeriodEnd are not provided, uses current time (now())
-// An association is active during a period if:
-// - start_date <= active_period_end (association started before or during the period)
-// - AND (end_date IS NULL OR end_date >= active_period_start) (association hasn't ended before the period or is indefinite)
+// applyActiveOnlyFilter applies a filter to return only coupon associations active during the
+// specified period, using the codebase-wide half-open [start, end) convention (see
+// internal/ee/service/billing.go's period-advance logic for the same convention). Kept in sync
+// with internal/testutil/inmemory_coupon_association_store.go's couponAssociationFilterFn and
+// internal/ee/service/analytics_discount.go's analyticsCoupon.activeOverlaps.
+//
+// When ActiveOnly is true, the association's own window [start_date, end_date) must contain or
+// overlap the query. Two distinct query modes share this function:
+//   - Genuine range (both activePeriodStart and activePeriodEnd provided, non-equal): standard
+//     half-open overlap — start_date < period_end AND (end_date IS NULL OR end_date > period_start).
+//   - Point-in-time (at most one of activePeriodStart/activePeriodEnd provided, or neither —
+//     defaults to now()): both collapse to a single instant T, and the correct check is POINT
+//     MEMBERSHIP, not range overlap — start_date <= T AND (end_date IS NULL OR end_date > T).
+//     Note the start comparison is non-strict here (<=), unlike the strict (<) comparison for a
+//     genuine range: an association starting exactly at the query instant must count as active
+//     at that instant, but an association starting exactly when a genuine range ends must not
+//     (it hasn't started yet as of any point actually inside that range).
+//
+// A degenerate/voided association (start_date == end_date) is never active under either mode —
+// this can't be left to the checks above: for a zero-width window, both the range-overlap and
+// point-membership formulas can still evaluate true when the void point falls strictly inside
+// the query period, since neither formula on its own encodes "this window contains nothing."
 func applyActiveOnlyFilter(query CouponAssociationQuery, activePeriodStart, activePeriodEnd *time.Time) CouponAssociationQuery {
 	var periodStart, periodEnd time.Time
+	pointInTime := activePeriodStart == nil || activePeriodEnd == nil
 
 	if activePeriodStart != nil && activePeriodEnd != nil {
 		// Use provided period
@@ -106,15 +124,33 @@ func applyActiveOnlyFilter(query CouponAssociationQuery, activePeriodStart, acti
 		periodEnd = now
 	}
 
+	startCondition := couponassociation.StartDateLT(periodEnd)
+	if pointInTime {
+		startCondition = couponassociation.StartDateLTE(periodEnd)
+	}
+
 	return query.Where(
 		couponassociation.And(
-			couponassociation.StartDateLTE(periodEnd),
+			startCondition,
 			couponassociation.Or(
-				couponassociation.EndDateGTE(periodStart),
 				couponassociation.EndDateIsNil(),
+				couponassociation.And(
+					couponassociation.EndDateGT(periodStart),
+					nonVoidedAssociation(),
+				),
 			),
 		),
 	)
+}
+
+// nonVoidedAssociation excludes rows where start_date == end_date — a degenerate, empty [t, t)
+// window that must never be considered active for any period. Only meaningful when end_date is
+// set (the caller only applies it inside the EndDateGT branch above), since a NULL end_date can
+// never equal start_date.
+func nonVoidedAssociation() predicate.CouponAssociation {
+	return predicate.CouponAssociation(func(s *sql.Selector) {
+		s.Where(sql.ColumnsNEQ(s.C(couponassociation.FieldStartDate), s.C(couponassociation.FieldEndDate)))
+	})
 }
 
 // applyEntityQueryOptions applies entity-specific filters from CouponAssociationFilter
