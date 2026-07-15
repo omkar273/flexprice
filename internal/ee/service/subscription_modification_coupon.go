@@ -20,7 +20,7 @@ func (s *subscriptionModificationService) executeCouponModification(
 	case dto.SubModifyCouponActionAdd:
 		return s.executeAddCoupon(ctx, subscriptionID, params, effectiveDate)
 	case dto.SubModifyCouponActionRemove:
-		return s.executeRemoveCoupon(ctx, subscriptionID, *params.CouponAssociationID, effectiveDate)
+		return s.executeRemoveCoupon(ctx, subscriptionID, params, effectiveDate)
 	default:
 		return nil, ierr.NewError("unknown coupon action: " + string(params.Action)).
 			Mark(ierr.ErrValidation)
@@ -114,10 +114,11 @@ func (s *subscriptionModificationService) executeAddCoupon(
 func (s *subscriptionModificationService) executeRemoveCoupon(
 	ctx context.Context,
 	subscriptionID string,
-	associationID string,
+	params *dto.SubModifyCouponParams,
 	effectiveDate time.Time,
 ) (*dto.SubscriptionModifyResponse, error) {
 	sp := s.serviceParams
+	associationID := *params.CouponAssociationID
 
 	// Validate subscription exists before any mutation.
 	sub, err := sp.SubRepo.Get(ctx, subscriptionID)
@@ -141,9 +142,32 @@ func (s *subscriptionModificationService) executeRemoveCoupon(
 			Mark(ierr.ErrValidation)
 	}
 
-	if assoc.EndDate != nil && !assoc.EndDate.After(effectiveDate) {
+	// Resolve the target end_date: an explicit value voids/ends at that point (down to
+	// start_date, which fully voids the association); omitted defaults to now, preserving
+	// today's behavior.
+	newEndDate := effectiveDate
+	if params.EndDate != nil {
+		newEndDate = params.EndDate.UTC()
+	}
+
+	if newEndDate.Before(assoc.StartDate) {
+		return nil, ierr.NewError("end_date cannot be before start_date").
+			WithHint("Provide an end_date on or after the association's start_date; pass end_date equal to start_date to void it entirely").
+			WithReportableDetails(map[string]interface{}{
+				"association_id": associationID,
+				"start_date":     assoc.StartDate,
+				"end_date":       newEndDate,
+			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	// Only reject extending an already-ended association forward: a plain remove (no
+	// explicit end_date) on an already-inactive association still errors here exactly as
+	// before, since effectiveDate (now) is after its past end_date. An explicit end_date at
+	// or before the current end_date — down to start_date, i.e. voiding — is allowed through.
+	if assoc.EndDate != nil && newEndDate.After(*assoc.EndDate) {
 		return nil, ierr.NewError("association already inactive").
-			WithHint("This coupon association has already ended").
+			WithHint("This coupon association has already ended; provide an end_date at or before its current end_date to void it").
 			WithReportableDetails(map[string]interface{}{
 				"association_id": associationID,
 				"end_date":       assoc.EndDate,
@@ -151,18 +175,7 @@ func (s *subscriptionModificationService) executeRemoveCoupon(
 			Mark(ierr.ErrValidation)
 	}
 
-	if effectiveDate.Before(assoc.StartDate) {
-		return nil, ierr.NewError("cannot remove coupon association before it has started").
-			WithHint("The coupon association has not started yet; wait until after its start_date").
-			WithReportableDetails(map[string]interface{}{
-				"association_id": associationID,
-				"start_date":     assoc.StartDate,
-				"now":            effectiveDate,
-			}).
-			Mark(ierr.ErrValidation)
-	}
-
-	assoc.EndDate = &effectiveDate
+	assoc.EndDate = &newEndDate
 	if err := sp.DB.WithTx(ctx, func(txCtx context.Context) error {
 		return sp.CouponAssociationRepo.Update(txCtx, assoc)
 	}); err != nil {
@@ -187,7 +200,7 @@ func (s *subscriptionModificationService) previewCouponModification(
 	case dto.SubModifyCouponActionAdd:
 		return s.previewAddCoupon(ctx, subscriptionID, params, effectiveDate)
 	case dto.SubModifyCouponActionRemove:
-		return s.previewRemoveCoupon(ctx, subscriptionID, *params.CouponAssociationID, effectiveDate)
+		return s.previewRemoveCoupon(ctx, subscriptionID, params, effectiveDate)
 	default:
 		return nil, ierr.NewError("unknown coupon action: " + string(params.Action)).
 			Mark(ierr.ErrValidation)
@@ -254,10 +267,11 @@ func (s *subscriptionModificationService) previewAddCoupon(
 func (s *subscriptionModificationService) previewRemoveCoupon(
 	ctx context.Context,
 	subscriptionID string,
-	associationID string,
+	params *dto.SubModifyCouponParams,
 	effectiveDate time.Time,
 ) (*dto.SubscriptionModifyResponse, error) {
 	sp := s.serviceParams
+	associationID := *params.CouponAssociationID
 
 	assoc, err := sp.CouponAssociationRepo.Get(ctx, associationID)
 	if err != nil {
@@ -274,20 +288,26 @@ func (s *subscriptionModificationService) previewRemoveCoupon(
 			}).
 			Mark(ierr.ErrValidation)
 	}
-	if assoc.EndDate != nil && !assoc.EndDate.After(effectiveDate) {
-		return nil, ierr.NewError("association already inactive").
-			WithReportableDetails(map[string]interface{}{"association_id": associationID}).
-			Mark(ierr.ErrValidation)
+
+	newEndDate := effectiveDate
+	if params.EndDate != nil {
+		newEndDate = params.EndDate.UTC()
 	}
 
-	if effectiveDate.Before(assoc.StartDate) {
-		return nil, ierr.NewError("cannot remove coupon association before it has started").
-			WithHint("The coupon association has not started yet; wait until after its start_date").
+	if newEndDate.Before(assoc.StartDate) {
+		return nil, ierr.NewError("end_date cannot be before start_date").
+			WithHint("Provide an end_date on or after the association's start_date; pass end_date equal to start_date to void it entirely").
 			WithReportableDetails(map[string]interface{}{
 				"association_id": associationID,
 				"start_date":     assoc.StartDate,
-				"now":            effectiveDate,
+				"end_date":       newEndDate,
 			}).
+			Mark(ierr.ErrValidation)
+	}
+
+	if assoc.EndDate != nil && newEndDate.After(*assoc.EndDate) {
+		return nil, ierr.NewError("association already inactive").
+			WithReportableDetails(map[string]interface{}{"association_id": associationID}).
 			Mark(ierr.ErrValidation)
 	}
 

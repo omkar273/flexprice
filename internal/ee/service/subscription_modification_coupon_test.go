@@ -317,6 +317,90 @@ func (s *SubscriptionModificationServiceSuite) TestCouponModification() {
 			},
 		},
 		{
+			name: "remove coupon — explicit end_date equal to start_date voids it",
+			run: func() {
+				ctx := s.GetContext()
+				cust := s.createCustomer("coup-rm-void")
+				sub := s.createActiveSub(cust.ID)
+				c := s.createCoupon()
+
+				start := s.GetNow()
+				assoc := s.createCouponAssociation(c.ID, sub.ID, start, nil)
+
+				req := dto.ExecuteSubscriptionModifyRequest{
+					Type: dto.SubscriptionModifyTypeCoupon,
+					CouponParams: &dto.SubModifyCouponParams{
+						Action:              dto.SubModifyCouponActionRemove,
+						CouponAssociationID: &assoc.ID,
+						EndDate:             &start,
+					},
+				}
+				resp, err := s.service.Execute(ctx, sub.ID, req)
+				s.Require().NoError(err, "voiding via end_date == start_date should succeed")
+				s.Require().NotNil(resp)
+
+				updated, err := s.GetStores().CouponAssociationRepo.Get(ctx, assoc.ID)
+				s.Require().NoError(err)
+				s.Require().NotNil(updated.EndDate)
+				s.True(updated.EndDate.Equal(updated.StartDate), "end_date should equal start_date after voiding")
+			},
+		},
+		{
+			name: "remove coupon — explicit end_date before start_date is rejected",
+			run: func() {
+				ctx := s.GetContext()
+				cust := s.createCustomer("coup-rm-before-start")
+				sub := s.createActiveSub(cust.ID)
+				c := s.createCoupon()
+
+				start := s.GetNow()
+				assoc := s.createCouponAssociation(c.ID, sub.ID, start, nil)
+				beforeStart := start.Add(-time.Hour)
+
+				req := dto.ExecuteSubscriptionModifyRequest{
+					Type: dto.SubscriptionModifyTypeCoupon,
+					CouponParams: &dto.SubModifyCouponParams{
+						Action:              dto.SubModifyCouponActionRemove,
+						CouponAssociationID: &assoc.ID,
+						EndDate:             &beforeStart,
+					},
+				}
+				_, err := s.service.Execute(ctx, sub.ID, req)
+				s.Require().Error(err, "end_date before start_date should be rejected")
+			},
+		},
+		{
+			name: "remove coupon — voiding an already-ended association via explicit end_date succeeds",
+			run: func() {
+				ctx := s.GetContext()
+				cust := s.createCustomer("coup-rm-void-past")
+				sub := s.createActiveSub(cust.ID)
+				c := s.createCoupon()
+
+				now := s.GetNow()
+				pastStart := now.Add(-72 * time.Hour)
+				pastEnd := now.Add(-24 * time.Hour)
+				assoc := s.createCouponAssociation(c.ID, sub.ID, pastStart, &pastEnd)
+
+				req := dto.ExecuteSubscriptionModifyRequest{
+					Type: dto.SubscriptionModifyTypeCoupon,
+					CouponParams: &dto.SubModifyCouponParams{
+						Action:              dto.SubModifyCouponActionRemove,
+						CouponAssociationID: &assoc.ID,
+						EndDate:             &pastStart, // void it entirely, back to its start_date
+					},
+				}
+				resp, err := s.service.Execute(ctx, sub.ID, req)
+				s.Require().NoError(err, "voiding an already-ended association via an explicit earlier end_date should succeed")
+				s.Require().NotNil(resp)
+
+				updated, err := s.GetStores().CouponAssociationRepo.Get(ctx, assoc.ID)
+				s.Require().NoError(err)
+				s.Require().NotNil(updated.EndDate)
+				s.True(updated.EndDate.Equal(pastStart))
+			},
+		},
+		{
 			name: "preview add coupon — no DB write, returns subscription state",
 			run: func() {
 				ctx := s.GetContext()

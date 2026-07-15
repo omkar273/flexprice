@@ -194,7 +194,8 @@ func (r *SubModifyGroupedInvoicingParams) Validate() error {
 // SubModifyCouponParams is the payload for coupon association changes on a subscription.
 // For action="add": coupon_code is required; provide either subscription_id (sub-level) or
 // subscription_line_item_id (line-item level), but not both.
-// For action="remove": association_id is required.
+// For action="remove": association_id is required. end_date is optional (defaults to now);
+// pass end_date equal to the association's start_date to void it entirely.
 type SubModifyCouponParams struct {
 	// Required. "add" to attach a coupon; "remove" to detach an existing association.
 	Action SubModifyCouponAction `json:"action" binding:"required"`
@@ -204,7 +205,10 @@ type SubModifyCouponParams struct {
 	CouponAssociationID *string `json:"coupon_association_id,omitempty"`
 	// Optional. When the coupon association starts; defaults to now.
 	StartDate *time.Time `json:"start_date,omitempty"`
-	// Optional. When the coupon association ends.
+	// Optional. When the coupon association ends. For action="add", sets the initial end_date.
+	// For action="remove", overrides the default (now) end_date used to end/void the
+	// association — pass a value equal to the association's start_date to void it entirely
+	// (excludes it from every billing period, past and future).
 	EndDate *time.Time `json:"end_date,omitempty"`
 	// Optional. Apply at subscription level. Mutually exclusive with SubscriptionLineItemID.
 	SubscriptionID *string `json:"subscription_id,omitempty"`
