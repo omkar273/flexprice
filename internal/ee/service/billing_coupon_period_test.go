@@ -201,3 +201,109 @@ func (s *BillingCouponPeriodSuite) TestCouponNotSelectedForSubCurrentPeriodOnly(
 	s.Require().NotNil(req)
 	s.Empty(req.InvoiceCoupons, "coupon expired before the requested period starts must not be selected")
 }
+
+// TestCouponEndDateEqualToPeriodStartExcluded proves the half-open [start_date, end_date)
+// convention: an association whose end_date lands exactly on the requested period's start
+// must NOT be selected for that period (previously, inclusive-end semantics wrongly included it).
+func (s *BillingCouponPeriodSuite) TestCouponEndDateEqualToPeriodStartExcluded() {
+	ctx := s.GetContext()
+
+	cust := &customer.Customer{ID: "cust_period_3", ExternalID: "ext_period_3", Name: "Period Test Customer 3", BaseModel: types.GetDefaultBaseModel(ctx)}
+	s.NoError(s.GetStores().CustomerRepo.Create(ctx, cust))
+
+	currentPeriodStart := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	currentPeriodEnd := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	requestedPeriodStart := currentPeriodEnd
+	requestedPeriodEnd := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+
+	sub := &subscription.Subscription{
+		ID: "sub_period_3", CustomerID: cust.ID, Currency: "usd",
+		SubscriptionStatus: types.SubscriptionStatusActive,
+		CurrentPeriodStart: currentPeriodStart, CurrentPeriodEnd: currentPeriodEnd,
+		BillingAnchor: currentPeriodStart, StartDate: currentPeriodStart,
+		BillingPeriod: types.BILLING_PERIOD_MONTHLY, BillingPeriodCount: 1,
+		BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.Create(ctx, sub))
+
+	c := &coupon.Coupon{
+		ID: "coupon_period_3", Name: "Ends Exactly At Period Start", Type: types.CouponTypePercentage,
+		PercentageOff: lo.ToPtr(decimal.NewFromFloat(10)), Cadence: types.CouponCadenceForever,
+		Currency: "usd", EnvironmentID: types.GetEnvironmentID(ctx), BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CouponRepo.Create(ctx, c))
+
+	// EndDate lands EXACTLY on requestedPeriodStart, with no offset — the boundary case.
+	endsExactlyAtRequestedPeriodStart := requestedPeriodStart
+	assoc := &coupon_association.CouponAssociation{
+		ID: "assoc_period_3", CouponID: c.ID, SubscriptionID: sub.ID,
+		StartDate: currentPeriodStart, EndDate: &endsExactlyAtRequestedPeriodStart,
+		EnvironmentID: types.GetEnvironmentID(ctx), Coupon: c, BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CouponAssociationRepo.Create(ctx, assoc))
+
+	result := &dto.BillingCalculationResult{
+		TotalAmount: decimal.NewFromInt(100), Currency: "usd",
+		FixedCharges: []dto.CreateInvoiceLineItemRequest{{Amount: decimal.NewFromInt(100), Quantity: decimal.NewFromInt(1)}},
+		UsageCharges: []dto.CreateInvoiceLineItemRequest{},
+	}
+
+	req, err := s.svc.CreateInvoiceRequestForCharges(ctx, &dto.CreateInvoiceRequestForChargesParams{
+		Subscription: sub, Result: result, PeriodStart: requestedPeriodStart, PeriodEnd: requestedPeriodEnd,
+	})
+	s.NoError(err)
+	s.Require().NotNil(req)
+	s.Empty(req.InvoiceCoupons, "coupon ending exactly at the period start must not be selected under [start,end) semantics")
+}
+
+// TestVoidedCouponAssociationNeverSelected proves that an association voided via
+// start_date == end_date (a degenerate, empty window) is excluded from every period,
+// even a period that would otherwise contain that timestamp.
+func (s *BillingCouponPeriodSuite) TestVoidedCouponAssociationNeverSelected() {
+	ctx := s.GetContext()
+
+	cust := &customer.Customer{ID: "cust_period_4", ExternalID: "ext_period_4", Name: "Period Test Customer 4", BaseModel: types.GetDefaultBaseModel(ctx)}
+	s.NoError(s.GetStores().CustomerRepo.Create(ctx, cust))
+
+	currentPeriodStart := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	currentPeriodEnd := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+
+	sub := &subscription.Subscription{
+		ID: "sub_period_4", CustomerID: cust.ID, Currency: "usd",
+		SubscriptionStatus: types.SubscriptionStatusActive,
+		CurrentPeriodStart: currentPeriodStart, CurrentPeriodEnd: currentPeriodEnd,
+		BillingAnchor: currentPeriodStart, StartDate: currentPeriodStart,
+		BillingPeriod: types.BILLING_PERIOD_MONTHLY, BillingPeriodCount: 1,
+		BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().SubscriptionRepo.Create(ctx, sub))
+
+	c := &coupon.Coupon{
+		ID: "coupon_period_4", Name: "Voided Mid-Period", Type: types.CouponTypePercentage,
+		PercentageOff: lo.ToPtr(decimal.NewFromFloat(10)), Cadence: types.CouponCadenceForever,
+		Currency: "usd", EnvironmentID: types.GetEnvironmentID(ctx), BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CouponRepo.Create(ctx, c))
+
+	// Voided: start_date == end_date, both strictly inside [currentPeriodStart, currentPeriodEnd).
+	voidedAt := currentPeriodStart.AddDate(0, 0, 15)
+	assoc := &coupon_association.CouponAssociation{
+		ID: "assoc_period_4", CouponID: c.ID, SubscriptionID: sub.ID,
+		StartDate: voidedAt, EndDate: &voidedAt,
+		EnvironmentID: types.GetEnvironmentID(ctx), Coupon: c, BaseModel: types.GetDefaultBaseModel(ctx),
+	}
+	s.NoError(s.GetStores().CouponAssociationRepo.Create(ctx, assoc))
+
+	result := &dto.BillingCalculationResult{
+		TotalAmount: decimal.NewFromInt(100), Currency: "usd",
+		FixedCharges: []dto.CreateInvoiceLineItemRequest{{Amount: decimal.NewFromInt(100), Quantity: decimal.NewFromInt(1)}},
+		UsageCharges: []dto.CreateInvoiceLineItemRequest{},
+	}
+
+	req, err := s.svc.CreateInvoiceRequestForCharges(ctx, &dto.CreateInvoiceRequestForChargesParams{
+		Subscription: sub, Result: result, PeriodStart: currentPeriodStart, PeriodEnd: currentPeriodEnd,
+	})
+	s.NoError(err)
+	s.Require().NotNil(req)
+	s.Empty(req.InvoiceCoupons, "a voided association (start_date == end_date) must never be selected, even for a period containing that timestamp")
+}

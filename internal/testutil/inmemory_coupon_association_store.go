@@ -192,7 +192,10 @@ func couponAssociationFilterFn(ctx context.Context, ca *coupon_association.Coupo
 		}
 	}
 
-	// Apply active filter based on start_date and end_date
+	// Apply active filter based on start_date and end_date, using the half-open
+	// [start_date, end_date) convention (matches internal/ee/service/billing.go's
+	// period-advance logic and internal/repository/ent/coupon_association.go's
+	// applyActiveOnlyFilter — keep all three in sync).
 	if f.ActiveOnly {
 		var periodStart, periodEnd time.Time
 
@@ -215,14 +218,18 @@ func couponAssociationFilterFn(ctx context.Context, ca *coupon_association.Coupo
 			periodEnd = now
 		}
 
-		// Check if association is active during the period
-		// Association is active if:
-		// - start_date <= period_end (association started before or during the period)
-		// - AND (end_date IS NULL OR end_date >= period_start) (association hasn't ended before the period or is indefinite)
-		if ca.StartDate.After(periodEnd) {
+		// A voided association (start_date == end_date) is a degenerate, empty window
+		// and must never overlap any period, regardless of where that period falls.
+		if ca.EndDate != nil && ca.EndDate.Equal(ca.StartDate) {
 			return false
 		}
-		if ca.EndDate != nil && ca.EndDate.Before(periodStart) {
+
+		// Half-open overlap: [start_date, end_date_or_+inf) intersects [periodStart, periodEnd)
+		// iff start_date < periodEnd AND (end_date is nil OR end_date > periodStart).
+		if !ca.StartDate.Before(periodEnd) {
+			return false
+		}
+		if ca.EndDate != nil && !ca.EndDate.After(periodStart) {
 			return false
 		}
 	}
