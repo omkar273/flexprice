@@ -401,6 +401,32 @@ func (s *SubscriptionModificationServiceSuite) TestCouponModification() {
 			},
 		},
 		{
+			name: "preview remove coupon — voiding an already-ended association via explicit end_date succeeds",
+			run: func() {
+				ctx := s.GetContext()
+				cust := s.createCustomer("coup-preview-rm-void-past")
+				sub := s.createActiveSub(cust.ID)
+				c := s.createCoupon()
+
+				now := s.GetNow()
+				pastStart := now.Add(-72 * time.Hour)
+				pastEnd := now.Add(-24 * time.Hour)
+				assoc := s.createCouponAssociation(c.ID, sub.ID, pastStart, &pastEnd)
+
+				req := dto.ExecuteSubscriptionModifyRequest{
+					Type: dto.SubscriptionModifyTypeCoupon,
+					CouponParams: &dto.SubModifyCouponParams{
+						Action:              dto.SubModifyCouponActionRemove,
+						CouponAssociationID: &assoc.ID,
+						EndDate:             &pastStart, // void it entirely, back to its start_date
+					},
+				}
+				resp, err := s.service.Preview(ctx, sub.ID, req)
+				s.Require().NoError(err, "previewing a void of an already-ended association via an explicit earlier end_date should succeed")
+				s.Require().NotNil(resp)
+			},
+		},
+		{
 			name: "preview remove coupon — explicit end_date equal to start_date voids it, no DB write",
 			run: func() {
 				ctx := s.GetContext()
