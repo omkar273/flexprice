@@ -289,6 +289,9 @@ func (s *subscriptionModificationService) previewRemoveCoupon(
 			Mark(ierr.ErrValidation)
 	}
 
+	// Resolve the target end_date: an explicit value voids/ends at that point (down to
+	// start_date, which fully voids the association); omitted defaults to now, preserving
+	// today's behavior.
 	newEndDate := effectiveDate
 	if params.EndDate != nil {
 		newEndDate = params.EndDate.UTC()
@@ -305,6 +308,10 @@ func (s *subscriptionModificationService) previewRemoveCoupon(
 			Mark(ierr.ErrValidation)
 	}
 
+	// Only reject extending an already-ended association forward: a plain remove (no
+	// explicit end_date) on an already-inactive association still errors here exactly as
+	// before, since effectiveDate (now) is after its past end_date. An explicit end_date at
+	// or before the current end_date — down to start_date, i.e. voiding — is allowed through.
 	if assoc.EndDate != nil && newEndDate.After(*assoc.EndDate) {
 		return nil, ierr.NewError("association already inactive").
 			WithReportableDetails(map[string]interface{}{"association_id": associationID}).

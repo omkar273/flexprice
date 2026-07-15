@@ -401,6 +401,35 @@ func (s *SubscriptionModificationServiceSuite) TestCouponModification() {
 			},
 		},
 		{
+			name: "preview remove coupon — explicit end_date equal to start_date voids it, no DB write",
+			run: func() {
+				ctx := s.GetContext()
+				cust := s.createCustomer("coup-preview-rm-void")
+				sub := s.createActiveSub(cust.ID)
+				c := s.createCoupon()
+
+				start := s.GetNow()
+				assoc := s.createCouponAssociation(c.ID, sub.ID, start, nil)
+
+				req := dto.ExecuteSubscriptionModifyRequest{
+					Type: dto.SubscriptionModifyTypeCoupon,
+					CouponParams: &dto.SubModifyCouponParams{
+						Action:              dto.SubModifyCouponActionRemove,
+						CouponAssociationID: &assoc.ID,
+						EndDate:             &start,
+					},
+				}
+				resp, err := s.service.Preview(ctx, sub.ID, req)
+				s.Require().NoError(err, "previewing a void via end_date == start_date should succeed")
+				s.Require().NotNil(resp)
+
+				// Preview must not persist any change — the association's end_date is still nil.
+				unchanged, err := s.GetStores().CouponAssociationRepo.Get(ctx, assoc.ID)
+				s.Require().NoError(err)
+				s.Nil(unchanged.EndDate, "Preview must not persist any coupon association change")
+			},
+		},
+		{
 			name: "preview add coupon — no DB write, returns subscription state",
 			run: func() {
 				ctx := s.GetContext()
