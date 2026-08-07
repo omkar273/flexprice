@@ -206,8 +206,26 @@ type KafkaConfig struct {
 	// TopicDLQ is the global fallback dead-letter Kafka topic used by handlers that
 	// do not define their own per-consumer-group topic_dlq. Empty disables DLQ for
 	// those handlers.
-	TopicDLQ      string               `mapstructure:"topic_dlq" default:""`
-	TLS           bool                 `mapstructure:"tls"` // set to true if using 9094 port else can set to false
+	TopicDLQ string `mapstructure:"topic_dlq" default:""`
+	TLS      bool   `mapstructure:"tls"` // set to true if using 9094 port else can set to false
+	// TLSCACertFile is the path to a PEM-encoded CA bundle used to verify the
+	// broker certificate. Empty (the default) means the OS trust store is used,
+	// which is correct for brokers with publicly-trusted certs (MSK, Confluent
+	// Cloud). Set it only when the broker presents a private/self-signed CA.
+	// The CA is applied to the Kafka client alone, so it does not affect other
+	// outbound TLS in the process (Stripe, GCP, webhooks).
+	//
+	// Must be PEM. JKS/PKCS12 truststores are not supported — sarama and Go's
+	// crypto/x509 read PEM only. Convert with:
+	//
+	//	keytool -exportcert -alias <alias> -keystore truststore.jks -rfc -file ca.pem
+	TLSCACertFile string `mapstructure:"tls_ca_cert_file"`
+	// TLSServerName overrides the hostname the broker certificate is verified
+	// against. Empty (the default) verifies against the dial address, i.e. the
+	// broker's advertised listener, which is correct almost always. Set it only
+	// when a private CA issues a certificate whose SAN does not match that name
+	// — a broker behind an SNI-mismatched load balancer, typically.
+	TLSServerName string               `mapstructure:"tls_server_name"`
 	UseSASL       bool                 `mapstructure:"use_sasl"`
 	SASLMechanism sarama.SASLMechanism `mapstructure:"sasl_mechanism"`
 	SASLUser      string               `mapstructure:"sasl_user"`
@@ -253,14 +271,29 @@ type ClickHouseConfig struct {
 	// (clickhouse.go acquire() waits on a semaphore of MaxOpenConns slots for DialTimeout),
 	// so it cannot be tuned for pool pressure without also changing dial failover — see
 	// the ConnOpenInOrder note in GetClientOptions. Prefer raising MaxOpenConns instead.
-	DialTimeout    time.Duration `mapstructure:"dial_timeout"`
-	ReadTimeout    time.Duration `mapstructure:"read_timeout"`
-	Address        string        `mapstructure:"address" validate:"required"`
-	TLS            bool          `mapstructure:"tls"`
-	Username       string        `mapstructure:"username" validate:"required"`
-	Password       string        `mapstructure:"password" validate:"required"`
-	Database       string        `mapstructure:"database" validate:"required"`
-	MaxMemoryUsage int64         `mapstructure:"max_memory_usage" validate:"required"`
+	DialTimeout time.Duration `mapstructure:"dial_timeout"`
+	ReadTimeout time.Duration `mapstructure:"read_timeout"`
+	Address     string        `mapstructure:"address" validate:"required"`
+	TLS         bool          `mapstructure:"tls"`
+	// TLSSkipVerify disables server certificate and hostname verification on the
+	// TLS connection. It only takes effect when TLS is true. Intended for dev
+	// environments whose ClickHouse serves a self-signed certificate (equivalent to
+	// SSL=true with SSL_MODE=NONE); it removes MITM protection, so leave it false
+	// everywhere else and trust the CA instead.
+	TLSSkipVerify bool `mapstructure:"tls_skip_verify"`
+	// Protocol selects the ClickHouse wire protocol: "native" (default) or "http".
+	// The two protocols listen on different ports and are not interchangeable — a
+	// native client pointed at an HTTP port fails with
+	// "[handshake] unexpected packet [72] from server" (72 is 'H' of "HTTP/1.1").
+	// Ports: native 9000 / 9440 (TLS), http 8123 / 8443 (TLS). Set this to "http"
+	// when ClickHouse is only reachable through an HTTP(S) endpoint, e.g. behind a
+	// TLS-terminating load balancer that exposes 8443. Empty means native so
+	// existing deployments keep their current behaviour.
+	Protocol       string `mapstructure:"protocol" validate:"omitempty,oneof=native http"`
+	Username       string `mapstructure:"username" validate:"required"`
+	Password       string `mapstructure:"password" validate:"required"`
+	Database       string `mapstructure:"database" validate:"required"`
+	MaxMemoryUsage int64  `mapstructure:"max_memory_usage" validate:"required"`
 }
 
 type LoggingConfig struct {
@@ -741,8 +774,10 @@ type CustomerPortalConfig struct {
 
 // RedisConfig holds configuration for Redis
 type RedisConfig struct {
-	Host      string        `mapstructure:"host" default:"localhost"`
-	Port      int           `mapstructure:"port" default:"6379"`
+	Host string `mapstructure:"host" default:"localhost"`
+	Port int    `mapstructure:"port" default:"6379"`
+	// Username is the data-node ACL user; leave empty for requirepass-style auth.
+	Username  string        `mapstructure:"username" default:""`
 	Password  string        `mapstructure:"password" default:""`
 	DB        int           `mapstructure:"db" default:"0"`
 	UseTLS    bool          `mapstructure:"use_tls" default:"false"`
@@ -758,8 +793,8 @@ type RedisConfig struct {
 
 	// Sentinel HA: a non-empty SentinelMasterName switches to Sentinel mode
 	// (ignores Host/Port/ClusterMode) and resolves the master via the quorum.
-	// SentinelAddrs are the sentinel endpoints, NOT the master. Password (above)
-	// auths the data nodes; SentinelUsername/Password auth the sentinels.
+	// SentinelAddrs are the sentinel endpoints, NOT the master. Username/Password
+	// (above) auth the data nodes; SentinelUsername/Password auth the sentinels.
 	SentinelMasterName string   `mapstructure:"sentinel_master_name" default:""`
 	SentinelAddrs      []string `mapstructure:"sentinel_addrs"`
 	SentinelUsername   string   `mapstructure:"sentinel_username" default:""`
@@ -1023,6 +1058,16 @@ func GetDefaultConfig() *Configuration {
 	}
 }
 
+// protocol maps the configured protocol name onto the driver's enum. An unset or
+// unrecognised value yields clickhouse.Native, which is both the driver's zero
+// value and the behaviour every deployment had before this field existed.
+func (c ClickHouseConfig) protocol() clickhouse.Protocol {
+	if strings.EqualFold(c.Protocol, "http") {
+		return clickhouse.HTTP
+	}
+	return clickhouse.Native
+}
+
 func (c ClickHouseConfig) GetClientOptions() *clickhouse.Options {
 	options := &clickhouse.Options{
 		Addr: []string{c.Address},
@@ -1051,8 +1096,9 @@ func (c ClickHouseConfig) GetClientOptions() *clickhouse.Options {
 		options.ReadTimeout = c.ReadTimeout
 	}
 	if c.TLS {
-		options.TLS = &tls.Config{}
+		options.TLS = &tls.Config{InsecureSkipVerify: c.TLSSkipVerify} // #nosec G402 -- opt-in, dev-only self-signed certs
 	}
+	options.Protocol = c.protocol()
 
 	maxMemoryUsageBytes := c.MaxMemoryUsage * int64(1024) * int64(1024) * int64(1024)
 	options.Settings = clickhouse.Settings{

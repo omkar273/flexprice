@@ -554,12 +554,45 @@ type CreateSubscriptionRequest struct {
 	// OpeningInvoiceAdjustmentAmount nets the opening invoice against a proration/cancel credit (e.g. on plan change). Internal only.
 	OpeningInvoiceAdjustmentAmount *decimal.Decimal `json:"-"`
 
+	Checkout *CheckoutParams `json:"checkout,omitempty"`
+
 	SubscriptionCreationConfig
 }
 
 type AddAddonRequest struct {
-	SubscriptionID                string `json:"subscription_id" validate:"required"`
+	SubscriptionID                string          `json:"subscription_id" validate:"required"`
+	Checkout                      *CheckoutParams `json:"checkout,omitempty"`
 	AddAddonToSubscriptionRequest `json:",inline"`
+}
+
+func (r *AddAddonRequest) Validate() error {
+	if err := validator.ValidateRequest(r); err != nil {
+		return err
+	}
+
+	if err := r.AddAddonToSubscriptionRequest.Validate(); err != nil {
+		return err
+	}
+
+	if err := r.Checkout.Validate(); err != nil {
+		return err
+	}
+
+	if r.Checkout != nil {
+		if len(r.OverrideLineItems) > 0 {
+			return ierr.NewError("override_line_items is not supported with checkout").
+				WithHint("Remove checkout to use override_line_items, or remove override_line_items to gate this addon behind payment").
+				Mark(ierr.ErrValidation)
+		}
+
+		if len(r.LineItemCommitments) > 0 {
+			return ierr.NewError("line_item_commitments is not supported with checkout").
+				WithHint("Remove checkout to use line_item_commitments, or remove line_item_commitments to gate this addon behind payment").
+				Mark(ierr.ErrValidation)
+		}
+	}
+
+	return nil
 }
 
 type RemoveAddonRequest struct {
@@ -754,6 +787,8 @@ type SubscriptionResponse struct {
 	// the search filter's expand string. Each entry is a feature with its
 	// aggregated entitlement info (same shape as CustomerEntitlementsResponse.Features).
 	Entitlements []*AggregatedFeature `json:"entitlements,omitempty"`
+
+	CheckoutSession *CheckoutSessionResponse `json:"checkout_session,omitempty"`
 }
 
 // ListSubscriptionsResponse represents the response for listing subscriptions
@@ -792,10 +827,46 @@ type SubscriptionResponseV2 struct {
 	PlanPricesOutOfSync bool `json:"plan_prices_out_of_sync"`
 }
 
+func (r *CreateSubscriptionRequest) validateCheckoutCompatibility() error {
+	if err := r.Checkout.Validate(); err != nil {
+		return err
+	}
+
+	if r.Checkout == nil {
+		return nil
+	}
+
+	if r.SubscriptionStatus != "" {
+		return ierr.NewError("subscription_status is not supported with checkout").
+			WithHint("Remove subscription_status; a checkout-gated subscription is created as draft and activated once payment succeeds").
+			WithReportableDetails(map[string]any{"subscription_status": r.SubscriptionStatus}).
+			Mark(ierr.ErrValidation)
+	}
+
+	if len(r.Phases) > 0 {
+		return ierr.NewError("phases is not supported with checkout").
+			WithHint("Remove checkout to use phases, or remove phases to gate this subscription behind payment").
+			Mark(ierr.ErrValidation)
+	}
+
+	// TODO: Handle inheritance for checkout-gated creates
+	if r.Inheritance != nil {
+		return ierr.NewError("inheritance is not supported with checkout").
+			WithHint("Remove checkout to create an inherited or grouped-invoicing subscription").
+			Mark(ierr.ErrValidation)
+	}
+
+	return nil
+}
+
 func (r *CreateSubscriptionRequest) Validate() error {
 
 	err := validator.ValidateRequest(r)
 	if err != nil {
+		return err
+	}
+
+	if err := r.validateCheckoutCompatibility(); err != nil {
 		return err
 	}
 
@@ -1798,6 +1869,64 @@ type SubscriptionUsageByMetersResponse struct {
 	// BucketedUsageResult holds per-bucket usage data for bucketed meters (MAX/SUM with bucket_size).
 	// Populated by GetMeterUsageBySubscription so CalculateMeterUsageCharges doesn't re-query ClickHouse.
 	BucketedUsageResult *events.AggregationResult `json:"-"`
+
+	// Exact carriers for billing math. JSON amount/quantity remain float64 for API
+	// compatibility; invoice calculation must use AmountDecimal/QuantityDecimal so
+	// values never round-trip through float64 (can flip currency rounding at boundaries).
+	amountExact      decimal.Decimal
+	hasAmountExact   bool
+	quantityExact    decimal.Decimal
+	hasQuantityExact bool
+}
+
+// SetAmountDecimal stores the billing amount exactly and mirrors float64 for the API.
+func (c *SubscriptionUsageByMetersResponse) SetAmountDecimal(amount decimal.Decimal) {
+	if c == nil {
+		return
+	}
+	c.amountExact = amount
+	c.hasAmountExact = true
+	c.Amount = amount.InexactFloat64()
+}
+
+// SetAmountWithCurrencyPrecision rounds to currency precision, then SetAmountDecimal.
+func (c *SubscriptionUsageByMetersResponse) SetAmountWithCurrencyPrecision(amount decimal.Decimal, currency string) {
+	if c == nil {
+		return
+	}
+	c.SetAmountDecimal(types.RoundToCurrencyPrecision(amount, currency))
+}
+
+// AmountDecimal returns the exact billing amount when set; otherwise reconstructs from the API float.
+func (c *SubscriptionUsageByMetersResponse) AmountDecimal() decimal.Decimal {
+	if c == nil {
+		return decimal.Zero
+	}
+	if c.hasAmountExact {
+		return c.amountExact
+	}
+	return decimal.NewFromFloat(c.Amount)
+}
+
+// SetQuantityDecimal stores the billing quantity exactly and mirrors float64 for the API.
+func (c *SubscriptionUsageByMetersResponse) SetQuantityDecimal(quantity decimal.Decimal) {
+	if c == nil {
+		return
+	}
+	c.quantityExact = quantity
+	c.hasQuantityExact = true
+	c.Quantity = quantity.InexactFloat64()
+}
+
+// QuantityDecimal returns the exact billing quantity when set; otherwise reconstructs from the API float.
+func (c *SubscriptionUsageByMetersResponse) QuantityDecimal() decimal.Decimal {
+	if c == nil {
+		return decimal.Zero
+	}
+	if c.hasQuantityExact {
+		return c.quantityExact
+	}
+	return decimal.NewFromFloat(c.Quantity)
 }
 
 type SubscriptionUpdatePeriodResponse struct {

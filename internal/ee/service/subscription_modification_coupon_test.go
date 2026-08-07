@@ -238,6 +238,68 @@ func (s *SubscriptionModificationServiceSuite) TestCouponModification() {
 			},
 		},
 		{
+			name: "remove coupon with explicit end_date in future — sets association end_date to specified future date",
+			run: func() {
+				ctx := s.GetContext()
+				cust := s.createCustomer("coup-rm-future-end")
+				sub := s.createActiveSub(cust.ID)
+				c := s.createCoupon()
+
+				now := s.GetNow()
+				assoc := s.createCouponAssociation(c.ID, sub.ID, now, nil)
+
+				futureEnd := now.Add(30 * 24 * time.Hour)
+				req := dto.ExecuteSubscriptionModifyRequest{
+					Type: dto.SubscriptionModifyTypeCoupon,
+					CouponParams: &dto.SubModifyCouponParams{
+						Action:              dto.SubModifyCouponActionRemove,
+						CouponAssociationID: &assoc.ID,
+						EndDate:             &futureEnd,
+					},
+				}
+				resp, err := s.service.Execute(ctx, sub.ID, req)
+				s.Require().NoError(err)
+				s.Require().NotNil(resp)
+
+				updated, err := s.GetStores().CouponAssociationRepo.Get(ctx, assoc.ID)
+				s.Require().NoError(err)
+				s.Require().NotNil(updated.EndDate)
+				s.True(updated.EndDate.Equal(futureEnd.UTC()), "EndDate should be set to the explicit future end_date")
+			},
+		},
+		{
+			name: "remove coupon with explicit end_date in past — backdates the association end_date",
+			run: func() {
+				ctx := s.GetContext()
+				cust := s.createCustomer("coup-rm-past-end")
+				sub := s.createActiveSub(cust.ID)
+				c := s.createCoupon()
+
+				// Association started 72 hours ago, still open.
+				pastStart := s.GetNow().Add(-72 * time.Hour)
+				assoc := s.createCouponAssociation(c.ID, sub.ID, pastStart, nil)
+
+				// Request removal effective 24 hours ago (backdate).
+				pastEnd := s.GetNow().Add(-24 * time.Hour)
+				req := dto.ExecuteSubscriptionModifyRequest{
+					Type: dto.SubscriptionModifyTypeCoupon,
+					CouponParams: &dto.SubModifyCouponParams{
+						Action:              dto.SubModifyCouponActionRemove,
+						CouponAssociationID: &assoc.ID,
+						EndDate:             &pastEnd,
+					},
+				}
+				resp, err := s.service.Execute(ctx, sub.ID, req)
+				s.Require().NoError(err)
+				s.Require().NotNil(resp)
+
+				updated, err := s.GetStores().CouponAssociationRepo.Get(ctx, assoc.ID)
+				s.Require().NoError(err)
+				s.Require().NotNil(updated.EndDate)
+				s.True(updated.EndDate.Equal(pastEnd.UTC()), "EndDate should be backdated to the explicit past end_date")
+			},
+		},
+		{
 			name: "remove coupon — association not found returns error",
 			run: func() {
 				ctx := s.GetContext()
@@ -494,4 +556,122 @@ func (s *SubscriptionModificationServiceSuite) TestCouponModification() {
 			tc.run()
 		})
 	}
+}
+
+// createCouponWithLimits creates a published percentage-off coupon with the
+// given redemption controls, for the VAPT redemption-enforcement tests.
+func (s *SubscriptionModificationServiceSuite) createCouponWithLimits(
+	maxRedemptions *int,
+	totalRedemptions int,
+	redeemAfter, redeemBefore *time.Time,
+) *coupon_domain.Coupon {
+	ctx := s.GetContext()
+	pct := decimal.NewFromInt(10)
+	id := types.GenerateUUIDWithPrefix(types.UUID_PREFIX_COUPON)
+	c := &coupon_domain.Coupon{
+		ID:               id,
+		Name:             "Limited Coupon",
+		Type:             types.CouponTypePercentage,
+		Cadence:          types.CouponCadenceForever,
+		PercentageOff:    &pct,
+		CouponCode:       lo.ToPtr(id),
+		MaxRedemptions:   maxRedemptions,
+		TotalRedemptions: totalRedemptions,
+		RedeemAfter:      redeemAfter,
+		RedeemBefore:     redeemBefore,
+		EnvironmentID:    types.GetEnvironmentID(ctx),
+		BaseModel:        types.GetDefaultBaseModel(ctx),
+	}
+	c.Status = types.StatusPublished
+	s.Require().NoError(s.GetStores().CouponRepo.Create(ctx, c))
+	return c
+}
+
+// TestCouponRedemptionEnforcement covers the VAPT finding that the
+// subscription modify/execute add-coupon path did not enforce max_redemptions,
+// redeem_after, or redeem_before, and never incremented total_redemptions.
+func (s *SubscriptionModificationServiceSuite) TestCouponRedemptionEnforcement() {
+	s.Run("max_redemptions already reached — add is rejected", func() {
+		ctx := s.GetContext()
+		cust := s.createCustomer("coup-max-reached")
+		sub := s.createActiveSub(cust.ID)
+		// max=2, already at 2 → limit reached.
+		c := s.createCouponWithLimits(lo.ToPtr(2), 2, nil, nil)
+
+		req := dto.ExecuteSubscriptionModifyRequest{
+			Type: dto.SubscriptionModifyTypeCoupon,
+			CouponParams: &dto.SubModifyCouponParams{
+				Action:     dto.SubModifyCouponActionAdd,
+				CouponCode: c.CouponCode,
+			},
+		}
+		_, err := s.service.Execute(ctx, sub.ID, req)
+		s.Require().Error(err, "coupon at max_redemptions must not be redeemable")
+
+		// No association should have been created.
+		assocs, listErr := s.GetStores().CouponAssociationRepo.List(ctx, &types.CouponAssociationFilter{
+			QueryFilter:     types.NewNoLimitQueryFilter(),
+			SubscriptionIDs: []string{sub.ID},
+			CouponIDs:       []string{c.ID},
+		})
+		s.Require().NoError(listErr)
+		s.Len(assocs, 0)
+	})
+
+	s.Run("redeem_after in the future — add is rejected", func() {
+		ctx := s.GetContext()
+		cust := s.createCustomer("coup-not-yet-valid")
+		sub := s.createActiveSub(cust.ID)
+		future := s.GetNow().Add(72 * time.Hour)
+		c := s.createCouponWithLimits(nil, 0, &future, nil)
+
+		req := dto.ExecuteSubscriptionModifyRequest{
+			Type: dto.SubscriptionModifyTypeCoupon,
+			CouponParams: &dto.SubModifyCouponParams{
+				Action:     dto.SubModifyCouponActionAdd,
+				CouponCode: c.CouponCode,
+			},
+		}
+		_, err := s.service.Execute(ctx, sub.ID, req)
+		s.Require().Error(err, "coupon before its redeem_after must not be redeemable")
+	})
+
+	s.Run("redeem_before in the past — add is rejected", func() {
+		ctx := s.GetContext()
+		cust := s.createCustomer("coup-expired")
+		sub := s.createActiveSub(cust.ID)
+		past := s.GetNow().Add(-72 * time.Hour)
+		c := s.createCouponWithLimits(nil, 0, nil, &past)
+
+		req := dto.ExecuteSubscriptionModifyRequest{
+			Type: dto.SubscriptionModifyTypeCoupon,
+			CouponParams: &dto.SubModifyCouponParams{
+				Action:     dto.SubModifyCouponActionAdd,
+				CouponCode: c.CouponCode,
+			},
+		}
+		_, err := s.service.Execute(ctx, sub.ID, req)
+		s.Require().Error(err, "coupon past its redeem_before must not be redeemable")
+	})
+
+	s.Run("successful add increments total_redemptions", func() {
+		ctx := s.GetContext()
+		cust := s.createCustomer("coup-increments")
+		sub := s.createActiveSub(cust.ID)
+		c := s.createCouponWithLimits(lo.ToPtr(5), 0, nil, nil)
+
+		req := dto.ExecuteSubscriptionModifyRequest{
+			Type: dto.SubscriptionModifyTypeCoupon,
+			CouponParams: &dto.SubModifyCouponParams{
+				Action:     dto.SubModifyCouponActionAdd,
+				CouponCode: c.CouponCode,
+			},
+		}
+		_, err := s.service.Execute(ctx, sub.ID, req)
+		s.Require().NoError(err)
+
+		updated, getErr := s.GetStores().CouponRepo.Get(ctx, c.ID)
+		s.Require().NoError(getErr)
+		s.Equal(1, updated.TotalRedemptions, "total_redemptions must be incremented on redemption")
+	})
 }
