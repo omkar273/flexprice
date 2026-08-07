@@ -95,6 +95,26 @@ Each acceptance criterion maps to at least one test. If a criterion has no test,
 
 ---
 
+## CR-04c — `recalculateDiscountOnInvoice` respects the lock and preserves ad-hoc coupons
+
+**Test:** `TestRecalculateDiscountOnInvoice_NoOpsWhenManuallyEdited`
+- Setup: draft invoice with `IsManuallyEdited = true`, known `CouponApplication`/line-item/total state.
+- Action: call `recalculateDiscountOnInvoice` (via `UpdateInvoice` with `ApplyDiscount: true`).
+- Assert: no `CouponApplication` deleted or created, no line item changed, totals unchanged, no error, info log emitted with the invoice ID.
+
+**Test:** `TestRecalculateDiscountOnInvoice_PreservesAdHocCoupon`
+- Setup: draft invoice, `IsManuallyEdited = false`, one ad-hoc `CouponApplication` (`CouponAssociationID = ""`, `DiscountedAmount = $10`) plus a subscription-level `CouponAssociation` that resolves to $15.
+- Action: call `recalculateDiscountOnInvoice`.
+- Assert: the ad-hoc `CouponApplication` row still exists (not deleted by `wipeCouponApplications`); `TotalDiscount = $25` (sum of both), not just $15.
+
+**Test:** `TestRecalculateDiscountOnInvoice_ZeroAdHocRegression` *(regression, must pass unmodified)*
+- Setup: draft invoice with only subscription-resolved coupons, no ad-hoc records, `IsManuallyEdited = false`.
+- Action: call `recalculateDiscountOnInvoice`.
+- Assert: behavior identical to pre-fix (subscription-derived coupons still wiped-and-reapplied as before; `TotalDiscount` matches what it was before this fix landed).
+- Type: all service integration tests (real DB).
+
+---
+
 ## CR-05 — Quantity/amount independence
 
 **Test:** `TestUpdateLineItem_QuantityAmountIndependent`

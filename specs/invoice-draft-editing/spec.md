@@ -31,6 +31,7 @@ Every platform researched (Stripe, Orb, Metronome, Lago) treats "draft = mutable
 - Locking a draft invoice's **line items** out of automatic/explicit recompute once they've been manually added, edited, or removed.
 - Making coupon/tax recompute additive-aware, so ad-hoc coupon/tax applications survive a `ComputeInvoice` run without needing a lock.
 - Preserving per-edit history for line items (archive-and-replace on every edit) without a dedicated audit table.
+- Making `recalculateDiscountOnInvoice` (a third, independently-developed recompute pathway discovered mid-implementation — see CR-04c) respect the manual-edit lock and preserve ad-hoc coupons, so it doesn't undermine CR-04/CR-04b's guarantee through a path those CRs didn't originally name.
 
 **Out of scope:**
 - Editing finalized, voided, or skipped invoices (existing status guards are unchanged).
@@ -77,6 +78,8 @@ Both become permanent no-ops for that invoice once locked. There is no unlock pa
 
 **Coupon/tax additive-awareness (required change to existing code, not just new code).** `applyCouponsToInvoice` and `applyTaxesToInvoice`/`ApplyTaxesOnInvoice` (`internal/ee/service/invoice.go` and `internal/ee/service/tax.go`), invoked both from `ComputeInvoice` (for invoices that are not line-item-locked) and from `performFinalizeInvoiceActions` (for every invoice), must be updated to fold in existing ad-hoc `CouponApplication`/`TaxApplied` records (`*_association_id = nil`, tied directly to the invoice) into `TotalDiscount`/`TotalTax` **in addition to** whatever subscription-level associations resolve that round, rather than overwriting those totals from subscription-resolved data alone. This is what lets an ad-hoc coupon/tax survive a `ComputeInvoice` run without needing to set `is_manually_edited`.
 
+**A third recompute pathway, discovered after T-01–T-11 had already landed (CR-04c).** `recalculateDiscountOnInvoice` (`internal/ee/service/invoice_recalculate_discount.go`), reachable via `PUT /invoices/:id` with `apply_discount: true`, was built independently and merged into `develop` while this feature was mid-implementation. It is neither `ComputeInvoice` nor `RecalculateInvoiceV2`, so CR-04's guard doesn't cover it, and it doesn't call `invoiceService.applyCouponsToInvoice` (it calls `couponApplicationService.ApplyCouponsToInvoice` directly and assigns `TotalDiscount` itself), so CR-04b's fix doesn't cover it either. Worse, it starts by unconditionally deleting **every** `CouponApplication` on the invoice (`wipeCouponApplications`) before re-deriving purely from the subscription's current standing associations — which would destroy an ad-hoc coupon outright, not just fail to protect it. This needs the same two treatments as the rest of this feature, applied directly to this function: an `is_manually_edited` no-op guard (CR-04c), and additive-awareness that preserves ad-hoc `CouponApplication` rows instead of wiping them and folds their amount into the recomputed `TotalDiscount` (CR-04c). Its own tax-refresh step already routes through `applyTaxesToInvoice`, so it inherits CR-04b's tax fix for free — only the coupon side needs a dedicated fix.
+
 ## Validation & guardrails
 
 - Draft-only status gate on every new endpoint, checked under row lock (existing `GetForUpdate` pattern) to prevent a race with a concurrent finalize.
@@ -105,6 +108,10 @@ WHEN `FinalizeInvoice` is called on a draft invoice, regardless of `is_manually_
 
 **CR-04b — Coupon/tax application is additive-aware**
 WHEN `applyCouponsToInvoice` or `applyTaxesToInvoice`/`ApplyTaxesOnInvoice` runs (from `ComputeInvoice` on a non-locked invoice, or from `FinalizeInvoice` on any invoice), THE SYSTEM SHALL include existing ad-hoc `CouponApplication`/`TaxApplied` records (association field `nil`) for that invoice in the resulting `TotalDiscount`/`TotalTax`, in addition to whatever subscription-level associations resolve that round — never overwriting their contribution.
+
+**CR-04c — `recalculateDiscountOnInvoice` respects the lock and preserves ad-hoc coupons**
+WHEN `recalculateDiscountOnInvoice` is invoked (via `PUT /invoices/:id` with `apply_discount: true`) on an invoice with `is_manually_edited = true`, THE SYSTEM SHALL no-op — make no change to any `CouponApplication`, line item, or total — and SHALL log the skip at info level with the invoice ID, matching CR-04's guarantee.
+WHEN `recalculateDiscountOnInvoice` runs on a non-locked invoice, THE SYSTEM SHALL NOT delete `CouponApplication` records with `coupon_association_id = nil` (ad-hoc ones) during its wipe-and-reapply step, and SHALL include their `discounted_amount` in the resulting `total_discount` in addition to whatever subscription-level associations resolve that round — matching CR-04b's additive-aware guarantee for this third pathway.
 
 **CR-05 — Quantity/amount independence**
 WHEN a user edits a line item's `quantity`, THE SYSTEM SHALL NOT automatically recalculate that line item's `amount` from a unit price, or vice versa; each is an independently stored override.

@@ -14,7 +14,7 @@ Seven new endpoints under `/invoices/:id/...` for line-item and ad-hoc coupon/ta
 - `internal/ee/service/invoice_coupon_edit.go` — `ApplyAdHocCoupon`, `RemoveAdHocCoupon`.
 - `internal/ee/service/invoice_tax_edit.go` — `ApplyAdHocTax`, `RemoveAdHocTax`.
 
-Existing files get targeted edits, not rewrites: `invoice.go` (lock guards in `ComputeInvoice`/`RecalculateInvoiceV2`, additive-aware fix in `applyCouponsToInvoice`), `tax.go` (additive-aware fix in `applyTaxesToInvoice`/`RecalculateTaxesOnInvoice`), and the ent schemas/repository for the two schema changes.
+Existing files get targeted edits, not rewrites: `invoice.go` (lock guards in `ComputeInvoice`/`RecalculateInvoiceV2`, additive-aware fix in `applyCouponsToInvoice`), `tax.go` (additive-aware fix in `applyTaxesToInvoice`/`RecalculateTaxesOnInvoice`), `invoice_recalculate_discount.go` (lock guard + ad-hoc-preserving fix, per CR-04c — a third, independently-developed recompute pathway discovered after T-01–T-11 had already landed on `develop`), and the ent schemas/repository for the two schema changes.
 
 ## Deliberate deviations from general house style
 
@@ -35,6 +35,7 @@ Existing files get targeted edits, not rewrites: `invoice.go` (lock guards in `C
 | `internal/ee/service/invoice_tax_edit.go` | New file: `ApplyAdHocTax`, `RemoveAdHocTax` |
 | `internal/ee/service/invoice.go` | `ComputeInvoice` (~408) + `RecalculateInvoiceV2` (~3253): add `is_manually_edited` no-op guard. `applyCouponsToInvoice` (~4420): fold in ad-hoc `CouponApplication`s |
 | `internal/ee/service/tax.go` | `applyTaxesToInvoice`-equivalent tax logic: fold in ad-hoc `TaxApplied` records |
+| `internal/ee/service/invoice_recalculate_discount.go` | `recalculateDiscountOnInvoice`: add `IsManuallyEdited` no-op guard (CR-04c); `wipeCouponApplications` must preserve ad-hoc `CouponApplication`s (`CouponAssociationID == ""`) instead of deleting them; fold their sum into the recomputed `TotalDiscount` |
 | `internal/api/dto/invoice.go` | New request DTOs: `AddLineItemRequest`, `UpdateLineItemRequest`, `ApplyCouponRequest`, `ApplyTaxRequest` |
 | `internal/api/v1/invoice.go` | 7 new handlers |
 | `internal/api/router.go` | 7 new route registrations inside existing `invoices := v1Private.Group("/invoices")` block |
@@ -65,6 +66,12 @@ A private helper, e.g. `recalculateTotalsFromLineItems(ctx, inv, lineItems) erro
 - Tax: fetch the chosen `TaxRate`, build a `*dto.TaxRateResponse`, compute the amount (the private `calculateTaxAmount` in `internal/ee/service/tax.go:1065` is same-package-callable since the new file lives in `internal/ee/service` too), then call the existing public `taxService.CreateTaxApplied(ctx, dto.CreateTaxAppliedRequest{TaxRateID, EntityType: types.TaxRateEntityTypeInvoice, EntityID: inv.ID, TaxableAmount, TaxAmount, Currency, TaxAssociationID: nil})` (`internal/ee/service/tax.go:350`).
 - Removal: `couponApplicationRepo.Delete(ctx, id)` / `taxService.DeleteTaxApplied(ctx, id)` — both already exist. After either, re-run the totals helper (subtract the removed amount, or simpler: re-derive `TotalDiscount`/`TotalTax` from the remaining set of applications, same as the additive-aware fetch above).
 
+### The third recompute pathway: `recalculateDiscountOnInvoice` (CR-04c)
+Discovered after T-01–T-11 had already landed: `internal/ee/service/invoice_recalculate_discount.go`'s `recalculateDiscountOnInvoice`, reachable via `PUT /invoices/:id {apply_discount: true}`, was built independently and merged into `develop` mid-implementation. It needs the same two fixes as everything else in this feature, applied locally to this one function:
+1. **Lock guard**: add `if inv.IsManuallyEdited { s.Logger.Info(...); return nil }` at the top of `recalculateDiscountOnInvoice` (mirroring the T-11/T-12 guards exactly) — the caller (`UpdateInvoice`) already holds the row lock via `GetForUpdate` before calling this function, so no additional locking is needed here, just the check.
+2. **Ad-hoc preservation**: `wipeCouponApplications` currently deletes every `CouponApplication` for the invoice unconditionally. Change its `CouponApplicationRepo.List` → delete loop to skip records where `CouponAssociationID == ""` (ad-hoc). Then, after `couponResult.TotalDiscountAmount` is computed (line 48 in the current file), add the ad-hoc sum before assigning to `inv.TotalDiscount` — reuse the exact `sumAdHocCouponDiscounts` helper introduced for CR-04b (T-13) rather than duplicating the fetch+filter+sum logic a third time.
+3. **Tax needs no separate fix.** `recalculateDiscountOnInvoice`'s tax-refresh step already calls `s.applyTaxesToInvoice` (the same function CR-04b/T-14 makes additive-aware) — it inherits that fix automatically once T-14 lands. Sequencing note: this task should land *after* T-13 (needs `sumAdHocCouponDiscounts` to exist) and *after* T-14 (for the tax side to already be fixed), i.e. last in the "recompute safety" cluster.
+
 ### Permission scope
 All 7 routes use `write(types.EntityInvoice, types.ActionWrite)` (the existing shorthand at `internal/api/router.go:113`), matching the rest of the draft-mutation routes (`compute`, `void`, `finalize` all use the same `write(...)` middleware — despite `finalize`/`void`'s swagger docs marking `@x-scope "delete"` for SDK/MCP categorization purposes, the actual Gin permission middleware is identical `ActionWrite` for all of them). Follow suit: swagger `@x-scope "write"` on all 7 new handlers, consistent with the decision that these are draft-only, reversible edits.
 
@@ -75,6 +82,7 @@ All 7 routes use `write(types.EntityInvoice, types.ActionWrite)` (the existing s
 - **Line-item-scoped ad-hoc coupons don't get re-pointed across an edit** (documented in spec's Known limitations) — a coupon's `InvoiceLineItemID` keeps referencing the archived predecessor after that line item is edited. Doesn't affect totals (see spec), only a cosmetic traceability gap. Not fixed in v1.
 - **Line-item-scoped tax was considered and explicitly rejected** for this iteration (see Deliberate deviations) — if a future request needs it, that's a new `TaxRateEntityType` constant plus resolver support, out of scope here.
 - **`make migrate-ent-dry-run` for T-02/T-04 requires a live Postgres connection** (`cmd/migrate/postgres.go` always opens a real DB, no offline diff mode) — unavailable in a sandboxed execution environment with no Docker access. This sanity check must run in CI or on a developer machine with DB access before the two new columns ship to production. Not a blocker for the rest of this plan (Ent's auto-migration will apply them at deploy time regardless), but the review step itself is deferred, not skipped.
+- **`develop` is a moving target for this exact problem space.** `recalculateDiscountOnInvoice`/`apply_discount` landed independently while this feature was mid-implementation, in the same functional area (invoice discount recalculation) this feature is built around, and had to be retrofitted with CR-04c after the fact. Before starting the recompute-safety cluster of tasks (T-11 onward), re-check `develop` for any further overlapping work that might have landed since — a repeat of this discovery mid-cluster would be more disruptive than catching it once up front.
 
 ## Decisions carried over from spec (recap, not new)
 
@@ -85,3 +93,4 @@ All 7 routes use `write(types.EntityInvoice, types.ActionWrite)` (the existing s
 - No idempotency key on the new POST endpoints (accepted risk, low-frequency human-initiated actions).
 - 7 separate REST endpoints, not a single batch/modify endpoint (explicit decision after discussion — matches this codebase's and every researched competitor's convention).
 - Line item edits are archive-and-replace, not in-place update — gives free per-edit history via existing `CreatedBy`/`CreatedAt`/`UpdatedBy`/`UpdatedAt` fields without a dedicated audit table, and mirrors `reconcileLineItems`'s existing archive-then-insert shape.
+- `recalculateDiscountOnInvoice` (a pathway that didn't exist when this feature was first scoped) gets the same lock-guard + additive-awareness treatment as `ComputeInvoice`/`RecalculateInvoiceV2`/`applyCouponsToInvoice`, applied as a dedicated task rather than silently left as a gap (CR-04c).
