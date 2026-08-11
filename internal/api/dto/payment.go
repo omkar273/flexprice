@@ -59,8 +59,7 @@ type StripePaymentGatewayOptions struct {
 func (o *StripePaymentGatewayOptions) Validate(paymentMethodType types.PaymentMethodType, paymentGateway *types.PaymentGatewayType) error {
 	switch {
 	case paymentMethodType != types.PaymentMethodTypePaymentLink,
-		paymentGateway == nil,
-		paymentGateway != nil && *paymentGateway != types.PaymentGatewayTypeStripe:
+		lo.FromPtr(paymentGateway) != types.PaymentGatewayTypeStripe:
 		return ierr.NewError("gateway_options.stripe only applies to Stripe payment-link payments").
 			WithHint("Remove gateway_options.stripe, or set payment_method_type to PAYMENT_LINK and payment_gateway to stripe").
 			WithReportableDetails(map[string]interface{}{
