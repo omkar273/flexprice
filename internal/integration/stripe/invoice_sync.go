@@ -221,18 +221,9 @@ func (s *InvoiceSyncService) syncLineItemsToStripe(ctx context.Context, flexInvo
 
 	var productIDByPriceID map[string]string
 	if linkStripeProduct {
-		priced := lo.UniqBy(lo.Filter(flexInvoice.LineItems, func(li *invoice.InvoiceLineItem, _ int) bool {
-			return li.PriceID != nil && *li.PriceID != ""
-		}), func(li *invoice.InvoiceLineItem) string { return *li.PriceID })
-
-		if len(priced) > 0 {
-			items := lo.Map(priced, func(li *invoice.InvoiceLineItem, _ int) priceSyncItem {
-				return priceSyncItem{PriceID: *li.PriceID, DisplayName: lo.FromPtr(li.DisplayName)}
-			})
-			productIDByPriceID, err = s.priceSyncSvc.EnsureBulkProductsSynced(ctx, items)
-			if err != nil {
-				return err
-			}
+		productIDByPriceID, err = s.priceSyncSvc.SyncPriceMappingsForLineItems(ctx, flexInvoice.LineItems)
+		if err != nil {
+			return err
 		}
 	}
 

@@ -34,27 +34,15 @@ type PaymentService struct {
 // buildSyncedLineItems builds one Checkout line item per line item, referencing its
 // synced Stripe Product when linked to a Price, else an ad-hoc item; nil falls back.
 func (s *PaymentService) buildSyncedLineItems(ctx context.Context, invoiceResp *dto.InvoiceResponse, currency string) ([]*stripe.CheckoutSessionCreateLineItemParams, error) {
-	var priced []*dto.InvoiceLineItemResponse
-	for _, li := range invoiceResp.LineItems {
-		if !li.Amount.IsZero() && li.PriceID != nil {
-			priced = append(priced, li)
-		}
-	}
-	if len(priced) == 0 {
-		return nil, nil
-	}
-
-	// Dedupe by PriceID before syncing — two line items can share a Price (e.g. base
-	// charge + usage overage) and would otherwise create two Stripe Products for one.
-	syncItems := lo.Map(
-		lo.UniqBy(priced, func(li *dto.InvoiceLineItemResponse) string { return *li.PriceID }),
-		func(li *dto.InvoiceLineItemResponse, _ int) priceSyncItem {
-			return priceSyncItem{PriceID: *li.PriceID, DisplayName: lo.FromPtrOr(li.DisplayName, *li.PriceID)}
-		},
-	)
-	productIDs, err := s.priceSyncSvc.EnsureBulkProductsSynced(ctx, syncItems)
+	lineItemModels := lo.Map(invoiceResp.LineItems, func(li *dto.InvoiceLineItemResponse, _ int) *invoice.InvoiceLineItem {
+		return &li.InvoiceLineItem
+	})
+	productIDs, err := s.priceSyncSvc.SyncPriceMappingsForLineItems(ctx, lineItemModels)
 	if err != nil {
 		return nil, err
+	}
+	if len(productIDs) == 0 {
+		return nil, nil
 	}
 
 	lineItems := make([]*stripe.CheckoutSessionCreateLineItemParams, 0, len(invoiceResp.LineItems))

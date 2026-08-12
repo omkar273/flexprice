@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/flexprice/flexprice/internal/domain/entityintegrationmapping"
+	"github.com/flexprice/flexprice/internal/domain/invoice"
 	ierr "github.com/flexprice/flexprice/internal/errors"
 	"github.com/flexprice/flexprice/internal/logger"
 	"github.com/flexprice/flexprice/internal/types"
@@ -136,4 +137,20 @@ func (s *stripePriceSyncService) EnsureBulkProductsSynced(ctx context.Context, i
 	}
 
 	return result, nil
+}
+
+// SyncPriceMappingsForLineItems dedupes Price-backed line items by PriceID and ensures
+// each has a synced Stripe Product, returning priceID -> stripeProductID.
+func (s *stripePriceSyncService) SyncPriceMappingsForLineItems(ctx context.Context, lineItems []*invoice.InvoiceLineItem) (map[string]string, error) {
+	priced := lo.UniqBy(lo.Filter(lineItems, func(li *invoice.InvoiceLineItem, _ int) bool {
+		return li.PriceID != nil && *li.PriceID != ""
+	}), func(li *invoice.InvoiceLineItem) string { return *li.PriceID })
+	if len(priced) == 0 {
+		return nil, nil
+	}
+
+	items := lo.Map(priced, func(li *invoice.InvoiceLineItem, _ int) priceSyncItem {
+		return priceSyncItem{PriceID: *li.PriceID, DisplayName: lo.FromPtr(li.DisplayName)}
+	})
+	return s.EnsureBulkProductsSynced(ctx, items)
 }
