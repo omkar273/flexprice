@@ -53,6 +53,10 @@ func (o *PaymentGatewayOptions) Validate(paymentMethodType types.PaymentMethodTy
 type StripePaymentGatewayOptions struct {
 	// TaxIDCollectionEnabled only applies to PAYMENT_LINK Checkout Sessions.
 	TaxIDCollectionEnabled *bool `json:"tax_id_collection_enabled,omitempty"`
+	// AutomaticTaxEnabled only applies to PAYMENT_LINK Checkout Sessions. Stripe calculates
+	// tax dynamically from the address the customer enters at checkout; it has no effect on
+	// off-session/renewal charges, which don't go through a Checkout Session.
+	AutomaticTaxEnabled *bool `json:"automatic_tax_enabled,omitempty"`
 }
 
 // Validate ensures Stripe options are only used with Stripe payment-link payments.
@@ -271,6 +275,9 @@ func (r *CreatePaymentRequest) ToPayment(ctx context.Context) (*payment.Payment,
 	}
 	if r.GatewayOptions != nil && r.GatewayOptions.Stripe != nil && lo.FromPtr(r.GatewayOptions.Stripe.TaxIDCollectionEnabled) {
 		gatewayMetadata["tax_id_collection_enabled"] = "true"
+	}
+	if r.GatewayOptions != nil && r.GatewayOptions.Stripe != nil && lo.FromPtr(r.GatewayOptions.Stripe.AutomaticTaxEnabled) {
+		gatewayMetadata["automatic_tax_enabled"] = "true"
 	}
 
 	p := &payment.Payment{
