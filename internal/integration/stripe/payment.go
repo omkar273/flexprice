@@ -441,6 +441,11 @@ func (s *PaymentService) CreatePaymentLink(ctx context.Context, req *dto.CreateS
 			Enabled: stripe.Bool(true),
 		}
 	}
+	if req.AutomaticTaxEnabled {
+		params.AutomaticTax = &stripe.CheckoutSessionCreateAutomaticTaxParams{
+			Enabled: stripe.Bool(true),
+		}
+	}
 
 	// Create the checkout session
 	session, err := stripeClient.V1CheckoutSessions.Create(ctx, params)

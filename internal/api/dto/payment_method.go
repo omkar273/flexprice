@@ -21,6 +21,7 @@ type CreateStripePaymentLinkRequest struct {
 	SaveCardAndMakeDefault bool            `json:"save_card_and_make_default" default:"false"`
 	PaymentID              string          `json:"payment_id" binding:"required"`
 	TaxIDCollectionEnabled bool            `json:"tax_id_collection_enabled" default:"false"`
+	AutomaticTaxEnabled    bool            `json:"automatic_tax_enabled" default:"false"`
 }
 
 // StripePaymentLinkResponse represents a response from creating a Stripe payment link
