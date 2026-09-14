@@ -127,6 +127,19 @@ const result = await flexPrice.events.ingestEvent({
 ## Authentication
 
 - Set the API key via `apiKeyAuth` when constructing `FlexPrice`. The SDK sends it in the `x-api-key` header.
+- For browser sessions, provide JWT credentials through `security`. The callback runs before each request, so token refreshes and environment changes do not require recreating the client:
+
+```typescript
+const flexPrice = new FlexPrice({
+  serverURL: "https://us.api.flexprice.io/v1",
+  security: async () => ({
+    bearerAuth: await getCurrentToken(),
+    environmentId: getSelectedEnvironmentId() ?? undefined,
+  }),
+});
+```
+
+- `environmentId` is optional when the JWT already contains an environment claim.
 - Set `FLEXPRICE_API_HOST` to a full URL (see [Environment](#environment)) or rely on the default `https://us.api.flexprice.io/v1`.
 - Use environment variables and never expose keys in client-side or public code. Get keys from your [FlexPrice dashboard](https://app.flexprice.io) or docs.
 
