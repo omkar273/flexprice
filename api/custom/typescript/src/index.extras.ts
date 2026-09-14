@@ -10,7 +10,7 @@ export {
   FlexPrice,
   type FlexPriceOptions,
   type FlexPriceSecurity,
-} from "./sdk/flex-price.js";
+} from "./sdk/flexprice.js";
 export {
   CustomerPortal,
   createCustomerPortal,
